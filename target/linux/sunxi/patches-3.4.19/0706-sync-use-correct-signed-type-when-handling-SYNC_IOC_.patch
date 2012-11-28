@@ -1,0 +1,28 @@
+From fe7eb30dbc62d4e2f971c128e6c4cd0798055319 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Tue, 4 Sep 2012 15:28:52 -0700
+Subject: [PATCH 706/944] sync: use correct signed type when handling
+ SYNC_IOC_WAIT
+
+Change-Id: Ic7d5adf9b145765e52b23186b8c3c793ccf29be7
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index b2b0c51..938cc52 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -634,7 +634,7 @@ static unsigned int sync_fence_poll(struct file *file, poll_table *wait)
+ 
+ static long sync_fence_ioctl_wait(struct sync_fence *fence, unsigned long arg)
+ {
+-	__u32 value;
++	__s32 value;
+ 
+ 	if (copy_from_user(&value, (void __user *)arg, sizeof(value)))
+ 		return -EFAULT;
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From c00b45630b656ea814ec5528fadb3d8c36ccb1dd Mon Sep 17 00:00:00 2001
+From: Dima Zavin <dima@android.com>
+Date: Wed, 5 Jan 2011 16:03:21 -0800
+Subject: [PATCH 071/944] fs: yaffs: don't force YAFFS_TRACE_ALWAYS for all
+ trace levels
+
+Change-Id: I9ddc676382d26aef7f12145d412fe670cb486317
+Signed-off-by: Dima Zavin <dima@android.com>
+---
+ fs/yaffs2/yportenv.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/yaffs2/yportenv.h b/fs/yaffs2/yportenv.h
+index 236f579..8183425 100644
+--- a/fs/yaffs2/yportenv.h
++++ b/fs/yaffs2/yportenv.h
+@@ -54,7 +54,7 @@
+ #endif
+ 
+ #define yaffs_trace(msk, fmt, ...) do { \
+-	if(yaffs_trace_mask & ((msk) | YAFFS_TRACE_ALWAYS)) \
++	if(yaffs_trace_mask & (msk)) \
+ 		printk(KERN_DEBUG "yaffs: " fmt "\n", ##__VA_ARGS__); \
+ } while(0)
+ 
+-- 
+1.8.0
+

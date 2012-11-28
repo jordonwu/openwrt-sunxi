@@ -1,0 +1,33 @@
+From 81b1e9d69ff251813c45326d3be9515dd942b08e Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 15 Oct 2012 19:00:46 +0300
+Subject: [PATCH 802/944] video: sunxi-disp: fix crash when
+ DISP_INIT_MODE_TWO_DIFF_SCREEN_SAME_CONTENTS is
+ used
+
+Earlier fb_para.primary_screen_id was uninitialized which caused that array index was wrong.
+This hard codes primary_screen_id to 0 which is logical.
+---
+ drivers/video/sunxi/disp/dev_fb.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 59e1a4b..0d72b83 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1364,9 +1364,11 @@ extern unsigned long fb_size;
+ 
+ __s32 Fb_Init(__u32 from)
+ {
+-    __disp_fb_create_para_t fb_para;
+     __s32 i;
+     __bool need_open_hdmi = 0;
++	__disp_fb_create_para_t fb_para = {
++		.primary_screen_id = 0,
++	};
+ 
+     __inf("Fb_Init:%d\n", from);
+ 
+-- 
+1.8.0
+

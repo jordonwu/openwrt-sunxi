@@ -1,0 +1,47 @@
+From 5a5c3aacdd2d05ab41aa017a0be8a41d3eba83d1 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 14:07:47 +0200
+Subject: [PATCH 488/944] usb: gadget: rename usb_gadget_driver::speed to
+ max_speed
+ (7177aed44f515d949f587170e0e177ce17e74793)
+
+---
+ drivers/usb/sun4i_usb/udc/sw_udc.c | 4 ++--
+ drivers/usb/sun5i_usb/udc/sw_udc.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/usb/sun4i_usb/udc/sw_udc.c b/drivers/usb/sun4i_usb/udc/sw_udc.c
+index 2354582..764f2e5 100644
+--- a/drivers/usb/sun4i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun4i_usb/udc/sw_udc.c
+@@ -3041,9 +3041,9 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
+ 		return -EBUSY;
+     }
+ 
+-	if (!bind || !driver->setup || driver->speed < USB_SPEED_FULL) {
++	if (!bind || !driver->setup || driver->max_speed < USB_SPEED_FULL) {
+ 		DMSG_PANIC("ERR: Invalid driver: bind %p setup %p speed %d\n",
+-			       bind, driver->setup, driver->speed);
++			       bind, driver->setup, driver->max_speed);
+ 		return -EINVAL;
+ 	}
+ 
+diff --git a/drivers/usb/sun5i_usb/udc/sw_udc.c b/drivers/usb/sun5i_usb/udc/sw_udc.c
+index a7e465b..5827efe 100644
+--- a/drivers/usb/sun5i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun5i_usb/udc/sw_udc.c
+@@ -3013,9 +3013,9 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
+ 		return -EBUSY;
+     }
+ 
+-	if (!bind || !driver->setup || driver->speed < USB_SPEED_FULL) {
++	if (!bind || !driver->setup || driver->max_speed < USB_SPEED_FULL) {
+ 		DMSG_PANIC("ERR: Invalid driver: bind %p setup %p speed %d\n",
+-			       bind, driver->setup, driver->speed);
++			       bind, driver->setup, driver->max_speed);
+ 		return -EINVAL;
+ 	}
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,41 @@
+From a6484b5848e980623ad51c749685514f1fe70c6f Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Wed, 16 Nov 2011 15:44:54 +0800
+Subject: [PATCH 327/944] build: add uImage build
+
+To use u-boot we need to build the uImage, and change the kernel params
+address to 0x40000400 which is the same as u-boot code.
+---
+ arch/arm/mach-sun4i/core.c | 2 +-
+ scripts/build_sun4i.sh     | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index bd951c7..e32cc25 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -375,7 +375,7 @@ EXPORT_SYMBOL(sw_get_ic_ver);
+ 
+ 
+ MACHINE_START(SUN4I, "sun4i")
+-	.boot_params    = PLAT_PHYS_OFFSET,
++	.boot_params    = PLAT_PHYS_OFFSET + 0x400,
+ 	.timer          = &sw_sys_timer,
+ 	.fixup          = sw_core_fixup,
+ 	.map_io         = sw_core_map_io,
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 96a0831..2a82f01 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -56,7 +56,7 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_defconfig .config
+ 	fi
+ 
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8
++	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage zImage
+ 	update_kern_ver
+ 
+ 	if [ -d output ]; then
+-- 
+1.8.0
+

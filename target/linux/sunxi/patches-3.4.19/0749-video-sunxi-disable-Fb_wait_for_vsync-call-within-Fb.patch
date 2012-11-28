@@ -1,0 +1,30 @@
+From f84ab53a8ae9773c486b365727a3d704603c2a42 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 7 Sep 2012 22:33:00 +0200
+Subject: [PATCH 749/944] video: sunxi: disable Fb_wait_for_vsync() call
+ within Fb_pan_display()
+
+introduced by 0165c7d303d8187e5cd0f20af270e1e03b648cbc from a bulk update of
+the disp driver coming from behind the wall makes the rendering unsuably slow.
+
+closes #72
+---
+ drivers/video/sunxi/disp/dev_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 88b0b96..2a3e158 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -866,7 +866,7 @@ static int Fb_pan_display(struct fb_var_screeninfo *var,struct fb_info *info)
+         }
+     }
+ 
+-	Fb_wait_for_vsync(info);
++	/*Fb_wait_for_vsync(info);*/
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

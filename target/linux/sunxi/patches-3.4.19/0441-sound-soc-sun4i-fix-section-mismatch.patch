@@ -1,0 +1,25 @@
+From afb9aa028af563bf19f342ec31fe4375026cb463 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 14 May 2012 02:51:18 +0000
+Subject: [PATCH 441/944] sound: soc: sun4i: fix section mismatch
+
+---
+ sound/soc/sun4i/sun4i-codec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/sun4i/sun4i-codec.c b/sound/soc/sun4i/sun4i-codec.c
+index 8f02678..3654244 100644
+--- a/sound/soc/sun4i/sun4i-codec.c
++++ b/sound/soc/sun4i/sun4i-codec.c
+@@ -1284,7 +1284,7 @@ static void codec_resume_events(struct work_struct *work)
+ 	gpio_write_one_pin_value(gpio_pa_shutdown, 1, "audio_pa_ctrl");
+ }
+ 
+-static int __init sun4i_codec_probe(struct platform_device *pdev)
++static int __devinit sun4i_codec_probe(struct platform_device *pdev)
+ {
+ 	int err;
+ 	int ret;
+-- 
+1.8.0
+

@@ -1,0 +1,23 @@
+From 192a399861dd8fefdbda4b8639ef6a0594d9f41e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 9 Sep 2012 00:49:18 +0200
+Subject: [PATCH 828/944] video: sunxi-disp: find new ump headers
+
+---
+ drivers/video/sunxi/disp/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index 5d9e59e..8be8110 100755
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -23,5 +23,5 @@ endif
+ 
+ ifeq ($(CONFIG_FB_SUNXI_UMP),y)
+ obj-m += disp_ump.o
+-EXTRA_CFLAGS += -Idrivers/gpu/mali/include
++ccflags-y += -Idrivers/gpu/mali/ump/include
+ endif
+-- 
+1.8.0
+

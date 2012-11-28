@@ -1,0 +1,25 @@
+From e601c2cf51c1fbedc621e953b1526daee8c792ad Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sat, 3 Mar 2012 18:45:17 +0100
+Subject: [PATCH 432/944] arm: sun3i: dma: fixed section mismatch
+
+---
+ arch/arm/mach-sun3i/dma/dma_15.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun3i/dma/dma_15.c b/arch/arm/mach-sun3i/dma/dma_15.c
+index c9e3e9a..48fdd88 100644
+--- a/arch/arm/mach-sun3i/dma/dma_15.c
++++ b/arch/arm/mach-sun3i/dma/dma_15.c
+@@ -113,7 +113,7 @@ static int __init sw_dma_add(struct sys_device *sysdev)
+ 	return sw_dma_init_map(&sw_dma_sel);
+ }
+ 
+-static struct sysdev_driver sw_dma_driver = {
++static struct sysdev_driver __initdata sw_dma_driver = {
+ 	.add	= sw_dma_add,
+ };
+ 
+-- 
+1.8.0
+

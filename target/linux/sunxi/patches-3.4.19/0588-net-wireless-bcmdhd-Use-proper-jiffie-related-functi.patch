@@ -1,0 +1,244 @@
+From 0902d6976ea2516970e1d303ff77f529eb089f3e Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 13 Jul 2012 14:30:33 -0700
+Subject: [PATCH 588/944] net: wireless: bcmdhd: Use proper jiffie-related
+ functions
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd.h               |  4 ++--
+ drivers/net/wireless/bcmdhd/dhd_cfg80211.c      |  4 ++--
+ drivers/net/wireless/bcmdhd/dhd_linux.c         | 22 +++++++---------------
+ drivers/net/wireless/bcmdhd/include/linux_osl.h |  2 +-
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c       | 13 ++++++-------
+ drivers/net/wireless/bcmdhd/wl_iw.c             |  6 +++---
+ 6 files changed, 21 insertions(+), 30 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 6aceea5..3283f6c 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -280,7 +280,7 @@ typedef struct dhd_pub {
+ 			SMP_RD_BARRIER_DEPENDS(); \
+ 			while (dhd_mmc_suspend && retry++ != b) { \
+ 				SMP_RD_BARRIER_DEPENDS(); \
+-				wait_event_interruptible_timeout(a, !dhd_mmc_suspend, HZ/100); \
++				wait_event_interruptible_timeout(a, !dhd_mmc_suspend, 1); \
+ 			} \
+ 		} 	while (0)
+ 	#define DHD_PM_RESUME_WAIT(a) 		_DHD_PM_RESUME_WAIT(a, 200)
+@@ -292,7 +292,7 @@ typedef struct dhd_pub {
+ 	#define SPINWAIT_SLEEP(a, exp, us) do { \
+ 		uint countdown = (us) + 9999; \
+ 		while ((exp) && (countdown >= 10000)) { \
+-			wait_event_interruptible_timeout(a, FALSE, HZ/100); \
++			wait_event_interruptible_timeout(a, FALSE, 1); \
+ 			countdown -= 10000; \
+ 		} \
+ 	} while (0)
+diff --git a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+index 5564590..accff9e 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+@@ -420,7 +420,7 @@ static void wl_cfg80211_bt_handler(struct work_struct *work)
+ 				__FUNCTION__));
+ 			btcx_inf->bt_state = BT_DHCP_OPPR_WIN;
+ 			mod_timer(&btcx_inf->timer,
+-				jiffies + BT_DHCP_OPPR_WIN_TIME*HZ/1000);
++				jiffies + msecs_to_jiffies(BT_DHCP_OPPR_WIN_TIME));
+ 			btcx_inf->timer_on = 1;
+ 			break;
+ 
+@@ -440,7 +440,7 @@ static void wl_cfg80211_bt_handler(struct work_struct *work)
+ 				wl_cfg80211_bt_setflag(btcx_inf->dev, TRUE);
+ 			btcx_inf->bt_state = BT_DHCP_FLAG_FORCE_TIMEOUT;
+ 			mod_timer(&btcx_inf->timer,
+-				jiffies + BT_DHCP_FLAG_FORCE_TIME*HZ/1000);
++				jiffies + msecs_to_jiffies(BT_DHCP_FLAG_FORCE_TIME));
+ 			btcx_inf->timer_on = 1;
+ 			break;
+ 
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 2b6adea..cc0ff70 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -735,7 +735,7 @@ dhd_timeout_start(dhd_timeout_t *tmo, uint usec)
+ 	tmo->limit = usec;
+ 	tmo->increment = 0;
+ 	tmo->elapsed = 0;
+-	tmo->tick = 1000000 / HZ;
++	tmo->tick = jiffies_to_usecs(1);
+ }
+ 
+ int
+@@ -1889,7 +1889,7 @@ dhd_watchdog_thread(void *data)
+ 				/* Reschedule the watchdog */
+ 				if (dhd->wd_timer_valid)
+ 					mod_timer(&dhd->timer,
+-					jiffies + dhd_watchdog_ms * HZ / 1000);
++					jiffies + msecs_to_jiffies(dhd_watchdog_ms));
+ 				dhd_os_spin_unlock(&dhd->pub, flags);
+ 			}
+ 			dhd_os_sdunlock(&dhd->pub);
+@@ -1930,7 +1930,7 @@ static void dhd_watchdog(ulong data)
+ 
+ 	/* Reschedule the watchdog */
+ 	if (dhd->wd_timer_valid)
+-		mod_timer(&dhd->timer, jiffies + dhd_watchdog_ms * HZ / 1000);
++		mod_timer(&dhd->timer, jiffies + msecs_to_jiffies(dhd_watchdog_ms));
+ 	dhd_os_spin_unlock(&dhd->pub, flags);
+ 	dhd_os_sdunlock(&dhd->pub);
+ 	DHD_OS_WAKE_UNLOCK(&dhd->pub);
+@@ -4323,14 +4323,10 @@ int
+ dhd_os_ioctl_resp_wait(dhd_pub_t *pub, uint *condition, bool *pending)
+ {
+ 	dhd_info_t * dhd = (dhd_info_t *)(pub->info);
+-	int timeout = dhd_ioctl_timeout_msec;
++	int timeout;
+ 
+ 	/* Convert timeout in millsecond to jiffies */
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
+-	timeout = msecs_to_jiffies(timeout);
+-#else
+-	timeout = timeout * HZ / 1000;
+-#endif
++	timeout = msecs_to_jiffies(dhd_ioctl_timeout_msec);
+ 
+ 	timeout = wait_event_timeout(dhd->ioctl_resp_wait, (*condition), timeout);
+ 	return timeout;
+@@ -4383,7 +4379,7 @@ dhd_os_wd_timer(void *bus, uint wdtick)
+ 	if (wdtick) {
+ 		dhd_watchdog_ms = (uint)wdtick;
+ 		/* Re arm the timer, at last watchdog period */
+-		mod_timer(&dhd->timer, jiffies + dhd_watchdog_ms * HZ / 1000);
++		mod_timer(&dhd->timer, jiffies + msecs_to_jiffies(dhd_watchdog_ms));
+ 		dhd->wd_timer_valid = TRUE;
+ 	}
+ 	dhd_os_spin_unlock(pub, flags);
+@@ -4696,11 +4692,7 @@ void dhd_wait_for_event(dhd_pub_t *dhd, bool *lockvar)
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+ 	struct dhd_info *dhdinfo =  dhd->info;
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
+ 	int timeout = msecs_to_jiffies(2000);
+-#else
+-	int timeout = 2 * HZ;
+-#endif
+ 	dhd_os_sdunlock(dhd);
+ 	wait_event_timeout(dhdinfo->ctrl_wait, (*lockvar == FALSE), timeout);
+ 	dhd_os_sdlock(dhd);
+@@ -5016,7 +5008,7 @@ int
+ dhd_wait_pend8021x(struct net_device *dev)
+ {
+ 	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
+-	int timeout = 10 * HZ / 1000;
++	int timeout = msecs_to_jiffies(10);
+ 	int ntimes = MAX_WAIT_FOR_8021X_TX;
+ 	int pend = dhd_get_pend_8021x_cnt(dhd);
+ 
+diff --git a/drivers/net/wireless/bcmdhd/include/linux_osl.h b/drivers/net/wireless/bcmdhd/include/linux_osl.h
+index 257aaf6..4223041 100644
+--- a/drivers/net/wireless/bcmdhd/include/linux_osl.h
++++ b/drivers/net/wireless/bcmdhd/include/linux_osl.h
+@@ -166,7 +166,7 @@ extern int osl_error(int bcmerror);
+ #include <linux/kernel.h>       
+ #include <linux/string.h>       
+ 
+-#define OSL_SYSUPTIME()		((uint32)jiffies * (1000 / HZ))
++#define OSL_SYSUPTIME()		((uint32)jiffies_to_msecs(jiffies))
+ #define	printf(fmt, args...)	printk(fmt , ## args)
+ #include <linux/kernel.h>	
+ #include <linux/string.h>	
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index 955aedd..dcc5e06 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -1682,7 +1682,7 @@ static s32 wl_do_iscan(struct wl_priv *wl, struct cfg80211_scan_request *request
+ 	}
+ 	wl->iscan_kickstart = true;
+ 	wl_run_iscan(iscan, request, WL_SCAN_ACTION_START);
+-	mod_timer(&iscan->timer, jiffies + iscan->timer_ms * HZ / 1000);
++	mod_timer(&iscan->timer, jiffies + msecs_to_jiffies(iscan->timer_ms));
+ 	iscan->timer_on = 1;
+ 
+ 	return err;
+@@ -1938,7 +1938,7 @@ __wl_cfg80211_scan(struct wiphy *wiphy, struct net_device *ndev,
+ #endif /* WL_CFG80211_VSDB_PRIORITIZE_SCAN_REQUEST */
+ 
+ 	/* Arm scan timeout timer */
+-	mod_timer(&wl->scan_timeout, jiffies + WL_SCAN_TIMER_INTERVAL_MS * HZ / 1000);
++	mod_timer(&wl->scan_timeout, jiffies + msecs_to_jiffies(WL_SCAN_TIMER_INTERVAL_MS));
+ 	iscan_req = false;
+ 	if (request) {		/* scan bss */
+ 		ssids = request->ssids;
+@@ -2275,7 +2275,7 @@ wl_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *dev,
+ 		}
+ 
+ 		/* wait 4 secons till scan done.... */
+-		schedule_timeout_interruptible(4 * HZ);
++		schedule_timeout_interruptible(msecs_to_jiffies(4000));
+ 		if (rollback_lock)
+ 			rtnl_lock();
+ 		bss = cfg80211_get_ibss(wiphy, NULL,
+@@ -6708,7 +6708,7 @@ static s32 wl_iscan_pending(struct wl_priv *wl)
+ 	s32 err = 0;
+ 
+ 	/* Reschedule the timer */
+-	mod_timer(&iscan->timer, jiffies + iscan->timer_ms * HZ / 1000);
++	mod_timer(&iscan->timer, jiffies + msecs_to_jiffies(iscan->timer_ms));
+ 	iscan->timer_on = 1;
+ 
+ 	return err;
+@@ -6724,7 +6724,7 @@ static s32 wl_iscan_inprogress(struct wl_priv *wl)
+ 	wl_run_iscan(iscan, NULL, WL_SCAN_ACTION_CONTINUE);
+ 	mutex_unlock(&wl->usr_sync);
+ 	/* Reschedule the timer */
+-	mod_timer(&iscan->timer, jiffies + iscan->timer_ms * HZ / 1000);
++	mod_timer(&iscan->timer, jiffies + msecs_to_jiffies(iscan->timer_ms));
+ 	iscan->timer_on = 1;
+ 
+ 	return err;
+@@ -8495,8 +8495,7 @@ static void wl_init_eq_lock(struct wl_priv *wl)
+ 
+ static void wl_delay(u32 ms)
+ {
+-	if (ms < 1000 / HZ) {
+-		cond_resched();
++	if (in_atomic() || (ms < jiffies_to_msecs(1))) {
+ 		mdelay(ms);
+ 	} else {
+ 		msleep(ms);
+diff --git a/drivers/net/wireless/bcmdhd/wl_iw.c b/drivers/net/wireless/bcmdhd/wl_iw.c
+index be08025..adcecf2 100644
+--- a/drivers/net/wireless/bcmdhd/wl_iw.c
++++ b/drivers/net/wireless/bcmdhd/wl_iw.c
+@@ -1227,7 +1227,7 @@ wl_iw_iscan_set_scan(
+ 	wl_iw_set_event_mask(dev);
+ 	wl_iw_iscan(iscan, &ssid, WL_SCAN_ACTION_START);
+ 
+-	iscan->timer.expires = jiffies + iscan->timer_ms*HZ/1000;
++	iscan->timer.expires = jiffies + msecs_to_jiffies(iscan->timer_ms);
+ 	add_timer(&iscan->timer);
+ 	iscan->timer_on = 1;
+ 
+@@ -3652,7 +3652,7 @@ _iscan_sysioc_thread(void *data)
+ 				rtnl_unlock();
+ #endif
+ 				
+-				iscan->timer.expires = jiffies + iscan->timer_ms*HZ/1000;
++				iscan->timer.expires = jiffies + msecs_to_jiffies(iscan->timer_ms);
+ 				add_timer(&iscan->timer);
+ 				iscan->timer_on = 1;
+ 				break;
+@@ -3664,7 +3664,7 @@ _iscan_sysioc_thread(void *data)
+ 			case WL_SCAN_RESULTS_PENDING:
+ 				WL_TRACE(("iscanresults pending\n"));
+ 				
+-				iscan->timer.expires = jiffies + iscan->timer_ms*HZ/1000;
++				iscan->timer.expires = jiffies + msecs_to_jiffies(iscan->timer_ms);
+ 				add_timer(&iscan->timer);
+ 				iscan->timer_on = 1;
+ 				break;
+-- 
+1.8.0
+

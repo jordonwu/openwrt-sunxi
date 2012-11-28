@@ -1,0 +1,82 @@
+From 16d0c01f838d59a2e144df067032f6e8164179f5 Mon Sep 17 00:00:00 2001
+From: zhangxu <zhangxu@allwinnertech.com>
+Date: Fri, 25 Nov 2011 14:27:39 +0800
+Subject: [PATCH 379/944] change goodix_touch name for android use
+
+---
+ arch/arm/configs/sun4i_crane_defconfig   | 9 ++++++++-
+ drivers/input/touchscreen/goodix_touch.c | 2 +-
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index 148ec66..a81db2a 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -673,6 +673,7 @@ CONFIG_BT=y
+ # CONFIG_BT_HCIBFUSB is not set
+ # CONFIG_BT_HCIVHCI is not set
+ # CONFIG_BT_MRVL is not set
++# CONFIG_AF_RXRPC is not set
+ CONFIG_WIRELESS=y
+ CONFIG_WIRELESS_EXT=y
+ CONFIG_WEXT_CORE=y
+@@ -764,6 +765,7 @@ CONFIG_ANDROID_PMEM=y
+ # CONFIG_EEPROM_LEGACY is not set
+ # CONFIG_EEPROM_MAX6875 is not set
+ # CONFIG_EEPROM_93CX6 is not set
++# CONFIG_IWMC3200TOP is not set
+ 
+ #
+ # Texas Instruments shared transport line discipline
+@@ -868,12 +870,14 @@ CONFIG_PHYLIB=y
+ # CONFIG_NETDEV_10000 is not set
+ CONFIG_WLAN=y
+ # CONFIG_USB_ZD1201 is not set
++# CONFIG_USB_NET_RNDIS_WLAN is not set
+ # CONFIG_WIFI_CONTROL_FUNC is not set
+ # CONFIG_ATH_COMMON is not set
+ # CONFIG_BCM4329 is not set
+ CONFIG_BCM4330=m
+ # CONFIG_BCMDHD is not set
+ # CONFIG_HOSTAP is not set
++# CONFIG_IWM is not set
+ # CONFIG_LIBERTAS is not set
+ # CONFIG_MWIFIEX is not set
+ CONFIG_RTL8192CU_SW=m
+@@ -1488,6 +1492,9 @@ CONFIG_USB_SW_SUN4I_USB_DEBUG=y
+ CONFIG_MMC=y
+ # CONFIG_MMC_DEBUG is not set
+ CONFIG_MMC_UNSAFE_RESUME=y
++# CONFIG_MMC_CLKGATE is not set
++# CONFIG_MMC_EMBEDDED_SDIO is not set
++# CONFIG_MMC_PARANOID_SD_INIT is not set
+ 
+ #
+ # MMC/SD/SDIO Card Drivers
+@@ -1587,9 +1594,9 @@ CONFIG_RTC_DRV_SUN4I=y
+ CONFIG_STAGING=y
+ # CONFIG_RISCOM8 is not set
+ # CONFIG_SPECIALIX is not set
+-# CONFIG_PRISM2_USB is not set
+ # CONFIG_VIDEO_TM6000 is not set
+ # CONFIG_USBIP_CORE is not set
++# CONFIG_PRISM2_USB is not set
+ # CONFIG_ECHO is not set
+ # CONFIG_BRCMUTIL is not set
+ # CONFIG_ASUS_OLED is not set
+diff --git a/drivers/input/touchscreen/goodix_touch.c b/drivers/input/touchscreen/goodix_touch.c
+index 6d4fe86..4c01a2e 100644
+--- a/drivers/input/touchscreen/goodix_touch.c
++++ b/drivers/input/touchscreen/goodix_touch.c
+@@ -79,7 +79,7 @@ struct goodix_ts_data {
+ #endif
+ };
+ 
+-const char *f3x_ts_name = "Goodix TouchScreen of GT80X";
++const char *f3x_ts_name = "gt80x";
+ static struct workqueue_struct *goodix_wq;
+ #define X_DIFF (800)
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From 6baacf110e85af6a7b508d56768cfa7da43b7514 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 8 Jun 2011 15:16:52 -0700
+Subject: [PATCH 122/944] net: wireless: Add CONFIG_WIFI_CONTROL_FUNC option
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/wireless/Kconfig b/drivers/net/wireless/Kconfig
+index 6b628d6..d9252ff 100644
+--- a/drivers/net/wireless/Kconfig
++++ b/drivers/net/wireless/Kconfig
+@@ -268,6 +268,11 @@ config MWL8K
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called mwl8k.  If unsure, say N.
+ 
++config WIFI_CONTROL_FUNC
++	bool "Enable WiFi control function abstraction"
++	help
++	  Enables Power/Reset/Carddetect function abstraction
++
+ source "drivers/net/wireless/ath/Kconfig"
+ source "drivers/net/wireless/b43/Kconfig"
+ source "drivers/net/wireless/b43legacy/Kconfig"
+-- 
+1.8.0
+

@@ -1,0 +1,84 @@
+From d28d224a04462cde58759df1e5cedebf904e26a0 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Wed, 25 Jul 2012 16:57:46 -0700
+Subject: [PATCH 613/944] power: smb347: read all IRQSTAT registers to clear
+ interrupts
+
+Change-Id: I430bd0413a63e3d9c79dee95371862724f4aa124
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 32 ++++++++++++++++----------------
+ 1 file changed, 16 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index eacff4e..c12932f 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -783,26 +783,26 @@ fail:
+ static irqreturn_t smb347_interrupt(int irq, void *data)
+ {
+ 	struct smb347_charger *smb = data;
+-	int stat_c, irqstat_e, irqstat_c;
++	int stat_c, t;
++	u8 irqstat[6];
+ 	irqreturn_t ret = IRQ_NONE;
+ 
+-	stat_c = smb347_read(smb, STAT_C);
+-	if (stat_c < 0) {
+-		dev_warn(&smb->client->dev, "reading STAT_C failed\n");
++	t = i2c_smbus_read_i2c_block_data(smb->client, IRQSTAT_A, 6, irqstat);
++	if (t < 0) {
++		dev_warn(&smb->client->dev,
++			 "reading IRQSTAT registers failed\n");
+ 		return IRQ_NONE;
+ 	}
+ 
+-	irqstat_c = smb347_read(smb, IRQSTAT_C);
+-	if (irqstat_c < 0) {
+-		dev_warn(&smb->client->dev, "reading IRQSTAT_C failed\n");
++	stat_c = smb347_read(smb, STAT_C);
++	if (stat_c < 0) {
++		dev_warn(&smb->client->dev, "reading STAT_C failed\n");
+ 		return IRQ_NONE;
+ 	}
+ 
+-	irqstat_e = smb347_read(smb, IRQSTAT_E);
+-	if (irqstat_e < 0) {
+-		dev_warn(&smb->client->dev, "reading IRQSTAT_E failed\n");
+-		return IRQ_NONE;
+-	}
++	pr_debug("%s: stat c=%x irq a=%x b=%x c=%x d=%x e=%x f=%x\n",
++		 __func__, stat_c, irqstat[0], irqstat[1], irqstat[2],
++		 irqstat[3], irqstat[4], irqstat[5]);
+ 
+ 	/*
+ 	 * If we get charger error we report the error back to user and
+@@ -822,21 +822,21 @@ static irqreturn_t smb347_interrupt(int irq, void *data)
+ 	 * If we reached the termination current the battery is charged.
+ 	 * Disable charging to ACK the interrupt and update status.
+ 	 */
+-	if (irqstat_c & (IRQSTAT_C_TERMINATION_IRQ |
+-			 IRQSTAT_C_TERMINATION_STAT)) {
++	if (irqstat[2] & (IRQSTAT_C_TERMINATION_IRQ |
++			  IRQSTAT_C_TERMINATION_STAT)) {
+ 		smb347_charging_disable(smb);
+ 		power_supply_changed(&smb->battery);
+ 		ret = IRQ_HANDLED;
+ 	}
+ 
+-	if (irqstat_c & IRQSTAT_C_TAPER_IRQ)
++	if (irqstat[2] & IRQSTAT_C_TAPER_IRQ)
+ 		ret = IRQ_HANDLED;
+ 
+ 	/*
+ 	 * If we got an under voltage interrupt it means that AC/USB input
+ 	 * was disconnected.
+ 	 */
+-	if (irqstat_e & (IRQSTAT_E_USBIN_UV_IRQ | IRQSTAT_E_DCIN_UV_IRQ))
++	if (irqstat[4] & (IRQSTAT_E_USBIN_UV_IRQ | IRQSTAT_E_DCIN_UV_IRQ))
+ 		ret = IRQ_HANDLED;
+ 
+ 	if (smb347_update_status(smb) > 0) {
+-- 
+1.8.0
+

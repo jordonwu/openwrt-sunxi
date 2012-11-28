@@ -1,0 +1,49 @@
+From 75b1f701b8a93085b1d7dd23bfe96d13cd172397 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 27 May 2012 01:18:13 +0200
+Subject: [PATCH 474/944] arm: sun3i: fix O= support
+
+---
+ arch/arm/mach-sun3i/clock/Makefile               | 10 +---------
+ arch/arm/mach-sun3i/clock/csp_ccmu/Makefile      |  1 +
+ arch/arm/mach-sun3i/clock/csp_ccmu/ccmu/Makefile |  5 +++++
+ 3 files changed, 7 insertions(+), 9 deletions(-)
+ create mode 100644 arch/arm/mach-sun3i/clock/csp_ccmu/Makefile
+ create mode 100644 arch/arm/mach-sun3i/clock/csp_ccmu/ccmu/Makefile
+
+diff --git a/arch/arm/mach-sun3i/clock/Makefile b/arch/arm/mach-sun3i/clock/Makefile
+index ccfb4da..6c462f5 100644
+--- a/arch/arm/mach-sun3i/clock/Makefile
++++ b/arch/arm/mach-sun3i/clock/Makefile
+@@ -1,9 +1 @@
+-
+-
+-obj-y		+= csp_ccmu/ccmu/ccm_mod_clk_freq.o \
+-		csp_ccmu/ccmu/ccm_sys_clk_freq.o \
+-		csp_ccmu/ccmu/ccm_mod_clk_status.o \
+-		csp_ccmu/ccmu/ccm.o \
+-		csp_ccmu/ccmu/ccm_sys_clk_status.o \
+-		clock.o
+-
++obj-y += csp_ccmu/ clock.o
+diff --git a/arch/arm/mach-sun3i/clock/csp_ccmu/Makefile b/arch/arm/mach-sun3i/clock/csp_ccmu/Makefile
+new file mode 100644
+index 0000000..c3debc2
+--- /dev/null
++++ b/arch/arm/mach-sun3i/clock/csp_ccmu/Makefile
+@@ -0,0 +1 @@
++obj-y += ccmu/
+diff --git a/arch/arm/mach-sun3i/clock/csp_ccmu/ccmu/Makefile b/arch/arm/mach-sun3i/clock/csp_ccmu/ccmu/Makefile
+new file mode 100644
+index 0000000..3e85ffd
+--- /dev/null
++++ b/arch/arm/mach-sun3i/clock/csp_ccmu/ccmu/Makefile
+@@ -0,0 +1,5 @@
++obj-y		+= ccm_mod_clk_freq.o \
++		ccm_sys_clk_freq.o \
++		ccm_mod_clk_status.o \
++		ccm.o \
++		ccm_sys_clk_status.o \
+-- 
+1.8.0
+

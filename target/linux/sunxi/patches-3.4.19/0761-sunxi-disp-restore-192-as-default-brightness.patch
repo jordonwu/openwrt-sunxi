@@ -1,0 +1,39 @@
+From a51b33f26ec0beb3f00cf7c6f099cd7053c8b00a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sat, 22 Sep 2012 00:42:11 +0200
+Subject: [PATCH 761/944] sunxi-disp: restore 192 as default brightness
+
+---
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c | 2 +-
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+index dc977c9..6ad84ca 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+@@ -713,7 +713,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ 	ret = OSAL_Script_FetchParser_Data(primary_key, sub_name, &value, 1);
+ 	if (ret < 0) {
+ 		DE_INF("%s.%s not exit\n", primary_key,sub_name);
+-		lcd_cfg->init_bright = 197;
++		lcd_cfg->init_bright = 192;
+ 	} else {
+ 		DE_INF("%s.%s = %d\n", primary_key,sub_name, value);
+ 		if (value > 256) {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+index 69de364..828d450 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+@@ -713,7 +713,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ 	ret = OSAL_Script_FetchParser_Data(primary_key, sub_name, &value, 1);
+ 	if (ret < 0) {
+ 		DE_INF("%s.%s not exit\n", primary_key,sub_name);
+-		lcd_cfg->init_bright = 197;
++		lcd_cfg->init_bright = 192;
+ 	} else {
+ 		DE_INF("%s.%s = %d\n", primary_key,sub_name, value);
+ 		if (value > 256) {
+-- 
+1.8.0
+

@@ -1,0 +1,39 @@
+From 7f141c58da4a6c8920fd6d7051b832e3dec6b877 Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Fri, 16 Dec 2011 20:00:38 -0800
+Subject: [PATCH 148/944] usb: gadget: rndis: Fix re-binding f_rndis
+
+f_rndis checks if rndis_string_defs[0].id is null to setup rndis
+and allocate string ids when it is bound to the first configuration:
+
+	/* maybe allocate device-global string IDs */
+	if (rndis_string_defs[0].id == 0) {
+
+		/* ... and setup RNDIS itself */
+		status = rndis_init();
+		if (status < 0)
+			return status;
+
+rndis_string_defs[0].id must be reset to 0 on unbind for rndis to be
+correctly initialized on the next composite_bind.
+
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/usb/gadget/f_rndis.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/gadget/f_rndis.c b/drivers/usb/gadget/f_rndis.c
+index 7b1cf18..f377c10 100644
+--- a/drivers/usb/gadget/f_rndis.c
++++ b/drivers/usb/gadget/f_rndis.c
+@@ -819,6 +819,7 @@ rndis_unbind(struct usb_configuration *c, struct usb_function *f)
+ 
+ 	rndis_deregister(rndis->config);
+ 	rndis_exit();
++	rndis_string_defs[0].id = 0;
+ 
+ 	if (gadget_is_superspeed(c->cdev->gadget))
+ 		usb_free_descriptors(f->ss_descriptors);
+-- 
+1.8.0
+

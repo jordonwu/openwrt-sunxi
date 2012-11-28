@@ -1,0 +1,170 @@
+From 0d2216eb1318d37244525f9548980e5e211fbe55 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 13 May 2012 00:49:40 +0200
+Subject: [PATCH 426/944] lichee: removed build_standby from scripts
+
+---
+ scripts/build_a12.sh         | 8 --------
+ scripts/build_a13.sh         | 8 --------
+ scripts/build_sun4i-lite.sh  | 7 -------
+ scripts/build_sun4i.sh       | 7 -------
+ scripts/build_sun4i_crane.sh | 7 -------
+ scripts/build_sun5i.sh       | 8 --------
+ 6 files changed, 45 deletions(-)
+
+diff --git a/scripts/build_a12.sh b/scripts/build_a12.sh
+index b4bc6d9..9d0afa8 100755
+--- a/scripts/build_a12.sh
++++ b/scripts/build_a12.sh
+@@ -42,13 +42,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	echo "build standby"
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun5i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -56,7 +49,6 @@ build_kernel()
+ 		cp arch/arm/configs/a12_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+diff --git a/scripts/build_a13.sh b/scripts/build_a13.sh
+index 991309e..2824254 100755
+--- a/scripts/build_a13.sh
++++ b/scripts/build_a13.sh
+@@ -42,13 +42,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	echo "build standby"
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun5i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -56,7 +49,6 @@ build_kernel()
+ 		cp arch/arm/configs/a13_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index ad64ea8..ac042fd 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -48,12 +48,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun4i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -61,7 +55,6 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 3343447..dab592d 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -48,12 +48,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun4i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -61,7 +55,6 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index 74cc1eb..82f9b09 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -48,12 +48,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun4i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -61,7 +55,6 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_crane_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+diff --git a/scripts/build_sun5i.sh b/scripts/build_sun5i.sh
+index d9f33bd..86532b1 100755
+--- a/scripts/build_sun5i.sh
++++ b/scripts/build_sun5i.sh
+@@ -42,13 +42,6 @@ Invalid Options:
+ "
+ }
+ 
+-build_standby()
+-{
+-	echo "build standby"
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
+-		-C ${LICHEE_KDIR}/arch/arm/mach-sun5i/pm/standby all
+-}
+-
+ build_kernel()
+ {
+ 	if [ ! -e .config ]; then
+@@ -56,7 +49,6 @@ build_kernel()
+ 		cp arch/arm/configs/sun5i_defconfig .config
+ 	fi
+ 
+-	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage modules
+ 
+ 	update_kern_ver
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From 1901b240b86683e452e8b1fe2d14cc22b9985650 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Sun, 27 May 2012 23:10:12 +0000
+Subject: [PATCH 481/944] Fix warning when compiling fantasy governor
+
+If CONFIG_CPU_FREQ_USR_EVNT_NOTIFY was not set, the compiler
+issues a warning. We need to use #ifdef instead of #if
+---
+ drivers/cpufreq/cpufreq_fantasy.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/cpufreq/cpufreq_fantasy.c b/drivers/cpufreq/cpufreq_fantasy.c
+index d66fa83..1927617 100644
+--- a/drivers/cpufreq/cpufreq_fantasy.c
++++ b/drivers/cpufreq/cpufreq_fantasy.c
+@@ -625,7 +625,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy, unsigned int even
+             break;
+         }
+ 
+-        #if CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++        #ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
+         case CPUFREQ_GOV_USRENET: {
+             /* cpu frequency limitation has changed, adjust current frequency */
+             if(!mutex_trylock(&this_dbs_info->timer_mutex)) {
+-- 
+1.8.0
+

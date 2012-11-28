@@ -1,0 +1,119 @@
+From b3ac5538b05c7979e2a3db8ef17b6e5b0946ef4e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 31 May 2012 00:36:38 +0200
+Subject: [PATCH 493/944] arm: sun3i: update to 3.3
+
+---
+ arch/arm/mach-sun3i/core.c                | 16 ++++++++--------
+ arch/arm/mach-sun3i/core.h                |  5 +----
+ arch/arm/mach-sun3i/dma/dma_15.c          |  3 ++-
+ arch/arm/mach-sun3i/include/mach/system.h |  2 +-
+ 4 files changed, 12 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-sun3i/core.c b/arch/arm/mach-sun3i/core.c
+index bdbd67f..41f3540 100644
+--- a/arch/arm/mach-sun3i/core.c
++++ b/arch/arm/mach-sun3i/core.c
+@@ -2,7 +2,6 @@
+ #include <linux/device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
+-#include <linux/sysdev.h>
+ #include <linux/interrupt.h>
+ #include <linux/amba/bus.h>
+ #include <linux/amba/clcd.h>
+@@ -12,6 +11,7 @@
+ #include <linux/io.h>
+ #include <linux/gfp.h>
+ #include <linux/clockchips.h>
++#include <linux/export.h>
+ 
+ #include <asm/clkdev.h>
+ #include <asm/system.h>
+@@ -200,25 +200,26 @@ void __init softwinner_map_io(void)
+ 	iotable_init(softwinner_io_desc, ARRAY_SIZE(softwinner_io_desc));
+ }
+ 
+-struct sysdev_class sw_sysclass = {
++struct bus_type sw_subsys = {
+ 	.name = "sw-core",
++	.dev_name = "sw-core",
+ };
+ 
+-static struct sys_device sw_sysdev = {
+-	.cls = &sw_sysclass,
++static struct device sw_dev = {
++	.bus = &sw_subsys,
+ };
+ 
+ static int __init sw_core_init(void)
+ {
+-        return sysdev_class_register(&sw_sysclass);
++        return subsys_system_register(&sw_subsys, NULL);
+ }
+ core_initcall(sw_core_init);
+ 
+ 
+ extern int sw_register_clocks(void);
+-void __init softwinner_init(void)
++static void __init softwinner_init(void)
+ {
+-	sysdev_register(&sw_sysdev);
++	device_register(&sw_dev);
+ }
+ 
+ static void __init softwinner_timer_init(void)
+@@ -258,7 +259,6 @@ MACHINE_START(SUN3I, "sun3i")
+         .init_irq       = softwinner_init_irq,
+         .timer          = &softwinner_timer,
+         .init_machine   = softwinner_init,
+-        .boot_params = (unsigned long)(0x80000000),
+ MACHINE_END
+ 
+ extern void _eLIBs_CleanFlushDCacheRegion(void *addr, __u32 len);
+diff --git a/arch/arm/mach-sun3i/core.h b/arch/arm/mach-sun3i/core.h
+index 2fc121e..2f19fe0 100644
+--- a/arch/arm/mach-sun3i/core.h
++++ b/arch/arm/mach-sun3i/core.h
+@@ -1,11 +1,8 @@
+ #ifndef __ASM_ARCH_SOFTWINNER_H
+-#define __ASM_ARCH_SOFTWINNERE_H
++#define __ASM_ARCH_SOFTWINNER_H
+ 
+ #include <linux/amba/bus.h>
+ 
+-extern void __init softwinner_init(void);
+-extern void __init softwinner_init_irq(void);
+-extern void __init softwinner_map_io(void);
+ extern struct sys_timer softwinner_timer;
+ 
+ #endif
+diff --git a/arch/arm/mach-sun3i/dma/dma_15.c b/arch/arm/mach-sun3i/dma/dma_15.c
+index 2bc0c09..4411e51 100644
+--- a/arch/arm/mach-sun3i/dma/dma_15.c
++++ b/arch/arm/mach-sun3i/dma/dma_15.c
+@@ -1,6 +1,7 @@
++#include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
+diff --git a/arch/arm/mach-sun3i/include/mach/system.h b/arch/arm/mach-sun3i/include/mach/system.h
+index a6b533f..d1f5f11 100644
+--- a/arch/arm/mach-sun3i/include/mach/system.h
++++ b/arch/arm/mach-sun3i/include/mach/system.h
+@@ -27,7 +27,7 @@
+ #include <mach/hardware.h>
+ #include <mach/platform.h>
+ 
+-extern struct sysdev_class sw_sysclass;
++extern struct bus_type sw_subsys;
+ 
+ static inline void arch_idle(void)
+ {
+-- 
+1.8.0
+

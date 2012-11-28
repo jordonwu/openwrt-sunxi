@@ -1,0 +1,2410 @@
+From 78d0e9fcb6e581e55d5a9691bb1656fe564977f7 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sun, 28 Oct 2012 12:43:19 +0100
+Subject: [PATCH 888/944] video:sunxi:lcd: manually format the remainder
+
+With the aid of checkpatch as well.
+
+Note that all lcd configuration files are now formatted similarly.
+To this end, the function lcd_gamma_gen found in one file, has been
+ported over to all that used gamma setting code (which turned out to
+be 100% equivalent).
+
+Now things start to make a lot more sense in here all of a sudden.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/lcd/dev_lcd.c                  |   8 +-
+ drivers/video/sunxi/lcd/dev_lcd.h                  |  14 +-
+ drivers/video/sunxi/lcd/lcd0_panel_cfg.c           | 108 ++++-----
+ drivers/video/sunxi/lcd/lcd1_panel_cfg.c           | 108 ++++-----
+ .../video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c  | 214 ++++++++---------
+ drivers/video/sunxi/lcd/lcd_bak/TC102.c            | 257 +++++++++++----------
+ .../video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c | 134 +++++------
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c       |  63 ++---
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c | 208 ++++++++---------
+ .../sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c   |  64 ++---
+ drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c        | 108 ++++-----
+ drivers/video/sunxi/lcd/lcd_panel_cfg.h            |  74 +++---
+ drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c    | 178 +++++++-------
+ 13 files changed, 749 insertions(+), 789 deletions(-)
+
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.c b/drivers/video/sunxi/lcd/dev_lcd.c
+index 3ab3f6f..e0feb59 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.c
++++ b/drivers/video/sunxi/lcd/dev_lcd.c
+@@ -39,14 +39,14 @@ int lcd_release(struct inode *inode, struct file *file)
+ 	return 0;
+ }
+ 
+-ssize_t lcd_read(struct file * file, char __user * buf, size_t count,
+-		 loff_t * ppos)
++ssize_t lcd_read(struct file *file, char __user *buf, size_t count,
++		 loff_t *ppos)
+ {
+ 	return -EINVAL;
+ }
+ 
+-ssize_t lcd_write(struct file * file, const char __user * buf, size_t count,
+-		  loff_t * ppos)
++ssize_t lcd_write(struct file *file, const char __user *buf, size_t count,
++		  loff_t *ppos)
+ {
+ 	return -EINVAL;
+ }
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index 9c26675..d908e09 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -22,9 +22,9 @@
+ #ifndef __DEV_LCD_H__
+ #define __DEV_LCD_H__
+ 
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ #include <asm/memory.h>
+-#include <asm/unistd.h>
++#include <linux/unistd.h>
+ #include "asm-generic/int-ll64.h"
+ #include "linux/kernel.h"
+ #include "linux/mm.h"
+@@ -32,9 +32,9 @@
+ #include <linux/vmalloc.h>
+ #include <linux/fs.h>
+ #include <linux/dma-mapping.h>
+-#include <linux/sched.h>	//wake_up_process()
+-#include <linux/kthread.h>	//kthread_create() / kthread_run()
+-#include <linux/err.h>		//IS_ERR() / PTR_ERR()
++#include <linux/sched.h> /* wake_up_process() */
++#include <linux/kthread.h> /* kthread_create() / kthread_run() */
++#include <linux/err.h> /* IS_ERR() / PTR_ERR() */
+ #include <linux/delay.h>
+ #include <linux/platform_device.h>
+ #include <linux/errno.h>
+@@ -52,8 +52,8 @@
+ 
+ #include <linux/drv_display.h>
+ 
+-extern void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+-extern void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
++extern void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun);
++extern void LCD_get_panel_funs_1(__lcd_panel_fun_t *fun);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 DRV_DISP_Init(void);
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+index dc2d915..48e21ce 100644
+--- a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+@@ -21,12 +21,15 @@
+ 
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
+ //#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] = {
+-//{input value, corrected value}
++	/* {input value, corrected value} */
+ 	{0, 0},
+ 	{15, 15},
+ 	{30, 30},
+@@ -47,77 +50,74 @@ static __u8 g_gamma_tbl[][2] = {
+ 	{255, 255},
+ };
+ 
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void lcd_gamma_gen(__panel_para_t *info)
+ {
+-	__u32 i = 0, j = 0;
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
++
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+ 
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
++
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
++{
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+ 	info->lcd_x = 800;
+ 	info->lcd_y = 480;
+-	info->lcd_dclk_freq = 33;	//MHz
++	info->lcd_dclk_freq = 33; /* MHz */
+ 
+-	info->lcd_pwm_not_used = 0;
+-	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 10000;	//Hz
+-	info->lcd_pwm_pol = 0;
++	info->lcd_ht = 1055; /* htotal */
++	info->lcd_hbp = 215; /* h back porch */
++	info->lcd_hv_hspw = 0; /* hsync */
++	info->lcd_vt = 525 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 34; /* v back porch */
++	info->lcd_hv_vspw = 0; /* vsync */
+ 
+-	info->lcd_if = 0;	//0:hv(sync+de); 1:8080; 2:ttl; 3:lvds
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	info->lcd_hbp = 215;	//hsync back porch
+-	info->lcd_ht = 1055;	//hsync total cycle
+-	info->lcd_hv_hspw = 0;	//hsync plus width
+-	info->lcd_vbp = 34;	//vsync back porch
+-	info->lcd_vt = 2 * 525;	//vysnc total cycle *2
+-	info->lcd_hv_vspw = 0;	//vysnc plus width
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++	info->lcd_hv_smode = 0; /* 0:RGB888 1:CCIR656 */
++	info->lcd_hv_s888_if = 0; /* serial RGB format */
++	info->lcd_hv_syuv_if = 0; /* serial YUV format */
+ 
+-	info->lcd_hv_if = 0;	//0:hv parallel 1:hv serial
+-	info->lcd_hv_smode = 0;	//0:RGB888 1:CCIR656
+-	info->lcd_hv_s888_if = 0;	//serial RGB format
+-	info->lcd_hv_syuv_if = 0;	//serial YUV format
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	info->lcd_cpu_if = 0;	//0:18bit 4:16bit
+-	info->lcd_frm = 0;	//0: disable; 1: enable rgb666 dither; 2:enable rgb656 dither
++	info->lcd_lvds_ch = 0; /* 0:single link; 1:dual link */
++	info->lcd_lvds_mode = 0; /* 0:NS mode; 1:JEIDA mode */
++	info->lcd_lvds_bitwidth = 0; /* 0:24bit; 1:18bit */
++	info->lcd_lvds_io_cross = 0; /* 0:normal; 1:pn cross */
+ 
+-	info->lcd_lvds_ch = 0;	//0:single channel; 1:dual channel
+-	info->lcd_lvds_mode = 0;	//0:NS mode; 1:JEIDA mode
+-	info->lcd_lvds_bitwidth = 0;	//0:24bit; 1:18bit
+-	info->lcd_lvds_io_cross = 0;	//0:normal; 1:pn cross
++	info->lcd_pwm_not_used = 0;
++	info->lcd_pwm_ch = 0;
++	info->lcd_pwm_freq = 10000; /* Hz */
++	info->lcd_pwm_pol = 0;
+ 
+-	info->lcd_io_cfg0 = 0x10000000;
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
+ 
+ 	info->lcd_gamma_correction_en = 0;
+-	if (info->lcd_gamma_correction_en) {
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-
+-			//__inf("handling{%d,%d}\n", g_gamma_tbl[i][0], g_gamma_tbl[i][1]);
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value =
+-				    g_gamma_tbl[i][1] +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
+-				    (value << 16) + (value << 8) + value;
+-				//__inf("----gamma %d, %d\n", g_gamma_tbl[i][0] + j, value);
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] =
+-		    (g_gamma_tbl[items - 1][1] << 16) +
+-		    (g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items -
+-								   1][1];
+-		//__inf("----gamma 255, %d\n", g_gamma_tbl[items-1][1]);
+-	}
++	if (info->lcd_gamma_correction_en)
++		lcd_gamma_gen(info);
+ }
+ #endif
+ 
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+-	fun->cfg_panel_info = LCD_cfg_panel_info;	//delete this line if you want to use the lcd para define in sys_config1.fex
++	fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+ }
+diff --git a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+index 4b3fed9..9fac367 100644
+--- a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+@@ -21,12 +21,15 @@
+ 
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
+ //#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] = {
+-//{input value, corrected value}
++	/* {input value, corrected value} */
+ 	{0, 0},
+ 	{15, 15},
+ 	{30, 30},
+@@ -47,77 +50,74 @@ static __u8 g_gamma_tbl[][2] = {
+ 	{255, 255},
+ };
+ 
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void lcd_gamma_gen(__panel_para_t *info)
+ {
+-	__u32 i = 0, j = 0;
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
++
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+ 
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
++
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
++{
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+ 	info->lcd_x = 800;
+ 	info->lcd_y = 480;
+-	info->lcd_dclk_freq = 33;	//MHz
++	info->lcd_dclk_freq = 33; /* MHz */
+ 
+-	info->lcd_pwm_not_used = 0;
+-	info->lcd_pwm_ch = 1;
+-	info->lcd_pwm_freq = 10000;	//Hz
+-	info->lcd_pwm_pol = 0;
++	info->lcd_ht = 1055; /* htotal */
++	info->lcd_hbp = 215; /* h back porch */
++	info->lcd_hv_hspw = 0; /* hsync */
++	info->lcd_vt = 525 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 34; /* v back porch */
++	info->lcd_hv_vspw = 0; /* vsync */
+ 
+-	info->lcd_if = 0;	//0:hv(sync+de); 1:8080; 2:ttl; 3:lvds
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	info->lcd_hbp = 215;	//hsync back porch
+-	info->lcd_ht = 1055;	//hsync total cycle
+-	info->lcd_hv_hspw = 0;	//hsync plus width
+-	info->lcd_vbp = 34;	//vsync back porch
+-	info->lcd_vt = 2 * 525;	//vysnc total cycle *2
+-	info->lcd_hv_vspw = 0;	//vysnc plus width
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++	info->lcd_hv_smode = 0; /* 0:RGB888 1:CCIR656 */
++	info->lcd_hv_s888_if = 0; /* serial RGB format */
++	info->lcd_hv_syuv_if = 0; /* serial YUV format */
+ 
+-	info->lcd_hv_if = 0;	//0:hv parallel 1:hv serial
+-	info->lcd_hv_smode = 0;	//0:RGB888 1:CCIR656
+-	info->lcd_hv_s888_if = 0;	//serial RGB format
+-	info->lcd_hv_syuv_if = 0;	//serial YUV format
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	info->lcd_cpu_if = 0;	//0:18bit 4:16bit
+-	info->lcd_frm = 0;	//0: disable; 1: enable rgb666 dither; 2:enable rgb656 dither
++	info->lcd_lvds_ch = 0; /* 0:single link; 1:dual link */
++	info->lcd_lvds_mode = 0; /* 0:NS mode; 1:JEIDA mode */
++	info->lcd_lvds_bitwidth = 0; /* 0:24bit; 1:18bit */
++	info->lcd_lvds_io_cross = 0; /* 0:normal; 1:pn cross */
+ 
+-	info->lcd_lvds_ch = 0;	//0:single channel; 1:dual channel
+-	info->lcd_lvds_mode = 0;	//0:NS mode; 1:JEIDA mode
+-	info->lcd_lvds_bitwidth = 0;	//0:24bit; 1:18bit
+-	info->lcd_lvds_io_cross = 0;	//0:normal; 1:pn cross
++	info->lcd_pwm_not_used = 0;
++	info->lcd_pwm_ch = 1;
++	info->lcd_pwm_freq = 10000; /* Hz */
++	info->lcd_pwm_pol = 0;
+ 
+-	info->lcd_io_cfg0 = 0x10000000;
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
+ 
+ 	info->lcd_gamma_correction_en = 0;
+-	if (info->lcd_gamma_correction_en) {
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-
+-			//__inf("handling{%d,%d}\n", g_gamma_tbl[i][0], g_gamma_tbl[i][1]);
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value =
+-				    g_gamma_tbl[i][1] +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
+-				    (value << 16) + (value << 8) + value;
+-				//__inf("----gamma %d, %d\n", g_gamma_tbl[i][0] + j, value);
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] =
+-		    (g_gamma_tbl[items - 1][1] << 16) +
+-		    (g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items -
+-								   1][1];
+-		//__inf("----gamma 255, %d\n", g_gamma_tbl[items-1][1]);
+-	}
++	if (info->lcd_gamma_correction_en)
++		lcd_gamma_gen(info);
+ }
+ #endif
+ 
+-void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_1(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+-	fun->cfg_panel_info = LCD_cfg_panel_info;	//delete this line if you want to use the lcd para define in sys_config1.fex
++	fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+ }
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index 63b6e38..6a3b1d5 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -21,17 +21,15 @@
+ 
+ #include "lcd_panel_cfg.h"
+ 
+-static void LCD_io_init(__u32 sel);
+-static void LCD_io_exit(__u32 sel);
+-static void LCD_open_cmd(__u32 sel);
+-static void LCD_close_cmd(__u32 sel);
+-
+-//delete this line if you want to use the lcd para define in sys_config1.fex
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
+ //#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] = {
+-//{input value, corrected value}
++	/* {input value, corrected value} */
+ 	{0, 0},
+ 	{15, 15},
+ 	{30, 30},
+@@ -52,104 +50,119 @@ static __u8 g_gamma_tbl[][2] = {
+ 	{255, 255},
+ };
+ 
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void lcd_gamma_gen(__panel_para_t *info)
+ {
+-	__u32 i = 0, j = 0;
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
++
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
++
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
+ 
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
++{
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+ 	info->lcd_x = 1280;
+ 	info->lcd_y = 768;
+-	info->lcd_dclk_freq = 68;	//MHz
++	info->lcd_dclk_freq = 68; /* MHz */
+ 
+-	info->lcd_pwm_not_used = 0;
+-	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 10000;	//Hz
+-	info->lcd_pwm_pol = 0;
++	info->lcd_ht = 1440; /* htotal */
++	info->lcd_hbp = 3; /* h back porch */
++	info->lcd_hv_hspw = 0; /* hsync */
++	info->lcd_vt = 790 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 3; /* v back porch */
++	info->lcd_hv_vspw = 0; /* vsync */
+ 
+-	info->lcd_if = 0;	//0:hv(sync+de); 1:8080; 2:ttl; 3:lvds
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	info->lcd_hbp = 3;	//hsync back porch
+-	info->lcd_ht = 1440;	//hsync total cycle
+-	info->lcd_hv_hspw = 0;	//hsync plus width
+-	info->lcd_vbp = 3;	//vsync back porch
+-	info->lcd_vt = 1580;	//vysnc total cycle *2
+-	info->lcd_hv_vspw = 0;	//vysnc plus width
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++	info->lcd_hv_smode = 0; /* 0:RGB888 1:CCIR656 */
++	info->lcd_hv_s888_if = 0; /* serial RGB format */
++	info->lcd_hv_syuv_if = 0; /* serial YUV format */
+ 
+-	info->lcd_hv_if = 0;	//0:hv parallel 1:hv serial
+-	info->lcd_hv_smode = 0;	//0:RGB888 1:CCIR656
+-	info->lcd_hv_s888_if = 0;	//serial RGB format
+-	info->lcd_hv_syuv_if = 0;	//serial YUV format
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	info->lcd_cpu_if = 0;	//0:18bit 4:16bit
+-	info->lcd_frm = 0;	//0: disable; 1: enable rgb666 dither; 2:enable rgb656 dither
++	info->lcd_lvds_ch = 0; /* 0:single link; 1:dual link */
++	info->lcd_lvds_mode = 0; /* 0:NS mode; 1:JEIDA mode */
++	info->lcd_lvds_bitwidth = 0; /* 0:24bit; 1:18bit */
++	info->lcd_lvds_io_cross = 0; /* 0:normal; 1:pn cross */
+ 
+-	info->lcd_lvds_ch = 0;	//0:single channel; 1:dual channel
+-	info->lcd_lvds_mode = 0;	//0:NS mode; 1:JEIDA mode
+-	info->lcd_lvds_bitwidth = 0;	//0:24bit; 1:18bit
+-	info->lcd_lvds_io_cross = 0;	//0:normal; 1:pn cross
++	info->lcd_pwm_not_used = 0;
++	info->lcd_pwm_ch = 0;
++	info->lcd_pwm_freq = 10000; /* Hz */
++	info->lcd_pwm_pol = 0;
+ 
+-	info->lcd_io_cfg0 = 0x00000000;
++	info->lcd_io_cfg0 = 0x00000000; /* clock phase */
+ 
+ 	info->lcd_gamma_correction_en = 0;
+-	if (info->lcd_gamma_correction_en) {
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-
+-			//__inf("handling{%d,%d}\n", g_gamma_tbl[i][0], g_gamma_tbl[i][1]);
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value =
+-				    g_gamma_tbl[i][1] +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
+-				    (value << 16) + (value << 8) + value;
+-				//__inf("----gamma %d, %d\n", g_gamma_tbl[i][0] + j, value);
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] =
+-		    (g_gamma_tbl[items - 1][1] << 16) +
+-		    (g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items -
+-								   1][1];
+-		//__inf("----gamma 255, %d\n", g_gamma_tbl[items-1][1]);
+-	}
++	if (info->lcd_gamma_correction_en)
++		lcd_gamma_gen(info);
+ }
+ #endif
+ 
++static void LCD_io_init(__u32 sel);
++static void LCD_io_exit(__u32 sel);
++static void LCD_open_cmd(__u32 sel);
++static void LCD_close_cmd(__u32 sel);
++
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);	/* open lcd power, and delay 10ms */
+-	LCD_OPEN_FUNC(sel, LCD_io_init, 20);	//request and init gpio, and delay 20ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);	//open lcd controller, and delay 200ms
+-	LCD_OPEN_FUNC(sel, LCD_open_cmd, 10);	//use gpio to config lcd module to the  work mode, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);	/* open lcd backlight, and delay 0ms */
++	/* open lcd power, and delay 10ms */
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);
++	/* request and init gpio, and delay 20ms */
++	LCD_OPEN_FUNC(sel, LCD_io_init, 20);
++	/* open lcd controller, and delay 200ms */
++	LCD_OPEN_FUNC(sel, TCON_open, 500);
++	/* use gpio to config lcd module to the  work mode, and delay 10ms */
++	LCD_OPEN_FUNC(sel, LCD_open_cmd, 10);
++	/* open lcd backlight, and delay 0ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	/* close lcd backlight, and delay 0ms */
+-	LCD_CLOSE_FUNC(sel, LCD_close_cmd, 0);	//use gpio to config lcd module to the powerdown/sleep mode, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);	//close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_io_exit, 0);	//release gpio, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);	/* close lcd power, and delay 1000ms */
++	/* close lcd backlight, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);
++	/*
++	 * use gpio to config lcd module to the powerdown/sleep mode,
++	 * and delay 0ms
++	 */
++	LCD_CLOSE_FUNC(sel, LCD_close_cmd, 0);
++	/* close lcd controller, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0);
++	/* release gpio, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_io_exit, 0);
++	/* close lcd power, and delay 1000ms */
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);
+ 
+ 	return 0;
+ }
+ 
+-#define IIC_SCLB_LOW()	        LCD_GPIO_write(0, 0, 0)
+-#define IIC_SCLB_HIGH()	        LCD_GPIO_write(0, 0, 1)
++#define IIC_SCLB_LOW()		LCD_GPIO_write(0, 0, 0)
++#define IIC_SCLB_HIGH()		LCD_GPIO_write(0, 0, 1)
+ 
+ #define IIC_SDAB_INPUT_SETUP()	LCD_GPIO_set_attr(0, 1, 0)
+ #define IIC_SDAB_OUTPUT_SETUP()	LCD_GPIO_set_attr(0, 1, 1)
+-#define CHECK_SDAB_HIGH()       LCD_GPIO_read(0, 1)
+-#define IIC_SDAB_LOW()          LCD_GPIO_write(0, 1, 0)
+-#define IIC_SDAB_HIGH()	        LCD_GPIO_write(0, 1, 1)
++#define CHECK_SDAB_HIGH()	LCD_GPIO_read(0, 1)
++#define IIC_SDAB_LOW()		LCD_GPIO_write(0, 1, 0)
++#define IIC_SDAB_HIGH()		LCD_GPIO_write(0, 1, 1)
+ 
+ static __bool i2cB_clock(void)
+ {
+@@ -159,7 +172,7 @@ static __bool i2cB_clock(void)
+ 	LCD_delay_us(5);
+ 	IIC_SCLB_LOW();
+ 	LCD_delay_us(5);
+-	return (sample);
++	return sample;
+ }
+ 
+ static __bool i2cB_ack(void)
+@@ -176,7 +189,7 @@ static __bool i2cB_ack(void)
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_HIGH();
+ 		LCD_delay_us(5);
+-		return (1);
++		return 1;
+ 	} else {
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_OUTPUT_SETUP();
+@@ -185,11 +198,10 @@ static __bool i2cB_ack(void)
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_HIGH();
+ 		LCD_delay_us(5);
+-		return (0);
++		return 0;
+ 	}
+ }
+ 
+-//---------------------------------------------------------
+ static void i2cBStartA(void)
+ {
+ 	IIC_SCLB_HIGH();
+@@ -208,12 +220,10 @@ static __bool i2cBStart(void)
+ 	IIC_SDAB_INPUT_SETUP();
+ 	if (CHECK_SDAB_HIGH()) {
+ 		IIC_SDAB_OUTPUT_SETUP();
+-		{
+-			i2cBStartA();
+-			return (1);
+-		}
++		i2cBStartA();
++		return 1;
+ 	}
+-	return (0);
++	return 0;
+ }
+ 
+ static void i2cBStop(void)
+@@ -227,21 +237,20 @@ static void i2cBStop(void)
+ 	LCD_delay_us(5);
+ }
+ 
+-//---------------------------------------------------------
+ static __bool i2cBTransmit(__u8 value)
+ {
+ 	register __u8 i;
+ 
+ 	for (i = 0; i < 8; i++) {
+-		if ((value & 0x80) == 0x80) {
++		if ((value & 0x80) == 0x80)
+ 			IIC_SDAB_HIGH();
+-		} else {
++		else
+ 			IIC_SDAB_LOW();
+-		}
++
+ 		value = value << 1;
+ 		i2cB_clock();
+ 	}
+-	return (!i2cB_ack());
++	return !i2cB_ack();
+ }
+ 
+ static __bool i2cBTransmitSubAddr(__u16 value)
+@@ -249,15 +258,15 @@ static __bool i2cBTransmitSubAddr(__u16 value)
+ 	register __u8 i;
+ 
+ 	for (i = 0; i < 8; i++) {
+-		if ((value & 0x80) == 0x80) {
++		if ((value & 0x80) == 0x80)
+ 			IIC_SDAB_HIGH();
+-		} else {
++		else
+ 			IIC_SDAB_LOW();
+-		}
++
+ 		value = value << 1;
+ 		i2cB_clock();
+ 	}
+-	return (!i2cB_ack());
++	return !i2cB_ack();
+ }
+ 
+ static __bool i2cBLocateSubAddr(__u8 slave_addr, __u16 sub_addr)
+@@ -268,42 +277,41 @@ static __bool i2cBLocateSubAddr(__u8 slave_addr, __u16 sub_addr)
+ 	sub_addr_hi = sub_addr >> 8;
+ 	sub_addr_low = sub_addr;
+ 	for (i = 0; i < 3; i++) {
+-		//Start I2C
++		/* Start I2C */
+ 		if (i2cBStart()) {
+-			//Slave address
++			/* Slave address */
+ 			if (i2cBTransmit(slave_addr)) {
+ 				if (i2cBTransmitSubAddr(sub_addr_hi)) {
+ 					if (i2cBTransmitSubAddr(sub_addr_low))
+-						return (1);
++						return 1;
+ 				}
+ 			}
+ 		}
+ 		i2cBStop();
+ 	}
+-	return (0);
++	return 0;
+ }
+ 
+ static __bool IIC_Write(__u8 slave_addr, __u16 sub_addr, __u8 value)
+ {
+ 	if (i2cBLocateSubAddr(slave_addr, sub_addr)) {
+-		//value
+ 		if (i2cBTransmit(value)) {
+ 			i2cBStop();
+-			return (1);
++			return 1;
+ 		}
+ 	}
+ 	i2cBStop();
+-	return (0);
++	return 0;
+ }
+ 
+ static void LCD_io_init(__u32 sel)
+ {
+-	//request SCLB gpio, and output high as default
++	/* request SCLB gpio, and output high as default */
+ 	LCD_GPIO_request(sel, 0);
+ 	LCD_GPIO_set_attr(sel, 0, 1);
+ 	LCD_GPIO_write(sel, 0, 1);
+ 
+-	//request SDAB gpio, and output high as default
++	/* request SDAB gpio, and output high as default */
+ 	LCD_GPIO_request(sel, 1);
+ 	LCD_GPIO_set_attr(sel, 1, 1);
+ 	LCD_GPIO_write(sel, 1, 1);
+@@ -311,10 +319,10 @@ static void LCD_io_init(__u32 sel)
+ 
+ static void LCD_io_exit(__u32 sel)
+ {
+-	//release SCLB gpio
++	/* release SCLB gpio */
+ 	LCD_GPIO_release(sel, 0);
+ 
+-	//release SDAB gpio
++	/* release SDAB gpio */
+ 	LCD_GPIO_release(sel, 1);
+ }
+ 
+@@ -331,10 +339,10 @@ static void LCD_close_cmd(__u32 sel)
+ {
+ }
+ 
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+-	fun->cfg_panel_info = LCD_cfg_panel_info;	//delete this line if you want to use the lcd para define in sys_config1.fex
++	fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+ 	fun->cfg_open_flow = LCD_open_flow;
+ 	fun->cfg_close_flow = LCD_close_flow;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC102.c b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+index 1b14f9d..52e6c13 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+@@ -21,19 +21,15 @@
+ 
+ #include "lcd_panel_cfg.h"
+ 
+-static void LCD_io_init(__u32 sel);
+-static void LCD_io_exit(__u32 sel);
+-static void LCD_open_cmd(__u32 sel);
+-static void LCD_close_cmd(__u32 sel);
+-static void LCD_vcc_on(__u32 sel);
+-static void LCD_vcc_off(__u32 sel);
+-
+-//delete this line if you want to use the lcd para define in sys_config1.fex
+-#define LCD_PARA_USE_CONFIG
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
++//#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] = {
+-//{input value, corrected value}
++	/* {input value, corrected value} */
+ 	{0, 0},
+ 	{15, 16},
+ 	{30, 40},
+@@ -54,94 +50,113 @@ static __u8 g_gamma_tbl[][2] = {
+ 	{255, 255},
+ };
+ 
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void lcd_gamma_gen(__panel_para_t *info)
+ {
+-	__u32 i = 0, j = 0;
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
++
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
++
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
++
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
+ 
++static void LCD_cfg_panel_info(__panel_para_t *info)
++{
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+ 	info->lcd_x = 1280;
+ 	info->lcd_y = 768;
+-	info->lcd_dclk_freq = 68;	//MHz
++	info->lcd_dclk_freq = 68; /* MHz */
+ 
+-	info->lcd_pwm_not_used = 0;
+-	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 10000;	//Hz
+-	info->lcd_pwm_pol = 0;
++	info->lcd_ht = 1440; /* htotal */
++	info->lcd_hbp = 3; /* h back porch */
++	info->lcd_hv_hspw = 0; /* hsync */
++	info->lcd_vt = 790 * 2;	/* votal * 2 */
++	info->lcd_vbp = 3; /* v back porch */
++	info->lcd_hv_vspw = 0; /* vsync */
+ 
+-	info->lcd_if = 0;	//0:hv(sync+de); 1:8080; 2:ttl; 3:lvds
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	info->lcd_hbp = 3;	//hsync back porch
+-	info->lcd_ht = 1440;	//hsync total cycle
+-	info->lcd_hv_hspw = 0;	//hsync plus width
+-	info->lcd_vbp = 3;	//vsync back porch
+-	info->lcd_vt = 1580;	//vysnc total cycle *2
+-	info->lcd_hv_vspw = 0;	//vysnc plus width
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++	info->lcd_hv_smode = 0; /* 0:RGB888 1:CCIR656 */
++	info->lcd_hv_s888_if = 0; /* serial RGB format */
++	info->lcd_hv_syuv_if = 0; /* serial YUV format */
+ 
+-	info->lcd_hv_if = 0;	//0:hv parallel 1:hv serial
+-	info->lcd_hv_smode = 0;	//0:RGB888 1:CCIR656
+-	info->lcd_hv_s888_if = 0;	//serial RGB format
+-	info->lcd_hv_syuv_if = 0;	//serial YUV format
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 1; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	info->lcd_cpu_if = 0;	//0:18bit 4:16bit
+-	info->lcd_frm = 1;	//0: disable; 1: enable rgb666 dither; 2:enable rgb656 dither
++	info->lcd_lvds_ch = 0; /* 0:single link; 1:dual link */
++	info->lcd_lvds_mode = 0; /* 0:NS mode; 1:JEIDA mode */
++	info->lcd_lvds_bitwidth = 0; /* 0:24bit; 1:18bit */
++	info->lcd_lvds_io_cross = 0; /* 0:normal; 1:pn cross */
+ 
+-	info->lcd_lvds_ch = 0;	//0:single channel; 1:dual channel
+-	info->lcd_lvds_mode = 0;	//0:NS mode; 1:JEIDA mode
+-	info->lcd_lvds_bitwidth = 0;	//0:24bit; 1:18bit
+-	info->lcd_lvds_io_cross = 0;	//0:normal; 1:pn cross
++	info->lcd_pwm_not_used = 0;
++	info->lcd_pwm_ch = 0;
++	info->lcd_pwm_freq = 10000; /* Hz */
++	info->lcd_pwm_pol = 0;
+ 
+-	info->lcd_io_cfg0 = 0x00000000;
++	info->lcd_io_cfg0 = 0x00000000; /* clock phase */
+ 
+ 	info->lcd_gamma_correction_en = 1;
+-	if (info->lcd_gamma_correction_en) {
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-
+-			//__inf("handling{%d,%d}\n", g_gamma_tbl[i][0], g_gamma_tbl[i][1]);
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value =
+-				    g_gamma_tbl[i][1] +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
+-				    (value << 16) + (value << 8) + value;
+-				//__inf("----gamma %d, %d\n", g_gamma_tbl[i][0] + j, value);
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] =
+-		    (g_gamma_tbl[items - 1][1] << 16) +
+-		    (g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items -
+-								   1][1];
+-		//__inf("----gamma 255, %d\n", g_gamma_tbl[items-1][1]);
+-	}
++	if (info->lcd_gamma_correction_en)
++		lcd_gamma_gen(info);
+ }
+ #endif
+ 
++static void LCD_io_init(__u32 sel);
++static void LCD_io_exit(__u32 sel);
++static void LCD_open_cmd(__u32 sel);
++static void LCD_close_cmd(__u32 sel);
++static void LCD_vcc_on(__u32 sel);
++static void LCD_vcc_off(__u32 sel);
++
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_vcc_on, 50);	//open lcd power, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);	/* open lcd vcc, and delay 10ms */
+-	LCD_OPEN_FUNC(sel, LCD_io_init, 20);	//request and init gpio, and delay 20ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);	//open lcd controller, and delay 200ms
+-	LCD_OPEN_FUNC(sel, LCD_open_cmd, 10);	//use gpio to config lcd module to the  work mode, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);	/* open lcd backlight, and delay 0ms */
++	/* open lcd power, and delay 10ms */
++	LCD_OPEN_FUNC(sel, LCD_vcc_on, 50);
++	/* open lcd vcc, and delay 10ms */
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);
++	/* request and init gpio, and delay 20ms */
++	LCD_OPEN_FUNC(sel, LCD_io_init, 20);
++	/* open lcd controller, and delay 200ms */
++	LCD_OPEN_FUNC(sel, TCON_open, 500);
++	/* use gpio to config lcd module to the work mode, and delay 10ms */
++	LCD_OPEN_FUNC(sel, LCD_open_cmd, 10);
++	/* open lcd backlight, and delay 0ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	/* close lcd backlight, and delay 0ms */
+-	LCD_CLOSE_FUNC(sel, LCD_close_cmd, 0);	//use gpio to config lcd module to the powerdown/sleep mode, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);	//close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_io_exit, 0);	//release gpio, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 0);	/* close lcd vcc, and delay 0ms */
+-	LCD_CLOSE_FUNC(sel, LCD_vcc_off, 1000);	//close lcd power, and delay 1000ms
++	/* close lcd backlight, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);
++	/*
++	 * use gpio to config lcd module to the powerdown/sleep mode,
++	 * and delay 0ms
++	 */
++	LCD_CLOSE_FUNC(sel, LCD_close_cmd, 0);
++	/* close lcd controller, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0);
++	/* release gpio, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_io_exit, 0);
++	/* close lcd vcc, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 0);
++	/* close lcd power, and delay 1000ms */
++	LCD_CLOSE_FUNC(sel, LCD_vcc_off, 1000);
+ 
+ 	return 0;
+ }
+@@ -151,7 +166,7 @@ static void LCD_vcc_on(__u32 sel)
+ 	user_gpio_set_t gpio_list;
+ 	int hdl;
+ 
+-	gpio_list.port = 8;	// 1:A; 2:B; 3:C; 4:d;5:e;6:f;7:g;8:h.....
++	gpio_list.port = 8; /* 1:A; 2:B; 3:C; 4:d;5:e;6:f;7:g;8:h... */
+ 	gpio_list.port_num = 6;
+ 	gpio_list.mul_sel = 1;
+ 	gpio_list.pull = 0;
+@@ -167,7 +182,7 @@ static void LCD_vcc_off(__u32 sel)
+ 	user_gpio_set_t gpio_list;
+ 	int hdl;
+ 
+-	gpio_list.port = 8;	// 1:A; 2:B; 3:C;.....
++	gpio_list.port = 8; /* 1:A; 2:B; 3:C; ... */
+ 	gpio_list.port_num = 6;
+ 	gpio_list.mul_sel = 1;
+ 	gpio_list.pull = 0;
+@@ -178,14 +193,14 @@ static void LCD_vcc_off(__u32 sel)
+ 	OSAL_GPIO_Release(hdl, 2);
+ }
+ 
+-#define IIC_SCLB_LOW()	        LCD_GPIO_write(0, 0, 0)
+-#define IIC_SCLB_HIGH()	        LCD_GPIO_write(0, 0, 1)
++#define IIC_SCLB_LOW()		LCD_GPIO_write(0, 0, 0)
++#define IIC_SCLB_HIGH()		LCD_GPIO_write(0, 0, 1)
+ 
+ #define IIC_SDAB_INPUT_SETUP()	LCD_GPIO_set_attr(0, 1, 0)
+ #define IIC_SDAB_OUTPUT_SETUP()	LCD_GPIO_set_attr(0, 1, 1)
+-#define CHECK_SDAB_HIGH()       LCD_GPIO_read(0, 1)
+-#define IIC_SDAB_LOW()          LCD_GPIO_write(0, 1, 0)
+-#define IIC_SDAB_HIGH()	        LCD_GPIO_write(0, 1, 1)
++#define CHECK_SDAB_HIGH()	LCD_GPIO_read(0, 1)
++#define IIC_SDAB_LOW()		LCD_GPIO_write(0, 1, 0)
++#define IIC_SDAB_HIGH()		LCD_GPIO_write(0, 1, 1)
+ 
+ static __bool i2cB_clock(void)
+ {
+@@ -195,7 +210,7 @@ static __bool i2cB_clock(void)
+ 	LCD_delay_us(10);
+ 	IIC_SCLB_LOW();
+ 	LCD_delay_us(10);
+-	return (sample);
++	return sample;
+ }
+ 
+ static __bool i2cB_ack(void)
+@@ -212,7 +227,7 @@ static __bool i2cB_ack(void)
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_HIGH();
+ 		LCD_delay_us(5);
+-		return (1);
++		return 1;
+ 	} else {
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_OUTPUT_SETUP();
+@@ -221,11 +236,10 @@ static __bool i2cB_ack(void)
+ 		LCD_delay_us(5);
+ 		IIC_SDAB_HIGH();
+ 		LCD_delay_us(5);
+-		return (0);
++		return 0;
+ 	}
+ }
+ 
+-//---------------------------------------------------------
+ static void i2cBStartA(void)
+ {
+ 	IIC_SCLB_HIGH();
+@@ -244,12 +258,10 @@ static __bool i2cBStart(void)
+ 	IIC_SDAB_INPUT_SETUP();
+ 	if (CHECK_SDAB_HIGH()) {
+ 		IIC_SDAB_OUTPUT_SETUP();
+-		{
+-			i2cBStartA();
+-			return (1);
+-		}
++		i2cBStartA();
++		return 1;
+ 	}
+-	return (0);
++	return 0;
+ }
+ 
+ static void i2cBStop(void)
+@@ -269,19 +281,17 @@ static __bool i2cBTransmit(__u8 value)
+ 	IIC_SDAB_OUTPUT_SETUP();
+ 	LCD_delay_us(5);
+ 	for (i = 0; i < 8; i++) {
+-		if ((value & 0x80) == 0x80) {
++		if ((value & 0x80) == 0x80)
+ 			IIC_SDAB_HIGH();
+-			//__inf("//////// DATA-1  //////\n");
+-		} else {
++		else
+ 			IIC_SDAB_LOW();
+-			//__inf("//////// DATA-0  //////\n");
+-		}
++
+ 		value = value << 1;
+ 		LCD_delay_us(10);
+ 		i2cB_clock();
+ 
+ 	}
+-	return (!i2cB_ack());
++	return !i2cB_ack();
+ }
+ 
+ static __bool i2cBTransmitSubAddr(__u8 value)
+@@ -289,16 +299,16 @@ static __bool i2cBTransmitSubAddr(__u8 value)
+ 	register __u8 i;
+ 
+ 	for (i = 0; i < 8; i++) {
+-		if ((value & 0x80) == 0x80) {
++		if ((value & 0x80) == 0x80)
+ 			IIC_SDAB_HIGH();
+-		} else {
++		else
+ 			IIC_SDAB_LOW();
+-		}
++
+ 		value = value << 1;
+ 		LCD_delay_us(10);
+ 		i2cB_clock();
+ 	}
+-	return (!i2cB_ack());
++	return !i2cB_ack();
+ }
+ 
+ static __bool i2cBLocateSubAddr(__u8 slave_addr, __u8 sub_addr)
+@@ -306,21 +316,16 @@ static __bool i2cBLocateSubAddr(__u8 slave_addr, __u8 sub_addr)
+ 	register __u8 i;
+ 
+ 	for (i = 0; i < 3; i++) {
+-		//Start I2C
+ 		if (i2cBStart()) {
+-			//__inf("-------------Start I2C OK-----------\n");
+ 			if (i2cBTransmit(slave_addr)) {
+-				//__inf("-------------SLAVE ADDR SEND OK-----------\n");
+-				if (i2cBTransmitSubAddr(sub_addr)) {
+-					//__inf("-------------ADDR SEND OK-----------\n");
+-					return (1);
+-				}
++				if (i2cBTransmitSubAddr(sub_addr))
++					return 1;
+ 			}
+ 		}
+ 		i2cBStop();
+ 	}
+ 
+-	return (0);
++	return 0;
+ }
+ 
+ static __bool IIC_Write_forT101(__u8 slave_addr, __u8 sub_addr, __u8 value)
+@@ -328,14 +333,13 @@ static __bool IIC_Write_forT101(__u8 slave_addr, __u8 sub_addr, __u8 value)
+ 	if (i2cBLocateSubAddr(slave_addr, sub_addr)) {
+ 		if (i2cBTransmit(value)) {
+ 			i2cBStop();
+-			//__inf("-------------DATA SEND OK-----------\n");
+-			return (1);
++			return 1;
+ 		}
+ 	}
+ 	i2cBStop();
+ 
+ 	__inf("-------------DATA SEND FAIL-----------\n");
+-	return (0);
++	return 0;
+ }
+ 
+ void i2cREAD(void)
+@@ -345,11 +349,10 @@ void i2cREAD(void)
+ 
+ 	IIC_SDAB_INPUT_SETUP();
+ 
+-	//__inf("-------------IIC_Read_data-----------------\n");
+ 	for (i = 0; i < 8; i++) {
+ 		value = value << 1;
+ 
+-		//i2cB_clock() ;
++		//i2cB_clock();
+ 		LCD_delay_us(15);
+ 		IIC_SCLB_HIGH();
+ 		LCD_delay_us(10);
+@@ -362,7 +365,6 @@ void i2cREAD(void)
+ 			value = value + 1;
+ 	}
+ 
+-	//__inf("-------------read ok----------\n");
+ 	i2cB_ack();
+ 	i2cBStop();
+ 
+@@ -370,24 +372,27 @@ void i2cREAD(void)
+ 
+ static __bool IIC_Read_forT101(__u8 slave_addr1, __u8 sub_addr1)
+ {
+-	if (i2cBLocateSubAddr(slave_addr1, sub_addr1)) {
++	if (i2cBLocateSubAddr(slave_addr1, sub_addr1))
+ 		i2cREAD();
+-	}
+-	//i2cBLocateSubAddr(slave_addr, sub_addr);
+-	//i2cBStop();
+-	return (0);
++
++#if 0
++	i2cBLocateSubAddr(slave_addr, sub_addr);
++	i2cBStop();
++#endif
++
++	return 0;
+ }
+ 
+ static void LCD_io_init(__u32 sel)
+ {
+ 	__inf("------+++++++++++++lcd init*************\n");
+ 
+-	//request SCLB gpio, and output high as default
++	/* request SCLB gpio, and output high as default */
+ 	LCD_GPIO_request(sel, 0);
+ 	LCD_GPIO_set_attr(sel, 0, 1);
+ 	LCD_GPIO_write(sel, 0, 1);
+ 
+-	//request SDAB gpio, and output high as default
++	/* request SDAB gpio, and output high as default */
+ 	LCD_GPIO_request(sel, 1);
+ 	LCD_GPIO_set_attr(sel, 1, 1);
+ 	LCD_GPIO_write(sel, 1, 1);
+@@ -397,10 +402,10 @@ static void LCD_io_exit(__u32 sel)
+ {
+ 	__inf("------+++++++++++++lcd exit*************\n");
+ 
+-	//release SCLB gpio
++	/* release SCLB gpio */
+ 	LCD_GPIO_release(sel, 0);
+ 
+-	//release SDAB gpio
++	/* release SDAB gpio */
+ 	LCD_GPIO_release(sel, 1);
+ }
+ 
+@@ -431,8 +436,10 @@ static void LCD_close_cmd(__u32 sel)
+ {
+ }
+ 
+-//sel: 0:lcd0; 1:lcd1
+-//para1 0:inter open 1:inter close 2:lense open 3:lense close
++/*
++ * sel: 0:lcd0; 1:lcd1
++ * para1 0:inter open 1:inter close 2:lense open 3:lense close
++ */
+ static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2,
+ 				   __u32 para3)
+ {
+@@ -455,10 +462,10 @@ static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2,
+ 	return 0;
+ }
+ 
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+-	fun->cfg_panel_info = LCD_cfg_panel_info;	//delete this line if you want to use the lcd para define in sys_config1.fex
++	fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+ 	fun->cfg_open_flow = LCD_open_flow;
+ 	fun->cfg_close_flow = LCD_close_flow;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index d354e8e..093331d 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -19,95 +19,91 @@
+  * MA 02111-1307 USA
+  */
+ 
+-/**********************************************************************
+- *
+- *  cpu_320x240_kgm281i0.c
+- *
+- **********************************************************************/
+-
+ #include "lcd_panel_cfg.h"
+ #include "../disp/ebios_lcdc_tve.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
+-#define LCD_PARA_USE_CONFIG
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
++//#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+-/*********************************************************
+- *
+- *  tcon parameters
+- *
+- *********************************************************/
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
+ {
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+-	//interface
+-	info->lcd_if = 1;	//0:hv;                 1:cpu/8080;     2:reserved;     3:lvds
+-	info->lcd_cpu_if = 0;	//0:18bit               4:16bit
+-
+-	//timing
+-	info->lcd_x = 320;	//Hor Pixels
+-	info->lcd_y = 240;	//Ver Pixels
+-	info->lcd_dclk_freq = 6;	//Pixel Data Cycle
+-	info->lcd_ht = 320 + 30;	//Hor Total Time
+-	info->lcd_hbp = 20;	//Hor Back Porch
+-	info->lcd_vt = (240 + 30) * 2;	//Ver Total Time*2
+-	info->lcd_vbp = 20;	//Ver Back Porch
+-	info->lcd_hv_hspw = 10;	//Hor Sync Time
+-	info->lcd_hv_vspw = 10;	//Ver Sync Time
+-	info->lcd_io_cfg0 = 0x10000000;	//Clock Phase
+-
+-	//color
+-	info->lcd_frm = 1;	//0: direct;    1: rgb666 dither;       2:rgb656 dither
+-	info->lcd_gamma_correction_en = 0;
++	info->lcd_x = 320;
++	info->lcd_y = 240;
++	info->lcd_dclk_freq = 6; /* MHz */
++
++	info->lcd_ht = 320 + 30; /* htotal */
++	info->lcd_hbp = 20; /* h back porch */
++	info->lcd_hv_hspw = 10;	/* hsync */
++	info->lcd_vt = (240 + 30) * 2; /* vtotal * 2 */
++	info->lcd_vbp = 20; /* v back porch */
++	info->lcd_hv_vspw = 10;	/* vsync */
++
++	info->lcd_if = 1; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
++
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 1; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	//backlight
+ 	info->lcd_pwm_not_used = 0;
+ 	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 12500;	//Hz
++	info->lcd_pwm_freq = 12500; /* Hz */
+ 	info->lcd_pwm_pol = 0;
++
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
++
++	info->lcd_gamma_correction_en = 0;
+ }
+ #endif
+ 
+-/*********************************************************
+- *
+- *  lcd flow function
+- *	CPU Panel:first TCON_open,than lcd_panel_init
+- *
+- *********************************************************/
++/*
++ * lcd flow function
++ * CPU Panel:first TCON_open,than lcd_panel_init
++ */
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);	/* open lcd power, than delay 50ms */
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);	//open lcd controller, than delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_panel_init, 50);	//lcd panel initial, than delay 50ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);	/* open lcd backlight, than delay 0ms */
++	/* open lcd power, than delay 50ms */
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);
++	/* open lcd controller, than delay 500ms */
++	LCD_OPEN_FUNC(sel, TCON_open, 500);
++	/* lcd panel initial, than delay 50ms */
++	LCD_OPEN_FUNC(sel, LCD_panel_init, 50);
++	/* open lcd backlight, than delay 0ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	/* close lcd backlight, than delay 0ms */
+-	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);	//lcd panel exit, than delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);	//close lcd controller, than delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);	/* close lcd power, than delay 1000ms */
++	/* close lcd backlight, than delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);
++	/* lcd panel exit, than delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);
++	/* close lcd controller, than delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0);
++	/* close lcd power, than delay 1000ms */
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);
+ 
+ 	return 0;
+ }
+ 
+-/*********************************************************
+- *
+- *  lcd panel initial
+- *	cpu 8080 bus initial
+- *
+- *********************************************************/
+-#define kgm281i0_rs(sel,data)	LCD_GPIO_write(sel,0,data)
++/*
++ * lcd panel initial
++ * cpu 8080 bus initial
++ */
++#define kgm281i0_rs(sel, data) LCD_GPIO_write(sel, 0, data)
+ 
+ static void kgm281i0_write_gram_origin(__u32 sel)
+ {
+-	LCD_CPU_WR(sel, 0x0020, 0);	// GRAM horizontal Address
+-	LCD_CPU_WR(sel, 0x0021, 319);	// GRAM Vertical Address
+-	LCD_CPU_WR_INDEX(sel, 0x22);	// Write Memery Start
++	LCD_CPU_WR(sel, 0x0020, 0); /* GRAM horizontal Address */
++	LCD_CPU_WR(sel, 0x0021, 319); /* GRAM Vertical Address */
++	LCD_CPU_WR_INDEX(sel, 0x22); /* Write Memery Start */
+ }
+ 
+ static void kgm281i0_init(__u32 sel)
+@@ -182,17 +178,20 @@ static void kgm281i0_init(__u32 sel)
+ 	LCD_CPU_WR(sel, 0x0007, 0x0173);
+ }
+ 
+-static void Lcd_cpuisr_proc(void)	//irq func
++/*
++ * irq func
++ */
++static void Lcd_cpuisr_proc(void)
+ {
+ 	kgm281i0_write_gram_origin(0);
+ }
+ 
+ static void LCD_panel_init(__u32 sel)
+ {
+-	kgm281i0_init(sel);	//initial lcd panel
+-	kgm281i0_write_gram_origin(sel);	//set gram origin
+-	LCD_CPU_register_irq(sel, Lcd_cpuisr_proc);	//resgister cpu irq func
+-	LCD_CPU_AUTO_FLUSH(sel, 1);	//start sent gram data
++	kgm281i0_init(sel); /* initial lcd panel */
++	kgm281i0_write_gram_origin(sel); /* set gram origin */
++	LCD_CPU_register_irq(sel, Lcd_cpuisr_proc); /* register cpu irq func */
++	LCD_CPU_AUTO_FLUSH(sel, 1); /* start sent gram data */
+ }
+ 
+ static void LCD_panel_exit(__u32 sel)
+@@ -200,12 +199,7 @@ static void LCD_panel_exit(__u32 sel)
+ 
+ }
+ 
+-/*********************************************************
+- *
+- *  do not modify
+- *
+- *********************************************************/
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+ 	fun->cfg_panel_info = LCD_cfg_panel_info;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+index 4f99421..d2d7406 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+@@ -19,62 +19,49 @@
+  * MA 02111-1307 USA
+  */
+ 
+-/**********************************************************************
+- *
+- *  hv_800x480.c
+- *
+- **********************************************************************/
+-
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
+ //#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ 
+-/**********************************************************************
+- *
+- *  tcon parameters
+- *
+- **********************************************************************/
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void LCD_cfg_panel_info(__panel_para_t *info)
+ {
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+-	//interface
+-	info->lcd_if = 0;	//0:hv;                 1:cpu/8080;     2:reserved;     3:lvds
+-	info->lcd_hv_if = 0;	//0:hv para;    1:hv serial;    2:ccir656
++	info->lcd_x = 800;
++	info->lcd_y = 480;
++	info->lcd_dclk_freq = 33; /* MHz */
+ 
+-	//timing
+-	info->lcd_x = 800;	//Hor Pixels
+-	info->lcd_y = 480;	//Ver Pixels
+-	info->lcd_dclk_freq = 33;	//Pixel Data Cycle,in MHz
+-	info->lcd_ht = 1056;	//Hor Total Time
+-	info->lcd_hbp = 216;	//Hor Back Porch
+-	info->lcd_vt = 525 * 2;	//Ver Total Time*2
+-	info->lcd_vbp = 35;	//Ver Back Porch
+-	info->lcd_hv_hspw = 10;	//Hor Sync Time
+-	info->lcd_hv_vspw = 10;	//Ver Sync Time
+-	info->lcd_io_cfg0 = 0x10000000;	//Clock Phase
++	info->lcd_ht = 1056; /* htotal */
++	info->lcd_hbp = 216; /* h back porch */
++	info->lcd_hv_hspw = 10; /* hsync */
++	info->lcd_vt = 525 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 35; /* h back porch */
++	info->lcd_hv_vspw = 10; /* vsync */
+ 
+-	//color
+-	info->lcd_frm = 0;	//0: direct;    1: rgb666 dither;       2:rgb656 dither
+-	info->lcd_gamma_correction_en = 0;
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
++
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+ 	info->lcd_pwm_not_used = 0;
+ 	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 12500;	//Hz
++	info->lcd_pwm_freq = 12500; /* Hz */
+ 	info->lcd_pwm_pol = 0;
+-}
+ 
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
++
++	info->lcd_gamma_correction_en = 0;
++}
+ #endif
+ 
+-/**********************************************************************
+- *
+- *  do not modify
+- *
+- **********************************************************************/
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+ 	fun->cfg_panel_info = LCD_cfg_panel_info;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+index 1870784..fb10b8a 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+@@ -19,140 +19,131 @@
+  * MA 02111-1307 USA
+  */
+ 
+-/**********************************************************************
+- *
+- *  hv_800x480_td043.c
+- *
+- **********************************************************************/
+-
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
+-#define LCD_PARA_USE_CONFIG
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
++//#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
++static __u8 g_gamma_tbl[][2] = {
++	/* {input value, corrected value} */
++	{0, 0},
++	{15, 15},
++	{30, 30},
++	{45, 45},
++	{60, 60},
++	{75, 75},
++	{90, 90},
++	{105, 105},
++	{120, 120},
++	{135, 135},
++	{150, 150},
++	{165, 165},
++	{180, 180},
++	{195, 195},
++	{210, 210},
++	{225, 225},
++	{240, 240},
++	{255, 255},
++};
++
++static void lcd_gamma_gen(__panel_para_t *info)
++{
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
+ 
+-/**********************************************************************
+- *
+- *  tcon parameters
+- *
+- **********************************************************************/
+-static void lcd_gamma_gen(__panel_para_t * info);
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
++
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
++
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
+ {
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+-	//interface
+-	info->lcd_if = 0;	//0:hv;                 1:cpu/8080;     2:reserved;     3:lvds
+-	info->lcd_hv_if = 0;	//0:hv para;    1:hv serial;    2:ccir656
+-
+-	//timing
+-	info->lcd_x = 800;	//Hor Pixels
+-	info->lcd_y = 480;	//Ver Pixels
+-	info->lcd_dclk_freq = 33;	//Pixel Data Cycle,in MHz
+-	info->lcd_ht = 1056;	//Hor Total Time
+-	info->lcd_hbp = 216;	//Hor Back Porch
+-	info->lcd_vt = 525 * 2;	//Ver Total Time*2
+-	info->lcd_vbp = 35;	//Ver Back Porch
+-	info->lcd_hv_hspw = 10;	//Hor Sync Time
+-	info->lcd_hv_vspw = 10;	//Ver Sync Time
+-	info->lcd_io_cfg0 = 0x10000000;	//Clock Phase
+-
+-	//color
+-	info->lcd_frm = 0;	//0: direct;    1: rgb666 dither;       2:rgb656 dither
+-	info->lcd_gamma_correction_en = 0;	//Gamma Table enable
+-	lcd_gamma_gen(info);	//Gamma Table Generation Func
++	info->lcd_x = 800;
++	info->lcd_y = 480;
++	info->lcd_dclk_freq = 33; /* MHz */
++
++	info->lcd_ht = 1056; /* htotal */
++	info->lcd_hbp = 216; /* h back porch */
++	info->lcd_hv_hspw = 10; /* hsync */
++	info->lcd_vt = 525 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 35; /* v back porch */
++	info->lcd_hv_vspw = 10;	/* vsync */
++
++	info->lcd_if = 0; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
++
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+ 	info->lcd_pwm_not_used = 0;
+ 	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 12500;	//Hz
++	info->lcd_pwm_freq = 12500; /* Hz */
+ 	info->lcd_pwm_pol = 0;
+-}
+ 
+-static void lcd_gamma_gen(__panel_para_t * info)
+-{
+-	const __u8 g_gamma_tbl[][2] = {
+-		//{input value, corrected value}
+-		{0, 0},
+-		{15, 15},
+-		{30, 30},
+-		{45, 45},
+-		{60, 60},
+-		{75, 75},
+-		{90, 90},
+-		{105, 105},
+-		{120, 120},
+-		{135, 135},
+-		{150, 150},
+-		{165, 165},
+-		{180, 180},
+-		{195, 195},
+-		{210, 210},
+-		{225, 225},
+-		{240, 240},
+-		{255, 255},
+-	};
+-
+-	//insert value
+-	{
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-		__u32 i, j;
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value = g_gamma_tbl[i][1]
+-				    +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j]
+-				    = (value << 16) + (value << 8) + value;
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16)
+-		    + (g_gamma_tbl[items - 1][1] << 8)
+-		    + (g_gamma_tbl[items - 1][1]);
+-	}
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
+ 
++	info->lcd_gamma_correction_en = 0;
++	lcd_gamma_gen(info);
+ }
+ #endif
+ 
+-/**********************************************************************
+- *
+- *  lcd flow function
+- *	hv panel:first lcd_panel_init,than TCON_open
+- *
+- **********************************************************************/
++/*
++ * lcd flow function
++ * hv panel:first lcd_panel_init,than TCON_open
++ */
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);	/* open lcd power, than delay 50ms */
+-	LCD_OPEN_FUNC(sel, LCD_panel_init, 50);	//lcd panel initial, than delay 50ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);	//open lcd controller, than delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);	/* open lcd backlight, than delay 0ms */
++	/* open lcd power, than delay 50ms */
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);
++	/* lcd panel initial, than delay 50ms */
++	LCD_OPEN_FUNC(sel, LCD_panel_init, 50);
++	/* open lcd controller, than delay 500ms */
++	LCD_OPEN_FUNC(sel, TCON_open, 500);
++	/* open lcd backlight, than delay 0ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	/* close lcd backlight, and delay 0ms */
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);	//close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);	//lcd panel exit, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);	/* close lcd power, and delay 1000ms */
++	/* close lcd backlight, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);
++	/* close lcd controller, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0);
++	/* lcd panel exit, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);
++	/* close lcd power, and delay 1000ms */
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);
+ 
+ 	return 0;
+ }
+ 
+-/**********************************************************************
+- *
+- *  lcd panel initial
+- *	serial io initial
+- *
+- **********************************************************************/
+-#define td043_spi_scen(sel,data)		LCD_GPIO_write(sel,2,data)
+-#define td043_spi_scl(sel,data)			LCD_GPIO_write(sel,1,data)
+-#define td043_spi_sda(sel,data)			LCD_GPIO_write(sel,0,data)
++/*
++ * lcd panel initial
++ * serial io initial
++ */
++#define td043_spi_scen(sel, data) LCD_GPIO_write(sel, 2, data)
++#define td043_spi_scl(sel, data) LCD_GPIO_write(sel, 1, data)
++#define td043_spi_sda(sel, data) LCD_GPIO_write(sel, 0, data)
+ 
+ static void td043_spi_wr(__u32 sel, __u32 addr, __u32 value)
+ {
+@@ -220,12 +211,7 @@ static void LCD_panel_exit(__u32 sel)
+ 
+ }
+ 
+-/**********************************************************************
+- *
+- *  do not modify
+- *
+- **********************************************************************/
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+ 	fun->cfg_panel_info = LCD_cfg_panel_info;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 69c20e7..79a4f59 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -19,64 +19,50 @@
+  * MA 02111-1307 USA
+  */
+ 
+-/**********************************************************************
+- *
+- *  lvds_1024x600_hds100ifw1.c
+- *
+- **********************************************************************/
+-
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
+-#define LCD_PARA_USE_CONFIG
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
++//#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ 
+-/**********************************************************************
+- *
+- *  tcon parameters
+- *
+- **********************************************************************/
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void LCD_cfg_panel_info(__panel_para_t *info)
+ {
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+-	//interface
+-	info->lcd_if = 3;	//0:hv;                 1:cpu/8080;     2:reserved;     3:lvds
+-	info->lcd_lvds_ch = 0;	//0:single link 1:dual link
+-	info->lcd_lvds_bitwidth = 1;	//0:24bit;              1:18bit;
++	info->lcd_x = 1024;
++	info->lcd_y = 600;
++	info->lcd_dclk_freq = 52; /* MHz */
+ 
+-	//timing
+-	info->lcd_x = 1024;	//Hor Pixels
+-	info->lcd_y = 600;	//Ver Pixels
+-	info->lcd_dclk_freq = 52;	//Pixel Data Cycle,in MHz
+-	info->lcd_ht = 1344;	//Hor Total Time
+-	info->lcd_hbp = 20;	//Hor Back Porch
+-	info->lcd_vt = 635 * 2;	//Ver Total Time*2
+-	info->lcd_vbp = 20;	//Ver Back Porch
++	info->lcd_ht = 1344; /* htotal */
++	info->lcd_hbp = 20; /* h back porch */
++	info->lcd_hv_hspw = 10; /* hsync */
++	info->lcd_vt = 635 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 20; /* v back porch */
++	info->lcd_hv_vspw = 10; /* vsync */
+ 
+-	info->lcd_hv_hspw = 10;	//Hor Sync Time
+-	info->lcd_hv_vspw = 10;	//Ver Sync Time
+-	info->lcd_io_cfg0 = 0x00000000;	//Clock Phase
++	info->lcd_if = 3; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	//color
+-	info->lcd_frm = 1;	//0: direct;    1: rgb666 dither;       2:rgb656 dither
+-	info->lcd_gamma_correction_en = 0;
++	info->lcd_frm = 1; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
++
++	info->lcd_lvds_ch = 0; /* 0:single link; 1:dual link */
++	info->lcd_lvds_bitwidth = 1; /* 0:24bit; 1:18bit */
+ 
+ 	info->lcd_pwm_not_used = 0;
+ 	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 12500;	//Hz
++	info->lcd_pwm_freq = 12500; /* Hz */
+ 	info->lcd_pwm_pol = 0;
+ 
++	info->lcd_io_cfg0 = 0x00000000;	/* clock phase */
++
++	info->lcd_gamma_correction_en = 0;
+ }
+ #endif
+ 
+-/**********************************************************************
+- *
+- *  do not modify
+- *
+- **********************************************************************/
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+ 	fun->cfg_panel_info = LCD_cfg_panel_info;
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+index 6eeaf76..ccbe385 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+@@ -21,12 +21,15 @@
+ 
+ #include "lcd_panel_cfg.h"
+ 
+-//delete this line if you want to use the lcd para define in sys_config1.fex
++/*
++ * comment out this line if you want to use the lcd para define in
++ * sys_config1.fex
++ */
+ //#define LCD_PARA_USE_CONFIG
+ 
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] = {
+-//{input value, corrected value}
++	/* {input value, corrected value} */
+ 	{0, 0},
+ 	{15, 15},
+ 	{30, 30},
+@@ -47,77 +50,74 @@ static __u8 g_gamma_tbl[][2] = {
+ 	{255, 255},
+ };
+ 
+-static void LCD_cfg_panel_info(__panel_para_t * info)
++static void lcd_gamma_gen(__panel_para_t *info)
+ {
+-	__u32 i = 0, j = 0;
++	__u32 items = sizeof(g_gamma_tbl) / 2;
++	__u32 i, j;
++
++	for (i = 0; i < items - 1; i++) {
++		__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+ 
++		for (j = 0; j < num; j++) {
++			__u32 value = 0;
++
++			value = g_gamma_tbl[i][1] +
++				((g_gamma_tbl[i + 1][1] -
++				  g_gamma_tbl[i][1]) * j) / num;
++			info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
++				(value << 16) + (value << 8) + value;
++		}
++	}
++	info->lcd_gamma_tbl[255] = (g_gamma_tbl[items - 1][1] << 16) +
++		(g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items - 1][1];
++}
++
++static void LCD_cfg_panel_info(__panel_para_t *info)
++{
+ 	memset(info, 0, sizeof(__panel_para_t));
+ 
+ 	info->lcd_x = 1920;
+ 	info->lcd_y = 1080;
+-	info->lcd_dclk_freq = 142;	//MHz
++	info->lcd_dclk_freq = 142; /* MHz */
+ 
+-	info->lcd_pwm_not_used = 0;
+-	info->lcd_pwm_ch = 0;
+-	info->lcd_pwm_freq = 10000;	//Hz
+-	info->lcd_pwm_pol = 0;
++	info->lcd_ht = 2160; /* htotal */
++	info->lcd_hbp = 13; /* h back porch */
++	info->lcd_hv_hspw = 0; /* hsync */
++	info->lcd_vt = 1125 * 2; /* vtotal * 2 */
++	info->lcd_vbp = 13; /* v back porch */
++	info->lcd_hv_vspw = 0; /* vsync */
+ 
+-	info->lcd_if = 3;	//0:hv(sync+de); 1:8080; 2:ttl; 3:lvds
++	info->lcd_if = 3; /* 0:hv(sync+de); 1:cpu/8080; 2:ttl; 3:lvds */
+ 
+-	info->lcd_hbp = 13;	//hsync back porch
+-	info->lcd_ht = 2160;	//hsync total cycle
+-	info->lcd_hv_hspw = 0;	//hsync plus width
+-	info->lcd_vbp = 13;	//vsync back porch
+-	info->lcd_vt = 2 * 1125;	//vysnc total cycle *2
+-	info->lcd_hv_vspw = 0;	//vysnc plus width
++	info->lcd_hv_if = 0; /* 0:hv parallel; 1:hv serial; 2:ccir656 */
++	info->lcd_hv_smode = 0; /* 0:RGB888 1:CCIR656 */
++	info->lcd_hv_s888_if = 0; /* serial RGB format */
++	info->lcd_hv_syuv_if = 0; /* serial YUV format */
+ 
+-	info->lcd_hv_if = 0;	//0:hv parallel 1:hv serial
+-	info->lcd_hv_smode = 0;	//0:RGB888 1:CCIR656
+-	info->lcd_hv_s888_if = 0;	//serial RGB format
+-	info->lcd_hv_syuv_if = 0;	//serial YUV format
++	info->lcd_cpu_if = 0; /* 0:18bit 4:16bit */
++	info->lcd_frm = 0; /* 0:direct; 1:rgb666 dither; 2:rgb656 dither */
+ 
+-	info->lcd_cpu_if = 0;	//0:18bit 4:16bit
+-	info->lcd_frm = 0;	//0: disable; 1: enable rgb666 dither; 2:enable rgb656 dither
++	info->lcd_lvds_ch = 1; /* 0:single link; 1:dual link */
++	info->lcd_lvds_mode = 0; /* 0:NS mode; 1:JEIDA mode */
++	info->lcd_lvds_bitwidth = 0; /* 0:24bit; 1:18bit */
++	info->lcd_lvds_io_cross = 1; /* 0:normal; 1:pn cross */
+ 
+-	info->lcd_lvds_ch = 1;	//0:single channel; 1:dual channel
+-	info->lcd_lvds_mode = 0;	//0:NS mode; 1:JEIDA mode
+-	info->lcd_lvds_bitwidth = 0;	//0:24bit; 1:18bit
+-	info->lcd_lvds_io_cross = 1;	//0:normal; 1:pn cross
++	info->lcd_pwm_not_used = 0;
++	info->lcd_pwm_ch = 0;
++	info->lcd_pwm_freq = 10000; /* Hz */
++	info->lcd_pwm_pol = 0;
+ 
+-	info->lcd_io_cfg0 = 0x10000000;
++	info->lcd_io_cfg0 = 0x10000000; /* clock phase */
+ 
+ 	info->lcd_gamma_correction_en = 0;
+-	if (info->lcd_gamma_correction_en) {
+-		__u32 items = sizeof(g_gamma_tbl) / 2;
+-
+-		for (i = 0; i < items - 1; i++) {
+-			__u32 num = g_gamma_tbl[i + 1][0] - g_gamma_tbl[i][0];
+-
+-			//__inf("handling{%d,%d}\n", g_gamma_tbl[i][0], g_gamma_tbl[i][1]);
+-			for (j = 0; j < num; j++) {
+-				__u32 value = 0;
+-
+-				value =
+-				    g_gamma_tbl[i][1] +
+-				    ((g_gamma_tbl[i + 1][1] -
+-				      g_gamma_tbl[i][1]) * j) / num;
+-				info->lcd_gamma_tbl[g_gamma_tbl[i][0] + j] =
+-				    (value << 16) + (value << 8) + value;
+-				//__inf("----gamma %d, %d\n", g_gamma_tbl[i][0] + j, value);
+-			}
+-		}
+-		info->lcd_gamma_tbl[255] =
+-		    (g_gamma_tbl[items - 1][1] << 16) +
+-		    (g_gamma_tbl[items - 1][1] << 8) + g_gamma_tbl[items -
+-								   1][1];
+-		//__inf("----gamma 255, %d\n", g_gamma_tbl[items-1][1]);
+-	}
++	if (info->lcd_gamma_correction_en)
++		lcd_gamma_gen(info);
+ }
+ #endif
+ 
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+-	fun->cfg_panel_info = LCD_cfg_panel_info;	//delete this line if you want to use the lcd para define in sys_config1.fex
++	fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+ }
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg.h b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+index 898acc9..108dc8d 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+@@ -32,10 +32,10 @@ __s32 LCD_open_flow_generic(__u32 sel);
+ __s32 LCD_close_flow_generic(__u32 sel);
+ __s32 LCD_user_defined_func_generic(__u32 sel, __u32 para1, __u32 para2,
+ 				    __u32 para3);
+-void LCD_get_panel_funs_generic(__lcd_panel_fun_t * fun);
++void LCD_get_panel_funs_generic(__lcd_panel_fun_t *fun);
+ 
+-void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+-void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
++void LCD_get_panel_funs_0(__lcd_panel_fun_t *fun);
++void LCD_get_panel_funs_1(__lcd_panel_fun_t *fun);
+ 
+ #define OSAL_Script_FetchParser_Data script_parser_fetch
+ #define OSAL_GPIO_Request gpio_request
+@@ -49,40 +49,40 @@ void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
+ #define OSAL_GPIO_DevREAD_ONEPIN_DATA gpio_read_one_pin_value
+ #define OSAL_GPIO_DevWRITE_ONEPIN_DATA gpio_write_one_pin_value
+ 
+-#define BIT0		  0x00000001
+-#define BIT1		  0x00000002
+-#define BIT2		  0x00000004
+-#define BIT3		  0x00000008
+-#define BIT4		  0x00000010
+-#define BIT5		  0x00000020
+-#define BIT6		  0x00000040
+-#define BIT7		  0x00000080
+-#define BIT8		  0x00000100
+-#define BIT9		  0x00000200
+-#define BIT10		  0x00000400
+-#define BIT11		  0x00000800
+-#define BIT12		  0x00001000
+-#define BIT13		  0x00002000
+-#define BIT14		  0x00004000
+-#define BIT15		  0x00008000
+-#define BIT16		  0x00010000
+-#define BIT17		  0x00020000
+-#define BIT18		  0x00040000
+-#define BIT19		  0x00080000
+-#define BIT20		  0x00100000
+-#define BIT21		  0x00200000
+-#define BIT22		  0x00400000
+-#define BIT23		  0x00800000
+-#define BIT24		  0x01000000
+-#define BIT25		  0x02000000
+-#define BIT26		  0x04000000
+-#define BIT27		  0x08000000
+-#define BIT28		  0x10000000
+-#define BIT29		  0x20000000
+-#define BIT30		  0x40000000
+-#define BIT31		  0x80000000
++#define BIT0	0x00000001
++#define BIT1	0x00000002
++#define BIT2	0x00000004
++#define BIT3	0x00000008
++#define BIT4	0x00000010
++#define BIT5	0x00000020
++#define BIT6	0x00000040
++#define BIT7	0x00000080
++#define BIT8	0x00000100
++#define BIT9	0x00000200
++#define BIT10	0x00000400
++#define BIT11	0x00000800
++#define BIT12	0x00001000
++#define BIT13	0x00002000
++#define BIT14	0x00004000
++#define BIT15	0x00008000
++#define BIT16	0x00010000
++#define BIT17	0x00020000
++#define BIT18	0x00040000
++#define BIT19	0x00080000
++#define BIT20	0x00100000
++#define BIT21	0x00200000
++#define BIT22	0x00400000
++#define BIT23	0x00800000
++#define BIT24	0x01000000
++#define BIT25	0x02000000
++#define BIT26	0x04000000
++#define BIT27	0x08000000
++#define BIT28	0x10000000
++#define BIT29	0x20000000
++#define BIT30	0x40000000
++#define BIT31	0x80000000
+ 
+-#define sys_get_wvalue(n)   (*((volatile __u32 *)(n)))	/* word input */
+-#define sys_put_wvalue(n,c) (*((volatile __u32 *)(n))  = (c))	/* word output */
++#define sys_get_wvalue(n) (*((volatile __u32 *)(n))) /* word input */
++#define sys_put_wvalue(n,c) (*((volatile __u32 *)(n)) = (c)) /* word output */
+ 
+ #endif
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+index 035a59f..df72bc3 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+@@ -27,35 +27,33 @@
+ //#define SPI_DATA_PRINT
+ 
+ #ifdef SPI_DATA_PRINT
+-#define lcd_spi_dbg(x,arg...) printk(KERN_INFO"[LCD_SPI]"x,##arg)
++#define lcd_spi_dbg(msg, ...) pr_info("[LCD_SPI]" msg, ##__VA_ARGS__)
+ #else
+-#define lcd_spi_dbg(x,arg...)
++#define lcd_spi_dbg(msg, ...)
+ #endif
+ 
+-static __s32 lcd_spi_cs = 0;
+-static __s32 lcd_spi_clk = 0;
+-static __s32 lcd_spi_mosi = 0;
+-static __s32 lcd_spi_used = 0;
++static __s32 lcd_spi_cs;
++static __s32 lcd_spi_clk;
++static __s32 lcd_spi_mosi;
++static __s32 lcd_spi_used;
+ static __s32 lcd_spi_module = -1;
+ 
+ static void check_spi_used_value()
+ {
+-	if (SCRIPT_PARSER_OK
+-	    != OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_used",
+-					    &lcd_spi_used, 1)) {
++	if (SCRIPT_PARSER_OK !=
++	    OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_used",
++					 &lcd_spi_used, 1))
+ 		__inf("LCD SPI doesn't use.\n");
+-	}
+ 
+-	if (0 == lcd_spi_used) {
++	if (!lcd_spi_used)
+ 		__inf("LCD SPI doesn't use.\n");
+-	}
+ }
+ 
+ void LCD_SPI_Init(__u32 sel)
+ {
+-	if (SCRIPT_PARSER_OK
+-	    != OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_module",
+-					    &lcd_spi_module, 1)) {
++	if (SCRIPT_PARSER_OK !=
++	    OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_module",
++					 &lcd_spi_module, 1)) {
+ 		__wrn("There is no LCD SPI module input.\n");
+ 		return;
+ 	}
+@@ -110,64 +108,24 @@ void LCD_SPI_Write(__u32 sel)
+ 	     lcd_spi_module);
+ 
+ 	switch (lcd_spi_module) {
+-	case 0:{		/* rili 7inch */
+-			for (i = 0; i < 8; i++) {
+-				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 0,
+-							       "lcd_spi_cs");
+-				lcd_spi_dbg("write data[%d]:", i);
+-
+-				for (j = 0; j < 16; j++) {
+-					OSAL_GPIO_DevWRITE_ONEPIN_DATA
+-					    (lcd_spi_clk, 0, "lcd_spi_clk");
+-					offset = 15 - j;
+-					bit_val =
+-					    (0x0001 & (data[i] >> offset));
+-					ret =
+-					    OSAL_GPIO_DevWRITE_ONEPIN_DATA
+-					    (lcd_spi_mosi, bit_val,
+-					     "lcd_spi_mosi");
+-#ifdef SPI_DATA_PRINT
+-					if (ret == 0) {
+-						lcd_spi_dbg("%d-", bit_val);
+-					} else {
+-						lcd_spi_dbg("write[bit:%d]ERR",
+-							    j);
+-					}
+-#endif
+-					LCD_delay_us(CMD_WIRTE_DELAY);
+-					OSAL_GPIO_DevWRITE_ONEPIN_DATA
+-					    (lcd_spi_clk, 1, "lcd_spi_clk");
+-					LCD_delay_us(CMD_WIRTE_DELAY);
+-				}
+-
+-				lcd_spi_dbg("\n");
+-				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 1,
+-							       "lcd_spi_cs");
+-				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1,
+-							       "lcd_spi_clk");
+-				LCD_delay_us(CMD_WIRTE_DELAY);
+-			}
+-			LCD_delay_ms(50);
++	case 0: /* rili 7inch */
++		for (i = 0; i < 8; i++) {
+ 			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 0,
+ 						       "lcd_spi_cs");
+-
+-			lcd_spi_dbg("write data[8]:");
++			lcd_spi_dbg("write data[%d]:", i);
+ 
+ 			for (j = 0; j < 16; j++) {
+ 				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 0,
+ 							       "lcd_spi_clk");
+ 				offset = 15 - j;
+-				bit_val = (0x0001 & (data[i] >> offset));
+-				ret =
+-				    OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_mosi,
+-								   bit_val,
+-								   "lcd_spi_mosi");
++				bit_val = 0x0001 & (data[i] >> offset);
++				ret = OSAL_GPIO_DevWRITE_ONEPIN_DATA
++					(lcd_spi_mosi, bit_val, "lcd_spi_mosi");
+ #ifdef SPI_DATA_PRINT
+-				if (ret == 0) {
++				if (ret == 0)
+ 					lcd_spi_dbg("%d-", bit_val);
+-				} else {
++				else
+ 					lcd_spi_dbg("write[bit:%d]ERR", j);
+-				}
+ #endif
+ 				LCD_delay_us(CMD_WIRTE_DELAY);
+ 				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1,
+@@ -181,81 +139,115 @@ void LCD_SPI_Write(__u32 sel)
+ 			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1,
+ 						       "lcd_spi_clk");
+ 			LCD_delay_us(CMD_WIRTE_DELAY);
+-			lcd_spi_dbg
+-			    ("========== LCD SPI data translation finished ===========\n");
+-			break;
+ 		}
+-	default:{
+-			lcd_spi_dbg("%s Unknow lcd_spi_module\n", __func__);
+-			break;
++		LCD_delay_ms(50);
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 0, "lcd_spi_cs");
++
++		lcd_spi_dbg("write data[8]:");
++
++		for (j = 0; j < 16; j++) {
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 0,
++						       "lcd_spi_clk");
++			offset = 15 - j;
++			bit_val = (0x0001 & (data[i] >> offset));
++			ret = OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_mosi,
++							     bit_val,
++							     "lcd_spi_mosi");
++#ifdef SPI_DATA_PRINT
++			if (ret == 0)
++				lcd_spi_dbg("%d-", bit_val);
++			else
++				lcd_spi_dbg("write[bit:%d]ERR", j);
++#endif
++			LCD_delay_us(CMD_WIRTE_DELAY);
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1,
++						       "lcd_spi_clk");
++			LCD_delay_us(CMD_WIRTE_DELAY);
+ 		}
++
++		lcd_spi_dbg("\n");
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 1, "lcd_spi_cs");
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1, "lcd_spi_clk");
++		LCD_delay_us(CMD_WIRTE_DELAY);
++		lcd_spi_dbg("LCD SPI data translation finished\n");
++		break;
++	default:
++		lcd_spi_dbg("%s Unknow lcd_spi_module\n", __func__);
++		break;
+ 	}
+ }
+ 
+ void LCD_SPI_Dinit(__u32 sel)
+ {
+ 	lcd_spi_dbg("release GPIO src : lcd_spi_mosi\n");
+-	if (lcd_spi_mosi) {
++	if (lcd_spi_mosi)
+ 		OSAL_GPIO_Release(lcd_spi_mosi, 2);
+-	}
+ 
+ 	lcd_spi_dbg("release GPIO src : lcd_spi_clk\n");
+-	if (lcd_spi_clk) {
++	if (lcd_spi_clk)
+ 		OSAL_GPIO_Release(lcd_spi_clk, 2);
+-	}
+ 
+ 	lcd_spi_dbg("release GPIO src : lcd_spi_cs\n");
+-	if (lcd_spi_cs) {
++	if (lcd_spi_cs)
+ 		OSAL_GPIO_Release(lcd_spi_cs, 2);
+-	}
+ }
+ 
+ void LCD_power_on_generic(__u32 sel)
+ {
+-	LCD_POWER_EN(sel, 1);	/* config lcd_power pin to open lcd power */
++	LCD_POWER_EN(sel, 1); /* config lcd_power pin to open lcd power */
+ }
+ 
+ void LCD_power_off_generic(__u32 sel)
+ {
+-	LCD_POWER_EN(sel, 0);	/* config lcd_power pin to close lcd power */
++	LCD_POWER_EN(sel, 0); /* config lcd_power pin to close lcd power */
+ }
+ 
+ void LCD_bl_open_generic(__u32 sel)
+ {
+-	LCD_PWM_EN(sel, 1);	/* open pwm module */
+-	LCD_BL_EN(sel, 1);	/* config lcd_bl_en pin to open lcd backlight */
++	LCD_PWM_EN(sel, 1); /* open pwm module */
++	LCD_BL_EN(sel, 1); /* config lcd_bl_en pin to open lcd backlight */
+ }
+ 
+ void LCD_bl_close_generic(__u32 sel)
+ {
+-	LCD_BL_EN(sel, 0);	/* config lcd_bl_en pin to close lcd backlight */
+-	LCD_PWM_EN(sel, 0);	/* close pwm module */
++	LCD_BL_EN(sel, 0); /* config lcd_bl_en pin to close lcd backlight */
++	LCD_PWM_EN(sel, 0); /* close pwm module */
+ }
+ 
+ __s32 LCD_open_flow_generic(__u32 sel)
+ {
+ 	check_spi_used_value();
+-	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);	/* open lcd power, and delay 50ms */
++	/* open lcd power, and delay 50ms */
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50);
+ 	if (lcd_spi_used) {
+ 		/* request and init gpio, and delay 20ms */
+ 		LCD_OPEN_FUNC(sel, LCD_SPI_Init, 20);
+-		/* use gpio to config lcd module to the  work mode, and delay 10ms */
++		/*
++		 * use gpio to config lcd module to the work mode,
++		 * and delay 10ms
++		 */
+ 		LCD_OPEN_FUNC(sel, LCD_SPI_Write, 10);
+ 	}
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);	/* open lcd controller, and delay 500ms */
+-	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);	/* open lcd backlight, and delay 0ms */
++	/* open lcd controller, and delay 500ms */
++	LCD_OPEN_FUNC(sel, TCON_open, 500);
++	/* open lcd backlight, and delay 0ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0);
+ 
+ 	return 0;
+ }
+ 
+ __s32 LCD_close_flow_generic(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	/* close lcd backlight, and delay 0ms */
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);	/* close lcd controller, and delay 0ms */
+-	if (lcd_spi_used) {
+-		LCD_CLOSE_FUNC(sel, LCD_SPI_Dinit, 0);	/* release gpio, and delay 0ms */
+-	}
+-	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);	/* close lcd power, and delay 1000ms */
++	/* close lcd backlight, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);
++	/* close lcd controller, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0);
++	if (lcd_spi_used)
++		/* release gpio, and delay 0ms */
++		LCD_CLOSE_FUNC(sel, LCD_SPI_Dinit, 0);
++
++	/* close lcd power, and delay 1000ms */
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);
+ 
+ 	return 0;
+ }
+@@ -267,9 +259,9 @@ __s32 LCD_user_defined_func_generic(__u32 sel, __u32 para1, __u32 para2,
+ 	return 0;
+ }
+ 
+-void LCD_get_panel_funs_generic(__lcd_panel_fun_t * fun)
++void LCD_get_panel_funs_generic(__lcd_panel_fun_t *fun)
+ {
+-	fun->cfg_panel_info = 0;	/* lcd panel info defined in sys_config1.fex */
++	fun->cfg_panel_info = 0; /* lcd panel info defined in sys_config1.fex */
+ 	fun->cfg_open_flow = LCD_open_flow_generic;
+ 	fun->cfg_close_flow = LCD_close_flow_generic;
+ 	fun->lcd_user_defined_func = LCD_user_defined_func_generic;
+-- 
+1.8.0
+

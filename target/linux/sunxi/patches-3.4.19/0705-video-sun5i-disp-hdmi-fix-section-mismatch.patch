@@ -1,0 +1,41 @@
+From 318754ec506294bdc5129c1c5170dfdc4664cd9b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 14 May 2012 02:51:18 +0000
+Subject: [PATCH 705/944] video: sun5i: disp/hdmi: fix section mismatch
+
+merge cbfdbcb146d0c6efe7de7a2829056ada7aad5007 intended for sun4i
+---
+ drivers/video/sun5i/disp/dev_disp.c | 3 ++-
+ drivers/video/sun5i/hdmi/dev_hdmi.c | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sun5i/disp/dev_disp.c b/drivers/video/sun5i/disp/dev_disp.c
+index 726b7af..b481983 100644
+--- a/drivers/video/sun5i/disp/dev_disp.c
++++ b/drivers/video/sun5i/disp/dev_disp.c
+@@ -393,7 +393,8 @@ ssize_t disp_write(struct file *file, const char __user *buf, size_t count, loff
+     return 0;
+ }
+ 
+-static int __init disp_probe(struct platform_device *pdev)//called when platform_driver_register
++/* called when platform_driver_register*/
++static int __devinit disp_probe(struct platform_device *pdev)
+ {
+ 	fb_info_t * info = NULL;
+ 
+diff --git a/drivers/video/sun5i/hdmi/dev_hdmi.c b/drivers/video/sun5i/hdmi/dev_hdmi.c
+index 8b86952..87450d1 100644
+--- a/drivers/video/sun5i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun5i/hdmi/dev_hdmi.c
+@@ -52,7 +52,7 @@ struct platform_device hdmi_device =
+ };
+ 
+ 
+-static int __init hdmi_probe(struct platform_device *pdev)
++static int __devinit hdmi_probe(struct platform_device *pdev)
+ {
+ 	__inf("hdmi_probe call\n");
+ 
+-- 
+1.8.0
+

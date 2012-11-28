@@ -1,0 +1,33 @@
+From b95d9dd57ed4c88ba5eb266a424687501e7234c9 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 13 Jul 2012 14:38:32 -0700
+Subject: [PATCH 589/944] net: wireless: bcmdhd: Adjust driver/fw/chip info
+ format
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index cc0ff70..2886b45 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -5237,12 +5237,12 @@ void dhd_set_version_info(dhd_pub_t *dhdp, char *fw)
+ 	int i;
+ 
+ 	i = snprintf(info_string, sizeof(info_string),
+-		"WLAN:\n  Driver: %s\n  Firmware: %s ", EPI_VERSION_STR, fw);
++		"  Driver: %s\n  Firmware: %s ", EPI_VERSION_STR, fw);
+ 
+ 	if (!dhdp)
+ 		return;
+ 	i = snprintf(&info_string[i], sizeof(info_string) - i,
+-		"\n  Chip: %x Rev %x Pkg %x\n", dhd_bus_chip_id(dhdp),
++		"\n  Chip: %x Rev %x Pkg %x", dhd_bus_chip_id(dhdp),
+ 		dhd_bus_chiprev_id(dhdp), dhd_bus_chippkg_id(dhdp));
+ }
+ 
+-- 
+1.8.0
+

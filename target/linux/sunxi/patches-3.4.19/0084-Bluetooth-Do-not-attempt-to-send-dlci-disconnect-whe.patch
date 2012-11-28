@@ -1,0 +1,29 @@
+From 64f9be0265b08ed793bc91756333a4d9f15843b4 Mon Sep 17 00:00:00 2001
+From: Nick Pelly <npelly@google.com>
+Date: Thu, 9 Jul 2009 12:23:44 -0700
+Subject: [PATCH 084/944] Bluetooth: Do not attempt to send dlci disconnect
+ when in BT_CONFIG.
+
+This fixes a bug where shutdown() and close() on a rfcomm socket during ACL
+connection would not cause HCI Create Connection Cancel.
+
+Signed-off-by: Nick Pelly <npelly@google.com>
+---
+ net/bluetooth/rfcomm/core.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/net/bluetooth/rfcomm/core.c b/net/bluetooth/rfcomm/core.c
+index 8a60238..9652707 100644
+--- a/net/bluetooth/rfcomm/core.c
++++ b/net/bluetooth/rfcomm/core.c
+@@ -462,7 +462,6 @@ static int __rfcomm_dlc_close(struct rfcomm_dlc *d, int err)
+ 
+ 	switch (d->state) {
+ 	case BT_CONNECT:
+-	case BT_CONFIG:
+ 		if (test_and_clear_bit(RFCOMM_DEFER_SETUP, &d->flags)) {
+ 			set_bit(RFCOMM_AUTH_REJECT, &d->flags);
+ 			rfcomm_schedule();
+-- 
+1.8.0
+

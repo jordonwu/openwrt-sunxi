@@ -1,0 +1,28 @@
+From d1d2e536b1920ff7c2fe1a5a8967fe7075a85e71 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Thu, 9 Aug 2012 21:29:52 -0700
+Subject: [PATCH 643/944] gpu: ion: Only map as much of the vma as the user
+ requested
+
+Change-Id: If0e368e192941c118683ab74aed48e4e0cb5731d
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion_system_heap.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index 726448d..e7fb07d 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -192,6 +192,8 @@ int ion_system_heap_map_user(struct ion_heap *heap, struct ion_buffer *buffer,
+ 		remap_pfn_range(vma, addr, page_to_pfn(sg_page(sg)),
+ 				sg_dma_len(sg), vma->vm_page_prot);
+ 		addr += sg_dma_len(sg);
++		if (addr >= vma->vm_end)
++			return 0;
+ 	}
+ 	return 0;
+ }
+-- 
+1.8.0
+

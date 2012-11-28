@@ -1,0 +1,123 @@
+From 2d02995151a187074bdecf182e107a601d50189f Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Sun, 23 Sep 2012 13:58:19 +0300
+Subject: [PATCH 811/944] video: sunxi: disp-ump: Add support for buf2
+
+---
+ drivers/video/sunxi/disp/dev_disp.h |  4 ++--
+ drivers/video/sunxi/disp/dev_fb.c   |  9 ++++++---
+ drivers/video/sunxi/disp/disp_ump.c | 19 +++++++++++++------
+ include/linux/drv_display_sun4i.h   |  3 ++-
+ 4 files changed, 23 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index 5e2af65..1d33f94 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -70,7 +70,7 @@ typedef struct
+ 	unsigned long           wait_count[SUNXI_MAX_FB];
+ 	__u32 pseudo_palette [SUNXI_MAX_FB][16];
+ #ifdef CONFIG_FB_SUNXI_UMP
+-	ump_dd_handle ump_wrapped_buffer[SUNXI_MAX_FB];
++	ump_dd_handle ump_wrapped_buffer[SUNXI_MAX_FB][2];
+ #endif
+ }fb_info_t;
+ 
+@@ -124,7 +124,7 @@ extern __s32 DRV_lcd_close(__u32 sel);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 Fb_Exit(void);
+ #ifdef CONFIG_FB_SUNXI_UMP
+-extern int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg);
++extern int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg, int buf);
+ #endif
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 0d72b83..e9b2b9b 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1041,13 +1041,14 @@ __s32 DRV_disp_int_process(__u32 sel)
+ }
+ 
+ #ifdef CONFIG_FB_SUNXI_UMP
+-int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg);
++int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg, int buf);
+ EXPORT_SYMBOL(disp_get_ump_secure_id);
+ #endif
+ 
+ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+ {
+ 	long ret = 0;
++	int secure_id_buf_num = 0;
+ 	unsigned long layer_hdl = 0;
+ 
+ 	switch (cmd)
+@@ -1114,12 +1115,14 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+     }
+ 
+ #ifdef CONFIG_FB_SUNXI_UMP
+-	case GET_UMP_SECURE_ID:
++	case GET_UMP_SECURE_ID_BUF2: /* flow trough */
++		secure_id_buf_num = 1;
++	case GET_UMP_SECURE_ID_BUF1:
+ 	{
+ 		if (!disp_get_ump_secure_id)
+ 			request_module("disp_ump");
+ 		if (disp_get_ump_secure_id)
+-			return disp_get_ump_secure_id(info, &g_fbi, arg);
++			return disp_get_ump_secure_id(info, &g_fbi, arg, secure_id_buf_num);
+ 		else
+ 			return -ENOTSUPP;
+ 	}
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+index 8f05cd4..c2e5b64 100644
+--- a/drivers/video/sunxi/disp/disp_ump.c
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -24,17 +24,24 @@
+ #include "dev_disp.h"
+ #include <ump/ump_kernel_interface_ref_drv.h>
+ 
+-static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg)
++static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg, int buf)
+ {
+ 	u32 __user *psecureid = (u32 __user *) arg;
++	int buf_len = info->fix.smem_len;
+ 	ump_secure_id secure_id;
+-	if (!g_fbi->ump_wrapped_buffer[info->node]) {
++	if (info->var.yres*2 == info->var.yres_virtual) {
++		buf_len = buf_len >> 1; /* divide by two */
++	} else {
++		__wrn("UMP: Double-buffering not enabled");
++	}
++
++	if (!g_fbi->ump_wrapped_buffer[info->node][buf]) {
+ 		ump_dd_physical_block ump_memory_description;
+-		ump_memory_description.addr = info->fix.smem_start;
+-		ump_memory_description.size = info->fix.smem_len;
+-		g_fbi->ump_wrapped_buffer[info->node] = ump_dd_handle_create_from_phys_blocks( &ump_memory_description, 1);
++		ump_memory_description.addr = info->fix.smem_start + (buf_len*buf);
++		ump_memory_description.size = buf_len;
++		g_fbi->ump_wrapped_buffer[info->node][buf] = ump_dd_handle_create_from_phys_blocks( &ump_memory_description, 1);
+ 	}
+-	secure_id = ump_dd_secure_id_get(g_fbi->ump_wrapped_buffer[info->node]);
++	secure_id = ump_dd_secure_id_get(g_fbi->ump_wrapped_buffer[info->node][buf]);
+ 	return put_user( (unsigned int)secure_id, psecureid );
+ }
+ 
+diff --git a/include/linux/drv_display_sun4i.h b/include/linux/drv_display_sun4i.h
+index f109176..9e3aeb1 100644
+--- a/include/linux/drv_display_sun4i.h
++++ b/include/linux/drv_display_sun4i.h
+@@ -790,7 +790,8 @@ typedef enum tag_DISP_CMD
+ }__disP_cmd_t;
+ 
+ 
+-#define GET_UMP_SECURE_ID _IOWR('m', 310, unsigned int)
++#define GET_UMP_SECURE_ID_BUF1 _IOWR('m', 310, unsigned int)
++#define GET_UMP_SECURE_ID_BUF2 _IOWR('m', 311, unsigned int)
+ 
+ #define FBIOGET_LAYER_HDL_0 0x4700
+ #define FBIOGET_LAYER_HDL_1 0x4701
+-- 
+1.8.0
+

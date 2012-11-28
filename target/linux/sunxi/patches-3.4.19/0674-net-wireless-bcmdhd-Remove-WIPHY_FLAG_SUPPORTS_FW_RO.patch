@@ -1,0 +1,34 @@
+From c36a0067fbda423f546b2323c58afb3b89184763 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 22 Aug 2012 16:09:09 -0700
+Subject: [PATCH 674/944] net: wireless: bcmdhd: Remove
+ WIPHY_FLAG_SUPPORTS_FW_ROAM flag
+
+If driver advertises FW_ROAM, the supplicant wouldn't send
+the BSSID & Freq in the connect command allowing the driver
+to choose the AP to connect to. But unless we support ROAM_CACHE
+in firware this will delay the ASSOC as the FW need to do a full
+scan before attempting to connect.
+
+Change-Id: Iebc88a60243196b9ad27b8302f2b1473710308f6
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index 59e446d..b9d69f5 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -5467,7 +5467,7 @@ static s32 wl_setup_wiphy(struct wireless_dev *wdev, struct device *sdiofunc_dev
+ #endif
+ 		WIPHY_FLAG_4ADDR_STATION;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+-	wdev->wiphy->flags |= WIPHY_FLAG_SUPPORTS_FW_ROAM;
++	/* wdev->wiphy->flags |= WIPHY_FLAG_SUPPORTS_FW_ROAM; */
+ #endif
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+ 	wdev->wiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL |
+-- 
+1.8.0
+

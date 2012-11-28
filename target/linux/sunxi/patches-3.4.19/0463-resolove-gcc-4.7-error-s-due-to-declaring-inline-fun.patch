@@ -1,0 +1,206 @@
+From 9bf31f68dbbe0aba4217902905cb17d87e5e653b Mon Sep 17 00:00:00 2001
+From: Brian Olsen <brian@stellacore.com>
+Date: Tue, 22 May 2012 12:15:22 -0600
+Subject: [PATCH 463/944] resolove gcc-4.7 error s due to declaring inline
+ functions with no body
+
+---
+ drivers/media/video/sun4i_csi/csi0/sun4i_csi_reg.c   | 20 ++++----------------
+ drivers/media/video/sun4i_csi/csi0/sun4i_drv_csi.c   | 11 +++++++++++
+ drivers/media/video/sun4i_csi/csi1/sun4i_csi_reg.c   | 20 ++++----------------
+ drivers/media/video/sun4i_csi/csi1/sun4i_drv_csi.c   | 12 ++++++++++++
+ .../media/video/sun4i_csi/include/sun4i_csi_core.h   |  6 ------
+ 5 files changed, 31 insertions(+), 38 deletions(-)
+
+diff --git a/drivers/media/video/sun4i_csi/csi0/sun4i_csi_reg.c b/drivers/media/video/sun4i_csi/csi0/sun4i_csi_reg.c
+index a5c6a08..3606ddb 100644
+--- a/drivers/media/video/sun4i_csi/csi0/sun4i_csi_reg.c
++++ b/drivers/media/video/sun4i_csi/csi0/sun4i_csi_reg.c
+@@ -37,13 +37,7 @@ void bsp_csi_configure(struct csi_dev *dev,__csi_conf_t *mode)
+ }
+ 
+ /* buffer */
+-void inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
+-{
+-	//bufer0a +4 = buffer0b, bufer0a +8 = buffer1a
+-    W(dev->regs+CSI_REG_BUF_0_A + (buf<<2), addr);
+-}
+-
+-u32 inline bsp_csi_get_buffer_address(struct csi_dev *dev,__csi_buf_t buf)
++u32 static inline bsp_csi_get_buffer_address(struct csi_dev *dev,__csi_buf_t buf)
+ {
+ 	u32 t;
+ 	t = R(dev->regs+CSI_REG_BUF_0_A + (buf<<2));
+@@ -60,7 +54,7 @@ void bsp_csi_double_buffer_disable(struct csi_dev *dev)
+     C(dev->regs+CSI_REG_BUF_CTRL, 0X1<<0);
+ }
+ 
+-void inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_buf_t type)
++void static inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_buf_t type)
+ {
+     if (CSI_BUF_A == type) {
+         C(dev->regs+CSI_REG_BUF_CTRL, 0x1<<2);
+@@ -69,7 +63,7 @@ void inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_b
+ 	}
+ }
+ 
+-void inline bsp_csi_double_buffer_get_status(struct csi_dev *dev,__csi_double_buf_status_t * status)
++void static inline bsp_csi_double_buffer_get_status(struct csi_dev *dev,__csi_double_buf_status_t * status)
+ {
+     u32 t;
+     t = R(dev->regs+CSI_REG_BUF_CTRL);
+@@ -147,7 +141,7 @@ void bsp_csi_int_disable(struct csi_dev *dev,__csi_int_t interrupt)
+     C(dev->regs+CSI_REG_INT_EN, interrupt);
+ }
+ 
+-void inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * status)
++void static inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * status)
+ {
+     u32 t;
+     t = R(dev->regs+CSI_REG_INT_STATUS);
+@@ -162,9 +156,3 @@ void inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * stat
+     status->vsync_trig		 = t&CSI_INT_VSYNC_TRIG;
+ 
+ }
+-
+-void inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
+-{
+-    W(dev->regs+CSI_REG_INT_STATUS, interrupt);
+-}
+-
+diff --git a/drivers/media/video/sun4i_csi/csi0/sun4i_drv_csi.c b/drivers/media/video/sun4i_csi/csi0/sun4i_drv_csi.c
+index 487a898..ad25946 100644
+--- a/drivers/media/video/sun4i_csi/csi0/sun4i_drv_csi.c
++++ b/drivers/media/video/sun4i_csi/csi0/sun4i_drv_csi.c
+@@ -240,6 +240,12 @@ static struct csi_fmt *get_format(struct v4l2_format *f)
+ 	return &formats[k];
+ };
+ 
++void static inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
++{
++	//bufer0a +4 = buffer0b, bufer0a +8 = buffer1a
++    W(dev->regs+CSI_REG_BUF_0_A + (buf<<2), addr);
++}
++
+ static inline void csi_set_addr(struct csi_dev *dev,struct csi_buffer *buffer)
+ {
+ 
+@@ -477,6 +483,11 @@ static int update_ccm_info(struct csi_dev *dev , struct ccm_config *ccm_cfg)
+ 	 return v4l2_subdev_call(dev->sd,core,ioctl,CSI_SUBDEV_CMD_SET_INFO,dev->ccm_info);
+ }
+ 
++void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
++{
++    W(dev->regs+CSI_REG_INT_STATUS, interrupt);
++}
++
+ static irqreturn_t csi_isr(int irq, void *priv)
+ {
+ 	struct csi_buffer *buf;
+diff --git a/drivers/media/video/sun4i_csi/csi1/sun4i_csi_reg.c b/drivers/media/video/sun4i_csi/csi1/sun4i_csi_reg.c
+index a5c6a08..3606ddb 100644
+--- a/drivers/media/video/sun4i_csi/csi1/sun4i_csi_reg.c
++++ b/drivers/media/video/sun4i_csi/csi1/sun4i_csi_reg.c
+@@ -37,13 +37,7 @@ void bsp_csi_configure(struct csi_dev *dev,__csi_conf_t *mode)
+ }
+ 
+ /* buffer */
+-void inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
+-{
+-	//bufer0a +4 = buffer0b, bufer0a +8 = buffer1a
+-    W(dev->regs+CSI_REG_BUF_0_A + (buf<<2), addr);
+-}
+-
+-u32 inline bsp_csi_get_buffer_address(struct csi_dev *dev,__csi_buf_t buf)
++u32 static inline bsp_csi_get_buffer_address(struct csi_dev *dev,__csi_buf_t buf)
+ {
+ 	u32 t;
+ 	t = R(dev->regs+CSI_REG_BUF_0_A + (buf<<2));
+@@ -60,7 +54,7 @@ void bsp_csi_double_buffer_disable(struct csi_dev *dev)
+     C(dev->regs+CSI_REG_BUF_CTRL, 0X1<<0);
+ }
+ 
+-void inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_buf_t type)
++void static inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_buf_t type)
+ {
+     if (CSI_BUF_A == type) {
+         C(dev->regs+CSI_REG_BUF_CTRL, 0x1<<2);
+@@ -69,7 +63,7 @@ void inline bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_b
+ 	}
+ }
+ 
+-void inline bsp_csi_double_buffer_get_status(struct csi_dev *dev,__csi_double_buf_status_t * status)
++void static inline bsp_csi_double_buffer_get_status(struct csi_dev *dev,__csi_double_buf_status_t * status)
+ {
+     u32 t;
+     t = R(dev->regs+CSI_REG_BUF_CTRL);
+@@ -147,7 +141,7 @@ void bsp_csi_int_disable(struct csi_dev *dev,__csi_int_t interrupt)
+     C(dev->regs+CSI_REG_INT_EN, interrupt);
+ }
+ 
+-void inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * status)
++void static inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * status)
+ {
+     u32 t;
+     t = R(dev->regs+CSI_REG_INT_STATUS);
+@@ -162,9 +156,3 @@ void inline bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * stat
+     status->vsync_trig		 = t&CSI_INT_VSYNC_TRIG;
+ 
+ }
+-
+-void inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
+-{
+-    W(dev->regs+CSI_REG_INT_STATUS, interrupt);
+-}
+-
+diff --git a/drivers/media/video/sun4i_csi/csi1/sun4i_drv_csi.c b/drivers/media/video/sun4i_csi/csi1/sun4i_drv_csi.c
+index b9c0b48..c8d84f5 100644
+--- a/drivers/media/video/sun4i_csi/csi1/sun4i_drv_csi.c
++++ b/drivers/media/video/sun4i_csi/csi1/sun4i_drv_csi.c
+@@ -241,6 +241,18 @@ static struct csi_fmt *get_format(struct v4l2_format *f)
+ 	return &formats[k];
+ };
+ 
++void static inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt)
++{
++    W(dev->regs+CSI_REG_INT_STATUS, interrupt);
++}
++
++void static inline bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr)
++{
++	//bufer0a +4 = buffer0b, bufer0a +8 = buffer1a
++    W(dev->regs+CSI_REG_BUF_0_A + (buf<<2), addr);
++}
++
++
+ static inline void csi_set_addr(struct csi_dev *dev,struct csi_buffer *buffer)
+ {
+ 
+diff --git a/drivers/media/video/sun4i_csi/include/sun4i_csi_core.h b/drivers/media/video/sun4i_csi/include/sun4i_csi_core.h
+index 09887a6..a096911 100644
+--- a/drivers/media/video/sun4i_csi/include/sun4i_csi_core.h
++++ b/drivers/media/video/sun4i_csi/include/sun4i_csi_core.h
+@@ -357,12 +357,8 @@ struct csi_dev {
+ void  bsp_csi_open(struct csi_dev *dev);
+ void  bsp_csi_close(struct csi_dev *dev);
+ void  bsp_csi_configure(struct csi_dev *dev,__csi_conf_t *mode);
+-void	inline  bsp_csi_set_buffer_address(struct csi_dev *dev,__csi_buf_t buf, u32 addr);
+-u32		inline  bsp_csi_get_buffer_address(struct csi_dev *dev,__csi_buf_t buf);
+ void  bsp_csi_double_buffer_enable(struct csi_dev *dev);
+ void  bsp_csi_double_buffer_disable(struct csi_dev *dev);
+-void	inline  bsp_csi_double_buffer_select_next(struct csi_dev *dev,__csi_double_buf_t type);
+-void	inline  bsp_csi_double_buffer_get_status(struct csi_dev *dev,__csi_double_buf_status_t * status);
+ void  bsp_csi_capture_video_start(struct csi_dev *dev);
+ void  bsp_csi_capture_video_stop(struct csi_dev *dev);
+ void  bsp_csi_capture_picture(struct csi_dev *dev);
+@@ -371,7 +367,5 @@ void 	bsp_csi_set_size(struct csi_dev *dev, u32 length_h, u32 length_v, u32 buf_
+ void 	bsp_csi_set_offset(struct csi_dev *dev,u32 start_h, u32 start_v);
+ void  bsp_csi_int_enable(struct csi_dev *dev,__csi_int_t interrupt);
+ void  bsp_csi_int_disable(struct csi_dev *dev,__csi_int_t interrupt);
+-void 	inline 	bsp_csi_int_get_status(struct csi_dev *dev,__csi_int_status_t * status);
+-void 	inline bsp_csi_int_clear_status(struct csi_dev *dev,__csi_int_t interrupt);
+ 
+ #endif  /* _CSI_H_ */
+-- 
+1.8.0
+

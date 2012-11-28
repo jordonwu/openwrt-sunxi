@@ -1,0 +1,88 @@
+From 71a6ef25b7846c0bf2a4acdac7cc713b332971fc Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 26 Oct 2012 16:08:22 +0200
+Subject: [PATCH 851/944] video:sunxi:disp: unify disp_video.c
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c | 13 +++++++++++++
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c | 11 +++++++++--
+ 2 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+index c80bd9a..f6c88ed 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+@@ -177,7 +177,11 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+ 		g_video[sel][id].dit_enable = FALSE;
+ #endif
+ 
++#ifdef CONFIG_ARCH_SUN4I
+             g_video[sel][id].fetch_field = FALSE;
++#else
++	    g_video[sel][id].fetch_field = TRUE;
++#endif
+         	if(g_video[sel][id].display_cnt == 0)
+         	{
+         	    g_video[sel][id].fetch_bot = (g_video[sel][id].video_cur.top_field_first)?0:1;
+@@ -210,10 +214,19 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     				g_video[sel][id].tempdiff_en = FALSE;
+     			}
+     			g_video[sel][id].diagintp_en = TRUE;
++#ifdef CONFIG_ARCH_SUN5I
++			g_video[sel][id].fetch_field = FALSE;//todo
++                g_video[sel][id].fetch_bot = 0;//todo
++                g_video[sel][id].dit_mode = DIT_MODE_MAF_BOB;//todo
++		g_video[sel][id].diagintp_en = FALSE;//todo
++#endif
+                 g_video[sel][id].tempdiff_en = FALSE;//todo
+     		}
+     		else
+     		{
++#ifdef CONFIG_ARCH_SUN5I
++			g_video[sel][id].fetch_bot = FALSE;
++#endif
+         	    g_video[sel][id].dit_mode = DIT_MODE_WEAVE;
+         	    g_video[sel][id].tempdiff_en = FALSE;
+         	    g_video[sel][id].diagintp_en = FALSE;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+index c9ca627..823af3e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+@@ -177,7 +177,11 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     		g_video[sel][id].dit_enable = FALSE;
+ #endif
+ 
++#ifdef CONFIG_ARCH_SUN4I
++		g_video[sel][id].fetch_field = FALSE;
++#else
+             g_video[sel][id].fetch_field = TRUE;
++#endif
+         	if(g_video[sel][id].display_cnt == 0)
+         	{
+         	    g_video[sel][id].fetch_bot = (g_video[sel][id].video_cur.top_field_first)?0:1;
+@@ -210,16 +214,19 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     				g_video[sel][id].tempdiff_en = FALSE;
+     			}
+     			g_video[sel][id].diagintp_en = TRUE;
+-
++#ifdef CONFIG_ARCH_SUN5I
+                 g_video[sel][id].fetch_field = FALSE;//todo
+                 g_video[sel][id].fetch_bot = 0;//todo
+                 g_video[sel][id].dit_mode = DIT_MODE_MAF_BOB;//todo
++		g_video[sel][id].diagintp_en = FALSE;//todo
++#endif
+                 g_video[sel][id].tempdiff_en = FALSE;//todo
+-                g_video[sel][id].diagintp_en = FALSE;//todo
+     		}
+     		else
+     		{
++#ifdef CONFIG_ARCH_SUN5I
+     		    g_video[sel][id].fetch_bot = FALSE;
++#endif
+         	    g_video[sel][id].dit_mode = DIT_MODE_WEAVE;
+         	    g_video[sel][id].tempdiff_en = FALSE;
+         	    g_video[sel][id].diagintp_en = FALSE;
+-- 
+1.8.0
+

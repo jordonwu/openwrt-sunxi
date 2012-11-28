@@ -1,0 +1,191 @@
+From 4eb3265978cc006aa63e0bfda366abe99c57c037 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 6 Sep 2012 16:32:35 +0200
+Subject: [PATCH 710/944] video: sunxi: rename CONFIG_SUNXI_FB* to
+ CONFIG_FB_SUNXI*
+
+---
+ arch/arm/configs/sun4i_defconfig  |  8 ++++----
+ arch/arm/configs/sun5i_defconfig  |  6 +++---
+ drivers/video/Kconfig             | 14 +++++++-------
+ drivers/video/Makefile            |  6 +++---
+ drivers/video/sunxi/disp/Makefile |  4 ++--
+ drivers/video/sunxi/disp/dev_fb.c |  8 ++++----
+ drivers/video/sunxi/hdmi/Makefile |  2 +-
+ drivers/video/sunxi/lcd/Makefile  |  2 +-
+ 8 files changed, 25 insertions(+), 25 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 3f273bc..d7d800d 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -1177,10 +1177,10 @@ CONFIG_FB_CFB_IMAGEBLIT=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_SUNXI_FB=m
+-CONFIG_SUN4I_FB_UMP=y
+-CONFIG_SUNXI_LCD=m
+-CONFIG_SUNXI_HDMI=m
++CONFIG_FB_SUNXI=m
++CONFIG_FB_SUNXI_UMP=y
++CONFIG_FB_SUNXI_LCD=m
++CONFIG_FB_SUNXI_HDMI=m
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/arch/arm/configs/sun5i_defconfig b/arch/arm/configs/sun5i_defconfig
+index 4d91a59..162a37a 100644
+--- a/arch/arm/configs/sun5i_defconfig
++++ b/arch/arm/configs/sun5i_defconfig
+@@ -1015,9 +1015,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_SUNXI_FB=y
+-CONFIG_SUNXI_LCD=y
+-CONFIG_SUNXI_HDMI=y
++CONFIG_FB_SUNXI=y
++CONFIG_FB_SUNXI_LCD=y
++CONFIG_FB_SUNXI_HDMI=y
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index ba8fd83..f770195 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -284,7 +284,7 @@ config SUN3I_HDMI
+ 	---help---
+ 	default m
+ 
+-config SUNXI_FB
++config FB_SUNXI
+         tristate "DISP Driver Support(sunxi)"
+         depends on FB && (ARCH_SUN5I || ARCH_SUN4I)
+ 	select FB_CFB_FILLRECT
+@@ -293,20 +293,20 @@ config SUNXI_FB
+         ---help---
+         default m
+ 
+-config SUN4I_FB_UMP
++config FB_SUNXI_UMP
+ 	bool "Enable FB/UMP Integration"
+-	depends on MALI && SUNXI_FB=m
++	depends on MALI && FB_SUNXI=m
+ 	default y
+ 
+-config SUNXI_LCD
++config FB_SUNXI_LCD
+         tristate "LCD Driver Support(sunxi)"
+-        depends on SUNXI_FB
++        depends on FB_SUNXI
+         ---help---
+         default m
+ 
+-config SUNXI_HDMI
++config FB_SUNXI_HDMI
+         tristate "HDMI Driver Support(sunxi)"
+-        depends on SUNXI_FB
++        depends on FB_SUNXI_LCD
+         ---help---
+         default m
+ 
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index 6bcec1e..c3224b9 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -32,9 +32,9 @@ obj-$(CONFIG_FB_WMT_GE_ROPS)   += wmt_ge_rops.o
+ 
+ obj-$(CONFIG_SUN3I_FB)     += sun3i/disp/
+ obj-$(CONFIG_SUN3I_HDMI)   += sun3i/hdmi/
+-obj-$(CONFIG_SUNXI_FB)     += sunxi/disp/
+-obj-$(CONFIG_SUNXI_LCD)    += sunxi/lcd/
+-obj-$(CONFIG_SUNXI_HDMI)   += sunxi/hdmi/
++obj-$(CONFIG_FB_SUNXI)		+= sunxi/disp/
++obj-$(CONFIG_FB_SUNXI_LCD)	+= sunxi/lcd/
++obj-$(CONFIG_FB_SUNXI_HDMI)	+= sunxi/hdmi/
+ 
+ # Hardware specific drivers go first
+ obj-$(CONFIG_FB_AMIGA)            += amifb.o c2p_planar.o
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index e281f13..1c050ff 100755
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_FB_SUNXI) += disp.o
++obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+ disp-objs += OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Dma.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+@@ -20,6 +20,6 @@ disp-objs += de_bsp_sun5i/de/ebios/de_be.o de_bsp_sun5i/de/ebios/de_fe.o de_bsp_
+ 	de_bsp_sun5i/de/disp_vga.o de_bsp_sun5i/de/disp_video.o
+ endif
+ 
+-ifeq ($(CONFIG_LYCHEE_FB_UMP_SUN4I),y)
++ifeq ($(CONFIG_FB_SUNXI_UMP),y)
+ EXTRA_CFLAGS += -Idrivers/gpu/mali/include
+ endif
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 9cc4011..91919d6 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -27,7 +27,7 @@
+ #include <linux/kernel.h>
+ #include <linux/fb.h>
+ 
+-#ifdef CONFIG_SUN4I_FB_UMP
++#ifdef CONFIG_FB_SUNXI_UMP
+ #include <ump/ump_kernel_interface.h>
+ 
+ static ump_dd_handle ump_wrapped_buffer;
+@@ -766,7 +766,7 @@ __s32 var_to_disp_fb(__disp_fb_t *fb, struct fb_var_screeninfo *var, struct fb_f
+ 
+ static int Fb_open(struct fb_info *info, int user)
+ {
+-#ifdef CONFIG_SUN4I_FB_UMP
++#ifdef CONFIG_FB_SUNXI_UMP
+ 	ump_dd_physical_block ump_memory_description;
+ 	ump_memory_description.addr = info->fix.smem_start;
+ 	ump_memory_description.size = info->fix.smem_len;
+@@ -1059,7 +1059,7 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+ 	long ret = 0;
+ 	unsigned long layer_hdl = 0;
+ 
+-#ifdef CONFIG_SUN4I_FB_UMP
++#ifdef CONFIG_FB_SUNXI_UMP
+ 	u32 __user *psecureid = (u32 __user *) arg;
+ 	ump_secure_id secure_id;
+ #endif
+@@ -1127,7 +1127,7 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+         break;
+     }
+ 
+-#ifdef CONFIG_SUN4I_FB_UMP
++#ifdef CONFIG_FB_SUNXI_UMP
+ 	case GET_UMP_SECURE_ID:
+ 	{
+ 		secure_id = ump_dd_secure_id_get( ump_wrapped_buffer );
+diff --git a/drivers/video/sunxi/hdmi/Makefile b/drivers/video/sunxi/hdmi/Makefile
+index 061ed72..1dacd96 100644
+--- a/drivers/video/sunxi/hdmi/Makefile
++++ b/drivers/video/sunxi/hdmi/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_SUNXI_HDMI) += hdmi.o
++obj-$(CONFIG_FB_SUNXI_HDMI) += hdmi.o
+ 
+ #hdmi-objs := anx7150/hdmi_core.o anx7150/hdmi_hal.o anx7150/hdmi_i2c.o\
+ #            dev_hdmi.o drv_hdmi.o
+diff --git a/drivers/video/sunxi/lcd/Makefile b/drivers/video/sunxi/lcd/Makefile
+index 5a4f0c8..82036e7 100644
+--- a/drivers/video/sunxi/lcd/Makefile
++++ b/drivers/video/sunxi/lcd/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_SUNXI_LCD) += lcd.o
++obj-$(CONFIG_FB_SUNXI_LCD) += lcd.o
+ 
+ lcd-objs := dev_lcd.o lcd0_panel_cfg.o lcd1_panel_cfg.o
+ 
+-- 
+1.8.0
+

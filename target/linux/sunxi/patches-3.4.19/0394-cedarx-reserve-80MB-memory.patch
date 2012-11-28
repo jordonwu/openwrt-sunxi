@@ -1,0 +1,35 @@
+From c4cc038ab4e4b78716b86ecb3d82d7407d3e2090 Mon Sep 17 00:00:00 2001
+From: benn <benn@allwinnertech.com>
+Date: Tue, 29 Nov 2011 09:35:26 +0800
+Subject: [PATCH 394/944] cedarx: reserve 80MB memory
+
+---
+ arch/arm/mach-sun4i/core.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index c1de505..398cab1 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -131,7 +131,7 @@ EXPORT_SYMBOL(g2d_start);
+ EXPORT_SYMBOL(g2d_size);
+ 
+ unsigned long ve_start = (PLAT_PHYS_OFFSET + SZ_64M);
+-unsigned long ve_size = SZ_64M;
++unsigned long ve_size = (SZ_64M + SZ_16M);
+ EXPORT_SYMBOL(ve_start);
+ EXPORT_SYMBOL(ve_size);
+ 
+@@ -139,7 +139,8 @@ static void __init sw_core_reserve(void)
+ {
+ 	memblock_reserve(SYS_CONFIG_MEMBASE, SYS_CONFIG_MEMSIZE);
+ 	memblock_reserve(fb_start, fb_size);
+-	memblock_reserve(ve_start, ve_size);
++	memblock_reserve(ve_start, SZ_64M);
++	memblock_reserve(ve_start + SZ_64M, SZ_16M);
+ 
+ #if 0
+         int g2d_used = 0;
+-- 
+1.8.0
+

@@ -1,0 +1,237 @@
+From 85dd7481824c37ce854f5b17fd391b4817f14e2d Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Sat, 7 Apr 2012 06:45:23 +0200
+Subject: [PATCH 498/944] ARM: restart: sunxi: use new restart hook
+
+Hook restart code into the new restart hook. arch_reset() is no more.
+---
+ arch/arm/mach-sun3i/core.c                |  6 ++++++
+ arch/arm/mach-sun3i/dma/dma_15.c          |  2 ++
+ arch/arm/mach-sun3i/include/mach/system.h | 10 ----------
+ arch/arm/mach-sun4i/core.c                | 12 ++++++++++++
+ arch/arm/mach-sun4i/include/mach/system.h | 18 ------------------
+ arch/arm/mach-sun5i/core.c                | 12 ++++++++++++
+ arch/arm/mach-sun5i/include/mach/system.h | 18 ------------------
+ 7 files changed, 32 insertions(+), 46 deletions(-)
+
+diff --git a/arch/arm/mach-sun3i/core.c b/arch/arm/mach-sun3i/core.c
+index 41f3540..6244a50 100644
+--- a/arch/arm/mach-sun3i/core.c
++++ b/arch/arm/mach-sun3i/core.c
+@@ -21,6 +21,7 @@
+ #include <asm/hardware/icst.h>
+ #include <asm/hardware/vic.h>
+ #include <asm/mach-types.h>
++#include <asm/delay.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -38,6 +39,10 @@
+  * Global vars definitions
+  *
+  */
++static void sun3i_restart(char mode, const char *cmd)
++{
++}
++
+ static void timer_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
+ {
+ 	volatile u32 ctrl;
+@@ -259,6 +264,7 @@ MACHINE_START(SUN3I, "sun3i")
+         .init_irq       = softwinner_init_irq,
+         .timer          = &softwinner_timer,
+         .init_machine   = softwinner_init,
++	.restart	= sun3i_restart,
+ MACHINE_END
+ 
+ extern void _eLIBs_CleanFlushDCacheRegion(void *addr, __u32 len);
+diff --git a/arch/arm/mach-sun3i/dma/dma_15.c b/arch/arm/mach-sun3i/dma/dma_15.c
+index 4411e51..e14f553 100644
+--- a/arch/arm/mach-sun3i/dma/dma_15.c
++++ b/arch/arm/mach-sun3i/dma/dma_15.c
+@@ -5,6 +5,8 @@
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
++#include <asm/io.h>
++
+ #include <mach/dma.h>
+ #include <mach/dma_regs.h>
+ #include <mach/system.h>
+diff --git a/arch/arm/mach-sun3i/include/mach/system.h b/arch/arm/mach-sun3i/include/mach/system.h
+index d1f5f11..ce42917 100644
+--- a/arch/arm/mach-sun3i/include/mach/system.h
++++ b/arch/arm/mach-sun3i/include/mach/system.h
+@@ -21,21 +21,11 @@
+ #ifndef __ASM_ARCH_SYSTEM_H
+ #define __ASM_ARCH_SYSTEM_H
+ 
+-
+-#include <linux/io.h>
+ #include <asm/proc-fns.h>
+-#include <mach/hardware.h>
+-#include <mach/platform.h>
+-
+-extern struct bus_type sw_subsys;
+ 
+ static inline void arch_idle(void)
+ {
+ 	cpu_do_idle();
+ }
+ 
+-static inline void arch_reset(char mode, const char *cmd)
+-{
+-}
+-
+ #endif
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index f24a80b..f8c0a4d 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -41,6 +41,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/setup.h>
+ #include <asm/memory.h>
++#include <asm/delay.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -278,6 +279,16 @@ void __init sw_core_init_irq(void)
+  * Global vars definitions
+  *
+  */
++static void sun4i_restart(char mode, const char *cmd)
++{
++	/* use watch-dog to reset system */
++	#define WATCH_DOG_CTRL_REG  (SW_VA_TIMERC_IO_BASE + 0x0094)
++	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 0;
++	__delay(100000);
++	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 3;
++	while(1);
++}
++
+ static void timer_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
+ {
+ 	volatile u32 ctrl;
+@@ -440,5 +451,6 @@ MACHINE_START(SUN4I, "sun4i")
+ 	.init_irq       = sw_core_init_irq,
+ 	.init_machine   = sw_core_init,
+ 	.reserve        = sw_core_reserve,
++	.restart	= sun4i_restart,
+ MACHINE_END
+ 
+diff --git a/arch/arm/mach-sun4i/include/mach/system.h b/arch/arm/mach-sun4i/include/mach/system.h
+index 979cc51..568ba01 100644
+--- a/arch/arm/mach-sun4i/include/mach/system.h
++++ b/arch/arm/mach-sun4i/include/mach/system.h
+@@ -16,15 +16,8 @@
+ #ifndef __SW_SYSTEM_H
+ #define __SW_SYSTEM_H
+ 
+-
+-#include <linux/io.h>
+ #include <asm/proc-fns.h>
+-#include <mach/hardware.h>
+-#include <mach/platform.h>
+-#include <asm/delay.h>
+-
+ 
+-extern struct sysdev_class sw_sysclass;
+ extern unsigned long fb_start;
+ extern unsigned long fb_size;
+ extern unsigned long g2d_start;
+@@ -35,17 +28,6 @@ static inline void arch_idle(void)
+ 	cpu_do_idle();
+ }
+ 
+-
+-static inline void arch_reset(char mode, const char *cmd)
+-{
+-	/* use watch-dog to reset system */
+-	#define WATCH_DOG_CTRL_REG  (SW_VA_TIMERC_IO_BASE + 0x0094)
+-	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 0;
+-	__delay(100000);
+-	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 3;
+-	while(1);
+-}
+-
+ enum sw_ic_ver {
+ 	MAGIC_VER_A = 0,
+ 	MAGIC_VER_B,
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 7349c66..999eeb3 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -40,6 +40,7 @@
+ #include <asm/hardware/vic.h>
+ #include <asm/mach-types.h>
+ #include <asm/setup.h>
++#include <asm/delay.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+@@ -285,6 +286,16 @@ void __init sw_core_init_irq(void)
+  * Global vars definitions
+  *
+  */
++static void sun5i_restart(char mode, const char *cmd)
++{
++	/* use watch-dog to reset system */
++	#define WATCH_DOG_CTRL_REG  (SW_VA_TIMERC_IO_BASE + 0x0094)
++	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 0;
++	__delay(100000);
++	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 3;
++	while(1);
++}
++
+ static void timer_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
+ {
+ 	volatile u32 ctrl;
+@@ -444,5 +455,6 @@ MACHINE_START(SUN5I, "sun5i")
+ 	.init_irq       = sw_core_init_irq,
+ 	.init_machine   = sw_core_init,
+ 	.reserve        = sw_core_reserve,
++	.restart	= sun5i_restart,
+ MACHINE_END
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/system.h b/arch/arm/mach-sun5i/include/mach/system.h
+index 085140b..9891fe2 100644
+--- a/arch/arm/mach-sun5i/include/mach/system.h
++++ b/arch/arm/mach-sun5i/include/mach/system.h
+@@ -16,15 +16,8 @@
+ #ifndef __SW_SYSTEM_H
+ #define __SW_SYSTEM_H
+ 
+-
+-#include <linux/io.h>
+ #include <asm/proc-fns.h>
+-#include <mach/hardware.h>
+-#include <mach/platform.h>
+-#include <asm/delay.h>
+-
+ 
+-extern struct sysdev_class sw_sysclass;
+ extern unsigned long fb_start;
+ extern unsigned long fb_size;
+ extern unsigned long g2d_start;
+@@ -35,17 +28,6 @@ static inline void arch_idle(void)
+ 	cpu_do_idle();
+ }
+ 
+-
+-static inline void arch_reset(char mode, const char *cmd)
+-{
+-	/* use watch-dog to reset system */
+-	#define WATCH_DOG_CTRL_REG  (SW_VA_TIMERC_IO_BASE + 0x0094)
+-	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 0;
+-	__delay(100000);
+-	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 3;
+-	while(1);
+-}
+-
+ enum sw_ic_ver {
+ 	MAGIC_VER_A = 0,
+ 	MAGIC_VER_B,
+-- 
+1.8.0
+

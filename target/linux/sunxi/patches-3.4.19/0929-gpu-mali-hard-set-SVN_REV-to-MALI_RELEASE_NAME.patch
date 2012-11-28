@@ -1,0 +1,64 @@
+From 90bd13866f1b9c536be2965742d8744c45400f4c Mon Sep 17 00:00:00 2001
+From: Brian Olsen <brian@stellacore.com>
+Date: Sun, 4 Nov 2012 08:01:54 +0000
+Subject: [PATCH 929/944] gpu: mali: hard set SVN_REV to MALI_RELEASE_NAME
+
+[ Re-applied and tweaked from 1267b4e21b89776743565e5e9d73c1971aeb650f,
+  it got lost during the Mali code update. ]
+---
+ drivers/gpu/mali/mali/Kbuild         | 6 ------
+ drivers/gpu/mali/ump/Kbuild          | 4 ++--
+ drivers/gpu/mali/ump/Makefile.common | 4 ++--
+ 3 files changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/gpu/mali/mali/Kbuild b/drivers/gpu/mali/mali/Kbuild
+index 5e2c79e..7f923b2 100644
+--- a/drivers/gpu/mali/mali/Kbuild
++++ b/drivers/gpu/mali/mali/Kbuild
+@@ -100,13 +100,7 @@ ifeq ($(MALI_PLATFORM_FILE),)
+ MALI_PLATFORM_FILE = platform/default/mali_platform.c
+ endif
+ 
+-# Get subversion revision number, fall back to only ${MALI_RELEASE_NAME} if no svn info is available
+-SVN_REV := $(shell (cd $(DRIVER_DIR); (svnversion | grep -qv exported && svnversion) || git svn info | grep '^Revision: '| sed -e 's/^Revision: //' ) 2>/dev/null )
+-ifeq ($(SVN_REV),)
+ SVN_REV := $(MALI_RELEASE_NAME)
+-else
+-SVN_REV := $(MALI_RELEASE_NAME)-r$(SVN_REV)
+-endif
+ 
+ # Set up our defines, which will be passed to gcc
+ DEFINES += -DUSING_OS_MEMORY=$(USING_OS_MEMORY)
+diff --git a/drivers/gpu/mali/ump/Kbuild b/drivers/gpu/mali/ump/Kbuild
+index 4116312..b8f25db 100644
+--- a/drivers/gpu/mali/ump/Kbuild
++++ b/drivers/gpu/mali/ump/Kbuild
+@@ -14,8 +14,8 @@ CONFIG ?= os_memory_64m
+ 
+ UDD_FILE_PREFIX = ../mali/
+ 
+-# Get subversion revision number, fall back to 0000 if no svn info is available
+-SVN_REV := $(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
++# set the SVN_REV to ${MALI_RELEASE_NAME} due to ARM using subversion
++SVN_REV := $(MALI_RELEASE_NAME)
+ 
+ ccflags-y += -DSVN_REV=$(SVN_REV)
+ ccflags-y += -DSVN_REV_STRING=\"$(SVN_REV)\"
+diff --git a/drivers/gpu/mali/ump/Makefile.common b/drivers/gpu/mali/ump/Makefile.common
+index 8ce5a5c..de820ae 100644
+--- a/drivers/gpu/mali/ump/Makefile.common
++++ b/drivers/gpu/mali/ump/Makefile.common
+@@ -13,8 +13,8 @@ SRC = $(UMP_FILE_PREFIX)common/ump_kernel_common.c \
+ 	$(UMP_FILE_PREFIX)common/ump_kernel_api.c \
+ 	$(UMP_FILE_PREFIX)common/ump_kernel_ref_drv.c
+ 
+-# Get subversion revision number, fall back to 0000 if no svn info is available
+-SVN_REV:=$(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
++# set the SVN_REV to ${MALI_RELEASE_NAME} due to ARM using subversion
++SVN_REV := $(MALI_RELEASE_NAME)
+ 
+ EXTRA_CFLAGS += -DSVN_REV=$(SVN_REV)
+ EXTRA_CFLAGS += -DSVN_REV_STRING=\"$(SVN_REV)\"
+-- 
+1.8.0
+

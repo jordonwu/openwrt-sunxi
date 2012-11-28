@@ -1,0 +1,52 @@
+From 19a11508c7e147833a005ed4ce2af62765c37c52 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Mon, 16 Jul 2012 18:24:33 -0700
+Subject: [PATCH 595/944] ARM: ftrace: Trace function entry before updating
+ index
+
+Commit 722b3c74695377d11d18a52f3da08114d37f3f37 modified x86 ftrace to
+avoid tracing all functions called from irqs when function graph was
+used with a filter.  Port the same fix to ARM.
+
+Change-Id: I3facbb85447effe54ff92db206068087c892fc28
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/kernel/ftrace.c | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/kernel/ftrace.c b/arch/arm/kernel/ftrace.c
+index bf17145..6a740a9 100644
+--- a/arch/arm/kernel/ftrace.c
++++ b/arch/arm/kernel/ftrace.c
+@@ -194,19 +194,20 @@ void prepare_ftrace_return(unsigned long *parent, unsigned long self_addr,
+ 	old = *parent;
+ 	*parent = return_hooker;
+ 
+-	err = ftrace_push_return_trace(old, self_addr, &trace.depth,
+-				       frame_pointer);
+-	if (err == -EBUSY) {
+-		*parent = old;
+-		return;
+-	}
+-
+ 	trace.func = self_addr;
++	trace.depth = current->curr_ret_stack + 1;
+ 
+ 	/* Only trace if the calling function expects to */
+ 	if (!ftrace_graph_entry(&trace)) {
+-		current->curr_ret_stack--;
+ 		*parent = old;
++		return;
++	}
++
++	err = ftrace_push_return_trace(old, self_addr, &trace.depth,
++				       frame_pointer);
++	if (err == -EBUSY) {
++		*parent = old;
++		return;
+ 	}
+ }
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From 4877f170f4464f12cdfeb9ea2d98297a51831bf2 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 22 May 2012 00:30:41 +0200
+Subject: [PATCH 456/944] arm: sun4i: enable IKCONFIG in both defconfigs
+
+---
+ arch/arm/configs/sun4i_crane_defconfig | 2 +-
+ arch/arm/configs/sun4i_defconfig       | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index 66f341f..9dbe3bf 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -72,7 +72,7 @@ CONFIG_TINY_RCU=y
+ # CONFIG_RCU_TRACE is not set
+ # CONFIG_TREE_RCU_TRACE is not set
+ CONFIG_IKCONFIG=y
+-# CONFIG_IKCONFIG_PROC is not set
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=19
+ # CONFIG_CGROUPS is not set
+ CONFIG_NAMESPACES=y
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 1a52202..3d72e74 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -72,7 +72,8 @@ CONFIG_TINY_RCU=y
+ # CONFIG_PREEMPT_RCU is not set
+ # CONFIG_RCU_TRACE is not set
+ # CONFIG_TREE_RCU_TRACE is not set
+-# CONFIG_IKCONFIG is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=19
+ CONFIG_CGROUPS=y
+ # CONFIG_CGROUP_DEBUG is not set
+-- 
+1.8.0
+

@@ -1,0 +1,110 @@
+From c16161f7fc5e40f876135d7ea47300a4bce2f3ca Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@LServer.(none)>
+Date: Wed, 16 Nov 2011 18:46:44 +0800
+Subject: [PATCH 341/944] config for kernel 3.0
+
+---
+ drivers/input/keyboard/Kconfig     | 25 +++++++++++++++++++++++++
+ drivers/input/keyboard/Makefile    |  8 ++++++++
+ drivers/input/touchscreen/Kconfig  | 23 +++++++++++++++++++++++
+ drivers/input/touchscreen/Makefile |  5 +++++
+ 4 files changed, 61 insertions(+)
+
+diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+index f354813..111503b 100644
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -580,4 +580,29 @@ config KEYBOARD_W90P910
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called w90p910_keypad.
+ 
++config KEYBOARD_SUN4IKEYPAD
++        tristate "Sun4i MATRIX Keypad support"
++        help
++          Say Y here to enable the matrix keypad on evaluation board
++          based on sun4i.
++
++          To compile this driver as a module, choose M here: the
++          module will be called sun4i.
++
++
++config KEYBOARD_SUN4I_KEYBOARD
++        tristate "SUN4I KEY BOARD support"
++        help
++          Say Y here to enable the keyboard, support 7 keys.
++          based on verify board.      
++
++config KEYBOARD_HV2605_KEYBOARD
++        tristate "SUN4I HV2605 KEY BOARD support"
++        depends on I2C
++        help
++          Say Y here to enable the keyboard, support 5 keys.
++
++config IR_SUN4I
++        tristate "sun4i IR  support"
++	depends on ARCH_SUN4I
+ endif
+diff --git a/drivers/input/keyboard/Makefile b/drivers/input/keyboard/Makefile
+index df7061f..6c73f7b 100644
+--- a/drivers/input/keyboard/Makefile
++++ b/drivers/input/keyboard/Makefile
+@@ -52,3 +52,11 @@ obj-$(CONFIG_KEYBOARD_TNETV107X)	+= tnetv107x-keypad.o
+ obj-$(CONFIG_KEYBOARD_TWL4030)		+= twl4030_keypad.o
+ obj-$(CONFIG_KEYBOARD_XTKBD)		+= xtkbd.o
+ obj-$(CONFIG_KEYBOARD_W90P910)		+= w90p910_keypad.o
++obj-$(CONFIG_KEYBOARD_SUN4IKEYPAD)      += sun4i-keypad.o
++obj-$(CONFIG_KEYBOARD_SUN4I_KEYBOARD)    += sun4i-keyboard.o
++
++ifdef CONFIG_ARCH_SUN4I
++obj-$(CONFIG_IR_SUN4I)		        += sun4i-ir.o
++endif
++
++obj-$(CONFIG_KEYBOARD_HV2605_KEYBOARD)  += hv2605.o
+diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
+index 1e7c563..704233d 100644
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -851,4 +851,27 @@ config TOUCHSCREEN_TPS6507X
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called tps6507x_ts.
+ 
++config  TOUCHSCREEN_GT801
++       tristate  "dpt microelctronics gt801 touchscreen driver"
++       depends on I2C
++       help
++          GT801 touchscreen driver
++config  TOUCHSCREEN_SUN4I_TS
++       tristate  "sun4i-ts touchscreen driver"
++       help
++           sun4i-ts touchscreen driver
++config TOUCHSCREEN_FT5X_TS
++       tristate  "ft5x touchscreen driver"
++       help
++         byd0x7ets touchscreen driver
++
++config  TOUCHSCREEN_ZT8031
++       tristate  "ZT8031 touchscreen driver"
++       help
++          ZT8031 touchscreen driver
++          
++config  TOUCHSCREEN_COASIA
++       tristate  "COASIA touchscreen driver"
++       help
++          COASIA touchscreen driver
+ endif
+diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
+index 175d641..ee0bdf7 100644
+--- a/drivers/input/touchscreen/Makefile
++++ b/drivers/input/touchscreen/Makefile
+@@ -70,3 +70,8 @@ obj-$(CONFIG_TOUCHSCREEN_WM97XX_MAINSTONE)	+= mainstone-wm97xx.o
+ obj-$(CONFIG_TOUCHSCREEN_WM97XX_ZYLONITE)	+= zylonite-wm97xx.o
+ obj-$(CONFIG_TOUCHSCREEN_W90X900)	+= w90p910_ts.o
+ obj-$(CONFIG_TOUCHSCREEN_TPS6507X)	+= tps6507x-ts.o
++obj-$(CONFIG_TOUCHSCREEN_FT5X_TS) += ft5x_ts.o
++obj-$(CONFIG_TOUCHSCREEN_GT801)         += goodix_touch.o
++obj-$(CONFIG_TOUCHSCREEN_ZT8031)         += zt8031.o
++obj-$(CONFIG_TOUCHSCREEN_COASIA)         += coasia_i2c.o
++obj-$(CONFIG_TOUCHSCREEN_SUN4I_TS)         += sun4i-ts.o
+-- 
+1.8.0
+

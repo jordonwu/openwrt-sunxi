@@ -1,0 +1,41 @@
+From 956df1fbda60f8767694699d66015587e6cee089 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Tue, 24 Apr 2012 11:59:24 -0700
+Subject: [PATCH 196/944] net: wireless: bcmdhd: HACK - force active power
+ mode
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c   | 2 +-
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 498eb4f..22e95cb 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -2995,7 +2995,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	char eventmask[WL_EVENTING_MASK_LEN];
+ 	char iovbuf[WL_EVENTING_MASK_LEN + 12];	/*  Room for "event_msgs" + '\0' + bitvec  */
+ 
+-	uint power_mode = PM_FAST;
++	uint power_mode = PM_OFF; /* PM_FAST */
+ 	uint32 dongle_align = DHD_SDALIGN;
+ 	uint32 glom = 0;
+ 	uint bcn_timeout = 4;
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index c6ebfa7..068f96d 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -3191,7 +3191,7 @@ wl_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 		return err;
+ 	}
+ 
+-	pm = enabled ? PM_FAST : PM_OFF;
++	pm = PM_OFF; /* enabled ? PM_FAST : PM_OFF; */
+ 	/* Do not enable the power save after assoc if it is p2p interface */
+ 	if (wl->p2p && wl->p2p->vif_created) {
+ 		WL_DBG(("Do not enable the power save for p2p interfaces even after assoc\n"));
+-- 
+1.8.0
+

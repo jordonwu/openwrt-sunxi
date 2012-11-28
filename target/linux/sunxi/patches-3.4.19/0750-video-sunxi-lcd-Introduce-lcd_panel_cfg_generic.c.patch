@@ -1,0 +1,1100 @@
+From 5fb3778c90e76ded2bc617496e71526a48125031 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 10 Sep 2012 21:33:37 +0300
+Subject: [PATCH 750/944] video: sunxi-lcd: Introduce lcd_panel_cfg_generic.c
+
+Generic SPI implementation
+---
+ drivers/video/sunxi/lcd/Makefile                   |   5 +-
+ drivers/video/sunxi/lcd/dev_lcd.c                  |   5 +-
+ drivers/video/sunxi/lcd/lcd0_panel_cfg.c           |  78 ------
+ drivers/video/sunxi/lcd/lcd1_panel_cfg.c           |  49 ----
+ .../video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c  |  37 +--
+ drivers/video/sunxi/lcd/lcd_bak/TC102.c            |  31 +--
+ .../video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c |  48 +---
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c       |  65 -----
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c |  46 +---
+ .../sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c   |  66 -----
+ drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c        |  49 ----
+ drivers/video/sunxi/lcd/lcd_panel_cfg.h            |  20 +-
+ drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c    | 287 +++++++++++++++++++++
+ 13 files changed, 326 insertions(+), 460 deletions(-)
+ create mode 100644 drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+
+diff --git a/drivers/video/sunxi/lcd/Makefile b/drivers/video/sunxi/lcd/Makefile
+index 82036e7..a012328 100644
+--- a/drivers/video/sunxi/lcd/Makefile
++++ b/drivers/video/sunxi/lcd/Makefile
+@@ -1,4 +1,5 @@
+ obj-$(CONFIG_FB_SUNXI_LCD) += lcd.o
+ 
+-lcd-objs := dev_lcd.o lcd0_panel_cfg.o lcd1_panel_cfg.o
+-
++lcd-objs := lcd_panel_cfg_generic.o dev_lcd.o
++lcd-objs += lcd0_panel_cfg.o
++lcd-objs += lcd1_panel_cfg.o
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.c b/drivers/video/sunxi/lcd/dev_lcd.c
+index 3bc594f..acdd77b 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.c
++++ b/drivers/video/sunxi/lcd/dev_lcd.c
+@@ -23,6 +23,7 @@
+ 
+ #include <linux/module.h>
+ #include "dev_lcd.h"
++#include "lcd_panel_cfg.h"
+ 
+ static struct cdev *my_cdev;
+ static dev_t devid ;
+@@ -76,8 +77,8 @@ int lcd_init(void)
+ 	static __lcd_panel_fun_t lcd0_cfg;
+ 	static __lcd_panel_fun_t lcd1_cfg;
+ 
+-	memset(&lcd0_cfg, 0, sizeof(__lcd_panel_fun_t));
+-	memset(&lcd1_cfg, 0, sizeof(__lcd_panel_fun_t));
++	LCD_get_panel_funs_generic(&lcd0_cfg);
++	LCD_get_panel_funs_generic(&lcd1_cfg);
+ 
+     LCD_get_panel_funs_0(&lcd0_cfg);
+ 	LCD_get_panel_funs_1(&lcd1_cfg);
+diff --git a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+index 1d9d0b1..dde2098 100644
+--- a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+@@ -27,14 +27,6 @@
+ //delete this line if you want to use the lcd para define in sys_config1.fex
+ //#define LCD_PARA_USE_CONFIG
+ 
+-#ifdef CONFIG_ARCH_SUN5I
+-#include "../../../power/axp_power/axp-gpio.h"
+-extern int axp_gpio_set_io(int gpio, int io_state);
+-extern int axp_gpio_get_io(int gpio, int *io_state);
+-extern int axp_gpio_set_value(int gpio, int value);
+-extern int axp_gpio_get_value(int gpio, int *value);
+-#endif
+-
+ #ifdef LCD_PARA_USE_CONFIG
+ static __u8 g_gamma_tbl[][2] =
+ {
+@@ -123,80 +115,10 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ }
+ #endif
+ 
+-static __s32 LCD_open_flow(__u32 sel)
+-{
+-	LCD_OPEN_FUNC(sel, LCD_power_on, 50);   //open lcd power, and delay 50ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);     //open lcd controller, and delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 0);     //open lcd backlight, and delay 0ms
+-
+-	return 0;
+-}
+-
+-static __s32 LCD_close_flow(__u32 sel)
+-{
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);       //close lcd backlight, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);         //close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);   //close lcd power, and delay 1000ms
+-
+-	return 0;
+-}
+-
+-static void LCD_power_on(__u32 sel)
+-{
+-#ifdef CONFIG_ARCH_SUN5I
+-    axp_gpio_set_io(0, 1);
+-    axp_gpio_set_value(0, 1);
+-
+-#else
+-    LCD_POWER_EN(sel, 1);//config lcd_power pin to open lcd power
+-#endif
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-#ifdef CONFIG_ARCH_SUN5I
+-    axp_gpio_set_io(0, 1);
+-    axp_gpio_set_value(0, 0);
+-#else
+-    LCD_POWER_EN(sel, 0);//config lcd_power pin to close lcd power
+-#endif
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);//open pwm module
+-#ifdef CONFIG_ARCH_SUN5I
+-    axp_gpio_set_io(1, 1);
+-    axp_gpio_set_value(1, 1);
+-#else
+-    LCD_BL_EN(sel, 1);//config lcd_bl_en pin to open lcd backlight
+-#endif
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-#ifdef CONFIG_ARCH_SUN5I
+-    axp_gpio_set_io(1, 1);
+-    axp_gpio_set_value(1, 0);
+-#else
+-    LCD_BL_EN(sel, 0);//config lcd_bl_en pin to close lcd backlight
+-#endif
+-    LCD_PWM_EN(sel, 0);//close pwm module
+-}
+-
+-//sel: 0:lcd0; 1:lcd1
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+     fun->cfg_panel_info = LCD_cfg_panel_info;//delete this line if you want to use the lcd para define in sys_config1.fex
+ #endif
+-    fun->cfg_open_flow = LCD_open_flow;
+-    fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+index 9ace8f4..5f5f146 100644
+--- a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+@@ -115,59 +115,10 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ }
+ #endif
+ 
+-static __s32 LCD_open_flow(__u32 sel)
+-{
+-	LCD_OPEN_FUNC(sel, LCD_power_on, 50);   //open lcd power, and delay 50ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);     //open lcd controller, and delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 0);     //open lcd backlight, and delay 0ms
+-
+-	return 0;
+-}
+-
+-static __s32 LCD_close_flow(__u32 sel)
+-{
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);       //close lcd backlight, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);         //close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);   //close lcd power, and delay 1000ms
+-
+-	return 0;
+-}
+-
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);//config lcd_power pin to open lcd power
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);//config lcd_power pin to close lcd power
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);//open pwm module
+-    LCD_BL_EN(sel, 1);//config lcd_bl_en pin to open lcd backlight
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);//config lcd_bl_en pin to close lcd backlight
+-    LCD_PWM_EN(sel, 0);//close pwm module
+-}
+-
+-//sel: 0:lcd0; 1:lcd1
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+     fun->cfg_panel_info = LCD_cfg_panel_info;//delete this line if you want to use the lcd para define in sys_config1.fex
+ #endif
+-    fun->cfg_open_flow = LCD_open_flow;
+-    fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index 60522bd..f2feab8 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -122,48 +122,26 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ 
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on	, 50); 	//open lcd power, and delay 10ms
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic	, 50);  /* open lcd power, and delay 10ms */
+ 	LCD_OPEN_FUNC(sel, LCD_io_init	, 20); 	//request and init gpio, and delay 20ms
+ 	LCD_OPEN_FUNC(sel, TCON_open	, 500);   //open lcd controller, and delay 200ms
+ 	LCD_OPEN_FUNC(sel, LCD_open_cmd	, 10); 	//use gpio to config lcd module to the  work mode, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open	, 0); 	//open lcd backlight, and delay 0ms
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic	, 0);  /* open lcd backlight, and delay 0ms */
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close    , 0); 	 //close lcd backlight, and delay 0ms
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic    , 0); 	 /* close lcd backlight, and delay 0ms */
+ 	LCD_CLOSE_FUNC(sel, LCD_close_cmd   , 0); 	 //use gpio to config lcd module to the powerdown/sleep mode, and delay 0ms
+ 	LCD_CLOSE_FUNC(sel, TCON_close	    , 0); 	 //close lcd controller, and delay 0ms
+ 	LCD_CLOSE_FUNC(sel, LCD_io_exit	    , 0); 	 //release gpio, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off   , 1000); //close lcd power, and delay 1000ms
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic   , 1000); /* close lcd power, and delay 1000ms */
+ 
+ 	return 0;
+ }
+ 
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);//config lcd_power pin to open lcd power
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);//config lcd_power pin to close lcd power
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);//open pwm module
+-    LCD_BL_EN(sel, 1);//config lcd_bl_en pin to open lcd backlight
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);//config lcd_bl_en pin to close lcd backlight
+-    LCD_PWM_EN(sel, 0);//close pwm module
+-}
+-
+ #define IIC_SCLB_LOW()	        LCD_GPIO_write(0, 0, 0)
+ #define IIC_SCLB_HIGH()	        LCD_GPIO_write(0, 0, 1)
+ 
+@@ -371,12 +349,6 @@ static void  LCD_close_cmd(__u32 sel)
+ {
+ }
+ 
+-//sel: 0:lcd0; 1:lcd1
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+@@ -384,6 +356,5 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #endif
+     fun->cfg_open_flow = LCD_open_flow;
+     fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC102.c b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+index c8e8035..18036b6 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+@@ -125,22 +125,22 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+ 	LCD_OPEN_FUNC(sel, LCD_vcc_on	, 50); 	//open lcd power, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_power_on , 50); 	//open lcd vcc, and delay 10ms
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic , 50); 	/* open lcd vcc, and delay 10ms */
+ 	LCD_OPEN_FUNC(sel, LCD_io_init	, 20); 	//request and init gpio, and delay 20ms
+ 	LCD_OPEN_FUNC(sel, TCON_open	, 500);   //open lcd controller, and delay 200ms
+ 	LCD_OPEN_FUNC(sel, LCD_open_cmd	, 10); 	//use gpio to config lcd module to the  work mode, and delay 10ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open	, 0); 	//open lcd backlight, and delay 0ms
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic	, 0); 	/* open lcd backlight, and delay 0ms */
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close    , 0); 	 //close lcd backlight, and delay 0ms
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic    , 0); 	 /* close lcd backlight, and delay 0ms */
+ 	LCD_CLOSE_FUNC(sel, LCD_close_cmd   , 0); 	 //use gpio to config lcd module to the powerdown/sleep mode, and delay 0ms
+ 	LCD_CLOSE_FUNC(sel, TCON_close	    , 0); 	 //close lcd controller, and delay 0ms
+ 	LCD_CLOSE_FUNC(sel, LCD_io_exit	    , 0); 	 //release gpio, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off   , 0); //close lcd vcc, and delay 0ms
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic   , 0); /* close lcd vcc, and delay 0ms */
+ 	LCD_CLOSE_FUNC(sel, LCD_vcc_off     , 1000); //close lcd power, and delay 1000ms
+ 
+ 	return 0;
+@@ -178,28 +178,6 @@ static void LCD_vcc_off(__u32 sel)
+     OSAL_GPIO_Release(hdl, 2);
+ }
+ 
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);//config lcd_power pin to open lcd power
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);//config lcd_power pin to close lcd power
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);//open pwm module
+-    LCD_BL_EN(sel, 1);//config lcd_bl_en pin to open lcd backlight
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);//config lcd_bl_en pin to close lcd backlight
+-    LCD_PWM_EN(sel, 0);//close pwm module
+-}
+-
+ #define IIC_SCLB_LOW()	        LCD_GPIO_write(0, 0, 0)
+ #define IIC_SCLB_HIGH()	        LCD_GPIO_write(0, 0, 1)
+ 
+@@ -505,6 +483,5 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #endif
+     fun->cfg_open_flow = LCD_open_flow;
+     fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index 50acc84..05ec91a 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -78,53 +78,24 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+  *********************************************************/
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on, 	50);   //open lcd power, than delay 50ms
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 	50);   /* open lcd power, than delay 50ms */
+ 	LCD_OPEN_FUNC(sel, TCON_open,		500);  //open lcd controller, than delay 500ms
+ 	LCD_OPEN_FUNC(sel, LCD_panel_init,	50);   //lcd panel initial, than delay 50ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 	0);    //open lcd backlight, than delay 0ms
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 	0);    /* open lcd backlight, than delay 0ms */
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 	0);		//close lcd backlight, than delay 0ms
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 	0);		/* close lcd backlight, than delay 0ms */
+ 	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);		//lcd panel exit, than delay 0ms
+ 	LCD_CLOSE_FUNC(sel, TCON_close, 	0);		//close lcd controller, than delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 	1000);	//close lcd power, than delay 1000ms
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 	1000);	/* close lcd power, than delay 1000ms */
+ 
+ 	return 0;
+ }
+ 
+-
+-/*********************************************************
+- *
+- *  lcd step function
+- *
+- *********************************************************/
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);
+-    LCD_BL_EN(sel, 1);
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);
+-    LCD_PWM_EN(sel, 0);
+-}
+-
+-
+ /*********************************************************
+  *
+  *  lcd panel initial
+@@ -229,15 +200,7 @@ static void LCD_panel_exit(__u32 sel)
+ {
+ 
+ }
+-/*********************************************************
+- *
+- *  user define function
+- *
+- *********************************************************/
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
++
+ 
+ /*********************************************************
+  *
+@@ -251,5 +214,4 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #endif
+     fun->cfg_open_flow = LCD_open_flow;
+     fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+index 5fc1eda..aa85e08 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+@@ -71,68 +71,6 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ 
+ #endif
+ 
+-
+-/**********************************************************************
+- *
+- *  lcd flow function
+- *	hv panel:first lcd_panel_init,than TCON_open
+- *
+- **********************************************************************/
+-static __s32 LCD_open_flow(__u32 sel)
+-{
+-	LCD_OPEN_FUNC(sel, LCD_power_on,	50);   //open lcd power, than delay 50ms
+-	LCD_OPEN_FUNC(sel, TCON_open,		500);  //open lcd controller, than delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 	0);    //open lcd backlight, than delay 0ms
+-
+-	return 0;
+-}
+-
+-static __s32 LCD_close_flow(__u32 sel)
+-{
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);	   //close lcd backlight, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0); 	   //close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);  //close lcd power, and delay 1000ms
+-
+-	return 0;
+-}
+-
+-/**********************************************************************
+- *
+- *  lcd step function
+- *
+- **********************************************************************/
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);
+-    LCD_BL_EN(sel, 1);
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);
+-    LCD_PWM_EN(sel, 0);
+-}
+-
+-/**********************************************************************
+- *
+- *  user define function
+- *
+- **********************************************************************/
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ /**********************************************************************
+  *
+  *  do not modify
+@@ -143,8 +81,5 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #ifdef LCD_PARA_USE_CONFIG
+     fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+-    fun->cfg_open_flow = LCD_open_flow;
+-    fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+index ac9c591..247c3f1 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+@@ -130,53 +130,26 @@ static void lcd_gamma_gen(__panel_para_t * info)
+  **********************************************************************/
+ static __s32 LCD_open_flow(__u32 sel)
+ {
+-	LCD_OPEN_FUNC(sel, LCD_power_on,	50);   //open lcd power, than delay 50ms
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic,	50);   /* open lcd power, than delay 50ms */
+ 	LCD_OPEN_FUNC(sel, LCD_panel_init,	50);   //lcd panel initial, than delay 50ms
+ 	LCD_OPEN_FUNC(sel, TCON_open,		500);  //open lcd controller, than delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 	0);    //open lcd backlight, than delay 0ms
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 	0);    /* open lcd backlight, than delay 0ms */
+ 
+ 	return 0;
+ }
+ 
+ static __s32 LCD_close_flow(__u32 sel)
+ {
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);	   //close lcd backlight, and delay 0ms
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0);	   /* close lcd backlight, and delay 0ms */
+ 	LCD_CLOSE_FUNC(sel, TCON_close, 0); 	   //close lcd controller, and delay 0ms
+ 	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);    //lcd panel exit, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);  //close lcd power, and delay 1000ms
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000);  /* close lcd power, and delay 1000ms */
+ 
+ 	return 0;
+ }
+ 
+ /**********************************************************************
+  *
+- *  lcd step function
+- *
+- **********************************************************************/
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);
+-    LCD_BL_EN(sel, 1);
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);
+-    LCD_PWM_EN(sel, 0);
+-}
+-
+-/**********************************************************************
+- *
+  *  lcd panel initial
+  *	serial io initial
+  *
+@@ -254,16 +227,6 @@ static void LCD_panel_exit(__u32 sel)
+ 
+ /**********************************************************************
+  *
+- *  user define function
+- *
+- **********************************************************************/
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+-/**********************************************************************
+- *
+  *  do not modify
+  *
+  **********************************************************************/
+@@ -274,6 +237,5 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #endif
+     fun->cfg_open_flow = LCD_open_flow;
+     fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 6cf0081..44c9431 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -73,69 +73,6 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ }
+ #endif
+ 
+-
+-/**********************************************************************
+- *
+- *  lcd flow function
+- *
+- **********************************************************************/
+-static __s32 LCD_open_flow(__u32 sel)
+-{
+-	LCD_OPEN_FUNC(sel, LCD_power_on,	50);   //open lcd power, than delay 50ms
+-//	LCD_OPEN_FUNC(sel, LCD_panel_init,	50);   //not in need
+-	LCD_OPEN_FUNC(sel, TCON_open,		500);  //open lcd controller, than delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 	0);    //open lcd backlight, than delay 0ms
+-
+-	return 0;
+-}
+-
+-static __s32 LCD_close_flow(__u32 sel)
+-{
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);	   //close lcd backlight, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0); 	   //close lcd controller, and delay 0ms
+-//	LCD_CLOSE_FUNC(sel, LCD_panel_exit, 0);    //not in need
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);  //close lcd power, and delay 1000ms
+-
+-	return 0;
+-}
+-
+-/**********************************************************************
+- *
+- *  lcd step function
+- *
+- **********************************************************************/
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);
+-    LCD_BL_EN(sel, 1);
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);
+-    LCD_PWM_EN(sel, 0);
+-}
+-
+-/**********************************************************************
+- *
+- *  user define function
+- *
+- **********************************************************************/
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ /**********************************************************************
+  *
+  *  do not modify
+@@ -146,8 +83,5 @@ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ #ifdef LCD_PARA_USE_CONFIG
+     fun->cfg_panel_info = LCD_cfg_panel_info;
+ #endif
+-    fun->cfg_open_flow = LCD_open_flow;
+-    fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+index b14261e..73dd90b 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+@@ -115,59 +115,10 @@ static void LCD_cfg_panel_info(__panel_para_t * info)
+ }
+ #endif
+ 
+-static __s32 LCD_open_flow(__u32 sel)
+-{
+-	LCD_OPEN_FUNC(sel, LCD_power_on, 50);   //open lcd power, and delay 50ms
+-	LCD_OPEN_FUNC(sel, TCON_open, 500);     //open lcd controller, and delay 500ms
+-	LCD_OPEN_FUNC(sel, LCD_bl_open, 0);     //open lcd backlight, and delay 0ms
+-
+-	return 0;
+-}
+-
+-static __s32 LCD_close_flow(__u32 sel)
+-{
+-	LCD_CLOSE_FUNC(sel, LCD_bl_close, 0);       //close lcd backlight, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, TCON_close, 0);         //close lcd controller, and delay 0ms
+-	LCD_CLOSE_FUNC(sel, LCD_power_off, 1000);   //close lcd power, and delay 1000ms
+-
+-	return 0;
+-}
+-
+-static void LCD_power_on(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 1);//config lcd_power pin to open lcd power
+-}
+-
+-static void LCD_power_off(__u32 sel)
+-{
+-    LCD_POWER_EN(sel, 0);//config lcd_power pin to close lcd power
+-}
+-
+-static void LCD_bl_open(__u32 sel)
+-{
+-    LCD_PWM_EN(sel, 1);//open pwm module
+-    LCD_BL_EN(sel, 1);//config lcd_bl_en pin to open lcd backlight
+-}
+-
+-static void LCD_bl_close(__u32 sel)
+-{
+-    LCD_BL_EN(sel, 0);//config lcd_bl_en pin to close lcd backlight
+-    LCD_PWM_EN(sel, 0);//close pwm module
+-}
+-
+-//sel: 0:lcd0; 1:lcd1
+-static __s32 LCD_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3)
+-{
+-    return 0;
+-}
+-
+ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun)
+ {
+ #ifdef LCD_PARA_USE_CONFIG
+     fun->cfg_panel_info = LCD_cfg_panel_info;//delete this line if you want to use the lcd para define in sys_config1.fex
+ #endif
+-    fun->cfg_open_flow = LCD_open_flow;
+-    fun->cfg_close_flow = LCD_close_flow;
+-    fun->lcd_user_defined_func = LCD_user_defined_func;
+ }
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg.h b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+index e8381cf..a63ba7f 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+@@ -28,10 +28,14 @@
+ #include "dev_lcd.h"
+ 
+ 
+-static void LCD_power_on(__u32 sel);
+-static void LCD_power_off(__u32 sel);
+-static void LCD_bl_open(__u32 sel);
+-static void LCD_bl_close(__u32 sel);
++void LCD_power_on_generic(__u32 sel);
++void LCD_power_off_generic(__u32 sel);
++void LCD_bl_open_generic(__u32 sel);
++void LCD_bl_close_generic(__u32 sel);
++__s32 LCD_open_flow_generic(__u32 sel);
++__s32 LCD_close_flow_generic(__u32 sel);
++__s32 LCD_user_defined_func_generic(__u32 sel, __u32 para1, __u32 para2, __u32 para3);
++void LCD_get_panel_funs_generic(__lcd_panel_fun_t * fun);
+ 
+ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+ void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
+@@ -63,6 +67,14 @@ extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+ #define OSAL_Script_FetchParser_Data script_parser_fetch
+ #define OSAL_GPIO_Request gpio_request
+ #define OSAL_GPIO_Release gpio_release
++#define OSAL_GPIO_Request_Ex gpio_request_ex
++#define OSAL_GPIO_DevGetAllPins_Status gpio_get_all_pin_status
++#define OSAL_GPIO_DevGetONEPins_Status gpio_get_one_pin_status
++#define OSAL_GPIO_DevSetONEPin_Status gpio_set_one_pin_status
++#define OSAL_GPIO_DevSetONEPIN_IO_STATUS gpio_set_one_pin_io_status
++#define OSAL_GPIO_DevSetONEPIN_PULL_STATUS gpio_set_one_pin_pull
++#define OSAL_GPIO_DevREAD_ONEPIN_DATA gpio_read_one_pin_value
++#define OSAL_GPIO_DevWRITE_ONEPIN_DATA gpio_write_one_pin_value
+ 
+ #define BIT0		  0x00000001
+ #define BIT1		  0x00000002
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+new file mode 100644
+index 0000000..c748393
+--- /dev/null
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+@@ -0,0 +1,287 @@
++/*
++ * drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
++ *
++ * (C) Copyright 2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include "lcd_panel_cfg.h"
++
++#define CMD_WIRTE_DELAY 2
++
++//#define SPI_DATA_PRINT
++
++#ifdef SPI_DATA_PRINT
++#define lcd_spi_dbg(x,arg...) printk(KERN_INFO"[LCD_SPI]"x,##arg)
++#else
++#define lcd_spi_dbg(x,arg...)
++#endif
++
++static __s32 lcd_spi_cs = 0;
++static __s32 lcd_spi_clk = 0;
++static __s32 lcd_spi_mosi = 0;
++static __s32 lcd_spi_used = 0;
++static __s32 lcd_spi_module = -1;
++
++#ifdef CONFIG_ARCH_SUN5I
++#include "../../../power/axp_power/axp-gpio.h"
++extern int axp_gpio_set_io(int gpio, int io_state);
++extern int axp_gpio_get_io(int gpio, int *io_state);
++extern int axp_gpio_set_value(int gpio, int value);
++extern int axp_gpio_get_value(int gpio, int *value);
++#endif
++
++static void check_spi_used_value()
++{
++	if (SCRIPT_PARSER_OK
++			!= OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_used",
++					&lcd_spi_used, 1)) {
++		__inf("LCD SPI doesn't use.\n");
++	}
++
++	if (0 == lcd_spi_used) {
++		__inf("LCD SPI doesn't use.\n");
++	}
++}
++
++
++void LCD_SPI_Init(__u32 sel)
++{
++	if (SCRIPT_PARSER_OK
++			!= OSAL_Script_FetchParser_Data("lcd_spi_para", "lcd_spi_module",
++					&lcd_spi_module, 1)) {
++		__wrn("There is no LCD SPI module input.\n");
++		return;
++	}
++
++	lcd_spi_cs = OSAL_GPIO_Request_Ex("lcd_spi_para", "lcd_spi_cs");
++	if (!lcd_spi_cs) {
++		__wrn("request gpio lcd_spi_cs error.\n");
++		goto ERR1;
++	}
++	lcd_spi_clk = OSAL_GPIO_Request_Ex("lcd_spi_para", "lcd_spi_clk");
++	if (!lcd_spi_clk) {
++		__wrn("request gpio lcd_spi_clk error.\n");
++		goto ERR2;
++	}
++	lcd_spi_mosi = OSAL_GPIO_Request_Ex("lcd_spi_para", "lcd_spi_mosi");
++	if (!lcd_spi_mosi) {
++		__wrn("request gpio lcd_spi_mosi error.\n");
++		goto ERR3;
++	}
++	return;
++
++	lcd_spi_dbg("release GPIO src : lcd_spi_mosi\n");
++	OSAL_GPIO_Release(lcd_spi_mosi, 2);
++ERR3:
++	lcd_spi_dbg("release GPIO src : lcd_spi_clk\n");
++	OSAL_GPIO_Release(lcd_spi_clk, 2);
++ERR2:
++	lcd_spi_dbg("release GPIO src : lcd_spi_cs\n");
++	OSAL_GPIO_Release(lcd_spi_cs, 2);
++ERR1:
++	return;
++}
++
++void LCD_SPI_Write(__u32 sel)
++{
++	int i = 0, j = 0, offset = 0, bit_val = 0, ret = 0;
++	u16 data[9] = { /* module 0 data */
++			0x0029, /* reset */
++			0x0025, /* standby */
++			0x0840, /* enable normally black */
++			0x0430, /* enable FRC/dither */
++			0x385f, /* enter test mode(1) */
++			0x3ca4, /* enter test mode(2) */
++			0x3409, /* enable SDRRS, enlarge OE width */
++			0x4041, /* adopt 2 line / 1 dot */
++			/* wait 100ms */
++			0x00ad, /* display on */
++	};
++
++	lcd_spi_dbg("============ start LCD SPI data write, module = %d============\n", lcd_spi_module);
++
++	switch (lcd_spi_module) {
++	case 0: { /* rili 7inch */
++		for (i = 0; i < 8; i++) {
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 0, "lcd_spi_cs");
++			lcd_spi_dbg("write data[%d]:", i);
++
++			for (j = 0; j < 16; j++) {
++				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 0, "lcd_spi_clk");
++				offset = 15 - j;
++				bit_val = (0x0001 & (data[i] >> offset));
++				ret = OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_mosi, bit_val,
++						"lcd_spi_mosi");
++#ifdef SPI_DATA_PRINT
++				if (ret == 0) {
++					lcd_spi_dbg("%d-", bit_val);
++				} else {
++					lcd_spi_dbg("write[bit:%d]ERR", j);
++				}
++#endif
++				LCD_delay_us(CMD_WIRTE_DELAY);
++				OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1, "lcd_spi_clk");
++				LCD_delay_us(CMD_WIRTE_DELAY);
++			}
++
++			lcd_spi_dbg("\n");
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 1, "lcd_spi_cs");
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1, "lcd_spi_clk");
++			LCD_delay_us(CMD_WIRTE_DELAY);
++		}
++		LCD_delay_ms(50);
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 0, "lcd_spi_cs");
++
++		lcd_spi_dbg("write data[8]:");
++
++		for (j = 0; j < 16; j++) {
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 0, "lcd_spi_clk");
++			offset = 15 - j;
++			bit_val = (0x0001 & (data[i] >> offset));
++			ret = OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_mosi, bit_val,
++					"lcd_spi_mosi");
++#ifdef SPI_DATA_PRINT
++			if (ret == 0) {
++				lcd_spi_dbg("%d-", bit_val);
++			} else {
++				lcd_spi_dbg("write[bit:%d]ERR", j);
++			}
++#endif
++			LCD_delay_us(CMD_WIRTE_DELAY);
++			OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1, "lcd_spi_clk");
++			LCD_delay_us(CMD_WIRTE_DELAY);
++		}
++
++		lcd_spi_dbg("\n");
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_cs, 1, "lcd_spi_cs");
++		OSAL_GPIO_DevWRITE_ONEPIN_DATA(lcd_spi_clk, 1, "lcd_spi_clk");
++		LCD_delay_us(CMD_WIRTE_DELAY);
++		lcd_spi_dbg("========== LCD SPI data translation finished ===========\n");
++		break;
++	}
++	default: {
++		lcd_spi_dbg("%s Unknow lcd_spi_module\n", __func__);
++		break;
++	}
++	}
++}
++
++void LCD_SPI_Dinit(__u32 sel)
++{
++	lcd_spi_dbg("release GPIO src : lcd_spi_mosi\n");
++	if (lcd_spi_mosi) {
++		OSAL_GPIO_Release(lcd_spi_mosi, 2);
++	}
++
++	lcd_spi_dbg("release GPIO src : lcd_spi_clk\n");
++	if (lcd_spi_clk) {
++		OSAL_GPIO_Release(lcd_spi_clk, 2);
++	}
++
++	lcd_spi_dbg("release GPIO src : lcd_spi_cs\n");
++	if (lcd_spi_cs) {
++		OSAL_GPIO_Release(lcd_spi_cs, 2);
++	}
++}
++
++void LCD_power_on_generic(__u32 sel)
++{
++#ifdef CONFIG_ARCH_SUN5I
++	axp_gpio_set_io(0, 1);
++	axp_gpio_set_value(0, 1);
++#else
++	LCD_POWER_EN(sel, 1); /* config lcd_power pin to open lcd power */
++#endif
++}
++
++void LCD_power_off_generic(__u32 sel)
++{
++#ifdef CONFIG_ARCH_SUN5I
++	axp_gpio_set_io(0, 1);
++	axp_gpio_set_value(0, 0);
++#else
++	LCD_POWER_EN(sel, 0); /* config lcd_power pin to close lcd power */
++#endif
++}
++
++void LCD_bl_open_generic(__u32 sel)
++{
++	LCD_PWM_EN(sel, 1); /* open pwm module */
++#ifdef CONFIG_ARCH_SUN5I
++	axp_gpio_set_io(1, 1);
++	axp_gpio_set_value(1, 1);
++#else
++	LCD_BL_EN(sel, 1); /* config lcd_bl_en pin to open lcd backlight */
++#endif
++}
++
++void LCD_bl_close_generic(__u32 sel)
++{
++#ifdef CONFIG_ARCH_SUN5I
++	axp_gpio_set_io(1, 1);
++	axp_gpio_set_value(1, 0);
++#else
++	LCD_BL_EN(sel, 0); /* config lcd_bl_en pin to close lcd backlight */
++#endif
++	LCD_PWM_EN(sel, 0); /* close pwm module */
++}
++
++__s32 LCD_open_flow_generic(__u32 sel)
++{
++	check_spi_used_value();
++	LCD_OPEN_FUNC(sel, LCD_power_on_generic, 50); /* open lcd power, and delay 50ms */
++	if (lcd_spi_used) {
++		/* request and init gpio, and delay 20ms */
++		LCD_OPEN_FUNC(sel, LCD_SPI_Init, 20);
++		/* use gpio to config lcd module to the  work mode, and delay 10ms */
++		LCD_OPEN_FUNC(sel, LCD_SPI_Write, 10);
++	}
++	LCD_OPEN_FUNC(sel, TCON_open, 500); /* open lcd controller, and delay 500ms */
++	LCD_OPEN_FUNC(sel, LCD_bl_open_generic, 0); /* open lcd backlight, and delay 0ms */
++
++	return 0;
++}
++
++__s32 LCD_close_flow_generic(__u32 sel)
++{
++	LCD_CLOSE_FUNC(sel, LCD_bl_close_generic, 0); /* close lcd backlight, and delay 0ms */
++	LCD_CLOSE_FUNC(sel, TCON_close, 0); /* close lcd controller, and delay 0ms */
++	if (lcd_spi_used) {
++		LCD_CLOSE_FUNC(sel, LCD_SPI_Dinit, 0); /* release gpio, and delay 0ms */
++	}
++	LCD_CLOSE_FUNC(sel, LCD_power_off_generic, 1000); /* close lcd power, and delay 1000ms */
++
++	return 0;
++}
++
++/* sel: 0:lcd0; 1:lcd1 */
++__s32 LCD_user_defined_func_generic(__u32 sel, __u32 para1, __u32 para2,
++		__u32 para3)
++{
++	return 0;
++}
++
++void LCD_get_panel_funs_generic(__lcd_panel_fun_t * fun)
++{
++	fun->cfg_panel_info = 0; /* lcd panel info defined in sys_config1.fex */
++	fun->cfg_open_flow = LCD_open_flow_generic;
++	fun->cfg_close_flow = LCD_close_flow_generic;
++	fun->lcd_user_defined_func = LCD_user_defined_func_generic;
++}
+-- 
+1.8.0
+

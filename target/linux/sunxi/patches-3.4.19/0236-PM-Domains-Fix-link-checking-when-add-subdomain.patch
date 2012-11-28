@@ -1,0 +1,34 @@
+From 4fcac10d28e7a046120b51a106b19082d2e57401 Mon Sep 17 00:00:00 2001
+From: Huang Ying <ying.huang@intel.com>
+Date: Mon, 7 May 2012 21:35:45 +0200
+Subject: [PATCH 236/944] PM / Domains: Fix link checking when add subdomain
+
+Current pm_genpd_add_subdomain() will allow duplicated link between
+master and slave domain.  This patch fixed it.
+
+Because when current pm_genpd_add_subdomain() checks whether the link
+between the master and slave generic PM domain already exists,
+slave_links instead of master_links of master domain is used.
+
+Signed-off-by: Huang Ying <ying.huang@intel.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/domain.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index cde5983..c3eaa08 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -1448,7 +1448,7 @@ int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 		goto out;
+ 	}
+ 
+-	list_for_each_entry(link, &genpd->slave_links, slave_node) {
++	list_for_each_entry(link, &genpd->master_links, master_node) {
+ 		if (link->slave == subdomain && link->master == genpd) {
+ 			ret = -EINVAL;
+ 			goto out;
+-- 
+1.8.0
+

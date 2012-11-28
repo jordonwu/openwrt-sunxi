@@ -1,0 +1,40 @@
+From 107a24010d7ad255a78a52a667c0dbb358f79b9e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 14 Jun 2012 00:48:39 +0200
+Subject: [PATCH 550/944] sun3i: add dummy SW_IO_PHYS
+
+---
+ arch/arm/mach-sun3i/include/mach/entry-macro.S | 1 +
+ arch/arm/mach-sun3i/include/mach/io.h          | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-sun3i/include/mach/entry-macro.S b/arch/arm/mach-sun3i/include/mach/entry-macro.S
+index 2414463..642c568 100644
+--- a/arch/arm/mach-sun3i/include/mach/entry-macro.S
++++ b/arch/arm/mach-sun3i/include/mach/entry-macro.S
+@@ -19,6 +19,7 @@
+  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
++#include <mach/io.h>
+ #include <mach/hardware.h>
+ #include <mach/platform.h>
+ #include <asm/hardware/vic.h>
+diff --git a/arch/arm/mach-sun3i/include/mach/io.h b/arch/arm/mach-sun3i/include/mach/io.h
+index b5af77b..489b9ac 100644
+--- a/arch/arm/mach-sun3i/include/mach/io.h
++++ b/arch/arm/mach-sun3i/include/mach/io.h
+@@ -23,6 +23,10 @@
+ 
+ #define IO_SPACE_LIMIT 0xffffffff
+ 
++#define SW_IO_PHYS      0x01c00000
++#define SW_IO_SIZE      (SZ_1M * 3)
++#define SW_IO_VIRT      0xf1c00000
++
+ /* for writel, readl, ... */
+ #define __mem_pci(a) (a)
+ 
+-- 
+1.8.0
+

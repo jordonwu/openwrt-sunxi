@@ -1,0 +1,26 @@
+From ae944ff1e0e8ca55a6caf22d2e377c938d98e1a3 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 23 May 2012 22:18:51 +0200
+Subject: [PATCH 467/944] arm: sun3i: fixed typo in clk_ahb_de_image0
+
+Reported-by: bin <sysfwlab@gmail.com>
+---
+ arch/arm/mach-sun3i/clock/clock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun3i/clock/clock.c b/arch/arm/mach-sun3i/clock/clock.c
+index 5137fd8..12ccb2f 100644
+--- a/arch/arm/mach-sun3i/clock/clock.c
++++ b/arch/arm/mach-sun3i/clock/clock.c
+@@ -1678,7 +1678,7 @@ static struct clk clk_ahb_de_image1  = {
+     .mod_reset      = NULL,
+ };
+ static struct clk clk_ahb_de_image0  = {
+-    .clk_id         = CSP_CCM_MOD_CLK_AHB_DE_IMAGE1,
++    .clk_id         = CSP_CCM_MOD_CLK_AHB_DE_IMAGE0,
+     .parent_id      = CSP_CCM_SYS_CLK_AHB,
+     .usrcnt         = 0,
+     .parent         = &clk_ahb,
+-- 
+1.8.0
+

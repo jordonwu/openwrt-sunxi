@@ -1,0 +1,41 @@
+From 109a3af095d519d1bad573b7e4c12239b2a31583 Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 9 May 2005 14:10:26 -0700
+Subject: [PATCH 023/944] ARM: Make low-level printk work
+
+Makes low-level printk work.
+
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ kernel/printk.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/kernel/printk.c b/kernel/printk.c
+index 50b1ecb..e12d00d 100644
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -56,6 +56,10 @@ void asmlinkage __attribute__((weak)) early_printk(const char *fmt, ...)
+ 
+ #define __LOG_BUF_LEN	(1 << CONFIG_LOG_BUF_SHIFT)
+ 
++#ifdef        CONFIG_DEBUG_LL
++extern void printascii(char *);
++#endif
++
+ /* printk's without a loglevel use this.. */
+ #define DEFAULT_MESSAGE_LOGLEVEL CONFIG_DEFAULT_MESSAGE_LOGLEVEL
+ 
+@@ -884,6 +888,10 @@ asmlinkage int vprintk(const char *fmt, va_list args)
+ 	printed_len += vscnprintf(printk_buf + printed_len,
+ 				  sizeof(printk_buf) - printed_len, fmt, args);
+ 
++#ifdef	CONFIG_DEBUG_LL
++	printascii(printk_buf);
++#endif
++
+ 	p = printk_buf;
+ 
+ 	/* Read log level and handle special printk prefix */
+-- 
+1.8.0
+

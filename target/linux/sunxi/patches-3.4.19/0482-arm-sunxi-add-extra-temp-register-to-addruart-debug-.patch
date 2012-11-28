@@ -1,0 +1,55 @@
+From 9514d3353e74b5b5a3c2de8117dd651832fc0a9c Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 28 May 2012 23:55:48 +0200
+Subject: [PATCH 482/944] arm: sunxi: add extra temp register to addruart
+ debug macro
+ (639da5ee374ba8f070690bbd355ca30139ce145a)
+
+---
+ arch/arm/mach-sun3i/include/mach/debug-macro.S | 2 +-
+ arch/arm/mach-sun4i/include/mach/debug-macro.S | 2 +-
+ arch/arm/mach-sun5i/include/mach/debug-macro.S | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-sun3i/include/mach/debug-macro.S b/arch/arm/mach-sun3i/include/mach/debug-macro.S
+index bcf1382..ee834fa 100644
+--- a/arch/arm/mach-sun3i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun3i/include/mach/debug-macro.S
+@@ -8,7 +8,7 @@
+ 
+ #include <mach/platform.h>
+ 
+-	.macro	addruart, rp, rv
++	.macro	addruart, rp, rv, tmp
+ 	ldr	\rp, =SW_PA_UART0_IO_BASE
+ 	ldr	\rv, =SW_VA_UART0_IO_BASE
+ #if CONFIG_SW_DEBUG_UART != 0
+diff --git a/arch/arm/mach-sun4i/include/mach/debug-macro.S b/arch/arm/mach-sun4i/include/mach/debug-macro.S
+index eb6ecba..1be8c85 100644
+--- a/arch/arm/mach-sun4i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun4i/include/mach/debug-macro.S
+@@ -8,7 +8,7 @@
+ 
+ #include <mach/platform.h>
+ 
+-	.macro	addruart, rp, rv
++	.macro	addruart, rp, rv, tmp
+ 	ldr	\rp, =SW_PA_UART0_IO_BASE
+ 	ldr	\rv, =SW_VA_UART0_IO_BASE
+ #if CONFIG_SW_DEBUG_UART != 0
+diff --git a/arch/arm/mach-sun5i/include/mach/debug-macro.S b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+index c3c0305..432cc17 100644
+--- a/arch/arm/mach-sun5i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+@@ -8,7 +8,7 @@
+ 
+ #include <mach/platform.h>
+ 
+-	.macro	addruart, rp, rv
++	.macro	addruart, rp, rv, tmp
+ 	ldr	\rp, =SW_PA_UART0_IO_BASE
+ 	ldr	\rv, =SW_VA_UART0_IO_BASE
+ #if CONFIG_SW_DEBUG_UART != 0
+-- 
+1.8.0
+

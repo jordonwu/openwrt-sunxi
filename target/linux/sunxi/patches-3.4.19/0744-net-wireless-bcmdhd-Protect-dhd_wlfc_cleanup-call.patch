@@ -1,0 +1,29 @@
+From 08beba13849316fb899bff2188989d02acb8b828 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 26 Sep 2012 15:05:24 -0700
+Subject: [PATCH 744/944] net: wireless: bcmdhd: Protect dhd_wlfc_cleanup()
+ call
+
+Change-Id: Ie9322f165a603f6eb12fead6603aadd2192bcdbf
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 5ab3fd8..069aab1 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -2597,7 +2597,9 @@ dhd_stop(struct net_device *net)
+ #endif
+ 
+ #ifdef PROP_TXSTATUS
++	dhd_os_wlfc_block(&dhd->pub);
+ 	dhd_wlfc_cleanup(&dhd->pub);
++	dhd_os_wlfc_unblock(&dhd->pub);
+ #endif
+ 	/* Stop the protocol module */
+ 	dhd_prot_stop(&dhd->pub);
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From 484101e5a816cb1e9022805d1714445c473e5b63 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Thu, 15 Mar 2012 17:46:07 -0700
+Subject: [PATCH 245/944] sw_sync: add fill_driver_data support
+
+Change-Id: Ib3812d282db56362d82f5ccc9a12b7d2100ab93a
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sw_sync.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/drivers/base/sw_sync.c b/drivers/base/sw_sync.c
+index 41beb9e..21ddf4f 100644
+--- a/drivers/base/sw_sync.c
++++ b/drivers/base/sw_sync.c
+@@ -86,6 +86,19 @@ static void sw_sync_print_pt(struct seq_file *s, struct sync_pt *sync_pt)
+ 	seq_printf(s, "%d / %d", pt->value, obj->value);
+ }
+ 
++static int sw_sync_fill_driver_data(struct sync_pt *sync_pt,
++				    void *data, int size)
++{
++	struct sw_sync_pt *pt = (struct sw_sync_pt *)sync_pt;
++
++	if (size < sizeof(pt->value))
++		return -ENOMEM;
++
++	memcpy(data, &pt->value, sizeof(pt->value));
++
++	return sizeof(pt->value);
++}
++
+ struct sync_timeline_ops sw_sync_timeline_ops = {
+ 	.driver_name = "sw_sync",
+ 	.dup = sw_sync_pt_dup,
+@@ -93,6 +106,7 @@ struct sync_timeline_ops sw_sync_timeline_ops = {
+ 	.compare = sw_sync_pt_compare,
+ 	.print_obj = sw_sync_print_obj,
+ 	.print_pt = sw_sync_print_pt,
++	.fill_driver_data = sw_sync_fill_driver_data,
+ };
+ 
+ 
+-- 
+1.8.0
+

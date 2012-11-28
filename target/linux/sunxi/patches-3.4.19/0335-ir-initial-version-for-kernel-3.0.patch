@@ -1,0 +1,1296 @@
+From 1286f53c822c353993cf70ea4acff32923ba805c Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@LServer.(none)>
+Date: Wed, 16 Nov 2011 18:31:34 +0800
+Subject: [PATCH 335/944] ir: initial version for kernel 3.0
+
+---
+ drivers/input/keyboard/ir-keymap.h | 551 ++++++++++++++++++++++++++++
+ drivers/input/keyboard/sun4i-ir.c  | 718 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 1269 insertions(+)
+ create mode 100644 drivers/input/keyboard/ir-keymap.h
+ create mode 100644 drivers/input/keyboard/sun4i-ir.c
+
+diff --git a/drivers/input/keyboard/ir-keymap.h b/drivers/input/keyboard/ir-keymap.h
+new file mode 100644
+index 0000000..5ecadfc
+--- /dev/null
++++ b/drivers/input/keyboard/ir-keymap.h
+@@ -0,0 +1,551 @@
++
++#ifndef __IR_KEYMAP_H__
++
++#define __IR_KEYMAP_H__
++
++
++/*IR IO Mapping Config*/
++//0--PIOB10, 1--PIOB17
++#define IR_IO_MAPPING			1
++
++/*IR Key Match Config*/
++//#define IR_CHECK_ADDR_CODE  
++#define IR_ADDR_CODE		(0x7f80) //(addr|((~addr)<<8))
++//#define INPUT_VALUE_MAPPING
++
++/*
++0x0d -- KEY_ESC
++0x12 -- KEY_UP
++0x18 -- KEY_DOWN
++0x16 -- KEY_LEFT
++0x14 -- KEY_RIGHT
++0x15 -- KEY_ENTER
++0x1F -- KEY_VOLUMEDOWN
++0x1E -- KEY_VOLUMEUP
++0x00 -- KEY_POWER
++
++*/
++#ifdef INPUT_VALUE_MAPPING
++static const unsigned int ir_keycodes[]=
++{
++	[0x00] = KEY_POWER,		
++	[0x01] = KEY_RESERVED,			
++	[0x02] = KEY_RESERVED,			
++	[0x03] = KEY_RESERVED,				
++	[0x04] = KEY_RESERVED,			
++	[0x05] = KEY_RESERVED,			
++	[0x06] = KEY_RESERVED,			
++	[0x07] = KEY_RESERVED,	
++	[0x08] = KEY_RESERVED,		
++	[0x09] = KEY_RESERVED,			
++	[0x0A] = KEY_RESERVED,			
++	[0x0B] = KEY_RESERVED,				
++	[0x0C] = KEY_RESERVED,			
++	[0x0D] = KEY_ESC,			
++	[0x0E] = KEY_RESERVED,			
++	[0x0F] = KEY_RESERVED,	
++	[0x10] = KEY_RESERVED,		
++	[0x11] = KEY_RESERVED,			
++	[0x12] = KEY_UP,			
++	[0x13] = KEY_RESERVED,				
++	[0x14] = KEY_RIGHT,			
++	[0x15] = KEY_ENTER,			
++	[0x16] = KEY_LEFT,			
++	[0x17] = KEY_RESERVED,	
++	[0x18] = KEY_DOWN,		
++	[0x19] = KEY_RESERVED,			
++	[0x1A] = KEY_RESERVED,			
++	[0x1B] = KEY_RESERVED,				
++	[0x1C] = KEY_RESERVED,			
++	[0x1D] = KEY_RESERVED,			
++	[0x1E] = KEY_VOLUMEUP,			
++	[0x1F] = KEY_VOLUMEDOWN,	
++	[0x20] = KEY_RESERVED,		
++	[0x21] = KEY_RESERVED,			
++	[0x22] = KEY_RESERVED,			
++	[0x23] = KEY_RESERVED,				
++	[0x24] = KEY_RESERVED,			
++	[0x25] = KEY_RESERVED,			
++	[0x26] = KEY_RESERVED,			
++	[0x27] = KEY_RESERVED,	
++	[0x28] = KEY_RESERVED,		
++	[0x29] = KEY_RESERVED,			
++	[0x2A] = KEY_RESERVED,			
++	[0x2B] = KEY_RESERVED,				
++	[0x2C] = KEY_RESERVED,			
++	[0x2D] = KEY_RESERVED,			
++	[0x2E] = KEY_RESERVED,			
++	[0x2F] = KEY_RESERVED,	
++	[0x30] = KEY_RESERVED,		
++	[0x31] = KEY_RESERVED,			
++	[0x32] = KEY_RESERVED,			
++	[0x33] = KEY_RESERVED,				
++	[0x34] = KEY_RESERVED,			
++	[0x35] = KEY_RESERVED,			
++	[0x36] = KEY_RESERVED,			
++	[0x37] = KEY_RESERVED,	
++	[0x38] = KEY_RESERVED,		
++	[0x39] = KEY_RESERVED,			
++	[0x3A] = KEY_RESERVED,			
++	[0x3B] = KEY_RESERVED,				
++	[0x3C] = KEY_RESERVED,			
++	[0x3D] = KEY_RESERVED,			
++	[0x3E] = KEY_RESERVED,			
++	[0x3F] = KEY_RESERVED,	
++	[0x40] = KEY_RESERVED,		
++	[0x41] = KEY_RESERVED,			
++	[0x42] = KEY_RESERVED,			
++	[0x43] = KEY_RESERVED,				
++	[0x44] = KEY_RESERVED,			
++	[0x45] = KEY_RESERVED,			
++	[0x46] = KEY_RESERVED,			
++	[0x47] = KEY_RESERVED,	
++	[0x48] = KEY_RESERVED,		
++	[0x49] = KEY_RESERVED,			
++	[0x4A] = KEY_RESERVED,			
++	[0x4B] = KEY_RESERVED,				
++	[0x4C] = KEY_RESERVED,			
++	[0x4D] = KEY_RESERVED,			
++	[0x4E] = KEY_RESERVED,			
++	[0x4F] = KEY_RESERVED,	
++	[0x50] = KEY_RESERVED,		
++	[0x51] = KEY_RESERVED,			
++	[0x52] = KEY_RESERVED,			
++	[0x53] = KEY_RESERVED,				
++	[0x54] = KEY_RESERVED,			
++	[0x55] = KEY_RESERVED,			
++	[0x56] = KEY_RESERVED,			
++	[0x57] = KEY_RESERVED,	
++	[0x58] = KEY_RESERVED,		
++	[0x59] = KEY_RESERVED,			
++	[0x5A] = KEY_RESERVED,			
++	[0x5B] = KEY_RESERVED,				
++	[0x5C] = KEY_RESERVED,			
++	[0x5D] = KEY_RESERVED,			
++	[0x5E] = KEY_RESERVED,			
++	[0x5F] = KEY_RESERVED,	
++	[0x60] = KEY_RESERVED,		
++	[0x61] = KEY_RESERVED,			
++	[0x62] = KEY_RESERVED,			
++	[0x63] = KEY_RESERVED,				
++	[0x64] = KEY_RESERVED,			
++	[0x65] = KEY_RESERVED,			
++	[0x66] = KEY_RESERVED,			
++	[0x67] = KEY_RESERVED,	
++	[0x68] = KEY_RESERVED,		
++	[0x69] = KEY_RESERVED,			
++	[0x6A] = KEY_RESERVED,			
++	[0x6B] = KEY_RESERVED,				
++	[0x6C] = KEY_RESERVED,			
++	[0x6D] = KEY_RESERVED,			
++	[0x6E] = KEY_RESERVED,			
++	[0x6F] = KEY_RESERVED,	
++	[0x70] = KEY_RESERVED,		
++	[0x71] = KEY_RESERVED,			
++	[0x72] = KEY_RESERVED,			
++	[0x73] = KEY_RESERVED,				
++	[0x74] = KEY_RESERVED,			
++	[0x75] = KEY_RESERVED,			
++	[0x76] = KEY_RESERVED,			
++	[0x77] = KEY_RESERVED,	
++	[0x78] = KEY_RESERVED,		
++	[0x79] = KEY_RESERVED,			
++	[0x7A] = KEY_RESERVED,			
++	[0x7B] = KEY_RESERVED,				
++	[0x7C] = KEY_RESERVED,			
++	[0x7D] = KEY_RESERVED,			
++	[0x7E] = KEY_RESERVED,			
++	[0x7F] = KEY_RESERVED,
++	[0x80] = KEY_RESERVED,		
++	[0x81] = KEY_RESERVED,			
++	[0x82] = KEY_RESERVED,			
++	[0x83] = KEY_RESERVED,				
++	[0x84] = KEY_RESERVED,			
++	[0x85] = KEY_RESERVED,			
++	[0x86] = KEY_RESERVED,			
++	[0x87] = KEY_RESERVED,	
++	[0x88] = KEY_RESERVED,		
++	[0x89] = KEY_RESERVED,			
++	[0x8A] = KEY_RESERVED,			
++	[0x8B] = KEY_RESERVED,				
++	[0x8C] = KEY_RESERVED,			
++	[0x8D] = KEY_RESERVED,			
++	[0x8E] = KEY_RESERVED,			
++	[0x8F] = KEY_RESERVED,	
++	[0x90] = KEY_RESERVED,		
++	[0x91] = KEY_RESERVED,			
++	[0x92] = KEY_RESERVED,			
++	[0x93] = KEY_RESERVED,				
++	[0x94] = KEY_RESERVED,			
++	[0x95] = KEY_RESERVED,			
++	[0x96] = KEY_RESERVED,			
++	[0x97] = KEY_RESERVED,	
++	[0x98] = KEY_RESERVED,		
++	[0x99] = KEY_RESERVED,			
++	[0x9A] = KEY_RESERVED,			
++	[0x9B] = KEY_RESERVED,				
++	[0x9C] = KEY_RESERVED,			
++	[0x9D] = KEY_RESERVED,			
++	[0x9E] = KEY_RESERVED,			
++	[0x9F] = KEY_RESERVED,	
++	[0xA0] = KEY_RESERVED,		
++	[0xA1] = KEY_RESERVED,			
++	[0xA2] = KEY_RESERVED,			
++	[0xA3] = KEY_RESERVED,				
++	[0xA4] = KEY_RESERVED,			
++	[0xA5] = KEY_RESERVED,			
++	[0xA6] = KEY_RESERVED,			
++	[0xA7] = KEY_RESERVED,	
++	[0xA8] = KEY_RESERVED,		
++	[0xA9] = KEY_RESERVED,			
++	[0xAA] = KEY_RESERVED,			
++	[0xAB] = KEY_RESERVED,				
++	[0xAC] = KEY_RESERVED,			
++	[0xAD] = KEY_RESERVED,			
++	[0xAE] = KEY_RESERVED,			
++	[0xAF] = KEY_RESERVED,	
++	[0xB0] = KEY_RESERVED,		
++	[0xB1] = KEY_RESERVED,			
++	[0xB2] = KEY_RESERVED,			
++	[0xB3] = KEY_RESERVED,				
++	[0xB4] = KEY_RESERVED,			
++	[0xB5] = KEY_RESERVED,			
++	[0xB6] = KEY_RESERVED,			
++	[0xB7] = KEY_RESERVED,	
++	[0xB8] = KEY_RESERVED,		
++	[0xB9] = KEY_RESERVED,			
++	[0xBA] = KEY_RESERVED,			
++	[0xBB] = KEY_RESERVED,				
++	[0xBC] = KEY_RESERVED,			
++	[0xBD] = KEY_RESERVED,			
++	[0xBE] = KEY_RESERVED,			
++	[0xBF] = KEY_RESERVED,	
++	[0xC0] = KEY_RESERVED,		
++	[0xC1] = KEY_RESERVED,			
++	[0xC2] = KEY_RESERVED,			
++	[0xC3] = KEY_RESERVED,				
++	[0xC4] = KEY_RESERVED,			
++	[0xC5] = KEY_RESERVED,			
++	[0xC6] = KEY_RESERVED,			
++	[0xC7] = KEY_RESERVED,	
++	[0xC8] = KEY_RESERVED,		
++	[0xC9] = KEY_RESERVED,			
++	[0xCA] = KEY_RESERVED,			
++	[0xCB] = KEY_RESERVED,				
++	[0xCC] = KEY_RESERVED,			
++	[0xCD] = KEY_RESERVED,			
++	[0xCE] = KEY_RESERVED,			
++	[0xCF] = KEY_RESERVED,	
++	[0xD0] = KEY_RESERVED,		
++	[0xD1] = KEY_RESERVED,			
++	[0xD2] = KEY_RESERVED,			
++	[0xD3] = KEY_RESERVED,				
++	[0xD4] = KEY_RESERVED,			
++	[0xD5] = KEY_RESERVED,			
++	[0xD6] = KEY_RESERVED,			
++	[0xD7] = KEY_RESERVED,	
++	[0xD8] = KEY_RESERVED,		
++	[0xD9] = KEY_RESERVED,			
++	[0xDA] = KEY_RESERVED,			
++	[0xDB] = KEY_RESERVED,				
++	[0xDC] = KEY_RESERVED,			
++	[0xDD] = KEY_RESERVED,			
++	[0xDE] = KEY_RESERVED,			
++	[0xDF] = KEY_RESERVED,	
++	[0xE0] = KEY_RESERVED,		
++	[0xE1] = KEY_RESERVED,			
++	[0xE2] = KEY_RESERVED,			
++	[0xE3] = KEY_RESERVED,				
++	[0xE4] = KEY_RESERVED,			
++	[0xE5] = KEY_RESERVED,			
++	[0xE6] = KEY_RESERVED,			
++	[0xE7] = KEY_RESERVED,	
++	[0xE8] = KEY_RESERVED,		
++	[0xE9] = KEY_RESERVED,			
++	[0xEA] = KEY_RESERVED,			
++	[0xEB] = KEY_RESERVED,				
++	[0xEC] = KEY_RESERVED,			
++	[0xED] = KEY_RESERVED,			
++	[0xEE] = KEY_RESERVED,			
++	[0xEF] = KEY_RESERVED,	
++	[0xF0] = KEY_RESERVED,		
++	[0xF1] = KEY_RESERVED,			
++	[0xF2] = KEY_RESERVED,			
++	[0xF3] = KEY_RESERVED,				
++	[0xF4] = KEY_RESERVED,			
++	[0xF5] = KEY_RESERVED,			
++	[0xF6] = KEY_RESERVED,			
++	[0xF7] = KEY_RESERVED,	
++	[0xF8] = KEY_RESERVED,		
++	[0xF9] = KEY_RESERVED,			
++	[0xFA] = KEY_RESERVED,			
++	[0xFB] = KEY_RESERVED,				
++	[0xFC] = KEY_RESERVED,			
++	[0xFD] = KEY_RESERVED,			
++	[0xFE] = KEY_RESERVED,			
++	[0xFF] = KEY_RESERVED				
++};
++#else
++static const unsigned int ir_keycodes[]=
++{
++	[0x00] = 0xff,
++	[0x01] = 0x01,	
++	[0x02] = 0x02,	
++	[0x03] = 0x03,		
++	[0x04] = 0x04,	
++	[0x05] = 0x05,	
++	[0x06] = 0x06,	
++	[0x07] = 0x07,
++	[0x08] = 0x08,
++	[0x09] = 0x09,	
++	[0x0A] = 0x0A,	
++	[0x0B] = 0x0B,		
++	[0x0C] = 0x0C,	
++	[0x0D] = 0x0D,
++	[0x0E] = 0x0E,	
++	[0x0F] = 0x0F,
++	[0x10] = 0x10,
++	[0x11] = 0x11,	
++	[0x12] = 0x12,
++	[0x13] = 0x13,		
++	[0x14] = 0x14,
++	[0x15] = 0x15,
++	[0x16] = 0x16,
++	[0x17] = 0x17,
++	[0x18] = 0x18,
++	[0x19] = 0x19,	
++	[0x1A] = 0x1A,	
++	[0x1B] = 0x1B,		
++	[0x1C] = 0x1C,	
++	[0x1D] = 0x1D,	
++	[0x1E] = 0x1E,	
++	[0x1F] = 0x1F,	
++	[0x20] = 0x20,
++	[0x21] = 0x21,	
++	[0x22] = 0x22,	
++	[0x23] = 0x23,		
++	[0x24] = 0x24,	
++	[0x25] = 0x25,	
++	[0x26] = 0x26,	
++	[0x27] = 0x27,
++	[0x28] = 0x28,
++	[0x29] = 0x29,	
++	[0x2A] = 0x2A,	
++	[0x2B] = 0x2B,		
++	[0x2C] = 0x2C,	
++	[0x2D] = 0x2D,	
++	[0x2E] = 0x2E,	
++	[0x2F] = 0x2F,
++	[0x30] = 0x30,
++	[0x31] = 0x31,	
++	[0x32] = 0x32,	
++	[0x33] = 0x33,		
++	[0x34] = 0x34,	
++	[0x35] = 0x35,	
++	[0x36] = 0x36,	
++	[0x37] = 0x37,
++	[0x38] = 0x38,
++	[0x39] = 0x39,	
++	[0x3A] = 0x3A,	
++	[0x3B] = 0x3B,		
++	[0x3C] = 0x3C,	
++	[0x3D] = 0x3D,	
++	[0x3E] = 0x3E,	
++	[0x3F] = 0x3F,
++	[0x40] = 0x40,
++	[0x41] = 0x41,	
++	[0x42] = 0x42,	
++	[0x43] = 0x43,		
++	[0x44] = 0x44,	
++	[0x45] = 0x45,	
++	[0x46] = 0x46,	
++	[0x47] = 0x47,
++	[0x48] = 0x48,
++	[0x49] = 0x49,	
++	[0x4A] = 0x4A,	
++	[0x4B] = 0x4B,		
++	[0x4C] = 0x4C,	
++	[0x4D] = 0x4D,	
++	[0x4E] = 0x4E,	
++	[0x4F] = 0x4F,
++	[0x50] = 0x50,
++	[0x51] = 0x51,	
++	[0x52] = 0x52,	
++	[0x53] = 0x53,		
++	[0x54] = 0x54,	
++	[0x55] = 0x55,	
++	[0x56] = 0x56,	
++	[0x57] = 0x57,
++	[0x58] = 0x58,
++	[0x59] = 0x59,	
++	[0x5A] = 0x5A,	
++	[0x5B] = 0x5B,		
++	[0x5C] = 0x5C,	
++	[0x5D] = 0x5D,	
++	[0x5E] = 0x5E,	
++	[0x5F] = 0x5F,
++	[0x60] = 0x60,
++	[0x61] = 0x61,	
++	[0x62] = 0x62,	
++	[0x63] = 0x63,		
++	[0x64] = 0x64,	
++	[0x65] = 0x65,	
++	[0x66] = 0x66,	
++	[0x67] = 0x67,
++	[0x68] = 0x68,
++	[0x69] = 0x69,	
++	[0x6A] = 0x6A,	
++	[0x6B] = 0x6B,		
++	[0x6C] = 0x6C,	
++	[0x6D] = 0x6D,	
++	[0x6E] = 0x6E,	
++	[0x6F] = 0x6F,
++	[0x70] = 0x70,
++	[0x71] = 0x71,	
++	[0x72] = 0x72,	
++	[0x73] = 0x73,		
++	[0x74] = 0x74,	
++	[0x75] = 0x75,	
++	[0x76] = 0x76,	
++	[0x77] = 0x77,
++	[0x78] = 0x78,
++	[0x79] = 0x79,	
++	[0x7A] = 0x7A,	
++	[0x7B] = 0x7B,		
++	[0x7C] = 0x7C,	
++	[0x7D] = 0x7D,	
++	[0x7E] = 0x7E,	
++	[0x7F] = 0x7F,
++	[0x80] = 0x80,
++	[0x81] = 0x81,	
++	[0x82] = 0x82,	
++	[0x83] = 0x83,		
++	[0x84] = 0x84,	
++	[0x85] = 0x85,	
++	[0x86] = 0x86,	
++	[0x87] = 0x87,
++	[0x88] = 0x88,
++	[0x89] = 0x89,	
++	[0x8A] = 0x8A,	
++	[0x8B] = 0x8B,		
++	[0x8C] = 0x8C,	
++	[0x8D] = 0x8D,	
++	[0x8E] = 0x8E,	
++	[0x8F] = 0x8F,
++	[0x90] = 0x90,
++	[0x91] = 0x91,	
++	[0x92] = 0x92,	
++	[0x93] = 0x93,		
++	[0x94] = 0x94,	
++	[0x95] = 0x95,	
++	[0x96] = 0x96,	
++	[0x97] = 0x97,
++	[0x98] = 0x98,
++	[0x99] = 0x99,	
++	[0x9A] = 0x9A,	
++	[0x9B] = 0x9B,		
++	[0x9C] = 0x9C,	
++	[0x9D] = 0x9D,	
++	[0x9E] = 0x9E,	
++	[0x9F] = 0x9F,
++	[0xA0] = 0xA0,
++	[0xA1] = 0xA1,	
++	[0xA2] = 0xA2,	
++	[0xA3] = 0xA3,		
++	[0xA4] = 0xA4,	
++	[0xA5] = 0xA5,	
++	[0xA6] = 0xA6,	
++	[0xA7] = 0xA7,
++	[0xA8] = 0xA8,
++	[0xA9] = 0xA9,	
++	[0xAA] = 0xAA,	
++	[0xAB] = 0xAB,		
++	[0xAC] = 0xAC,	
++	[0xAD] = 0xAD,	
++	[0xAE] = 0xAE,	
++	[0xAF] = 0xAF,
++	[0xB0] = 0xB0,
++	[0xB1] = 0xB1,	
++	[0xB2] = 0xB2,	
++	[0xB3] = 0xB3,		
++	[0xB4] = 0xB4,	
++	[0xB5] = 0xB5,	
++	[0xB6] = 0xB6,	
++	[0xB7] = 0xB7,
++	[0xB8] = 0xB8,
++	[0xB9] = 0xB9,	
++	[0xBA] = 0xBA,	
++	[0xBB] = 0xBB,		
++	[0xBC] = 0xBC,	
++	[0xBD] = 0xBD,	
++	[0xBE] = 0xBE,	
++	[0xBF] = 0xBF,
++	[0xC0] = 0xC0,
++	[0xC1] = 0xC1,	
++	[0xC2] = 0xC2,	
++	[0xC3] = 0xC3,		
++	[0xC4] = 0xC4,	
++	[0xC5] = 0xC5,	
++	[0xC6] = 0xC6,	
++	[0xC7] = 0xC7,
++	[0xC8] = 0xC8,
++	[0xC9] = 0xC9,	
++	[0xCA] = 0xCA,	
++	[0xCB] = 0xCB,		
++	[0xCC] = 0xCC,	
++	[0xCD] = 0xCD,	
++	[0xCE] = 0xCE,	
++	[0xCF] = 0xCF,
++	[0xD0] = 0xD0,
++	[0xD1] = 0xD1,	
++	[0xD2] = 0xD2,	
++	[0xD3] = 0xD3,		
++	[0xD4] = 0xD4,	
++	[0xD5] = 0xD5,	
++	[0xD6] = 0xD6,	
++	[0xD7] = 0xD7,
++	[0xD8] = 0xD8,
++	[0xD9] = 0xD9,	
++	[0xDA] = 0xDA,	
++	[0xDB] = 0xDB,		
++	[0xDC] = 0xDC,	
++	[0xDD] = 0xDD,	
++	[0xDE] = 0xDE,	
++	[0xDF] = 0xDF,
++	[0xE0] = 0xE0,
++	[0xE1] = 0xE1,	
++	[0xE2] = 0xE2,	
++	[0xE3] = 0xE3,		
++	[0xE4] = 0xE4,	
++	[0xE5] = 0xE5,	
++	[0xE6] = 0xE6,	
++	[0xE7] = 0xE7,
++	[0xE8] = 0xE8,
++	[0xE9] = 0xE9,	
++	[0xEA] = 0xEA,	
++	[0xEB] = 0xEB,		
++	[0xEC] = 0xEC,	
++	[0xED] = 0xED,	
++	[0xEE] = 0xEE,	
++	[0xEF] = 0xEF,
++	[0xF0] = 0xF0,
++	[0xF1] = 0xF1,	
++	[0xF2] = 0xF2,	
++	[0xF3] = 0xF3,		
++	[0xF4] = 0xF4,	
++	[0xF5] = 0xF5,	
++	[0xF6] = 0xF6,	
++	[0xF7] = 0xF7,
++	[0xF8] = 0xF8,
++	[0xF9] = 0xF9,	
++	[0xFA] = 0xFA,	
++	[0xFB] = 0xFB,		
++	[0xFC] = 0xFC,	
++	[0xFD] = 0xFD,	
++	[0xFE] = 0xFE,	
++	[0xFF] = 0xFF     	
++};
++
++#endif
++
++#endif /*__IR_KEYMAP_H__*/
+diff --git a/drivers/input/keyboard/sun4i-ir.c b/drivers/input/keyboard/sun4i-ir.c
+new file mode 100644
+index 0000000..c2bcca7
+--- /dev/null
++++ b/drivers/input/keyboard/sun4i-ir.c
+@@ -0,0 +1,718 @@
++/****************************************************************
++*
++*VERSION 1.0 Inital Version
++*****************************************************************/
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/input.h>
++#include <linux/delay.h>
++#include <linux/interrupt.h>
++#include <linux/keyboard.h>
++#include <linux/ioport.h>
++#include <asm/irq.h>
++#include <asm/io.h>
++#include <linux/slab.h>
++#include <linux/timer.h>
++#include <mach/clock.h>
++
++#include <mach/irqs.h>
++#include <mach/system.h>
++#include <mach/hardware.h>
++#include <mach/sys_config.h>
++
++#include <linux/clk.h>
++#ifdef CONFIG_HAS_EARLYSUSPEND
++    #include <linux/pm.h>
++    #include <linux/earlysuspend.h>
++#endif
++
++#include "ir-keymap.h"
++
++static struct clk *apb_ir_clk;
++static struct clk *ir_clk;
++static u32 ir_gpio_hdle;
++
++
++#define SYS_GPIO_CFG_EN
++#define SYS_CLK_CFG_EN
++//#define DEBUG_IR
++#define PRINT_SUSPEND_INFO
++
++#ifdef DEBUG_IR
++#define DEBUG_IR_LEVEL0
++#define DEBUG_IR_LEVEL2
++#define DEBUG_IR_LEVEL1
++#define dprintk(level, fmt, arg...)	if (debug >= level) \
++	printk(KERN_DEBUG fmt , ## arg)
++#else
++#undef DEBUG_IR_LEVEL0
++#undef DEBUG_IR_LEVEL2
++#undef DEBUG_IR_LEVEL1
++#define dprintk(level, fmt, arg...)	//
++#endif
++
++//Registers
++#define IR_REG(x) 	(x)
++#define IR0_BASE		(0xf1c21800)
++#define IR1_BASE		(0xf1c21C00)
++#define IR_BASE		IR0_BASE
++#define IR_IRQNO	(SW_INT_IRQNO_IR0)
++
++//CCM register
++#define CCM_BASE	0xf1c20000
++//PIO register
++#define PI_BASE		0xf1c20800
++
++#define IR_CTRL_REG	IR_REG(0x00) //IR Control
++#define IR_RXCFG_REG	IR_REG(0x10) //Rx Config
++#define IR_RXDAT_REG	IR_REG(0x20) //Rx Data
++#define IR_RXINTE_REG	IR_REG(0x2C) //Rx Interrupt Enable
++#define IR_RXINTS_REG	IR_REG(0x30) //Rx Interrupt Status
++#define IR_SPLCFG_REG	IR_REG(0x34) //IR Sample Config
++
++//Bit Definition of IR_RXINTS_REG Register
++#define IR_RXINTS_RXOF		(0x1<<0)		//Rx FIFO Overflow
++#define IR_RXINTS_RXPE		(0x1<<1)		//Rx Packet End
++#define IR_RXINTS_RXDA		(0x1<<4)		//Rx FIFO Data Available
++
++//Frequency of Sample Clock = 23437.5Hz, Cycle is 42.7us
++//Pulse of NEC Remote >560us
++#define IR_RXFILT_VAL		(8)			//Filter Threshold = 8*42.7 = ~341us	< 500us
++#define IR_RXIDLE_VAL		(2)   	//Idle Threshold = (2+1)*128*42.7 = ~16.4ms > 9ms
++#define IR_FIFO_SIZE		(16)    //16Bytes
++
++#define IR_L1_MIN	(80)		//80*42.7 = ~3.4ms, Lead1(4.5ms) > IR_L1_MIN
++#define IR_L0_MIN	(40)		//40*42.7 = ~1.7ms, Lead0(4.5ms) Lead0R(2.25ms)> IR_L0_MIN
++#define IR_PMAX		(26)		//26*42.7 = ~1109us ~= 561*2, Pluse < IR_PMAX
++#define IR_DMID		(26)		//26*42.7 = ~1109us ~= 561*2, D1 > IR_DMID, D0 =< IR_DMID
++#define IR_DMAX		(53)		//53*42.7 = ~2263us ~= 561*4, D < IR_DMAX
++
++#define IR_ERROR_CODE		(0xffffffff)
++#define IR_REPEAT_CODE		(0x00000000)
++#define DRV_VERSION		"1.00"
++
++
++#ifdef CONFIG_HAS_EARLYSUSPEND
++struct sun4i_ir_data {
++	struct early_suspend early_suspend;
++};
++#endif
++
++struct ir_raw_buffer
++{
++	unsigned long dcnt;                  /*Packet Count*/
++	#define	IR_RAW_BUF_SIZE		128
++	unsigned char buf[IR_RAW_BUF_SIZE];
++};
++
++#ifdef DEBUG_IR
++static int debug = 8;
++#endif
++
++static unsigned int ir_cnt = 0;
++static struct input_dev *ir_dev;
++static struct timer_list *s_timer;
++static unsigned long ir_code=0;
++static int timer_used=0;
++static struct ir_raw_buffer	ir_rawbuf;
++
++#ifdef CONFIG_HAS_EARLYSUSPEND
++static struct sun4i_ir_data *ir_data;
++#endif
++
++
++static inline void ir_reset_rawbuffer(void)
++{
++	ir_rawbuf.dcnt = 0;
++}
++
++static inline void ir_write_rawbuffer(unsigned char data)
++{
++	if(ir_rawbuf.dcnt < IR_RAW_BUF_SIZE)
++	{
++		ir_rawbuf.buf[ir_rawbuf.dcnt++] = data;
++	}
++	else
++	{
++		printk("ir_write_rawbuffer: IR Rx Buffer Full!!\n");
++	}
++}
++
++static inline unsigned char ir_read_rawbuffer(void)
++{
++	unsigned char data = 0x00;
++
++	if(ir_rawbuf.dcnt > 0)
++	{
++		data = ir_rawbuf.buf[--ir_rawbuf.dcnt];
++	}
++
++	return data;
++}
++
++static inline int ir_rawbuffer_empty(void)
++{
++	return (ir_rawbuf.dcnt == 0);
++}
++
++static inline int ir_rawbuffer_full(void)
++{
++	return (ir_rawbuf.dcnt >= IR_RAW_BUF_SIZE);
++}
++
++static void ir_clk_cfg(void)
++{
++#ifdef SYS_CLK_CFG_EN
++        unsigned long rate = 3000000; //3Mhz
++#else
++        unsigned long tmp = 0;
++#endif
++
++#ifdef SYS_CLK_CFG_EN
++	apb_ir_clk = clk_get(NULL, "apb_ir0");
++	if(!apb_ir_clk) {
++			printk("try to get apb_ir0 clock failed!\n");
++			return;
++	}
++
++	ir_clk = clk_get(NULL, "ir0");
++	if(!ir_clk) {
++			printk("try to get ir0 clock failed!\n");
++			return;
++	}
++
++	if(clk_set_rate(ir_clk, rate)) {
++			printk("set ir0 clock freq to 3M failed!\n");
++	}
++
++	if(clk_enable(apb_ir_clk)) {
++		printk("try to enable apb_ir_clk failed!\n");
++		}
++	if(clk_enable(ir_clk)) {
++		printk("try to enable apb_ir_clk failed!\n");
++	}
++
++#else
++	//Enable APB Clock for IR
++	tmp = readl(CCM_BASE + 0x10);
++	tmp |= 0x1<<10;  //IR
++	writel(tmp, CCM_BASE + 0x10);
++
++	//config Special Clock for IR	(24/8=3MHz)
++	tmp = readl(CCM_BASE + 0x34);
++	tmp &= ~(0x3<<8);
++	tmp |= (0x1<<8);   	//Select 24MHz
++	tmp |= (0x1<<7);   	//Open Clock
++	tmp &= ~(0x3f<<0);
++	tmp |= (7<<0);	 	//Divisor = 8
++	writel(tmp, CCM_BASE + 0x34);
++#endif
++
++    return;
++}
++
++static void ir_clk_uncfg(void)
++{
++#ifdef SYS_CLK_CFG_EN
++	clk_put(apb_ir_clk);
++	clk_put(ir_clk);
++#else
++#endif
++
++	return;
++}
++static void ir_sys_cfg(void)
++{
++	//unsigned long tmp;
++#ifdef SYS_GPIO_CFG_EN
++        if(0 == (ir_gpio_hdle = gpio_request_ex("ir_para", "ir0_rx"))){
++	printk("try to request ir_para gpio failed. \n");
++        }
++#else
++	//config IO: PIOB4 to IR_Rx
++	tmp = readl(PI_BASE + 0x24); //PIOB_CFG0_REG
++	tmp &= ~(0xf<<16);
++	tmp |= (0x2<<16);
++	writel(tmp, PI_BASE + 0x24);
++#endif
++
++	ir_clk_cfg();
++
++    return;
++}
++
++static void ir_sys_uncfg(void)
++{
++	//unsigned long tmp;
++#ifdef SYS_GPIO_CFG_EN
++	gpio_release(ir_gpio_hdle, 2);
++#else
++#endif
++	ir_clk_uncfg();
++	return;
++}
++
++static void ir_reg_cfg(void)
++{
++	unsigned long tmp = 0;
++	/*Enable IR Mode*/
++	tmp = 0x3<<4;
++	writel(tmp, IR_BASE+IR_CTRL_REG);
++
++	/*Config IR Smaple Register*/
++	tmp = 0x1<<0; 	//Fsample = 3MHz/128 = 23437.5Hz (42.7us)
++	tmp |= (IR_RXFILT_VAL&0x3f)<<2;	//Set Filter Threshold
++	tmp |= (IR_RXIDLE_VAL&0xff)<<8; //Set Idle Threshold
++	writel(tmp, IR_BASE+IR_SPLCFG_REG);
++
++	/*Invert Input Signal*/
++	writel(0x1<<2, IR_BASE+IR_RXCFG_REG);
++
++	/*Clear All Rx Interrupt Status*/
++	writel(0xff, IR_BASE+IR_RXINTS_REG);
++
++	/*Set Rx Interrupt Enable*/
++	tmp = (0x1<<4)|0x3;
++	tmp |= ((IR_FIFO_SIZE>>1)-1)<<8; //Rx FIFO Threshold = FIFOsz/2;
++	writel(tmp, IR_BASE+IR_RXINTE_REG);
++
++	/*Enable IR Module*/
++	tmp = readl(IR_BASE+IR_CTRL_REG);
++	tmp |= 0x3;
++	writel(tmp, IR_BASE+IR_CTRL_REG);
++
++	return;
++}
++
++static void ir_setup(void)
++{
++	dprintk(2, "ir_setup: ir setup start!!\n");
++
++	ir_code = 0;
++	timer_used = 0;
++	ir_reset_rawbuffer();
++	ir_sys_cfg();
++	ir_reg_cfg();
++
++	dprintk(2, "ir_setup: ir setup end!!\n");
++
++	return;
++}
++
++static inline unsigned char ir_get_data(void)
++{
++	return (unsigned char)(readl(IR_BASE + IR_RXDAT_REG));
++}
++
++static inline unsigned long ir_get_intsta(void)
++{
++	return (readl(IR_BASE + IR_RXINTS_REG));
++}
++
++static inline void ir_clr_intsta(unsigned long bitmap)
++{
++	unsigned long tmp = readl(IR_BASE + IR_RXINTS_REG);
++
++	tmp &= ~0xff;
++	tmp |= bitmap&0xff;
++	writel(tmp, IR_BASE + IR_RXINTS_REG);
++}
++
++static unsigned long ir_packet_handler(unsigned char *buf, unsigned long dcnt)
++{
++	unsigned long len;
++	unsigned char val = 0x00;
++	unsigned char last = 0x00;
++	unsigned long code = 0;
++	int bitCnt = 0;
++	unsigned long i=0;
++
++	//print_hex_dump_bytes("--- ", DUMP_PREFIX_NONE, buf, dcnt);
++
++	dprintk(2, "dcnt = %d \n", (int)dcnt);
++
++	/*Find Lead '1'*/
++	len = 0;
++	for(i=0; i<dcnt; i++)
++	{
++		val = buf[i];
++		if(val & 0x80)
++		{
++			len += val & 0x7f;
++		}
++		else
++		{
++			if(len > IR_L1_MIN)
++				break;
++
++			len = 0;
++		}
++	}
++
++	if((val&0x80) || (len<=IR_L1_MIN))
++		return IR_ERROR_CODE; /*Invalid Code*/
++
++	/*Find Lead '0'*/
++	len = 0;
++	for(; i<dcnt; i++)
++	{
++		val = buf[i];
++		if(val & 0x80)
++		{
++			if(len > IR_L0_MIN)
++				break;
++
++			len = 0;
++		}
++		else
++		{
++			len += val & 0x7f;
++		}
++	}
++
++	if((!(val&0x80)) || (len<=IR_L0_MIN))
++		return IR_ERROR_CODE; /*Invalid Code*/
++
++	/*go decoding*/
++	code = 0;  /*0 for Repeat Code*/
++	bitCnt = 0;
++	last = 1;
++	len = 0;
++	for(; i<dcnt; i++)
++	{
++		val = buf[i];
++		if(last)
++		{
++			if(val & 0x80)
++			{
++				len += val & 0x7f;
++			}
++			else
++			{
++				if(len > IR_PMAX) /*Error Pulse*/
++				{
++					return IR_ERROR_CODE;
++				}
++				last = 0;
++				len = val & 0x7f;
++			}
++		}
++		else
++		{
++			if(val & 0x80)
++			{
++				if(len > IR_DMAX) /*Error Distant*/
++				{
++					return IR_ERROR_CODE;
++				}
++				else
++				{
++					if(len > IR_DMID)
++					{
++						/*data '1'*/
++						code |= 1<<bitCnt;
++					}
++					bitCnt ++;
++					if(bitCnt == 32)
++						break;  /*decode over*/
++				}
++				last = 1;
++				len = val & 0x7f;
++			}
++			else
++			{
++				len += val & 0x7f;
++			}
++		}
++	}
++
++	return code;
++}
++
++static int ir_code_valid(unsigned long code)
++{
++	unsigned long tmp1, tmp2;
++
++#ifdef IR_CHECK_ADDR_CODE
++	/*Check Address Value*/
++	if((code&0xffff) != (IR_ADDR_CODE&0xffff))
++		return 0; /*Address Error*/
++
++	tmp1 = code & 0x00ff0000;
++	tmp2 = (code & 0xff000000)>>8;
++
++	return ((tmp1^tmp2)==0x00ff0000);  /*Check User Code*/
++#else
++	/*Do Not Check Address Value*/
++	tmp1 = code & 0x00ff00ff;
++	tmp2 = (code & 0xff00ff00)>>8;
++
++	//return ((tmp1^tmp2)==0x00ff00ff);
++	return (((tmp1^tmp2) & 0x00ff0000)==0x00ff0000 );
++#endif /*#ifdef IR_CHECK_ADDR_CODE*/
++}
++
++static irqreturn_t ir_irq_service(int irqno, void *dev_id)
++{
++	unsigned long intsta = ir_get_intsta();
++
++#ifdef DEBUG_IR_LEVEL2
++	printk("IR IRQ Serve\n");
++#endif
++	ir_clr_intsta(intsta);
++
++	//if(intsta & (IR_RXINTS_RXDA|IR_RXINTS_RXPE))  /*FIFO Data Valid*/
++	/*Read Data Every Time Enter this Routine*/
++	{
++		unsigned long dcnt =  (ir_get_intsta()>>8) & 0x1f;
++		unsigned long i = 0;
++
++		/*Read FIFO*/
++		for(i=0; i<dcnt; i++)
++		{
++			if(ir_rawbuffer_full())
++			{
++				#ifdef DEBUG_IR_LEVEL0
++				printk("ir_irq_service: Raw Buffer Full!!\n");
++				#endif
++				break;
++			}
++			else
++			{
++				ir_write_rawbuffer(ir_get_data());
++			}
++		}
++	}
++
++	if(intsta & IR_RXINTS_RXPE)	 /*Packet End*/
++	{
++		unsigned long code;
++		int code_valid;
++
++		code = ir_packet_handler(ir_rawbuf.buf, ir_rawbuf.dcnt);
++		ir_rawbuf.dcnt = 0;
++		code_valid = ir_code_valid(code);
++
++		if(timer_used)
++		{
++			if(code_valid)  //the pre-key is released
++			{
++				input_report_key(ir_dev, ir_keycodes[(ir_code>>16)&0xff], 0);
++				input_sync(ir_dev);
++				#ifdef DEBUG_IR_LEVEL1
++				printk("IR KEY UP\n");
++				#endif
++				ir_cnt = 0;
++			}
++			if((code==IR_REPEAT_CODE)||(code_valid))  //Error, may interfere from other sources
++			{
++				mod_timer(s_timer, jiffies + (HZ/5));
++			}
++		}
++		else
++		{
++			if(code_valid)
++			{
++				s_timer->expires = jiffies + (HZ/5);  //200ms timeout
++				add_timer(s_timer);
++				timer_used = 1;
++			}
++		}
++
++		if(timer_used)
++		{
++			ir_cnt++;
++			if(ir_cnt == 1)
++			{
++			if(code_valid)	ir_code = code;  /*update saved code with a new valid code*/
++			#ifdef DEBUG_IR_LEVEL0
++			printk("IR RAW CODE : %lu\n",(ir_code>>16)&0xff);
++			#endif
++			input_report_key(ir_dev, ir_keycodes[(ir_code>>16)&0xff], 1);
++			#ifdef DEBUG_IR_LEVEL0
++			printk("IR CODE : %d\n",ir_keycodes[(ir_code>>16)&0xff]);
++			#endif
++			input_sync(ir_dev);
++			#ifdef DEBUG_IR_LEVEL1
++			printk("IR KEY VALE %d\n",ir_keycodes[(ir_code>>16)&0xff]);
++			#endif
++		  }
++
++
++		}
++
++		dprintk(1, "ir_irq_service: Rx Packet End, code=0x%x, ir_code=0x%x, timer_used=%d \n", (int)code, (int)ir_code, timer_used);
++	}
++
++	if(intsta & IR_RXINTS_RXOF)  /*FIFO Overflow*/
++	{
++		/*flush raw buffer*/
++		ir_reset_rawbuffer();
++#ifdef DEBUG_IR_LEVEL0
++		printk("ir_irq_service: Rx FIFO Overflow!!\n");
++#endif
++	}
++
++	return IRQ_HANDLED;
++}
++
++static void ir_timer_handle(unsigned long arg)
++{
++	del_timer(s_timer);
++	timer_used = 0;
++	/*Time Out, means that the key is up*/
++	input_report_key(ir_dev, ir_keycodes[(ir_code>>16)&0xff], 0);
++	input_sync(ir_dev);
++#ifdef DEBUG_IR_LEVEL1
++	printk("IR KEY TIMER OUT UP\n");
++#endif
++	ir_cnt = 0;
++
++	dprintk(2, "ir_timer_handle: timeout \n");
++}
++
++//停用设备
++#ifdef CONFIG_HAS_EARLYSUSPEND
++static void sun4i_ir_suspend(struct early_suspend *h)
++{
++//    unsigned long tmp = 0;
++	/*int ret;
++	struct sun4i_ir_data *ts = container_of(h, struct sun4i_ir_data, early_suspend);
++      */
++#ifdef PRINT_SUSPEND_INFO
++	printk("enter earlysuspend: sun4i_ir_suspend. \n");
++#endif
++/*
++	tmp = readl(IR_BASE+IR_CTRL_REG);
++	tmp &= 0xfffffffc;
++    writel(tmp, IR_BASE+IR_CTRL_REG);
++*/
++	clk_disable(ir_clk);
++	clk_disable(apb_ir_clk);
++
++	return ;
++}
++
++//重新唤醒
++static void sun4i_ir_resume(struct early_suspend *h)
++{
++    //unsigned long tmp = 0;
++	/*int ret;
++	struct sun4i_ir_data *ts = container_of(h, struct sun4i_ir_data, early_suspend);
++    */
++#ifdef PRINT_SUSPEND_INFO
++	printk("enter laterresume: sun4i_ir_resume. \n");
++#endif
++
++	ir_code = 0;
++	timer_used = 0;
++	ir_reset_rawbuffer();
++	ir_clk_cfg();
++	ir_reg_cfg();
++
++	return ;
++}
++#else
++#endif
++
++static int __init ir_init(void)
++{
++	int i,ret;
++	int err =0;
++
++	ir_dev = input_allocate_device();
++	if (!ir_dev)
++	{
++		printk(KERN_ERR "ir_dev: not enough memory for input device\n");
++		err = -ENOMEM;
++		goto fail1;
++	}
++
++	ir_dev->name = "sun4i-ir";
++	ir_dev->phys = "RemoteIR/input1";
++	ir_dev->id.bustype = BUS_HOST;
++	ir_dev->id.vendor = 0x0001;
++	ir_dev->id.product = 0x0001;
++	ir_dev->id.version = 0x0100;
++
++    #ifdef REPORT_REPEAT_KEY_VALUE
++	ir_dev->evbit[0] = BIT_MASK(EV_KEY)|BIT_MASK(EV_REP) ;
++    #else
++    	ir_dev->evbit[0] = BIT_MASK(EV_KEY);
++    #endif
++
++	for (i = 0; i < 256; i++)
++		set_bit(ir_keycodes[i], ir_dev->keybit);
++
++	if (request_irq(IR_IRQNO, ir_irq_service, 0, "RemoteIR",
++			ir_dev)) {
++		err = -EBUSY;
++		goto fail2;
++	}
++
++	ir_setup();
++
++	s_timer = kmalloc(sizeof(struct timer_list), GFP_KERNEL);
++	if (!s_timer)
++	{
++	ret =  - ENOMEM;
++	printk(" IR FAIL TO  Request Time\n");
++	goto fail3;
++	}
++	init_timer(s_timer);
++	s_timer->function = &ir_timer_handle;
++
++	err = input_register_device(ir_dev);
++	if (err)
++		goto fail4;
++	printk("IR Initial OK\n");
++
++#ifdef CONFIG_HAS_EARLYSUSPEND
++	printk("==register_early_suspend =\n");
++	ir_data = kzalloc(sizeof(*ir_data), GFP_KERNEL);
++	if (ir_data == NULL) {
++		err = -ENOMEM;
++		goto err_alloc_data_failed;
++	}
++
++	ir_data->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
++	ir_data->early_suspend.suspend = sun4i_ir_suspend;
++	ir_data->early_suspend.resume	= sun4i_ir_resume;
++	register_early_suspend(&ir_data->early_suspend);
++#endif
++
++	return 0;
++
++#ifdef CONFIG_HAS_EARLYSUSPEND
++ err_alloc_data_failed:
++#endif
++ fail4:
++ 	kfree(s_timer);
++ fail3:
++ 	free_irq(IR_IRQNO, ir_dev);
++ fail2:
++ 	input_free_device(ir_dev);
++ fail1:
++ 	return err;
++}
++
++static void __exit ir_exit(void)
++{
++	#ifdef CONFIG_HAS_EARLYSUSPEND
++	    unregister_early_suspend(&ir_data->early_suspend);
++	#endif
++
++	free_irq(IR_IRQNO, ir_dev);
++	input_unregister_device(ir_dev);
++	ir_sys_uncfg();
++ 	kfree(s_timer);
++}
++
++module_init(ir_init);
++module_exit(ir_exit);
++
++MODULE_DESCRIPTION("Remote IR driver");
++MODULE_AUTHOR("DanielWang");
++MODULE_LICENSE("GPL");
++
+-- 
+1.8.0
+

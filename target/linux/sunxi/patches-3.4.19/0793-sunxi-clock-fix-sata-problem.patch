@@ -1,0 +1,126 @@
+From 013e38364ac79a94c6b1cbe55a4ccd76b3bf8a1c Mon Sep 17 00:00:00 2001
+From: Guillaume Fougnies <guillaume@eulerian.com>
+Date: Sat, 29 Sep 2012 12:07:51 -0700
+Subject: [PATCH 793/944] sunxi: clock: fix sata problem
+
+Based on the previous patch, i have work around a version of the patch with
+the A10 User Manual v1.2.
+
+I don't know why they have previously put PLL6 to 1.2Ghz with sourcing the
+apb1 to hosc.
+Seems from the document it should be simply sourced to the PLL6 when set to
+1.2Ghz.
+
+This patch propagate the clock change to all IC versions like the previous
+cubieteam patch and it is far more cleaner like that.
+It's following the specs from the document.
+Still don't know why this mess around the IC VersC / PLL4 and why not
+simply let it on and keep the whole code more straightforward.
+
+For the cedar patch, i'm using it in my test but it's around PLL4 so it
+should have no link with the sata problem i think.
+I should definitvely be tested on a mele a2000 with an active mali driver
+to validate it. Not my case here.
+
+This patch is working on mine. Seems finaly more a sub PLL6 clock (PLL6M)
+to be the reason of the sata problem.
+---
+ arch/arm/mach-sun4i/clock/clock.c | 80 +++++++++++++--------------------------
+ 1 file changed, 27 insertions(+), 53 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/clock/clock.c b/arch/arm/mach-sun4i/clock/clock.c
+index 4df915e..2331e5f 100644
+--- a/arch/arm/mach-sun4i/clock/clock.c
++++ b/arch/arm/mach-sun4i/clock/clock.c
+@@ -175,61 +175,35 @@ int clk_init(void)
+         tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+         tmpSclk->set_clk(tmpSclk->clk);
+         #endif
+-
+-        /* sata pll set to 960mhz for c ver. */
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
+-        #if(USE_PLL6M_REPLACE_PLL4)
+-        tmpSclk->clk->rate  = 960000000;
+-        #else
+-        tmpSclk->clk->rate  = 600000000;
+-        #endif
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6M];
+-        #if(USE_PLL6M_REPLACE_PLL4)
+-        tmpSclk->clk->rate  = 160000000;
+-        #else
+-        tmpSclk->clk->rate  = 100000000;
+-        #endif
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL62];
+-        #if(USE_PLL6M_REPLACE_PLL4)
+-        tmpSclk->clk->rate  = 480000000;
+-        #else
+-        tmpSclk->clk->rate  = 300000000;
+-        #endif
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-    } else {
+-        /* initiate PLL4 */
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL4];
+-        tmpSclk->clk->rate  = 960000000;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-
+-        /* initiate PLL6 */
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
+-        tmpSclk->clk->rate  = 600000000;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6M];
+-        tmpSclk->clk->rate  = 100000000;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL62];
+-        tmpSclk->clk->rate  = 300000000;
+-        tmpSclk->set_clk(tmpSclk->clk);
+-        tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+-        tmpSclk->set_clk(tmpSclk->clk);
+     }
+ 
++	/* initiate PLL6 */
++	tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
++	tmpSclk->clk->rate  = 1200000000;
++	tmpSclk->set_clk(tmpSclk->clk);
++	tmpSclk->clk->onoff = AW_CCU_CLK_ON;
++	tmpSclk->set_clk(tmpSclk->clk);
++
++	tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6M];
++	tmpSclk->clk->rate  = 100000000;
++	tmpSclk->set_clk(tmpSclk->clk);
++	tmpSclk->clk->onoff = AW_CCU_CLK_ON;
++	tmpSclk->set_clk(tmpSclk->clk);
++
++	tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL62];
++	tmpSclk->clk->rate  = 600000000;
++	tmpSclk->set_clk(tmpSclk->clk);
++	tmpSclk->clk->onoff = AW_CCU_CLK_ON;
++	tmpSclk->set_clk(tmpSclk->clk);
++
++	tmpSclk = clk_get(NULL, "apb1");
++	if (tmpSclk) {
++		struct clk *tmpClk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
++		clk_set_parent(tmpSclk, tmpClk);
++	} else {
++		CCU_ERR("try to get apb1 clock handle failed!\n");
++	}
++
+     tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL7];
+     tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+     tmpSclk->set_clk(tmpSclk->clk);
+-- 
+1.8.0
+

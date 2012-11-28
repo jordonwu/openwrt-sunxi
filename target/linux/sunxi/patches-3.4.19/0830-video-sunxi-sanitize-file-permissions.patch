@@ -1,0 +1,28 @@
+From 1e2c27cf787078fd42b5e37c6f0d2659e31576d2 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 17 Oct 2012 12:04:40 +0200
+Subject: [PATCH 830/944] video:sunxi: sanitize file permissions
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ 0 files changed
+ mode change 100755 => 100644 drivers/video/sunxi/disp/Makefile
+ mode change 100755 => 100644 drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
+ mode change 100755 => 100644 drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
+ mode change 100755 => 100644 drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+old mode 100755
+new mode 100644
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
+old mode 100755
+new mode 100644
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
+old mode 100755
+new mode 100644
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
+old mode 100755
+new mode 100644
+-- 
+1.8.0
+

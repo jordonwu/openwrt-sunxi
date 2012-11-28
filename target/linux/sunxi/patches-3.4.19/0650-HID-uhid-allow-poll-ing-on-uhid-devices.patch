@@ -1,0 +1,43 @@
+From 876c625ad556dd5e396033cc8c1888c580ee17f3 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:15 +0200
+Subject: [PATCH 650/944] HID: uhid: allow poll()'ing on uhid devices
+
+As long as the internal buffer is not empty, we return POLLIN to
+user-space.
+
+uhid->head and uhid->tail are no atomics so the comparison may return
+inexact results. However, this doesn't matter here as user-space would
+need to poll() in two threads simultaneously to trigger this. And in this
+case it doesn't matter if a cached result is returned or the exact new
+result as user-space does not know which thread returns first from poll()
+and the following read(). So it is safe to compare the values without
+locking.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index 05ef4b0..b1a477f 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -117,6 +117,13 @@ static ssize_t uhid_char_write(struct file *file, const char __user *buffer,
+ 
+ static unsigned int uhid_char_poll(struct file *file, poll_table *wait)
+ {
++	struct uhid_device *uhid = file->private_data;
++
++	poll_wait(file, &uhid->waitq, wait);
++
++	if (uhid->head != uhid->tail)
++		return POLLIN | POLLRDNORM;
++
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

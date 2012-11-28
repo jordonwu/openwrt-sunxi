@@ -1,0 +1,30 @@
+From a75dff6187a30fc1a10798efc62b5564752b17a1 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 18:00:44 +0200
+Subject: [PATCH 874/944] video:sunxi:disp: fix excess elements in modClkName
+ on sun4i
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/OSAL_Clock.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL_Clock.c
+index e6bc992..36a341e 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL_Clock.c
+@@ -204,9 +204,11 @@ static char *_modClkName[AW_MOD_CLK_CNT] = {
+ 	"ahb_ehci1",
+ 	"ahb_ohci1",
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ 	"iep",
+ 	"ahb_iep",
+ 	"sdram_iep",
++#endif
+ };
+ 
+ __s32 OSAL_CCMU_SetSrcFreq(__u32 nSclkNo, __u32 nFreq)
+-- 
+1.8.0
+

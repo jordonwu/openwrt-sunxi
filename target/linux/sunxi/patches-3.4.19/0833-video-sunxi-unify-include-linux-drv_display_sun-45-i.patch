@@ -1,0 +1,68 @@
+From 9fd4c7b53197af3e3b035c5bdec9451b69d6297a Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 25 Oct 2012 21:05:44 +0300
+Subject: [PATCH 833/944] video:sunxi: unify
+ include/linux/drv_display_sun[45]i.h
+
+sun4i has DISP_CMD_SET/GET__HUE ioctls, which are ifdeffed out in a
+massive switch statement anyway on sun5i.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/media/video/sun4i_csi/test/app_test_ok.c | 4 ++--
+ include/linux/drv_display.h                      | 4 +---
+ include/linux/drv_display_sunxi.h                | 3 +--
+ 3 files changed, 4 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/media/video/sun4i_csi/test/app_test_ok.c b/drivers/media/video/sun4i_csi/test/app_test_ok.c
+index f556db8..b0b012d 100644
+--- a/drivers/media/video/sun4i_csi/test/app_test_ok.c
++++ b/drivers/media/video/sun4i_csi/test/app_test_ok.c
+@@ -47,7 +47,7 @@
+ #include <time.h>
+ #include <linux/fb.h>
+ //#include "../../../../../../linux-v2.6.36.4/include/linux/drv_display.h"//modify this
+-#include "./../../../../../include/linux/drv_display_sun4i.h"//modify this
++#include "./../../../../../include/linux/drv_display_sunxi.h"//modify this
+ 
+ //#define READ_NUM 5000
+ #define DISPLAY
+@@ -1212,4 +1212,4 @@ printf("********************************************************************test
+ 
+ 	exit (EXIT_SUCCESS);
+ 	return 0;
+-}
+\ No newline at end of file
++}
+diff --git a/include/linux/drv_display.h b/include/linux/drv_display.h
+index 22a023c..430737b 100644
+--- a/include/linux/drv_display.h
++++ b/include/linux/drv_display.h
+@@ -23,9 +23,7 @@
+ 
+ #if defined(CONFIG_ARCH_SUN3I)
+ #include <linux/drv_display_sun3i.h>
+-#elif defined(CONFIG_ARCH_SUN4I)
+-#include <linux/drv_display_sunxi.h>
+-#elif defined(CONFIG_ARCH_SUN5I)
++#elif defined(CONFIG_ARCH_SUN4I) || defined(CONFIG_ARCH_SUN5I)
+ #include <linux/drv_display_sunxi.h>
+ #else
+ #error "no chip id defined"
+diff --git a/include/linux/drv_display_sunxi.h b/include/linux/drv_display_sunxi.h
+index e0fd090..ea9f3e0 100644
+--- a/include/linux/drv_display_sunxi.h
++++ b/include/linux/drv_display_sunxi.h
+@@ -791,8 +791,7 @@ typedef enum tag_DISP_CMD
+ //---pwm --------
+     DISP_CMD_PWM_SET_PARA = 0x300,
+     DISP_CMD_PWM_GET_PARA = 0x301,
+-}__disP_cmd_t;
+-
++}__disp_cmd_t;
+ 
+ #define GET_UMP_SECURE_ID_BUF1 _IOWR('m', 310, unsigned int)
+ #define GET_UMP_SECURE_ID_BUF2 _IOWR('m', 311, unsigned int)
+-- 
+1.8.0
+

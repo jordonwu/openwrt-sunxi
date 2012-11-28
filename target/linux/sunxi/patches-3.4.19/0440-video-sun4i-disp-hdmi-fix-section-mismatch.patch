@@ -1,0 +1,40 @@
+From 32fb936f506bc301ffdcd9c17469ba8dceb88271 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 14 May 2012 02:51:18 +0000
+Subject: [PATCH 440/944] video: sun4i: disp/hdmi: fix section mismatch
+
+---
+ drivers/video/sun4i/disp/dev_disp.c | 3 ++-
+ drivers/video/sun4i/hdmi/dev_hdmi.c | 2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/sun4i/disp/dev_disp.c b/drivers/video/sun4i/disp/dev_disp.c
+index 82e3cc1..80aca13 100644
+--- a/drivers/video/sun4i/disp/dev_disp.c
++++ b/drivers/video/sun4i/disp/dev_disp.c
+@@ -366,7 +366,8 @@ ssize_t disp_write(struct file *file, const char __user *buf, size_t count, loff
+     return 0;
+ }
+ 
+-static int __init disp_probe(struct platform_device *pdev)//called when platform_driver_register
++/* called when platform_driver_register*/
++static int __devinit disp_probe(struct platform_device *pdev)
+ {
+ 	fb_info_t * info = NULL;
+ 
+diff --git a/drivers/video/sun4i/hdmi/dev_hdmi.c b/drivers/video/sun4i/hdmi/dev_hdmi.c
+index aad05d5..f4879b3 100644
+--- a/drivers/video/sun4i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun4i/hdmi/dev_hdmi.c
+@@ -28,7 +28,7 @@ struct platform_device hdmi_device =
+ };
+ 
+ 
+-static int __init hdmi_probe(struct platform_device *pdev)
++static int __devinit hdmi_probe(struct platform_device *pdev)
+ {
+ 	__inf("hdmi_probe call\n");
+ 
+-- 
+1.8.0
+

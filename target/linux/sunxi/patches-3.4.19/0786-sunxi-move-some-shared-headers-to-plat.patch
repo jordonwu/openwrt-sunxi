@@ -1,0 +1,2399 @@
+From 3a25f25b3aa80fe947ba5f68f3c43c639399b283 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 30 Jul 2012 17:17:32 +0200
+Subject: [PATCH 786/944] sunxi: move some shared headers to plat/
+
+---
+ arch/arm/mach-sun3i/include/mach/debug-macro.S |  31 +-----
+ arch/arm/mach-sun3i/include/mach/hardware.h    |  28 +-----
+ arch/arm/mach-sun3i/include/mach/uncompress.h  |  36 +------
+ arch/arm/mach-sun4i/include/mach/clock.h       |  65 +-----------
+ arch/arm/mach-sun4i/include/mach/debug-macro.S |  33 +------
+ arch/arm/mach-sun4i/include/mach/dram.h        |  68 +------------
+ arch/arm/mach-sun4i/include/mach/entry-macro.S |  95 +-----------------
+ arch/arm/mach-sun4i/include/mach/hardware.h    |  33 +------
+ arch/arm/mach-sun4i/include/mach/io.h          |  33 +------
+ arch/arm/mach-sun4i/include/mach/irqs.h        | 124 +----------------------
+ arch/arm/mach-sun4i/include/mach/memory.h      |  30 +-----
+ arch/arm/mach-sun4i/include/mach/system.h      |  44 +--------
+ arch/arm/mach-sun4i/include/mach/timex.h       |  30 +-----
+ arch/arm/mach-sun4i/include/mach/uncompress.h  |  40 +-------
+ arch/arm/mach-sun5i/include/mach/clock.h       |  65 +-----------
+ arch/arm/mach-sun5i/include/mach/debug-macro.S |  33 +------
+ arch/arm/mach-sun5i/include/mach/dram.h        | 100 +------------------
+ arch/arm/mach-sun5i/include/mach/entry-macro.S |  95 +-----------------
+ arch/arm/mach-sun5i/include/mach/hardware.h    |  33 +------
+ arch/arm/mach-sun5i/include/mach/io.h          |  33 +------
+ arch/arm/mach-sun5i/include/mach/irqs.h        | 127 +-----------------------
+ arch/arm/mach-sun5i/include/mach/memory.h      |  51 +---------
+ arch/arm/mach-sun5i/include/mach/system.h      |  55 +----------
+ arch/arm/mach-sun5i/include/mach/timex.h       |  30 +-----
+ arch/arm/mach-sun5i/include/mach/uncompress.h  |  40 +-------
+ arch/arm/plat-sunxi/include/plat/clock.h       |  68 +++++++++++++
+ arch/arm/plat-sunxi/include/plat/debug-macro.S |  36 +++++++
+ arch/arm/plat-sunxi/include/plat/dram.h        | 101 +++++++++++++++++++
+ arch/arm/plat-sunxi/include/plat/entry-macro.S |  98 ++++++++++++++++++
+ arch/arm/plat-sunxi/include/plat/hardware.h    |  36 +++++++
+ arch/arm/plat-sunxi/include/plat/io.h          |  36 +++++++
+ arch/arm/plat-sunxi/include/plat/irqs.h        | 132 +++++++++++++++++++++++++
+ arch/arm/plat-sunxi/include/plat/memory.h      |  58 +++++++++++
+ arch/arm/plat-sunxi/include/plat/system.h      |  59 +++++++++++
+ arch/arm/plat-sunxi/include/plat/timex.h       |  33 +++++++
+ arch/arm/plat-sunxi/include/plat/uncompress.h  |  43 ++++++++
+ 36 files changed, 725 insertions(+), 1327 deletions(-)
+ create mode 100644 arch/arm/plat-sunxi/include/plat/clock.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/debug-macro.S
+ create mode 100644 arch/arm/plat-sunxi/include/plat/dram.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/entry-macro.S
+ create mode 100644 arch/arm/plat-sunxi/include/plat/hardware.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/io.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/irqs.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/memory.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/system.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/timex.h
+ create mode 100644 arch/arm/plat-sunxi/include/plat/uncompress.h
+
+diff --git a/arch/arm/mach-sun3i/include/mach/debug-macro.S b/arch/arm/mach-sun3i/include/mach/debug-macro.S
+index d382713..ea20d29 100644
+--- a/arch/arm/mach-sun3i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun3i/include/mach/debug-macro.S
+@@ -1,34 +1,5 @@
+ /*
+  * arch/arm/mach-sun3i/include/mach/debug-macro.S
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+ 
+-#include <mach/platform.h>
+-
+-	.macro	addruart, rp, rv, tmp
+-	ldr	\rp, =SW_PA_UART0_IO_BASE
+-	ldr	\rv, =SW_VA_UART0_IO_BASE
+-#if CONFIG_SW_DEBUG_UART != 0
+-	add	\rp, \rp, #(0x400 * CONFIG_SW_DEBUG_UART)
+-	add	\rv, \rv, #(0x400 * CONFIG_SW_DEBUG_UART)
+-#endif
+-	.endm
+-
+-#define UART_SHIFT	2
+-#include <asm/hardware/debug-8250.S>
++#include <plat/debug-macro.S>
+diff --git a/arch/arm/mach-sun3i/include/mach/hardware.h b/arch/arm/mach-sun3i/include/mach/hardware.h
+index bdfd882..a80ed64 100644
+--- a/arch/arm/mach-sun3i/include/mach/hardware.h
++++ b/arch/arm/mach-sun3i/include/mach/hardware.h
+@@ -1,31 +1,5 @@
+ /*
+  * arch/arm/mach-sun3i/include/mach/hardware.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  */
+-#ifndef __ASM_ARCH_HARDWARE_H
+-#define __ASM_ARCH_HARDWARE_H
+ 
+-#include <asm/sizes.h>
+-
+-/* macro to get at IO space when running virtually */
+-#define IO_ADDRESS(x)		((x) + 0xf0000000)
+-
+-#define __io_address(n)		__io(IO_ADDRESS(n))
+-
+-#endif
++#include <plat/hardware.h>
+diff --git a/arch/arm/mach-sun3i/include/mach/uncompress.h b/arch/arm/mach-sun3i/include/mach/uncompress.h
+index fb0d280..9db2c29 100644
+--- a/arch/arm/mach-sun3i/include/mach/uncompress.h
++++ b/arch/arm/mach-sun3i/include/mach/uncompress.h
+@@ -1,39 +1,5 @@
+ /*
+  * arch/arm/mach-sun3i/include/mach/uncompress.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-/*
+- * This does not append a newline
+- */
+-static inline void putc(int c)
+-{
+-}
+-
+-static inline void flush(void)
+-{
+-}
+-
+-/*
+- * nothing to do
+- */
+-#define arch_decomp_setup()
+-#define arch_decomp_wdog()
+-
++#include <plat/uncompress.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/clock.h b/arch/arm/mach-sun4i/include/mach/clock.h
+index 6b976ce..3efeacd 100644
+--- a/arch/arm/mach-sun4i/include/mach/clock.h
++++ b/arch/arm/mach-sun4i/include/mach/clock.h
+@@ -1,68 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/clock.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Kevin Zhang <kevin@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_CLOCK_H__
+-#define __SW_CLOCK_H__
+-
+-#include <linux/kernel.h>
+-#include "aw_ccu.h"
+-
+-/* define clock type            */
+-typedef enum __CCU_CLK_TYPE
+-{
+-    CCU_CLK_TYPE_SYS,
+-    CCU_CLK_TYPE_MOD,
+-
+-} __ccu_clk_type_e;
+-
+-typedef enum __CCU_CLK_CHANGE
+-{
+-    CCU_CLK_CHANGE_NONE,
+-    CCU_CLK_CHANGE_PREPARE,
+-    CCU_CLK_CHANGE_DONE,
+-
+-} __ccu_clk_change_e;
+-
+-
+-typedef struct clk
+-{
+-    __aw_ccu_clk_t  *clk;       /* clock handle from ccu csp                            */
+-    __s32           usr_cnt;    /* user count                                           */
+-    __s32           enable;     /* enable count, when it down to 0, it will be disalbe  */
+-    __s32           hash;       /* hash value, for fast search without string compare   */
+-
+-    __aw_ccu_clk_t  *(*get_clk)(__s32 id);
+-                                /* set clock                                            */
+-    __aw_ccu_err_e  (*set_clk)(__aw_ccu_clk_t *clk);
+-                                /* get clock                                            */
+-    struct clk      *parent;    /* parent clock node pointer                            */
+-    struct clk      *child;     /* child clock node pinter                              */
+-    struct clk      *left;      /* left brother node pointer                            */
+-    struct clk      *right;     /* right bother node pointer                            */
+-
+-} __ccu_clk_t;
+-
+-extern int clk_reset(struct clk *clk, int reset);
+-
+-#endif  /* #ifndef __SW_CLOCK_H__ */
+-
++#include <plat/clock.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/debug-macro.S b/arch/arm/mach-sun4i/include/mach/debug-macro.S
+index 725fad5..d71e453 100644
+--- a/arch/arm/mach-sun4i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun4i/include/mach/debug-macro.S
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/debug-macro.S
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#include <mach/platform.h>
+-
+-	.macro	addruart, rp, rv, tmp
+-	ldr	\rp, =SW_PA_UART0_IO_BASE
+-	ldr	\rv, =SW_VA_UART0_IO_BASE
+-#if CONFIG_SW_DEBUG_UART != 0
+-	add	\rp, \rp, #(0x400 * CONFIG_SW_DEBUG_UART)
+-	add	\rv, \rv, #(0x400 * CONFIG_SW_DEBUG_UART)
+-#endif
+-	.endm
+-
+-#define UART_SHIFT	2
+-#include <asm/hardware/debug-8250.S>
++#include <plat/debug-macro.S>
+diff --git a/arch/arm/mach-sun4i/include/mach/dram.h b/arch/arm/mach-sun4i/include/mach/dram.h
+index 3cd6c90..d8af26f 100644
+--- a/arch/arm/mach-sun4i/include/mach/dram.h
++++ b/arch/arm/mach-sun4i/include/mach/dram.h
+@@ -1,71 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/dram.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Kevin Zhang <kevin@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __AW_DRAM_H__
+-#define __AW_DRAM_H__
+-
+-#include <linux/kernel.h>
+-
+-struct dram_para_t
+-{
+-    unsigned int    dram_baseaddr;
+-    unsigned int    dram_clk;
+-    unsigned int    dram_type;
+-    unsigned int    dram_rank_num;
+-    unsigned int    dram_chip_density;
+-    unsigned int    dram_io_width;
+-    unsigned int    dram_bus_width;
+-    unsigned int    dram_cas;
+-    unsigned int    dram_zq;
+-    unsigned int    dram_odt_en;
+-    unsigned int    dram_size;
+-    unsigned int    dram_tpr0;
+-    unsigned int    dram_tpr1;
+-    unsigned int    dram_tpr2;
+-    unsigned int    dram_tpr3;
+-    unsigned int    dram_tpr4;
+-    unsigned int    dram_tpr5;
+-    unsigned int    dram_emr1;
+-    unsigned int    dram_emr2;
+-    unsigned int    dram_emr3;
+-};
+-
+-int dram_init(void);
+-int dram_exit(void);
+-int dram_get_size(void);
+-void dram_set_clock(int clk);
+-void dram_set_drive(void);
+-void dram_set_autorefresh_cycle(unsigned int clk);
+-int  dram_scan_readpipe(void);
+-void dram_enter_selfrefresh(void);
+-void dram_exit_selfrefresh(void);
+-void dram_enter_power_down(void);
+-void dram_exit_power_down(void);
+-void dram_hostport_on_off(unsigned int port_idx, unsigned int on);
+-unsigned int dram_hostport_check_ahb_fifo_status(unsigned int port_idx);
+-void dram_hostport_setup(unsigned int port, unsigned int prio, unsigned int wait_cycle, unsigned int cmd_num);
+-void dram_power_save_process(void);
+-unsigned int dram_power_up_process(void);
+-
+-#endif  /* __AW_DRAM_H__ */
+-
++#include <plat/dram.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/entry-macro.S b/arch/arm/mach-sun4i/include/mach/entry-macro.S
+index c8a0d18..5d0ffa4 100644
+--- a/arch/arm/mach-sun4i/include/mach/entry-macro.S
++++ b/arch/arm/mach-sun4i/include/mach/entry-macro.S
+@@ -1,98 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/entry-macro.S
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#include <mach/io.h>
+-#include <mach/hardware.h>
+-#include <mach/platform.h>
+-#include <asm/hardware/vic.h>
+-
+-	.macro getioaddr, rp, rv
+-	ldr	\rp, =SW_IO_PHYS
+-	ldr	\rv, =SW_IO_VIRT
+-	.endm
+-
+-        .macro  disable_fiq
+-        .endm
+-
+-        .macro  get_irqnr_preamble, base, tmp
+-        ldr \base, =SW_VA_INT_IO_BASE
+-        .endm
+-
+-        .macro  arch_ret_to_user, tmp1, tmp2
+-        .endm
+-
+-        .macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-        ldr \irqstat, [\base, #0x10]    @ get pending status
+-        mov \irqnr, #0
+-        teq \irqstat, #0
+-        beq 1003f
+-
+-1001:   tst \irqstat, #15
+-        bne 1002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 1001b
+-1002:   tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 1002b
+-1003:   /* EQ will be set if no irqs pending */
+-
+-        ldr \irqstat, [\base, #0x14]    @ get pending status
+-        teq \irqstat, #0
+-        beq 3000f
+-
+-        mov \irqnr, #32
+-2001:       tst \irqstat, #15
+-        bne 2002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 2001b
+-2002:       tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 2002b
+-
+-3000:   /* EQ will be set if no irqs pending */
+-
+-        ldr \irqstat, [\base, #0x18]    @ get pending status
+-        teq \irqstat, #0
+-        beq 5000f
+-
+-        mov \irqnr, #64
+-4001:       tst \irqstat, #15
+-        bne 4002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 4001b
+-4002:       tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 4002b
+-
+-5000:
+-        .endm
+-
++#include <plat/entry-macro.S>
+diff --git a/arch/arm/mach-sun4i/include/mach/hardware.h b/arch/arm/mach-sun4i/include/mach/hardware.h
+index a1cbf6e..b3fb202 100644
+--- a/arch/arm/mach-sun4i/include/mach/hardware.h
++++ b/arch/arm/mach-sun4i/include/mach/hardware.h
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/hardware.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_HARDWARE_H
+-#define __SW_HARDWARE_H
+-
+-#include <asm/sizes.h>
+-
+-/* macro to get at IO space when running virtually */
+-#define IO_ADDRESS(x)           ((x) + 0xf0000000)
+-
+-#define __io_address(n)         __io(IO_ADDRESS(n))
+-
+-#endif
+-
+-
++#include <plat/hardware.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/io.h b/arch/arm/mach-sun4i/include/mach/io.h
+index c72aa12..3cc8e49 100644
+--- a/arch/arm/mach-sun4i/include/mach/io.h
++++ b/arch/arm/mach-sun4i/include/mach/io.h
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/io.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_IO_H
+-#define __SW_IO_H
+-
+-#define IO_SPACE_LIMIT 0x1ffffff
+-
+-#define SW_IO_PHYS      0x01c00000
+-#define SW_IO_SIZE      (SZ_1M * 3)
+-#define SW_IO_VIRT      0xf1c00000
+-
+-#define __mem_pci(a) (a)
+-#define __io(a)         __typesafe_io(a)
+-
+-#endif
++#include <plat/io.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/irqs.h b/arch/arm/mach-sun4i/include/mach/irqs.h
+index 834d70f..225d094 100644
+--- a/arch/arm/mach-sun4i/include/mach/irqs.h
++++ b/arch/arm/mach-sun4i/include/mach/irqs.h
+@@ -1,127 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/irqs.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_IRQS_H
+-#define __SW_IRQS_H
+-
+-
+-#include <mach/platform.h>
+-
+-#define NR_IRQS		                      96
+-
+-/*----------- interrupt register list -------------------------------------------*/
+-
+-
+-/* registers */
+-
+-/* mask */
+-#define SW_INT_START	                  0
+-
+-#define SW_INT_IRQNO_ENMI               0
+-#define SW_INT_IRQNO_UART0              1
+-#define SW_INT_IRQNO_UART1              2
+-#define SW_INT_IRQNO_UART2              3
+-#define SW_INT_IRQNO_UART3              4
+-#define SW_INT_IRQNO_IR0                5
+-#define SW_INT_IRQNO_IR1                6
+-#define SW_INT_IRQNO_TWI0               7
+-#define SW_INT_IRQNO_TWI1               8
+-#define SW_INT_IRQNO_TWI2               9
+-#define SW_INT_IRQNO_SPI00              10
+-#define SW_INT_IRQNO_SPI01              11
+-#define SW_INT_IRQNO_SPI02              12
+-#define SW_INT_IRQNO_SPDIF              13
+-#define SW_INT_IRQNO_AC97               14
+-#define SW_INT_IRQNO_TS                 15
+-#define SW_INT_IRQNO_I2S                16
+-#define SW_INT_IRQNO_UART4              17
+-#define SW_INT_IRQNO_UART5              18
+-#define SW_INT_IRQNO_UART6              19
+-#define SW_INT_IRQNO_UART7              20
+-#define SW_INT_IRQNO_KEYPAD             21
+-#define SW_INT_IRQNO_TIMER0             22
+-#define SW_INT_IRQNO_TIMER1             23
+-#define SW_INT_IRQNO_ALARM              24
+-#define SW_INT_IRQNO_TIMER2             24
+-#define SW_INT_IRQNO_TIMER3             25
+-#define SW_INT_IRQNO_CAN                26
+-#define SW_INT_IRQNO_DMA                27
+-#define SW_INT_IRQNO_PIO                28
+-#define SW_INT_IRQNO_TOUCH_PANEL        29
+-#define SW_INT_IRQNO_AUDIO_CODEC        30
+-#define SW_INT_IRQNO_LRADC              31
+-#define SW_INT_IRQNO_SDMC0              32
+-#define SW_INT_IRQNO_SDMC1              33
+-#define SW_INT_IRQNO_SDMC2              34
+-#define SW_INT_IRQNO_SDMC3              35
+-#define SW_INT_IRQNO_MEMSTICK           36
+-#define SW_INT_IRQNO_NAND               37
+-
+-#define SW_INTC_IRQNO_USB0              38
+-#define SW_INTC_IRQNO_USB1              39
+-#define SW_INTC_IRQNO_USB2              40
+-#define SW_INTC_IRQNO_SCR               41
+-#define SW_INTC_IRQNO_CSI0              42
+-#define SW_INTC_IRQNO_CSI1              43
+-
+-#define SW_INT_IRQNO_LCDCTRL0           44
+-#define SW_INT_IRQNO_LCDCTRL1           45
+-#define SW_INT_IRQNO_MP                 46
+-#define SW_INT_IRQNO_DEFEBE0            47
+-#define SW_INT_IRQNO_DEFEBE1            48
+-#define SW_INT_IRQNO_PMU                49
+-#define SW_INT_IRQNO_SPI3               50
+-#define SW_INT_IRQNO_TZASC              51
+-#define SW_INT_IRQNO_PATA               52
+-#define SW_INT_IRQNO_VE                 53
+-#define SW_INT_IRQNO_SS                 54
+-#define SW_INT_IRQNO_EMAC               55
+-#define SW_INT_IRQNO_SATA               56
+-#define SW_INT_IRQNO_GPS                57
+-#define SW_INT_IRQNO_HDMI               58
+-#define SW_INT_IRQNO_TVE                59
+-#define SW_INT_IRQNO_ACE                60
+-#define SW_INT_IRQNO_TVD                61
+-#define SW_INT_IRQNO_PS2_0              62
+-#define SW_INT_IRQNO_PS2_1              63
+-#define SW_INT_IRQNO_USB3               64
+-#define SW_INT_IRQNO_USB4               65
+-#define SW_INT_IRQNO_PLE_PFM            66
+-#define SW_INT_IRQNO_TIMER4             67
+-#define SW_INT_IRQNO_TIMER5             68
+-#define SW_INT_IRQNO_GPU_GP             69
+-#define SW_INT_IRQNO_GPU_GPMMU          70
+-#define SW_INT_IRQNO_GPU_PP0            71
+-#define SW_INT_IRQNO_GPU_PPMMU0         72
+-#define SW_INT_IRQNO_GPU_PMU            73
+-#define SW_INT_IRQNO_GPU_RSV0           74
+-#define SW_INT_IRQNO_GPU_RSV1           75
+-#define SW_INT_IRQNO_GPU_RSV2           76
+-#define SW_INT_IRQNO_GPU_RSV3           77
+-#define SW_INT_IRQNO_GPU_RSV4           78
+-#define SW_INT_IRQNO_GPU_RSV5           79
+-#define SW_INT_IRQNO_GPU_RSV6           80
+-
+-#define SW_INT_END		                  95
+-
+-#endif
++#include <plat/irqs.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/memory.h b/arch/arm/mach-sun4i/include/mach/memory.h
+index 5be06c8..5b484ed 100644
+--- a/arch/arm/mach-sun4i/include/mach/memory.h
++++ b/arch/arm/mach-sun4i/include/mach/memory.h
+@@ -1,33 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/memory.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_MEMORY_H
+-#define __SW_MEMORY_H
+-
+-/* physical offset of RAM */
+-#define PLAT_PHYS_OFFSET		UL(0x40000000)
+-
+-/* default ATAG_MEM size */
+-#define MEM_SIZE	(512*1024*1024)
+-
+-#endif
++#include <plat/memory.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/system.h b/arch/arm/mach-sun4i/include/mach/system.h
+index 4371e2f..1854bd0 100644
+--- a/arch/arm/mach-sun4i/include/mach/system.h
++++ b/arch/arm/mach-sun4i/include/mach/system.h
+@@ -1,47 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/system.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_SYSTEM_H
+-#define __SW_SYSTEM_H
+-
+-#include <asm/proc-fns.h>
+-
+-extern unsigned long fb_start;
+-extern unsigned long fb_size;
+-extern unsigned long g2d_start;
+-extern unsigned long g2d_size;
+-
+-static inline void arch_idle(void)
+-{
+-	cpu_do_idle();
+-}
+-
+-enum sw_ic_ver {
+-	MAGIC_VER_A = 0,
+-	MAGIC_VER_B,
+-	MAGIC_VER_C
+-};
+-
+-enum sw_ic_ver sw_get_ic_ver(void);
+-
+-#endif
++#include <plat/system.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/timex.h b/arch/arm/mach-sun4i/include/mach/timex.h
+index 1a24fa9..df3cfea 100644
+--- a/arch/arm/mach-sun4i/include/mach/timex.h
++++ b/arch/arm/mach-sun4i/include/mach/timex.h
+@@ -1,33 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/timex.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_TIMEX_H
+-#define __SW_TIMEX_H
+-
+-#define SYS_TIMER_SCAL      (16)            /* timer clock source pre-divsion   */
+-#define SYS_TIMER_CLKSRC    (24000000)      /* timer clock source               */
+-#define TMR_INTER_VAL       (SYS_TIMER_CLKSRC/(SYS_TIMER_SCAL*HZ))
+-
+-#define CLOCK_TICK_RATE     TMR_INTER_VAL
+-
+-#endif
++#include <plat/timex.h>
+diff --git a/arch/arm/mach-sun4i/include/mach/uncompress.h b/arch/arm/mach-sun4i/include/mach/uncompress.h
+index 11a8aa2..ddfe147 100644
+--- a/arch/arm/mach-sun4i/include/mach/uncompress.h
++++ b/arch/arm/mach-sun4i/include/mach/uncompress.h
+@@ -1,43 +1,5 @@
+ /*
+  * arch/arm/mach-sun4i/include/mach/uncompress.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_UNCOMPRESS_H
+-#define __SW_UNCOMPRESS_H
+-
+-static inline void putc(int c)
+-{
+-}
+-
+-static inline void flush(void)
+-{
+-}
+-
+-/*
+- * nothing to do
+- */
+-#define arch_decomp_setup()
+-#define arch_decomp_wdog()
+-
+-#endif
+-
+-
++#include <plat/uncompress.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/clock.h b/arch/arm/mach-sun5i/include/mach/clock.h
+index 44fe3c4..689be1b 100644
+--- a/arch/arm/mach-sun5i/include/mach/clock.h
++++ b/arch/arm/mach-sun5i/include/mach/clock.h
+@@ -1,68 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/clock.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Kevin Zhang <kevin@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_CLOCK_H__
+-#define __SW_CLOCK_H__
+-
+-#include <linux/kernel.h>
+-#include "aw_ccu.h"
+-
+-/* define clock type            */
+-typedef enum __CCU_CLK_TYPE
+-{
+-    CCU_CLK_TYPE_SYS,
+-    CCU_CLK_TYPE_MOD,
+-
+-} __ccu_clk_type_e;
+-
+-typedef enum __CCU_CLK_CHANGE
+-{
+-    CCU_CLK_CHANGE_NONE,
+-    CCU_CLK_CHANGE_PREPARE,
+-    CCU_CLK_CHANGE_DONE,
+-
+-} __ccu_clk_change_e;
+-
+-
+-typedef struct clk
+-{
+-    __aw_ccu_clk_t  *clk;       /* clock handle from ccu csp                            */
+-    __s32           usr_cnt;    /* user count                                           */
+-    __s32           enable;     /* enable count, when it down to 0, it will be disalbe  */
+-    __s32           hash;       /* hash value, for fast search without string compare   */
+-
+-    __aw_ccu_clk_t  *(*get_clk)(__s32 id);
+-                                /* set clock                                            */
+-    __aw_ccu_err_e  (*set_clk)(__aw_ccu_clk_t *clk);
+-                                /* get clock                                            */
+-    struct clk      *parent;    /* parent clock node pointer                            */
+-    struct clk      *child;     /* child clock node pinter                              */
+-    struct clk      *left;      /* left brother node pointer                            */
+-    struct clk      *right;     /* right bother node pointer                            */
+-
+-} __ccu_clk_t;
+-
+-extern int clk_reset(struct clk *clk, int reset);
+-
+-#endif  /* #ifndef __SW_CLOCK_H__ */
+-
++#include <plat/clock.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/debug-macro.S b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+index 110ab53..5314af0 100644
+--- a/arch/arm/mach-sun5i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/debug-macro.S
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#include <mach/platform.h>
+-
+-	.macro	addruart, rp, rv, tmp
+-	ldr	\rp, =SW_PA_UART0_IO_BASE
+-	ldr	\rv, =SW_VA_UART0_IO_BASE
+-#if CONFIG_SW_DEBUG_UART != 0
+-	add	\rp, \rp, #(0x400 * CONFIG_SW_DEBUG_UART)
+-	add	\rv, \rv, #(0x400 * CONFIG_SW_DEBUG_UART)
+-#endif
+-	.endm
+-
+-#define UART_SHIFT	2
+-#include <asm/hardware/debug-8250.S>
++#include <plat/debug-macro.S>
+diff --git a/arch/arm/mach-sun5i/include/mach/dram.h b/arch/arm/mach-sun5i/include/mach/dram.h
+index 2f0cbcd..53c9eff 100644
+--- a/arch/arm/mach-sun5i/include/mach/dram.h
++++ b/arch/arm/mach-sun5i/include/mach/dram.h
+@@ -1,103 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/dram.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Kevin Zhang <kevin@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __AW_DRAM_H__
+-#define __AW_DRAM_H__
+-
+-#include <linux/kernel.h>
+-#include <mach/platform.h>
+-
+-struct dram_para_t
+-{
+-    unsigned int    dram_baseaddr;
+-    unsigned int    dram_clk;
+-    unsigned int    dram_type;
+-    unsigned int    dram_rank_num;
+-    unsigned int    dram_chip_density;
+-    unsigned int    dram_io_width;
+-    unsigned int    dram_bus_width;
+-    unsigned int    dram_cas;
+-    unsigned int    dram_zq;
+-    unsigned int    dram_odt_en;
+-    unsigned int    dram_size;
+-    unsigned int    dram_tpr0;
+-    unsigned int    dram_tpr1;
+-    unsigned int    dram_tpr2;
+-    unsigned int    dram_tpr3;
+-    unsigned int    dram_tpr4;
+-    unsigned int    dram_tpr5;
+-    unsigned int    dram_emr1;
+-    unsigned int    dram_emr2;
+-    unsigned int    dram_emr3;
+-};
+-
+-int dram_init(void);
+-int dram_exit(void);
+-int dram_get_size(void);
+-void dram_set_clock(int clk);
+-void dram_set_drive(void);
+-void dram_set_autorefresh_cycle(unsigned int clk);
+-int  dram_scan_readpipe(void);
+-void dram_enter_selfrefresh(void);
+-void dram_exit_selfrefresh(void);
+-void dram_enter_power_down(void);
+-void dram_exit_power_down(void);
+-void dram_hostport_on_off(unsigned int port_idx, unsigned int on);
+-unsigned int dram_hostport_check_ahb_fifo_status(unsigned int port_idx);
+-void dram_hostport_setup(unsigned int port, unsigned int prio, unsigned int wait_cycle, unsigned int cmd_num);
+-void dram_power_save_process(void);
+-unsigned int dram_power_up_process(void);
+-
+-
+-#define DRAM_HOST_CFG_BASE          (SW_VA_DRAM_IO_BASE + 0x250)
+-typedef struct __DRAM_HOST_CFG_REG{
+-    unsigned int    AcsEn:1;    //bit0, host port access enable
+-    unsigned int    reserved0:1;    //bit1
+-    unsigned int    PrioLevel:2;    //bit2, host port poriority level
+-    unsigned int    WaitState:4;    //bit4, host port wait state
+-    unsigned int    CmdNum:8;       //bit8, host port command number
+-    unsigned int    reserved1:14;   //bit16
+-    unsigned int    WrCntEn:1;      //bit30, host port write counter enable
+-    unsigned int    RdCntEn:1;      //bit31, host port read counter enable
+-} __dram_host_cfg_reg_t;
+-
+-typedef enum __DRAM_HOST_PORT{
+-    DRAM_HOST_CPU   = 16,
+-    DRAM_HOST_GPU   = 17,
+-    DRAM_HOST_BE    = 18,
+-    DRAM_HOST_FE    = 19,
+-    DRAM_HOST_CSI   = 20,
+-    DRAM_HOST_TSDM  = 21,
+-    DRAM_HOST_VE    = 22,
+-    DRAM_HOST_USB   = 24,
+-    DRAM_HOST_NDMA  = 25,
+-    DRAM_HOST_ATH   = 26,
+-    DRAM_HOST_IEP   = 27,
+-    DRAM_HOST_SDHC  = 28,
+-    DRAM_HOST_DDMA  = 29,
+-    DRAM_HOST_GPS   = 30,
+-} __dram_host_port_e;
+-
+-
+-#endif  /* __AW_DRAM_H__ */
+-
++#include <plat/dram.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/entry-macro.S b/arch/arm/mach-sun5i/include/mach/entry-macro.S
+index 8c920ee..7857f3d 100644
+--- a/arch/arm/mach-sun5i/include/mach/entry-macro.S
++++ b/arch/arm/mach-sun5i/include/mach/entry-macro.S
+@@ -1,98 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/entry-macro.S
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#include <mach/io.h>
+-#include <mach/hardware.h>
+-#include <mach/platform.h>
+-#include <asm/hardware/vic.h>
+-
+-	.macro getioaddr, rp, rv
+-	ldr	\rp, =SW_IO_PHYS
+-	ldr	\rv, =SW_IO_VIRT
+-	.endm
+-
+-        .macro  disable_fiq
+-        .endm
+-
+-        .macro  get_irqnr_preamble, base, tmp
+-        ldr \base, =SW_VA_INT_IO_BASE
+-        .endm
+-
+-        .macro  arch_ret_to_user, tmp1, tmp2
+-        .endm
+-
+-        .macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
+-        ldr \irqstat, [\base, #0x10]    @ get pending status
+-        mov \irqnr, #0
+-        teq \irqstat, #0
+-        beq 1003f
+-
+-1001:   tst \irqstat, #15
+-        bne 1002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 1001b
+-1002:   tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 1002b
+-1003:   /* EQ will be set if no irqs pending */
+-
+-        ldr \irqstat, [\base, #0x14]    @ get pending status
+-        teq \irqstat, #0
+-        beq 3000f
+-
+-        mov \irqnr, #32
+-2001:       tst \irqstat, #15
+-        bne 2002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 2001b
+-2002:       tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 2002b
+-
+-3000:   /* EQ will be set if no irqs pending */
+-
+-        ldr \irqstat, [\base, #0x18]    @ get pending status
+-        teq \irqstat, #0
+-        beq 5000f
+-
+-        mov \irqnr, #64
+-4001:       tst \irqstat, #15
+-        bne 4002f
+-        add \irqnr, \irqnr, #4
+-        movs    \irqstat, \irqstat, lsr #4
+-        bne 4001b
+-4002:       tst \irqstat, #1
+-        bne 5000f
+-        add \irqnr, \irqnr, #1
+-        movs    \irqstat, \irqstat, lsr #1
+-        bne 4002b
+-
+-5000:
+-        .endm
+-
++#include <plat/entry-macro.S>
+diff --git a/arch/arm/mach-sun5i/include/mach/hardware.h b/arch/arm/mach-sun5i/include/mach/hardware.h
+index 9e2be38..de2052e 100644
+--- a/arch/arm/mach-sun5i/include/mach/hardware.h
++++ b/arch/arm/mach-sun5i/include/mach/hardware.h
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/hardware.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_HARDWARE_H
+-#define __SW_HARDWARE_H
+-
+-#include <asm/sizes.h>
+-
+-/* macro to get at IO space when running virtually */
+-#define IO_ADDRESS(x)           ((x) + 0xf0000000)
+-
+-#define __io_address(n)         __io(IO_ADDRESS(n))
+-
+-#endif
+-
+-
++#include <plat/hardware.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/io.h b/arch/arm/mach-sun5i/include/mach/io.h
+index 7d56a7e..1087aa4 100644
+--- a/arch/arm/mach-sun5i/include/mach/io.h
++++ b/arch/arm/mach-sun5i/include/mach/io.h
+@@ -1,36 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/io.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_IO_H
+-#define __SW_IO_H
+-
+-#define IO_SPACE_LIMIT 0x1ffffff
+-
+-#define SW_IO_PHYS      0x01c00000
+-#define SW_IO_SIZE      (SZ_1M * 3)
+-#define SW_IO_VIRT      0xf1c00000
+-
+-#define __mem_pci(a) (a)
+-#define __io(a)         __typesafe_io(a)
+-
+-#endif
++#include <plat/io.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/irqs.h b/arch/arm/mach-sun5i/include/mach/irqs.h
+index defe49a..7ebcab2 100644
+--- a/arch/arm/mach-sun5i/include/mach/irqs.h
++++ b/arch/arm/mach-sun5i/include/mach/irqs.h
+@@ -1,130 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/irqs.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_IRQS_H
+-#define __SW_IRQS_H
+-
+-
+-#include <mach/platform.h>
+-
+-#define NR_IRQS		                      96
+-
+-/*----------- interrupt register list -------------------------------------------*/
+-
+-
+-/* registers */
+-
+-/* mask */
+-#define SW_INT_START	                  0
+-
+-#define SW_INT_IRQNO_ENMI               0
+-#define SW_INT_IRQNO_UART0              1
+-#define SW_INT_IRQNO_UART1              2
+-#define SW_INT_IRQNO_UART2              3
+-#define SW_INT_IRQNO_UART3              4
+-#define SW_INT_IRQNO_IR0                5
+-#define SW_INT_IRQNO_IR1                6
+-#define SW_INT_IRQNO_TWI0               7
+-#define SW_INT_IRQNO_TWI1               8
+-#define SW_INT_IRQNO_TWI2               9
+-#define SW_INT_IRQNO_SPI00              10
+-#define SW_INT_IRQNO_SPI01              11
+-#define SW_INT_IRQNO_SPI02              12
+-#define SW_INT_IRQNO_SPDIF              13
+-#define SW_INT_IRQNO_AC97               14
+-#define SW_INT_IRQNO_TS                 15
+-#define SW_INT_IRQNO_I2S                16
+-#define SW_INT_IRQNO_UART4              17
+-#define SW_INT_IRQNO_UART5              18
+-#define SW_INT_IRQNO_UART6              19
+-#define SW_INT_IRQNO_UART7              20
+-#define SW_INT_IRQNO_KEYPAD             21
+-#define SW_INT_IRQNO_TIMER0             22
+-#define SW_INT_IRQNO_TIMER1             23
+-#define SW_INT_IRQNO_ALARM              24
+-#define SW_INT_IRQNO_TIMER2             24
+-#define SW_INT_IRQNO_TIMER3             25
+-#define SW_INT_IRQNO_CAN                26
+-#define SW_INT_IRQNO_DMA                27
+-#define SW_INT_IRQNO_PIO                28
+-#define SW_INT_IRQNO_TOUCH_PANEL        29
+-#define SW_INT_IRQNO_AUDIO_CODEC        30
+-#define SW_INT_IRQNO_LRADC              31
+-#define SW_INT_IRQNO_SDMC0              32
+-#define SW_INT_IRQNO_SDMC1              33
+-#define SW_INT_IRQNO_SDMC2              34
+-#define SW_INT_IRQNO_SDMC3              35
+-#define SW_INT_IRQNO_MEMSTICK           36
+-#define SW_INT_IRQNO_NAND               37
+-
+-#define SW_INTC_IRQNO_USB0              38
+-#define SW_INTC_IRQNO_USB1              39
+-#define SW_INTC_IRQNO_USB2              40
+-#define SW_INTC_IRQNO_SCR               41
+-#define SW_INTC_IRQNO_CSI0              42
+-#define SW_INTC_IRQNO_CSI1              43
+-
+-#define SW_INT_IRQNO_LCDCTRL0           44
+-#define SW_INT_IRQNO_LCDCTRL1           45
+-#define SW_INT_IRQNO_MP                 46
+-#define SW_INT_IRQNO_DEFEBE0            47
+-#define SW_INT_IRQNO_DEFEBE1            48
+-#define SW_INT_IRQNO_PMU                49
+-#define SW_INT_IRQNO_SPI3               50
+-#define SW_INT_IRQNO_TZASC              51
+-#define SW_INT_IRQNO_PATA               52
+-#define SW_INT_IRQNO_VE                 53
+-#define SW_INT_IRQNO_SS                 54
+-#define SW_INT_IRQNO_EMAC               55
+-#define SW_INT_IRQNO_SATA               56
+-#define SW_INT_IRQNO_GPS                57
+-#define SW_INT_IRQNO_HDMI               58
+-#define SW_INT_IRQNO_TVE                59
+-#define SW_INT_IRQNO_ACE                60
+-#define SW_INT_IRQNO_TVD                61
+-#define SW_INT_IRQNO_PS2_0              62
+-#define SW_INT_IRQNO_PS2_1              63
+-#define SW_INT_IRQNO_USB3               64
+-#define SW_INT_IRQNO_USB4               65
+-#define SW_INT_IRQNO_PLE_PFM            66
+-#define SW_INT_IRQNO_TIMER4             67
+-#define SW_INT_IRQNO_TIMER5             68
+-#define SW_INT_IRQNO_GPU_GP             69
+-#define SW_INT_IRQNO_GPU_GPMMU          70
+-#define SW_INT_IRQNO_GPU_PP0            71
+-#define SW_INT_IRQNO_GPU_PPMMU0         72
+-#define SW_INT_IRQNO_GPU_PMU            73
+-#define SW_INT_IRQNO_GPU_RSV0           74
+-#define SW_INT_IRQNO_GPU_RSV1           75
+-#define SW_INT_IRQNO_GPU_RSV2           76
+-#define SW_INT_IRQNO_GPU_RSV3           77
+-#define SW_INT_IRQNO_GPU_RSV4           78
+-#define SW_INT_IRQNO_GPU_RSV5           79
+-#define SW_INT_IRQNO_GPU_RSV6           80
+-
+-#define SW_INT_IRQNO_SYNC_TIMER0	82
+-#define SW_INT_IRQNO_SYNC_TIMER1	83
+-
+-#define SW_INT_END		                  95
+-
+-#endif
++#include <plat/irqs.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/memory.h b/arch/arm/mach-sun5i/include/mach/memory.h
+index 1f4a9e6..476669c 100644
+--- a/arch/arm/mach-sun5i/include/mach/memory.h
++++ b/arch/arm/mach-sun5i/include/mach/memory.h
+@@ -1,53 +1,4 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/memory.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+-
+-#ifndef __SW_MEMORY_H
+-#define __SW_MEMORY_H
+-
+-/* physical offset of RAM */
+-#define PLAT_PHYS_OFFSET		UL(0x40000000)
+-
+-#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
+-#define SW_VE_MEM_SIZE                    (SZ_64M)
+-#define SW_FB_MEM_BASE                    (SW_VE_MEM_BASE + SW_VE_MEM_SIZE)
+-#define SW_FB_MEM_SIZE                    (SZ_16M)
+-#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
+-#define SW_GPU_MEM_SIZE                   (SZ_64M)
+-#define SW_BANK1_SIZE                     (SZ_64M + SW_VE_MEM_SIZE + SW_FB_MEM_SIZE)
+-#define SW_BANK2_OFFSET                   (SW_BANK1_SIZE + SW_GPU_MEM_SIZE)
+-
+-/*
+-#error "fixme"
+-#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
+-#define SW_VE_MEM_SIZE                    (SZ_64M + SZ_16M)
+-#define SW_FB_MEM_BASE                    (SW_VE_MEM + SW_MEM_VE_SIZE)
+-#define SW_FB_MEM_SIZE                    (SZ_32M)
+-#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
+-#define SW_GPU_MEM_SIZE                   (SZ_64M)
+-#define SW_G2D_MEM_BASE
+-#define SW_G2D_MEM_SIZE                   0x1000000
+-*/
+-
+-
+-#endif
+-
++#include <plat/memory.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/system.h b/arch/arm/mach-sun5i/include/mach/system.h
+index 22a58e0..0167749 100644
+--- a/arch/arm/mach-sun5i/include/mach/system.h
++++ b/arch/arm/mach-sun5i/include/mach/system.h
+@@ -1,57 +1,4 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/system.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+-
+-#ifndef __SW_SYSTEM_H
+-#define __SW_SYSTEM_H
+-
+-#include <asm/proc-fns.h>
+-
+-extern unsigned long fb_start;
+-extern unsigned long fb_size;
+-extern unsigned long g2d_start;
+-extern unsigned long g2d_size;
+-
+-static inline void arch_idle(void)
+-{
+-	cpu_do_idle();
+-}
+-
+-enum sw_ic_ver {
+-	MAGIC_VER_A = 0,
+-	MAGIC_VER_B,
+-	MAGIC_VER_C
+-};
+-
+-enum sw_ic_ver sw_get_ic_ver(void);
+-
+-struct sw_chip_id
+-{
+-    unsigned int sid_rkey0;
+-    unsigned int sid_rkey1;
+-    unsigned int sid_rkey2;
+-    unsigned int sid_rkey3;
+-};
+-
+-int sw_get_chip_id(struct sw_chip_id *);
+-
+-#endif
++#include <plat/system.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/timex.h b/arch/arm/mach-sun5i/include/mach/timex.h
+index f8b3180..76dc125 100644
+--- a/arch/arm/mach-sun5i/include/mach/timex.h
++++ b/arch/arm/mach-sun5i/include/mach/timex.h
+@@ -1,33 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/timex.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_TIMEX_H
+-#define __SW_TIMEX_H
+-
+-#define SYS_TIMER_SCAL      (16)            /* timer clock source pre-divsion   */
+-#define SYS_TIMER_CLKSRC    (24000000)      /* timer clock source               */
+-#define TMR_INTER_VAL       (SYS_TIMER_CLKSRC/(SYS_TIMER_SCAL*HZ))
+-
+-#define CLOCK_TICK_RATE     TMR_INTER_VAL
+-
+-#endif
++#include <plat/timex.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/uncompress.h b/arch/arm/mach-sun5i/include/mach/uncompress.h
+index fdce823..6a06fdd 100644
+--- a/arch/arm/mach-sun5i/include/mach/uncompress.h
++++ b/arch/arm/mach-sun5i/include/mach/uncompress.h
+@@ -1,43 +1,5 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/uncompress.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+  */
+ 
+-#ifndef __SW_UNCOMPRESS_H
+-#define __SW_UNCOMPRESS_H
+-
+-static inline void putc(int c)
+-{
+-}
+-
+-static inline void flush(void)
+-{
+-}
+-
+-/*
+- * nothing to do
+- */
+-#define arch_decomp_setup()
+-#define arch_decomp_wdog()
+-
+-#endif
+-
+-
++#include <plat/uncompress.h>
+diff --git a/arch/arm/plat-sunxi/include/plat/clock.h b/arch/arm/plat-sunxi/include/plat/clock.h
+new file mode 100644
+index 0000000..5e491c5
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/clock.h
+@@ -0,0 +1,68 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/clock.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_CLOCK_H__
++#define __SW_CLOCK_H__
++
++#include <linux/kernel.h>
++#include <mach/aw_ccu.h>
++
++/* define clock type            */
++typedef enum __CCU_CLK_TYPE
++{
++    CCU_CLK_TYPE_SYS,
++    CCU_CLK_TYPE_MOD,
++
++} __ccu_clk_type_e;
++
++typedef enum __CCU_CLK_CHANGE
++{
++    CCU_CLK_CHANGE_NONE,
++    CCU_CLK_CHANGE_PREPARE,
++    CCU_CLK_CHANGE_DONE,
++
++} __ccu_clk_change_e;
++
++
++typedef struct clk
++{
++    __aw_ccu_clk_t  *clk;       /* clock handle from ccu csp                            */
++    __s32           usr_cnt;    /* user count                                           */
++    __s32           enable;     /* enable count, when it down to 0, it will be disalbe  */
++    __s32           hash;       /* hash value, for fast search without string compare   */
++
++    __aw_ccu_clk_t  *(*get_clk)(__s32 id);
++                                /* set clock                                            */
++    __aw_ccu_err_e  (*set_clk)(__aw_ccu_clk_t *clk);
++                                /* get clock                                            */
++    struct clk      *parent;    /* parent clock node pointer                            */
++    struct clk      *child;     /* child clock node pinter                              */
++    struct clk      *left;      /* left brother node pointer                            */
++    struct clk      *right;     /* right bother node pointer                            */
++
++} __ccu_clk_t;
++
++extern int clk_reset(struct clk *clk, int reset);
++
++#endif  /* #ifndef __SW_CLOCK_H__ */
++
+diff --git a/arch/arm/plat-sunxi/include/plat/debug-macro.S b/arch/arm/plat-sunxi/include/plat/debug-macro.S
+new file mode 100644
+index 0000000..449f692
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/debug-macro.S
+@@ -0,0 +1,36 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/debug-macro.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <mach/platform.h>
++
++	.macro	addruart, rp, rv, tmp
++	ldr	\rp, =SW_PA_UART0_IO_BASE
++	ldr	\rv, =SW_VA_UART0_IO_BASE
++#if CONFIG_SW_DEBUG_UART != 0
++	add	\rp, \rp, #(0x400 * CONFIG_SW_DEBUG_UART)
++	add	\rv, \rv, #(0x400 * CONFIG_SW_DEBUG_UART)
++#endif
++	.endm
++
++#define UART_SHIFT	2
++#include <asm/hardware/debug-8250.S>
+diff --git a/arch/arm/plat-sunxi/include/plat/dram.h b/arch/arm/plat-sunxi/include/plat/dram.h
+new file mode 100644
+index 0000000..afab284
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/dram.h
+@@ -0,0 +1,101 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/dram.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __AW_DRAM_H__
++#define __AW_DRAM_H__
++
++#include <linux/kernel.h>
++
++struct dram_para_t
++{
++    unsigned int    dram_baseaddr;
++    unsigned int    dram_clk;
++    unsigned int    dram_type;
++    unsigned int    dram_rank_num;
++    unsigned int    dram_chip_density;
++    unsigned int    dram_io_width;
++    unsigned int    dram_bus_width;
++    unsigned int    dram_cas;
++    unsigned int    dram_zq;
++    unsigned int    dram_odt_en;
++    unsigned int    dram_size;
++    unsigned int    dram_tpr0;
++    unsigned int    dram_tpr1;
++    unsigned int    dram_tpr2;
++    unsigned int    dram_tpr3;
++    unsigned int    dram_tpr4;
++    unsigned int    dram_tpr5;
++    unsigned int    dram_emr1;
++    unsigned int    dram_emr2;
++    unsigned int    dram_emr3;
++};
++
++int dram_init(void);
++int dram_exit(void);
++int dram_get_size(void);
++void dram_set_clock(int clk);
++void dram_set_drive(void);
++void dram_set_autorefresh_cycle(unsigned int clk);
++int  dram_scan_readpipe(void);
++void dram_enter_selfrefresh(void);
++void dram_exit_selfrefresh(void);
++void dram_enter_power_down(void);
++void dram_exit_power_down(void);
++void dram_hostport_on_off(unsigned int port_idx, unsigned int on);
++unsigned int dram_hostport_check_ahb_fifo_status(unsigned int port_idx);
++void dram_hostport_setup(unsigned int port, unsigned int prio, unsigned int wait_cycle, unsigned int cmd_num);
++void dram_power_save_process(void);
++unsigned int dram_power_up_process(void);
++
++#ifdef CONFIG_MACH_SUN5I
++#define DRAM_HOST_CFG_BASE          (SW_VA_DRAM_IO_BASE + 0x250)
++typedef struct __DRAM_HOST_CFG_REG{
++    unsigned int    AcsEn:1;    //bit0, host port access enable
++    unsigned int    reserved0:1;    //bit1
++    unsigned int    PrioLevel:2;    //bit2, host port poriority level
++    unsigned int    WaitState:4;    //bit4, host port wait state
++    unsigned int    CmdNum:8;       //bit8, host port command number
++    unsigned int    reserved1:14;   //bit16
++    unsigned int    WrCntEn:1;      //bit30, host port write counter enable
++    unsigned int    RdCntEn:1;      //bit31, host port read counter enable
++} __dram_host_cfg_reg_t;
++
++typedef enum __DRAM_HOST_PORT{
++    DRAM_HOST_CPU   = 16,
++    DRAM_HOST_GPU   = 17,
++    DRAM_HOST_BE    = 18,
++    DRAM_HOST_FE    = 19,
++    DRAM_HOST_CSI   = 20,
++    DRAM_HOST_TSDM  = 21,
++    DRAM_HOST_VE    = 22,
++    DRAM_HOST_USB   = 24,
++    DRAM_HOST_NDMA  = 25,
++    DRAM_HOST_ATH   = 26,
++    DRAM_HOST_IEP   = 27,
++    DRAM_HOST_SDHC  = 28,
++    DRAM_HOST_DDMA  = 29,
++    DRAM_HOST_GPS   = 30,
++} __dram_host_port_e;
++#endif
++
++#endif  /* __AW_DRAM_H__ */
+diff --git a/arch/arm/plat-sunxi/include/plat/entry-macro.S b/arch/arm/plat-sunxi/include/plat/entry-macro.S
+new file mode 100644
+index 0000000..1550e7e
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/entry-macro.S
+@@ -0,0 +1,98 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/entry-macro.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <mach/io.h>
++#include <mach/hardware.h>
++#include <mach/platform.h>
++#include <asm/hardware/vic.h>
++
++	.macro getioaddr, rp, rv
++	ldr	\rp, =SW_IO_PHYS
++	ldr	\rv, =SW_IO_VIRT
++	.endm
++
++        .macro  disable_fiq
++        .endm
++
++        .macro  get_irqnr_preamble, base, tmp
++        ldr \base, =SW_VA_INT_IO_BASE
++        .endm
++
++        .macro  arch_ret_to_user, tmp1, tmp2
++        .endm
++
++        .macro  get_irqnr_and_base, irqnr, irqstat, base, tmp
++        ldr \irqstat, [\base, #0x10]    @ get pending status
++        mov \irqnr, #0
++        teq \irqstat, #0
++        beq 1003f
++
++1001:   tst \irqstat, #15
++        bne 1002f
++        add \irqnr, \irqnr, #4
++        movs    \irqstat, \irqstat, lsr #4
++        bne 1001b
++1002:   tst \irqstat, #1
++        bne 5000f
++        add \irqnr, \irqnr, #1
++        movs    \irqstat, \irqstat, lsr #1
++        bne 1002b
++1003:   /* EQ will be set if no irqs pending */
++
++        ldr \irqstat, [\base, #0x14]    @ get pending status
++        teq \irqstat, #0
++        beq 3000f
++
++        mov \irqnr, #32
++2001:       tst \irqstat, #15
++        bne 2002f
++        add \irqnr, \irqnr, #4
++        movs    \irqstat, \irqstat, lsr #4
++        bne 2001b
++2002:       tst \irqstat, #1
++        bne 5000f
++        add \irqnr, \irqnr, #1
++        movs    \irqstat, \irqstat, lsr #1
++        bne 2002b
++
++3000:   /* EQ will be set if no irqs pending */
++
++        ldr \irqstat, [\base, #0x18]    @ get pending status
++        teq \irqstat, #0
++        beq 5000f
++
++        mov \irqnr, #64
++4001:       tst \irqstat, #15
++        bne 4002f
++        add \irqnr, \irqnr, #4
++        movs    \irqstat, \irqstat, lsr #4
++        bne 4001b
++4002:       tst \irqstat, #1
++        bne 5000f
++        add \irqnr, \irqnr, #1
++        movs    \irqstat, \irqstat, lsr #1
++        bne 4002b
++
++5000:
++        .endm
++
+diff --git a/arch/arm/plat-sunxi/include/plat/hardware.h b/arch/arm/plat-sunxi/include/plat/hardware.h
+new file mode 100644
+index 0000000..2dd6558
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/hardware.h
+@@ -0,0 +1,36 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/hardware.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_HARDWARE_H
++#define __SW_HARDWARE_H
++
++#include <asm/sizes.h>
++
++/* macro to get at IO space when running virtually */
++#define IO_ADDRESS(x)           ((x) + 0xf0000000)
++
++#define __io_address(n)         __io(IO_ADDRESS(n))
++
++#endif
++
++
+diff --git a/arch/arm/plat-sunxi/include/plat/io.h b/arch/arm/plat-sunxi/include/plat/io.h
+new file mode 100644
+index 0000000..828e766
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/io.h
+@@ -0,0 +1,36 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/io.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_IO_H
++#define __SW_IO_H
++
++#define IO_SPACE_LIMIT 0x1ffffff
++
++#define SW_IO_PHYS      0x01c00000
++#define SW_IO_SIZE      (SZ_1M * 3)
++#define SW_IO_VIRT      0xf1c00000
++
++#define __mem_pci(a) (a)
++#define __io(a)         __typesafe_io(a)
++
++#endif
+diff --git a/arch/arm/plat-sunxi/include/plat/irqs.h b/arch/arm/plat-sunxi/include/plat/irqs.h
+new file mode 100644
+index 0000000..2e29d27
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/irqs.h
+@@ -0,0 +1,132 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/irqs.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_IRQS_H
++#define __SW_IRQS_H
++
++
++#include <mach/platform.h>
++
++#define NR_IRQS		                      96
++
++/*----------- interrupt register list -------------------------------------------*/
++
++
++/* registers */
++
++/* mask */
++#define SW_INT_START	                  0
++
++#define SW_INT_IRQNO_ENMI               0
++#define SW_INT_IRQNO_UART0              1
++#define SW_INT_IRQNO_UART1              2
++#define SW_INT_IRQNO_UART2              3
++#define SW_INT_IRQNO_UART3              4
++#define SW_INT_IRQNO_IR0                5
++#define SW_INT_IRQNO_IR1                6
++#define SW_INT_IRQNO_TWI0               7
++#define SW_INT_IRQNO_TWI1               8
++#define SW_INT_IRQNO_TWI2               9
++#define SW_INT_IRQNO_SPI00              10
++#define SW_INT_IRQNO_SPI01              11
++#define SW_INT_IRQNO_SPI02              12
++#define SW_INT_IRQNO_SPDIF              13
++#define SW_INT_IRQNO_AC97               14
++#define SW_INT_IRQNO_TS                 15
++#define SW_INT_IRQNO_I2S                16
++#define SW_INT_IRQNO_UART4              17
++#define SW_INT_IRQNO_UART5              18
++#define SW_INT_IRQNO_UART6              19
++#define SW_INT_IRQNO_UART7              20
++#define SW_INT_IRQNO_KEYPAD             21
++#define SW_INT_IRQNO_TIMER0             22
++#define SW_INT_IRQNO_TIMER1             23
++#define SW_INT_IRQNO_ALARM              24
++#define SW_INT_IRQNO_TIMER2             24
++#define SW_INT_IRQNO_TIMER3             25
++#define SW_INT_IRQNO_CAN                26
++#define SW_INT_IRQNO_DMA                27
++#define SW_INT_IRQNO_PIO                28
++#define SW_INT_IRQNO_TOUCH_PANEL        29
++#define SW_INT_IRQNO_AUDIO_CODEC        30
++#define SW_INT_IRQNO_LRADC              31
++#define SW_INT_IRQNO_SDMC0              32
++#define SW_INT_IRQNO_SDMC1              33
++#define SW_INT_IRQNO_SDMC2              34
++#define SW_INT_IRQNO_SDMC3              35
++#define SW_INT_IRQNO_MEMSTICK           36
++#define SW_INT_IRQNO_NAND               37
++
++#define SW_INTC_IRQNO_USB0              38
++#define SW_INTC_IRQNO_USB1              39
++#define SW_INTC_IRQNO_USB2              40
++#define SW_INTC_IRQNO_SCR               41
++#define SW_INTC_IRQNO_CSI0              42
++#define SW_INTC_IRQNO_CSI1              43
++
++#define SW_INT_IRQNO_LCDCTRL0           44
++#define SW_INT_IRQNO_LCDCTRL1           45
++#define SW_INT_IRQNO_MP                 46
++#define SW_INT_IRQNO_DEFEBE0            47
++#define SW_INT_IRQNO_DEFEBE1            48
++#define SW_INT_IRQNO_PMU                49
++#define SW_INT_IRQNO_SPI3               50
++#define SW_INT_IRQNO_TZASC              51
++#define SW_INT_IRQNO_PATA               52
++#define SW_INT_IRQNO_VE                 53
++#define SW_INT_IRQNO_SS                 54
++#define SW_INT_IRQNO_EMAC               55
++#define SW_INT_IRQNO_SATA               56
++#define SW_INT_IRQNO_GPS                57
++#define SW_INT_IRQNO_HDMI               58
++#define SW_INT_IRQNO_TVE                59
++#define SW_INT_IRQNO_ACE                60
++#define SW_INT_IRQNO_TVD                61
++#define SW_INT_IRQNO_PS2_0              62
++#define SW_INT_IRQNO_PS2_1              63
++#define SW_INT_IRQNO_USB3               64
++#define SW_INT_IRQNO_USB4               65
++#define SW_INT_IRQNO_PLE_PFM            66
++#define SW_INT_IRQNO_TIMER4             67
++#define SW_INT_IRQNO_TIMER5             68
++#define SW_INT_IRQNO_GPU_GP             69
++#define SW_INT_IRQNO_GPU_GPMMU          70
++#define SW_INT_IRQNO_GPU_PP0            71
++#define SW_INT_IRQNO_GPU_PPMMU0         72
++#define SW_INT_IRQNO_GPU_PMU            73
++#define SW_INT_IRQNO_GPU_RSV0           74
++#define SW_INT_IRQNO_GPU_RSV1           75
++#define SW_INT_IRQNO_GPU_RSV2           76
++#define SW_INT_IRQNO_GPU_RSV3           77
++#define SW_INT_IRQNO_GPU_RSV4           78
++#define SW_INT_IRQNO_GPU_RSV5           79
++#define SW_INT_IRQNO_GPU_RSV6           80
++
++#ifdef CONFIG_ARCH_SUN5I
++#define SW_INT_IRQNO_SYNC_TIMER0	82
++#define SW_INT_IRQNO_SYNC_TIMER1	83
++#endif
++
++#define SW_INT_END		                  95
++
++#endif
+diff --git a/arch/arm/plat-sunxi/include/plat/memory.h b/arch/arm/plat-sunxi/include/plat/memory.h
+new file mode 100644
+index 0000000..0582397
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/memory.h
+@@ -0,0 +1,58 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/memory.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_MEMORY_H
++#define __SW_MEMORY_H
++
++/* physical offset of RAM */
++#define PLAT_PHYS_OFFSET		UL(0x40000000)
++
++/* default ATAG_MEM size */
++#define MEM_SIZE	(512*1024*1024)
++
++#ifdef CONFIG_ARCH_SUN5I
++
++#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
++#define SW_VE_MEM_SIZE                    (SZ_64M)
++#define SW_FB_MEM_BASE                    (SW_VE_MEM_BASE + SW_VE_MEM_SIZE)
++#define SW_FB_MEM_SIZE                    (SZ_16M)
++#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
++#define SW_GPU_MEM_SIZE                   (SZ_64M)
++#define SW_BANK1_SIZE                     (SZ_64M + SW_VE_MEM_SIZE + SW_FB_MEM_SIZE)
++#define SW_BANK2_OFFSET                   (SW_BANK1_SIZE + SW_GPU_MEM_SIZE)
++
++#if 0
++#error "fixme"
++#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
++#define SW_VE_MEM_SIZE                    (SZ_64M + SZ_16M)
++#define SW_FB_MEM_BASE                    (SW_VE_MEM + SW_MEM_VE_SIZE)
++#define SW_FB_MEM_SIZE                    (SZ_32M)
++#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
++#define SW_GPU_MEM_SIZE                   (SZ_64M)
++#define SW_G2D_MEM_BASE
++#define SW_G2D_MEM_SIZE                   0x1000000
++#endif
++
++#endif
++
++#endif
+diff --git a/arch/arm/plat-sunxi/include/plat/system.h b/arch/arm/plat-sunxi/include/plat/system.h
+new file mode 100644
+index 0000000..6c5984a
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/system.h
+@@ -0,0 +1,59 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/system.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_SYSTEM_H
++#define __SW_SYSTEM_H
++
++#include <asm/proc-fns.h>
++
++extern unsigned long fb_start;
++extern unsigned long fb_size;
++extern unsigned long g2d_start;
++extern unsigned long g2d_size;
++
++static inline void arch_idle(void)
++{
++	cpu_do_idle();
++}
++
++enum sw_ic_ver {
++	MAGIC_VER_A = 0,
++	MAGIC_VER_B,
++	MAGIC_VER_C
++};
++
++enum sw_ic_ver sw_get_ic_ver(void);
++
++#ifdef CONFIG_ARCH_SUN5I
++struct sw_chip_id
++{
++    unsigned int sid_rkey0;
++    unsigned int sid_rkey1;
++    unsigned int sid_rkey2;
++    unsigned int sid_rkey3;
++};
++
++int sw_get_chip_id(struct sw_chip_id *);
++#endif
++
++#endif
+diff --git a/arch/arm/plat-sunxi/include/plat/timex.h b/arch/arm/plat-sunxi/include/plat/timex.h
+new file mode 100644
+index 0000000..728efe7
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/timex.h
+@@ -0,0 +1,33 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/timex.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_TIMEX_H
++#define __SW_TIMEX_H
++
++#define SYS_TIMER_SCAL      (16)            /* timer clock source pre-divsion   */
++#define SYS_TIMER_CLKSRC    (24000000)      /* timer clock source               */
++#define TMR_INTER_VAL       (SYS_TIMER_CLKSRC/(SYS_TIMER_SCAL*HZ))
++
++#define CLOCK_TICK_RATE     TMR_INTER_VAL
++
++#endif
+diff --git a/arch/arm/plat-sunxi/include/plat/uncompress.h b/arch/arm/plat-sunxi/include/plat/uncompress.h
+new file mode 100644
+index 0000000..d66537b
+--- /dev/null
++++ b/arch/arm/plat-sunxi/include/plat/uncompress.h
+@@ -0,0 +1,43 @@
++/*
++ * arch/arm/plat-sunxi/include/plat/uncompress.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __SW_UNCOMPRESS_H
++#define __SW_UNCOMPRESS_H
++
++static inline void putc(int c)
++{
++}
++
++static inline void flush(void)
++{
++}
++
++/*
++ * nothing to do
++ */
++#define arch_decomp_setup()
++#define arch_decomp_wdog()
++
++#endif
++
++
+-- 
+1.8.0
+

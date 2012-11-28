@@ -1,0 +1,70 @@
+From 0e432e6ce2aeb08a2053e9460e4afa621e5c0ab7 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 15 Aug 2012 13:10:04 -0700
+Subject: [PATCH 667/944] HACK: ARM: disable sleeping while atomic warning in
+ do_signal
+
+ARM disables interrupts in do_signal, which triggers a warning in
+try_to_freeze, see details at https://lkml.org/lkml/2011/8/23/221.
+To prevent the warnings, add try_to_freeze_nowarn and call it from
+do_signal.
+
+Change-Id: If7482de21c386adc705fa1ac4ecb8c7ece5bb356
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/kernel/signal.c |  2 +-
+ include/linux/freezer.h  | 11 +++++++++++
+ kernel/signal.c          |  2 +-
+ 3 files changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/kernel/signal.c b/arch/arm/kernel/signal.c
+index d68d1b6..eb3a291 100644
+--- a/arch/arm/kernel/signal.c
++++ b/arch/arm/kernel/signal.c
+@@ -642,7 +642,7 @@ static void do_signal(struct pt_regs *regs, int syscall)
+ 		}
+ 	}
+ 
+-	if (try_to_freeze())
++	if (try_to_freeze_nowarn())
+ 		goto no_signal;
+ 
+ 	/*
+diff --git a/include/linux/freezer.h b/include/linux/freezer.h
+index d09af4b..a628084 100644
+--- a/include/linux/freezer.h
++++ b/include/linux/freezer.h
+@@ -41,6 +41,17 @@ extern int freeze_kernel_threads(void);
+ extern void thaw_processes(void);
+ extern void thaw_kernel_threads(void);
+ 
++/*
++ * HACK: prevent sleeping while atomic warnings due to ARM signal handling
++ * disabling irqs
++ */
++static inline bool try_to_freeze_nowarn(void)
++{
++	if (likely(!freezing(current)))
++		return false;
++	return __refrigerator(false);
++}
++
+ static inline bool try_to_freeze(void)
+ {
+ 	might_sleep();
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 17afcaf..1dd48f7 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -2209,7 +2209,7 @@ relock:
+ 	 * Now that we woke up, it's crucial if we're supposed to be
+ 	 * frozen that we freeze now before running anything substantial.
+ 	 */
+-	try_to_freeze();
++	try_to_freeze_nowarn();
+ 
+ 	spin_lock_irq(&sighand->siglock);
+ 	/*
+-- 
+1.8.0
+

@@ -1,0 +1,48 @@
+From c6a6a521e91ea230929714b3cb448c901923956f Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Thu, 15 Sep 2011 09:22:35 -0700
+Subject: [PATCH 124/944] net: wireless: Add CFG80211_ALLOW_RECONNECT option
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/wireless/Kconfig | 11 +++++++++++
+ net/wireless/sme.c   |  2 ++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/net/wireless/Kconfig b/net/wireless/Kconfig
+index 2e4444f..8db24da 100644
+--- a/net/wireless/Kconfig
++++ b/net/wireless/Kconfig
+@@ -160,3 +160,14 @@ config LIB80211_DEBUG
+ 	  from lib80211.
+ 
+ 	  If unsure, say N.
++
++config CFG80211_ALLOW_RECONNECT
++	bool "Allow reconnect while already connected"
++	depends on CFG80211
++	default n
++	help
++	  cfg80211 stack doesn't allow to connect if you are already
++	  connected. This option allows to make a connection in this case.
++
++	  Select this option ONLY for wlan drivers that are specifically
++	  built for such purposes.
+diff --git a/net/wireless/sme.c b/net/wireless/sme.c
+index f7e937f..7eef5b4 100644
+--- a/net/wireless/sme.c
++++ b/net/wireless/sme.c
+@@ -767,8 +767,10 @@ int __cfg80211_connect(struct cfg80211_registered_device *rdev,
+ 
+ 	ASSERT_WDEV_LOCK(wdev);
+ 
++#ifndef CONFIG_CFG80211_ALLOW_RECONNECT
+ 	if (wdev->sme_state != CFG80211_SME_IDLE)
+ 		return -EALREADY;
++#endif
+ 
+ 	if (WARN_ON(wdev->connect_keys)) {
+ 		kfree(wdev->connect_keys);
+-- 
+1.8.0
+

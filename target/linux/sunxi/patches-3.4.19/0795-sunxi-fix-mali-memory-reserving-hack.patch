@@ -1,0 +1,198 @@
+From e624192a87fc561ab151245f7104e05ceb9453d8 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 11 Oct 2012 16:28:14 +0200
+Subject: [PATCH 795/944] sunxi: fix mali memory reserving hack
+
+fix to work when the first mem tag has a size different than 512MB
+---
+ arch/arm/mach-sun4i/Kconfig |  5 ++++
+ arch/arm/mach-sun4i/core.c  | 59 +++++++++++++++++++++++++++++----------------
+ arch/arm/mach-sun5i/Kconfig |  5 ++++
+ arch/arm/mach-sun5i/core.c  | 59 +++++++++++++++++++++++++++++----------------
+ 4 files changed, 86 insertions(+), 42 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/Kconfig b/arch/arm/mach-sun4i/Kconfig
+index ff12138..de9260b 100644
+--- a/arch/arm/mach-sun4i/Kconfig
++++ b/arch/arm/mach-sun4i/Kconfig
+@@ -10,4 +10,9 @@ config SW_DEBUG_UART
+ 	  Choose the UART on which kernel low-level debug messages should be
+ 	  output.
+ 
++config SUNXI_MALI_RESERVED_MEM
++	bool
++	depends on MALI
++	default y
++
+ endif
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index 80a223a..99d3f63 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -101,34 +101,51 @@ void __init sw_core_map_io(void)
+ 	pr_brom((void*)SW_VA_BROM_BASE);
+ }
+ 
++#define pr_reserve_info(L, START, SIZE) \
++	pr_info("\t" L " : 0x%08x - 0x%08x  (%4d %s)\n", \
++		(u32)(START), (u32)((START) + (SIZE) - 1), \
++		(u32)((SIZE) < SZ_1M ? (SIZE) / SZ_1K : (SIZE) / SZ_1M), \
++		(SIZE) < SZ_1M ? "kB" : "MB")
++
+ static void __init sw_core_fixup(struct tag *t, char **cmdline,
+ 				 struct meminfo *mi)
+ {
+-	u32 mali, size = 0;
+-	int banks = 0;
+-#if defined(CONFIG_MALI) || defined(CONFIG_MALI_MODULE)
+-	mali = 64;
+-#else
+-	mali = 0;
+-#endif
+-
++#ifdef CONFIG_SUNXI_MALI_RESERVED_MEM
++	u32 bank = 0;
+ 	for (; t->hdr.size; t = tag_next(t)) if (t->hdr.tag == ATAG_MEM) {
+-		size += t->u.mem.size / SZ_1M;
+-		if (banks++ == 0)
+-			t->u.mem.size -= mali * SZ_1M;
++		if (bank) {
++			mi->nr_banks++;
++			mi->bank[bank].start = t->u.mem.start;
++			mi->bank[bank].size = t->u.mem.size;
++		} else { /* first bank */
++			u32 size = t->u.mem.size / SZ_1M;
++			mi->nr_banks = 1;
++			mi->bank[0].start = t->u.mem.start;
++			if (size < 512) {
++				mi->bank[0].size = SZ_1M * size;
++
++				pr_err("MALI: not enough memory in first bank to make reserve.\n");
++			} else {
++				mi->bank[0].size = SZ_1M * (512 - 64);
++
++				size -= 512;
++				if (size) {
++					bank++;
++					mi->nr_banks++;
++					mi->bank[1].start = t->u.mem.start + (512 * SZ_1M);
++					mi->bank[1].size = SZ_1M * size;
++				}
++
++				pr_info("Memory cut off:\n");
++				pr_reserve_info("MALI", t->u.mem.start + SZ_512M - SZ_64M,
++						SZ_64M);
++			}
++		}
++		bank++;
+ 	}
+-
+-	pr_info("Total Detected Memory: %uMB with %d banks\n", size, banks);
+-	if (mali > 0)
+-		pr_info("%u MB reserved for MALI\n", mali);
++#endif
+ }
+ 
+-#define pr_reserve_info(L, START, SIZE) \
+-	pr_info("\t" L " : 0x%08x - 0x%08x  (%4d %s)\n", \
+-		(u32)(START), (u32)((START) + (SIZE) - 1), \
+-		(u32)((SIZE) < SZ_1M ? (SIZE) / SZ_1K : (SIZE) / SZ_1M), \
+-		(SIZE) < SZ_1M ? "kB" : "MB")
+-
+ /* Only reserve certain important memory blocks if there are actually
+  * drivers which use them.
+  */
+diff --git a/arch/arm/mach-sun5i/Kconfig b/arch/arm/mach-sun5i/Kconfig
+index 8f64589..e860c3b 100644
+--- a/arch/arm/mach-sun5i/Kconfig
++++ b/arch/arm/mach-sun5i/Kconfig
+@@ -8,4 +8,9 @@ config SW_DEBUG_UART
+ 	  Choose the UART on which kernel low-level debug messages should be
+ 	  output.
+ 
++config SUNXI_MALI_RESERVED_MEM
++	bool
++	depends on MALI
++	default y
++
+ endif
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 44836d4..7b26c63 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -102,34 +102,51 @@ void __init sw_core_map_io(void)
+ 	pr_brom((void*)SW_VA_BROM_BASE);
+ }
+ 
++#define pr_reserve_info(L, START, SIZE) \
++	pr_info("\t" L " : 0x%08x - 0x%08x  (%4d %s)\n", \
++		(u32)(START), (u32)((START) + (SIZE) - 1), \
++		(u32)((SIZE) < SZ_1M ? (SIZE) / SZ_1K : (SIZE) / SZ_1M), \
++		(SIZE) < SZ_1M ? "kB" : "MB")
++
+ static void __init sw_core_fixup(struct tag *t, char **cmdline,
+ 				 struct meminfo *mi)
+ {
+-	u32 mali, size = 0;
+-	int banks = 0;
+-#if defined(CONFIG_MALI) || defined(CONFIG_MALI_MODULE)
+-	mali = 64;
+-#else
+-	mali = 0;
+-#endif
+-
++#ifdef CONFIG_SUNXI_MALI_RESERVED_MEM
++	u32 bank = 0;
+ 	for (; t->hdr.size; t = tag_next(t)) if (t->hdr.tag == ATAG_MEM) {
+-		size += t->u.mem.size / SZ_1M;
+-		if (banks++ == 0)
+-			t->u.mem.size -= mali * SZ_1M;
++		if (bank) {
++			mi->nr_banks++;
++			mi->bank[bank].start = t->u.mem.start;
++			mi->bank[bank].size = t->u.mem.size;
++		} else { /* first bank */
++			u32 size = t->u.mem.size / SZ_1M;
++			mi->nr_banks = 1;
++			mi->bank[0].start = t->u.mem.start;
++			if (size < 512) {
++				mi->bank[0].size = SZ_1M * size;
++
++				pr_err("MALI: not enough memory in first bank to make reserve.\n");
++			} else {
++				mi->bank[0].size = SZ_1M * (512 - 64);
++
++				size -= 512;
++				if (size) {
++					bank++;
++					mi->nr_banks++;
++					mi->bank[1].start = t->u.mem.start + (512 * SZ_1M);
++					mi->bank[1].size = SZ_1M * size;
++				}
++
++				pr_info("Memory cut off:\n");
++				pr_reserve_info("MALI", t->u.mem.start + SZ_512M - SZ_64M,
++						SZ_64M);
++			}
++		}
++		bank++;
+ 	}
+-
+-	pr_info("Total Detected Memory: %uMB with %d banks\n", size, banks);
+-	if (mali > 0)
+-		pr_info("%u MB reserved for MALI\n", mali);
++#endif
+ }
+ 
+-#define pr_reserve_info(L, START, SIZE) \
+-	pr_info("\t" L " : 0x%08x - 0x%08x  (%4d %s)\n", \
+-		(u32)(START), (u32)((START) + (SIZE) - 1), \
+-		(u32)((SIZE) < SZ_1M ? (SIZE) / SZ_1K : (SIZE) / SZ_1M), \
+-		(SIZE) < SZ_1M ? "kB" : "MB")
+-
+ #ifdef CONFIG_FB_SUNXI_RESERVED_MEM
+ unsigned long fb_start = (PLAT_PHYS_OFFSET + SZ_512M - SZ_64M - SZ_32M);
+ unsigned long fb_size = SZ_32M;
+-- 
+1.8.0
+

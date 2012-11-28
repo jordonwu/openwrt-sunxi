@@ -1,0 +1,1037 @@
+From da3dc8d126eec9536dff42940c17cdb5245a337b Mon Sep 17 00:00:00 2001
+From: huangxin <huangxin@LServer.(none)>
+Date: Tue, 15 Nov 2011 17:42:40 +0800
+Subject: [PATCH 305/944] ae:add the ae drv
+
+---
+ drivers/media/Kconfig               |  10 +
+ drivers/media/Makefile              |   1 +
+ drivers/media/audio/Kconfig         |   4 +
+ drivers/media/audio/Makefile        |   3 +
+ drivers/media/audio/sun4i_ace.c     | 312 ++++++++++++++++++++++++++++++
+ drivers/media/audio/sun4i_ace_i.h   | 103 ++++++++++
+ drivers/media/audio/sun4i_dev_ace.c | 375 ++++++++++++++++++++++++++++++++++++
+ drivers/media/audio/sun4i_drv_ace.h | 149 ++++++++++++++
+ 8 files changed, 957 insertions(+)
+ create mode 100644 drivers/media/audio/Kconfig
+ create mode 100644 drivers/media/audio/Makefile
+ create mode 100644 drivers/media/audio/sun4i_ace.c
+ create mode 100644 drivers/media/audio/sun4i_ace_i.h
+ create mode 100644 drivers/media/audio/sun4i_dev_ace.c
+ create mode 100644 drivers/media/audio/sun4i_drv_ace.h
+
+diff --git a/drivers/media/Kconfig b/drivers/media/Kconfig
+index 9575db4..11489c5 100644
+--- a/drivers/media/Kconfig
++++ b/drivers/media/Kconfig
+@@ -121,6 +121,16 @@ source "drivers/media/video/Kconfig"
+ source "drivers/media/radio/Kconfig"
+ 
+ #
++# Audio Engine
++#
++config AUDIO_ENGINE
++	tristate "AUDIO Engine"
++	---help---
++	  Support for audio engine/dsp
++
++source "drivers/media/audio/Kconfig"
++
++#
+ # DVB adapters
+ #
+ 
+diff --git a/drivers/media/Makefile b/drivers/media/Makefile
+index 64755c9..4ef41a4 100644
+--- a/drivers/media/Makefile
++++ b/drivers/media/Makefile
+@@ -12,3 +12,4 @@ obj-y += common/ rc/ video/
+ 
+ obj-$(CONFIG_VIDEO_DEV) += radio/
+ obj-$(CONFIG_DVB_CORE)  += dvb/
++obj-$(CONFIG_AUDIO_ENGINE) += audio/
+diff --git a/drivers/media/audio/Kconfig b/drivers/media/audio/Kconfig
+new file mode 100644
+index 0000000..9cfa781
+--- /dev/null
++++ b/drivers/media/audio/Kconfig
+@@ -0,0 +1,4 @@
++config ACE_CONFIG
++	tristate "ace modlue manage clock"
++	default y
++	depends on AUDIO_ENGINE
+diff --git a/drivers/media/audio/Makefile b/drivers/media/audio/Makefile
+new file mode 100644
+index 0000000..95fd056
+--- /dev/null
++++ b/drivers/media/audio/Makefile
+@@ -0,0 +1,3 @@
++
++obj-$(CONFIG_ACE_CONFIG) += sun4i_dev_ace.o
++obj-$(CONFIG_ACE_CONFIG) += sun4i_ace.o
+diff --git a/drivers/media/audio/sun4i_ace.c b/drivers/media/audio/sun4i_ace.c
+new file mode 100644
+index 0000000..ecd04ac
+--- /dev/null
++++ b/drivers/media/audio/sun4i_ace.c
+@@ -0,0 +1,312 @@
++/*
++**************************************************************************************************************
++*											         eLDK
++*						            the Easy Portable/Player Develop Kits
++*									           desktop system
++*
++*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
++*											 All Rights Reserved
++*
++* File    	: sun4i_ace.c
++* By      	: HUANGXIN
++* Func		:
++* Version	: v1.0
++* ============================================================================================================
++* 2011-6-2 16:10:39  HUANGXIN create this file, implements the fundemental interface;
++**************************************************************************************************************
++*/
++#include "sun4i_ace_i.h"
++#include <linux/module.h>
++#include <linux/semaphore.h>
++#include <linux/slab.h>
++#include <linux/io.h>
++
++static __s32 ACE_EnableModule(__ace_module_type_e module, __u32 mode);
++
++
++struct clk *hAceMClk, *hDramAceClk, *hAceAhbClk;
++void *       ace_hsram;
++EXPORT_SYMBOL(ace_hsram);
++
++__s32       configTimes = 0;
++
++#define ACE_REGS_BASE ACE_REGS_pBASE
++struct semaphore		pSemAceClkAdjust;
++struct semaphore		pSemAceCe;
++struct semaphore		pSemAceConfig;
++
++
++struct clk *parent_clk = NULL;
++int esCLK_SetMclkSrc(struct clk *clk, int parent)
++{
++	int ret = 0;
++
++	if(clk == NULL){
++		printk(" %s %d The clk is NULL\n ", __FUNCTION__, __LINE__);
++		return ACE_FAIL;
++	}
++
++	if(parent == CSP_CCM_SYS_CLK_SDRAM_PLL){
++		parent_clk = clk_get(NULL, "sdram_pll");
++		if(parent_clk == NULL){
++			printk("%s %d : get sdram pll fail \n", __FUNCTION__, __LINE__);
++			return ACE_FAIL;
++		}
++		ret = clk_set_parent(clk, parent_clk);
++	}
++
++	return ret;
++}
++
++int esCLK_CloseMclkSrc(int parent)
++{
++	struct clk *parent_clk = NULL;
++
++	if(parent == CSP_CCM_SYS_CLK_SDRAM_PLL){
++		if (parent_clk) {
++			printk("release parent clk\n");
++			clk_put(parent_clk);
++			parent_clk = NULL;
++		}
++	}
++
++	return 0;
++}
++
++int esCLK_MclkOnOff(struct clk *clk, int onoff){
++	int ret = 1;
++
++	if(onoff == 1){
++		ret = clk_enable(clk);
++		if(ret == -1){
++			printk("%s %d : Enable clk fail\n", __FUNCTION__, __LINE__);
++		}
++	}
++	else if(onoff == 0){
++		clk_disable(clk);
++		ret = 1;
++	}
++
++	return ret;
++}
++void *esMEM_SramReqBlk(int addr){
++	void *map_addr = NULL;
++
++	addr |= 0xf0000000;
++	map_addr = (void *)addr;
++
++	return map_addr;
++}
++
++/*
++*********************************************************************************************************
++*                                   ACE INIT
++*
++* Description: initialise ACE moudle, create the manager for resource management.
++*
++* Arguments  : none
++*
++* Returns    : result;
++*               ACE_OK   - init ACE successed;
++*               ACE_FAIL - init ACE failed;
++*
++* Note       : This funciton just create manager, without hardware operation;
++*********************************************************************************************************
++*/
++__s32 ACE_Init(void)
++{
++    //create semphore to sync clock adjust.
++ 	sema_init(&pSemAceClkAdjust, 1);
++
++	//ACE_REGS_BASE = ACE_PBASE_ADDR;
++	/*ae,ce的相关寄存器都需要通过这个地址值映射偏移找到*/
++	ace_hsram = ioremap(ACE_REGS_pBASE, 4096);
++    if (!ace_hsram){
++        printk("cannot map region for sram");
++       return -1;
++    }
++    //create sem to sync ace config
++
++    sema_init(&pSemAceConfig, 1);
++
++
++    //create semphore to sync resource usage
++    sema_init(&pSemAceCe, 1);
++
++    configTimes = 0;
++    return ACE_OK;
++}
++EXPORT_SYMBOL_GPL(ACE_Init);
++
++/*
++*********************************************************************************************************
++*                                   ACE EXIT
++*
++* Description: exit ACE module, destroy resource manager;
++*
++* Arguments  : none
++*
++* Returns    : result;
++*               ACE_OK   - exit ace module successed;
++*               ACE_FAIL - exit ace module failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 ACE_Exit(void)
++{
++    iounmap((void *)ace_hsram);
++    return ACE_OK;
++}
++EXPORT_SYMBOL_GPL(ACE_Exit);
++
++/*
++*********************************************************************************************************
++*                                   REQUEST HARDWARE RESOURCE
++*
++* Description: require hardware resource.
++*
++* Arguments  : module   the hardware module which need be requested;
++*              mode     mode of hardware module requested;
++                            ACE_REQUEST_MODE_WAIT   - request hw resource with waiting mode;
++                            ACE_REQUEST_MODE_NOWAIT - request hw resource with no-wait mode;
++*              timeout  limitation of time out, just used under ACE_REQUEST_MODE_WAIT mode;
++*
++* Returns    : handle of hardware resource, NULL means request hw-resource failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++s32 ACE_HwReq(__ace_module_type_e module, __ace_request_mode_e mode, __u32 timeout)
++{
++    if(ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module )
++    {
++        //request semphore
++        if(ACE_REQUEST_MODE_NOWAIT == mode)
++        {
++            if(down_trylock(&pSemAceCe)== 0)     //the resource is available or not
++            {
++                 return ACE_FAIL;
++	    	}
++	    }
++        else if(ACE_REQUEST_MODE_WAIT == mode)
++        {
++
++            if(down_interruptible(&pSemAceCe))
++            {
++	    	    return  -ERESTARTSYS;
++	        }
++	    }
++        ACE_EnableModule(ACE_MODULE_CE, ACE_MODULE_ENABLE);
++
++    }
++    else if(ACE_MODULE_AE == module)
++    {
++        ACE_EnableModule(ACE_MODULE_AE, ACE_MODULE_ENABLE);
++    }
++    else
++    {
++		printk("%s, %d\n", __FILE__, __LINE__);
++        return ACE_FAIL;
++    }
++
++    return ACE_OK;
++}
++EXPORT_SYMBOL_GPL(ACE_HwReq);
++
++/*
++*********************************************************************************************************
++*                                   RELEASE HARDWARE RESOURCE
++*
++* Description: release hardware resource;
++*
++* Arguments  : moudle   the module need be released;
++*
++* Returns    : result;
++*                   ACE_OK,    release hardware resource successed;
++*                   ACE_FAIL,  release hardware resource failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 ACE_HwRel(__ace_module_type_e module)
++{
++	if (module == ACE_MODULE_CE) {
++        //release semphore
++	    up(&pSemAceCe);
++        ACE_EnableModule(ACE_MODULE_CE, ACE_MODULE_DISABLE);
++    } else if(module == ACE_MODULE_AE) {
++        ACE_EnableModule(ACE_MODULE_AE, ACE_MODULE_DISABLE);
++    }
++
++    return ACE_OK;
++
++}
++EXPORT_SYMBOL_GPL(ACE_HwRel);
++
++/*
++*********************************************************************************************************
++*                                       GET ACE MODULE CLOCK
++*
++* Description: This function Get ACE module clock;
++*
++* Arguments  :
++*
++* Returns    : nFreq    ce module clk freqrence value;
++*********************************************************************************************************
++*/
++__u32 ACE_GetClk(void)
++{
++    __u32 temp = 0;
++    temp = esCLK_GetSrcFreq(esCLK_GetMclkSrc(hAceMClk));
++    return temp;
++}
++EXPORT_SYMBOL_GPL(ACE_GetClk);
++
++
++
++/*
++*********************************************************************************************************
++*                                       ACE_EnableModule
++*
++* Description:
++*
++* Arguments  :
++*
++* Returns    :
++*
++* Note       :
++*********************************************************************************************************
++*/
++static __s32 ACE_EnableModule(__ace_module_type_e module, __u32 mode)
++{
++
++    __u32 status = readReg(ACE_MODE_SELECTOR);
++    if(ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module )
++    {
++        if(ACE_MODULE_ENABLE == mode)
++          {
++              status |=  ACE_CE_ENABLE_MASK;
++          }
++          else if(ACE_MODULE_DISABLE == mode)
++          {
++              status &= (~ACE_CE_ENABLE_MASK);
++          }
++
++    }
++    else if(ACE_MODULE_AE == module)
++    {
++        if(ACE_MODULE_ENABLE == mode)
++          {
++              status |=  ACE_AE_ENABLE_MASK;
++          }
++          else if(ACE_MODULE_DISABLE == mode)
++          {
++              status &= (~ACE_AE_ENABLE_MASK);
++          }
++    }
++    writeReg(ACE_MODE_SELECTOR,status);
++    return ACE_OK;
++}
++
++
+diff --git a/drivers/media/audio/sun4i_ace_i.h b/drivers/media/audio/sun4i_ace_i.h
+new file mode 100644
+index 0000000..f0ae9c4
+--- /dev/null
++++ b/drivers/media/audio/sun4i_ace_i.h
+@@ -0,0 +1,103 @@
++/*
++**************************************************************************************************************
++*											         eLDK
++*						            the Easy Portable/Player Develop Kits
++*									           desktop system
++*
++*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
++*											 All Rights Reserved
++*
++* File    	: sun4i_ace_i.h
++* By      	: HUANGXIN
++* Func		:
++* Version	: v1.0
++* ============================================================================================================
++* 2011-6-2 16:09:33  HUANGXIN create this file, implements the fundemental interface;
++**************************************************************************************************************
++*/
++#ifndef _SUN4I_ACE_I_H_
++#define	_SUN4I_ACE_I_H_
++
++#include "sun4i_drv_ace.h"
++
++#define writeReg(nReg, nVal)    \
++            do{*(volatile __u32 *)(nReg) = (nVal);}while(0)
++#define readReg(nReg)   \
++            *(volatile __u32 *)(nReg)
++#define sys_get_wvalue(n)   (*((volatile __u32 *)(n)))          /* word input */
++#define sys_put_wvalue(n,c) (*((volatile __u32 *)(n))  = (c))   /* word output */
++
++#define ACE_REGS_pBASE    	(0x01c1a000)
++//extern __u32 ACE_REGS_BASE;
++
++extern void *       ace_hsram;
++
++/*ACE register offset*/
++#define ACE_MODE_SELECTOR_OFF   	      	0x00
++#define ACE_ACE_RESET_OFF   	          	0x04
++
++/*AE register offset*/
++#define AE_INT_EN_REG_OFF             (0x100+0x08)
++#define AE_STATUS_REG_OFF             (0x100+0x24)
++
++
++/*ACE register address*/
++#define ACE_MODE_SELECTOR     	(ace_hsram + ACE_MODE_SELECTOR_OFF)
++#define ACE_ACE_RESET         	(ace_hsram + ACE_ACE_RESET_OFF)
++
++/*AE register address*/
++#define AE_INT_EN_REG        	(ace_hsram + AE_INT_EN_REG_OFF)
++#define AE_STATUS_REG	        (ace_hsram + AE_STATUS_REG_OFF)
++
++#define ACE_ENGINE_MAX_FREQ      150000000            //150M
++
++//ace reset mask
++#define ACE_RESET_MASK                      (1<<0)
++//ace reset mode
++#define ACE_RESET_DISABLE                   (0)
++#define ACE_RESET_ENABLE                    (1)
++
++//ace ce enable mask
++#define ACE_CE_ENABLE_MASK                  (1<<4)
++//ace ae enable mask
++#define ACE_AE_ENABLE_MASK                  (1<<0)
++
++typedef struct __ACE_MODULE_USE_STAT{
++    __ace_module_type_e ceUseCnt;
++    __ace_module_type_e aeUseCnt;
++}__ace_module_use_stat_t;
++
++//ace module enable mode
++#define ACE_MODULE_DISABLE                      (0)
++#define ACE_MODULE_ENABLE                       (1)
++
++#define CSP_CCM_SYS_CLK_SDRAM_PLL  1
++
++#define CLK_OFF 0
++#define CLK_ON  1
++
++
++#define ACE_FAIL    -1
++#define ACE_OK       0
++
++#define CLK_CMD_SCLKCHG_REQ  2
++#define CLK_CMD_SCLKCHG_DONE 3
++
++
++#define CSP_CCM_MOD_CLK_ACE  "ace"
++#define CSP_CCM_MOD_CLK_AHB_ACE "ahb_ace"
++#define CSP_CCM_MOD_CLK_SDRAM_ACE "sdram_ace"
++
++#define esCLK_OpenMclk(a)  clk_get(NULL, (a))
++#define esCLK_CloseMclk      clk_put
++#define esCLK_GetMclkSrc     clk_get_parent
++
++#define esCLK_GetSrcFreq    clk_get_rate
++#define esCLK_SetMclkDiv    clk_set_rate
++#define esCLK_MclkRegCb(a, b)   NULL
++#define esCLK_MclkUnregCb(a, b) NULL
++#define esCLK_MclkReset(a, b)   clk_reset(a, b)
++
++
++
++#endif	/* _ACE_I_H_ */
+diff --git a/drivers/media/audio/sun4i_dev_ace.c b/drivers/media/audio/sun4i_dev_ace.c
+new file mode 100644
+index 0000000..161389f
+--- /dev/null
++++ b/drivers/media/audio/sun4i_dev_ace.c
+@@ -0,0 +1,375 @@
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/ioctl.h>
++#include <linux/fs.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/list.h>
++#include <linux/errno.h>
++#include <linux/mutex.h>
++#include <linux/slab.h>
++#include <linux/preempt.h>
++#include <linux/cdev.h>
++#include <linux/platform_device.h>
++#include <linux/interrupt.h>
++#include <linux/clk.h>
++#include <asm/uaccess.h>
++#include <asm/io.h>
++#include <asm/dma.h>
++#include <mach/hardware.h>
++#include <asm/system.h>
++#include <linux/rmap.h>
++#include <linux/string.h>
++#include <mach/clock.h>
++#include "sun4i_drv_ace.h"
++#include "sun4i_ace_i.h"
++#ifdef CONFIG_PM
++#include <linux/pm.h>
++#endif
++
++static struct class *ace_dev_class;
++static struct cdev *ace_dev;
++static dev_t dev_num ;
++struct clk *ace_moduleclk,*dram_aceclk,*ahb_aceclk,*ace_pll5_pclk;
++static unsigned long suspend_acerate = 0;
++static int ref_count = 0;
++static DECLARE_WAIT_QUEUE_HEAD(wait_ae);
++__u32 ae_interrupt_sta = 0, ae_interrupt_value = 0;
++void *       ccmu_hsram;
++//ae、ace、ce共享中断号
++#define ACE_IRQ_NO (60)
++
++//extern int clk_reset(struct clk *clk, int reset);
++
++static int ace_dev_open(struct inode *inode, struct file *filp){
++    int status = 0;
++    return status;
++}
++
++static int ace_dev_release(struct inode *inode, struct file *filp){
++    int status = 0;
++
++    return status;
++}
++
++/*
++ * Audio engine interrupt service routine
++ * To wake up ae wait queue
++ */
++static irqreturn_t ace_interrupt(int irq, void *dev)
++{
++	volatile int ae_out_mode_reg = 0;
++
++	//status 0x24
++	ae_out_mode_reg = readReg(AE_STATUS_REG);
++	ae_interrupt_value = ae_out_mode_reg;
++	if(ae_out_mode_reg & 0x04){
++	  writeReg(AE_INT_EN_REG,readReg(AE_INT_EN_REG)&(~0x0f));
++	}
++
++	ae_out_mode_reg &= 0x0f;
++	writeReg(AE_STATUS_REG,ae_out_mode_reg);
++	ae_interrupt_sta = 1;
++
++	ae_out_mode_reg = readReg(AE_STATUS_REG);//没用  测试是否可以del
++	wake_up_interruptible(&wait_ae);
++
++    return IRQ_HANDLED;
++}
++
++static long
++ace_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg){
++
++	int 				ret_val = 0;
++	unsigned long       test_arg;
++	__ace_req_e 		mpara;
++	unsigned long rate;
++	switch (cmd){
++		case ACE_DEV_HWREQ:
++			test_arg = copy_from_user(&mpara, (__ace_req_e *)arg,
++                       sizeof(__ace_req_e));
++			ret_val = ACE_HwReq(mpara.module, mpara.mode, mpara.timeout);
++			break;
++
++		case ACE_DEV_HWREL:
++			test_arg = copy_from_user(&mpara, (__ace_req_e *)arg,
++                       sizeof(__ace_req_e));
++			ret_val = ACE_HwRel(mpara.module);
++			break;
++
++		case ACE_DEV_GETCLKFREQ:
++			test_arg = ACE_GetClk();
++			put_user(test_arg, (unsigned long *)arg);
++			ret_val = 1;
++			break;
++		case ACE_DEV_GET_ADDR:
++			put_user((int)ace_hsram, (int *)arg);
++			break;
++		case ACE_DEV_INS_ISR:
++			break;
++
++		case ACE_DEV_UNINS_ISR:
++		   break;
++
++		case ACE_DEV_WAIT_AE:
++			wait_event_interruptible(wait_ae,
++			    ae_interrupt_sta);
++			ae_interrupt_sta = 0;
++			return ae_interrupt_value;
++		case ACE_DEV_CLK_OPEN:
++			/* ace_moduleclk */
++			ace_moduleclk = clk_get(NULL,"ace");
++			ace_pll5_pclk = clk_get(NULL, "sdram_pll_p");
++			if (clk_set_parent(ace_moduleclk, ace_pll5_pclk)) {
++				printk("try to set parent of ace_moduleclk to ace_pll5clk failed!\n");
++			}
++			rate = clk_get_rate(ace_pll5_pclk);
++			if(clk_set_rate(ace_moduleclk, rate/2)) {
++				printk("try to set ace_moduleclk rate failed!!!\n");
++				 goto out;
++			}
++			if(clk_reset(ace_moduleclk, 1)){
++				printk("try to reset ace_moduleclkfailed!!!\n");
++				 goto out;
++			}
++			if(clk_reset(ace_moduleclk, 0)){
++				printk("try to reset ace_moduleclkfailed!!!\n");
++				 goto out;
++			}
++			if (-1 == clk_enable(ace_moduleclk)) {
++				printk("ace_moduleclk failed; \n");
++				goto out;
++			}
++
++			/*geting dram clk for ace!*/
++			dram_aceclk = clk_get(NULL, "sdram_ace");
++
++			if (-1 == clk_enable(dram_aceclk)) {
++				printk("dram_moduleclk failed; \n");
++				 goto out1;
++			}
++			/* getting ahb clk for ace! */
++			ahb_aceclk = clk_get(NULL,"ahb_ace");
++			if (-1 == clk_enable(ahb_aceclk)) {
++				printk("ahb_aceclk failed; \n");
++				goto out2;
++			}
++			ref_count++;
++			goto out;
++			out2:
++				clk_disable(dram_aceclk);
++			out1:
++				clk_disable(ace_moduleclk);
++			out:
++			break;
++		case ACE_DEV_CLK_CLOSE:
++			clk_disable(ace_moduleclk);
++			//释放ace_moduleclk时钟句柄
++			clk_put(ace_moduleclk);
++			//释放ace_pll5_pclk时钟句柄
++			clk_put(ace_pll5_pclk);
++
++			clk_disable(dram_aceclk);
++			//释放dram_aceclk时钟句柄
++			clk_put(dram_aceclk);
++
++			clk_disable(ahb_aceclk);
++			//释放ahb_aceclk时钟句柄
++			clk_put(ahb_aceclk);
++			ref_count--;
++			break;
++		default:
++			break;
++	}
++
++	return ret_val;
++}
++
++void acedev_vma_open(struct vm_area_struct *vma)
++{
++}
++
++void acedev_vma_close(struct vm_area_struct *vma)
++{
++}
++
++static struct vm_operations_struct acedev_remap_vm_ops = {
++    .open = acedev_vma_open,
++    .close = acedev_vma_close,
++};
++
++
++static int acedev_mmap(struct file *filp, struct vm_area_struct *vma)
++{
++    unsigned long temp_pfn;
++    temp_pfn = ACE_REGS_pBASE >> 12;
++    /* Set reserved and I/O flag for the area. */
++    vma->vm_flags |= VM_RESERVED | VM_IO;
++
++    /* Select uncached access. */
++    vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
++    if (io_remap_pfn_range(vma, vma->vm_start, temp_pfn,
++                    vma->vm_end - vma->vm_start, vma->vm_page_prot))
++    {
++        return -EAGAIN;
++    }
++    vma->vm_ops = &acedev_remap_vm_ops;
++    acedev_vma_open(vma);
++
++    return 0;
++}
++
++static int snd_sw_ace_suspend(struct platform_device *pdev,pm_message_t state)
++{
++	suspend_acerate = clk_get_rate(ace_moduleclk);
++	clk_disable(dram_aceclk);
++	//释放dram_aceclk时钟句柄
++	clk_put(dram_aceclk);
++
++	clk_disable(ace_moduleclk);
++	//释放ace_moduleclk时钟句柄
++	clk_put(ace_moduleclk);
++	clk_disable(ahb_aceclk);
++	//释放ahb_aceclk时钟句柄
++	clk_put(ahb_aceclk);
++	//释放ace_pll5_pclk时钟句柄
++	clk_put(ace_pll5_pclk);
++
++	/*for clk test*/
++	pr_debug("[ace_suspend reg]\n");
++	pr_debug("ace_module CLK:0xf1c20148 is:%x\n", *(volatile int *)0xf1c20148);
++	pr_debug("ace_pll5_p CLK:0xf1c20020 is:%x\n", *(volatile int *)0xf1c20020);
++	pr_debug("dram_ace CLK:0xf1c20100 is:%x\n", *(volatile int *)0xf1c20100);
++	pr_debug("ahb_ace CLK:0xf1c20060 is:%x\n", *(volatile int *)0xf1c20060);
++	pr_debug("[ace_suspend reg]\n");
++	return 0;
++}
++
++static int snd_sw_ace_resume(struct platform_device *pdev)
++{
++	if(ref_count == 0){
++		return 0;
++	}
++	/* ace_moduleclk */
++	ace_moduleclk = clk_get(NULL,"ace");
++	ace_pll5_pclk = clk_get(NULL, "sdram_pll_p");
++	if (clk_set_parent(ace_moduleclk, ace_pll5_pclk)) {
++		printk("try to set parent of ace_moduleclk to ace_pll5clk failed!\n");
++		goto out;
++	}
++
++	if(clk_set_rate(ace_moduleclk, suspend_acerate)) {
++	   	printk("try to set ace_moduleclk rate failed!!!\n");
++	   	goto out;
++	}
++	if(clk_reset(ace_moduleclk, 1)){
++	   	printk("try to reset ace_moduleclkfailed!!!\n");
++	   	goto out;
++	}
++	if(clk_reset(ace_moduleclk, 0)){
++	   	printk("try to reset ace_moduleclkfailed!!!\n");
++	   	goto out;
++	}
++	if (-1 == clk_enable(ace_moduleclk)) {
++	   printk("ace_moduleclk failed; \n");
++	   goto out;
++	}
++
++	/*geting dram clk for ace!*/
++	dram_aceclk = clk_get(NULL, "sdram_ace");
++
++	if (-1 == clk_enable(dram_aceclk)) {
++	   	printk("dram_moduleclk failed; \n");
++	   	goto out1;
++	}
++	/* getting ahb clk for ace! */
++	ahb_aceclk = clk_get(NULL,"ahb_ace");
++	if (-1 == clk_enable(ahb_aceclk)) {
++	   	printk("ahb_aceclk failed; \n");
++	   	goto out2;
++	}
++	goto out;
++
++	out2:
++		clk_disable(dram_aceclk);
++	out1:
++		clk_disable(ace_moduleclk);
++	out:
++	return 0;
++}
++
++static struct file_operations ace_dev_fops = {
++    .owner =    THIS_MODULE,
++    .unlocked_ioctl = ace_dev_ioctl,
++    .mmap           = acedev_mmap,
++    .open           = ace_dev_open,
++    .release        = ace_dev_release,
++};
++
++/*data relating*/
++static struct platform_device sw_device_ace = {
++	.name = "sun4i-ace",
++};
++
++/*method relating*/
++static struct platform_driver sw_ace_driver = {
++#ifdef CONFIG_PM
++	.suspend	= snd_sw_ace_suspend,
++	.resume		= snd_sw_ace_resume,
++#endif
++	.driver		= {
++		.name	= "sun4i-ace",
++	},
++};
++
++static int __init ace_dev_init(void)
++{
++    int status = 0;
++    int err = 0;
++	int ret = 0;
++	pr_debug("[ace_drv] start!!!\n");
++	ret = request_irq(ACE_IRQ_NO, ace_interrupt, 0, "ace_dev", NULL);
++	if (ret < 0) {
++	   printk("request ace irq err\n");
++	   return -EINVAL;
++	}
++	if((platform_device_register(&sw_device_ace))<0)
++		return err;
++
++	if ((err = platform_driver_register(&sw_ace_driver)) < 0)
++		return err;
++
++
++    alloc_chrdev_region(&dev_num, 0, 1, "ace_chrdev");
++    ace_dev = cdev_alloc();
++    cdev_init(ace_dev, &ace_dev_fops);
++    ace_dev->owner = THIS_MODULE;
++    err = cdev_add(ace_dev, dev_num, 1);
++    if (err){
++    	printk(KERN_NOTICE"Error %d adding ace_dev!\n", err);
++        return -1;
++    }
++    ace_dev_class = class_create(THIS_MODULE, "ace_cls");
++    device_create(ace_dev_class, NULL,
++                  dev_num, NULL, "ace_dev");
++    ACE_Init();
++    printk("[ace_drv] init end!!!\n");
++    return status;
++}
++module_init(ace_dev_init);
++
++static void __exit ace_dev_exit(void)
++{
++	free_irq(ACE_IRQ_NO, NULL);
++	ACE_Exit();
++
++    device_destroy(ace_dev_class,  dev_num);
++    class_destroy(ace_dev_class);
++    	platform_driver_unregister(&sw_ace_driver);
++}
++module_exit(ace_dev_exit);
++
++MODULE_AUTHOR("young");
++MODULE_DESCRIPTION("User mode encrypt device interface");
++MODULE_LICENSE("GPL");
++
+diff --git a/drivers/media/audio/sun4i_drv_ace.h b/drivers/media/audio/sun4i_drv_ace.h
+new file mode 100644
+index 0000000..12a80c4
+--- /dev/null
++++ b/drivers/media/audio/sun4i_drv_ace.h
+@@ -0,0 +1,149 @@
++/*
++**************************************************************************************************************
++*											         eLDK
++*						            the Easy Portable/Player Develop Kits
++*									           desktop system
++*
++*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
++*											 All Rights Reserved
++*
++* File    	: sun4i_drv_ace.h
++* By      	: HUANGXIN
++* Func		:
++* Version	: v1.0
++* ============================================================================================================
++* 2011-6-2 16:09:00  HUANGXIN create this file, implements the fundemental interface;
++**************************************************************************************************************
++*/
++#ifndef __ACE_HAL_H__
++#define	__ACE_HAL_H__
++#include <linux/types.h>
++#include <linux/clk.h>
++
++// defule type of modules in ACE
++typedef enum __ACE_MODULE_TYPE
++{
++    ACE_MODULE_NONE = 0,
++    ACE_MODULE_CE,
++    ACE_MODULE_AE,
++    ACE_MODULE_PNG,
++    ACE_MODULE_TSCC,
++    ACE_MODULE_
++
++}__ace_module_type_e;
++
++
++typedef enum __ACE_REQUEST_MODE
++{
++    ACE_REQUEST_MODE_WAIT = 0,  //request hw with waiting mode
++    ACE_REQUEST_MODE_NOWAIT,    //request hw with no-wait mode
++    ACE_REQUEST_MODE_
++
++} __ace_request_mode_e;
++
++
++typedef enum __ACE_OPS
++{
++	ACE_DEV_HWREQ = 100,
++	ACE_DEV_HWREL,
++	ACE_DEV_GETCLKFREQ,
++	ACE_DEV_GET_ADDR,
++	ACE_DEV_INS_ISR,
++	ACE_DEV_UNINS_ISR,
++	ACE_DEV_WAIT_AE,
++	ACE_DEV_CLK_OPEN,
++	ACE_DEV_CLK_CLOSE,
++	ACE_DEV_
++}__ace_ops_e;
++
++typedef struct ace_req{
++	__ace_module_type_e module;
++	__ace_request_mode_e mode;
++	__u32 timeout;
++}__ace_req_e;
++
++/*
++*********************************************************************************************************
++*                                   ACE INIT
++*
++* Description: initialise ACE moudle, create the manager for resource management.
++*
++* Arguments  : none
++*
++* Returns    : result;
++*               EPDK_OK   - init ACE successed;
++*               EPDK_FAIL - init ACE failed;
++*
++* Note       : This funciton just create manager, without hardware operation;
++*********************************************************************************************************
++*/
++__s32 ACE_Init(void);
++
++/*
++*********************************************************************************************************
++*                                   ACE EXIT
++*
++* Description: exit ACE module, destroy resource manager;
++*
++* Arguments  : none
++*
++* Returns    : result;
++*               EPDK_OK   - exit ace module successed;
++*               EPDK_FAIL - exit ace module failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 ACE_Exit(void);
++
++/*
++*********************************************************************************************************
++*                                   REQUEST HARDWARE RESOURCE
++*
++* Description: require hardware resource.
++*
++* Arguments  : module   the hardware module which need be requested;
++*              mode     mode of hardware module requested;
++                            ACE_REQUEST_MODE_WAIT   - request hw resource with waiting mode;
++                            ACE_REQUEST_MODE_NOWAIT - request hw resource with no-wait mode;
++*              timeout  limitation of time out, just used under ACE_REQUEST_MODE_WAIT mode;
++*
++* Returns    : handle of hardware resource, NULL means request hw-resource failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++s32 ACE_HwReq(__ace_module_type_e module, __ace_request_mode_e mode, __u32 timeout);
++
++/*
++*********************************************************************************************************
++*                                   RELEASE HARDWARE RESOURCE
++*
++* Description: release hardware resource;
++*
++* Arguments  : moudle   the module need be released;
++*
++* Returns    : result;
++*                   EPDK_OK,    release hardware resource successed;
++*                   EPDK_FAIL,  release hardware resource failed;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 ACE_HwRel(u32 hHWRes);
++
++/*
++*********************************************************************************************************
++*                                       GET ACE MODULE CLOCK
++*
++* Description: This function Get ACE module clock;
++*
++* Arguments  :
++*
++* Returns    : nFreq    ce module clk freqrence value;
++*********************************************************************************************************
++*/
++__u32 ACE_GetClk(void);
++
++#endif	/* __ACE_HAL_H__ */
++
+-- 
+1.8.0
+

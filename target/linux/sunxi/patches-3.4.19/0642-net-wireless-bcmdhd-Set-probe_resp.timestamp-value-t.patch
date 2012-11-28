@@ -1,0 +1,33 @@
+From f752d4a9212707fff6a08da52adae3859bff7d04 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Tue, 20 Mar 2012 17:04:02 -0700
+Subject: [PATCH 642/944] net: wireless: bcmdhd: Set probe_resp.timestamp
+ value to scan results
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index db8ed19..d0febd6 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -5571,6 +5571,14 @@ static s32 wl_inform_single_bss(struct wl_priv *wl, struct wl_bss_info *bi)
+ 	signal = notif_bss_info->rssi * 100;
+ 
+ 
++	if (!mgmt->u.probe_resp.timestamp) {
++		struct timeval tv;
++
++		do_gettimeofday(&tv);
++		mgmt->u.probe_resp.timestamp = ((u64)tv.tv_sec * 1000000)
++						+ tv.tv_usec;
++	}
++
+ 	cbss = cfg80211_inform_bss_frame(wiphy, channel, mgmt,
+ 		le16_to_cpu(notif_bss_info->frame_len), signal, aflags);
+ 	if (unlikely(!cbss)) {
+-- 
+1.8.0
+

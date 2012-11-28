@@ -1,0 +1,24 @@
+From 1edac836dd305e178acf2d2312d55128d22d8297 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 13 Jul 2012 14:28:56 +0200
+Subject: [PATCH 585/944] misc: sun4i-vibrator: depends on android
+
+---
+ drivers/misc/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index 1f4a8d9..f16c278 100644
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -53,6 +53,7 @@ config AD525X_DPOT_SPI
+ 
+ config SUN4I_VIBRATOR
+ 	tristate "Vibrator sun4i platform"
++	depends on ANDROID_TIMED_OUTPUT
+ 	help
+ 	  Say Y here if you have a vibrator on your board.
+ 
+-- 
+1.8.0
+

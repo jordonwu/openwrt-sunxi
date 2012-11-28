@@ -1,0 +1,385 @@
+From ecbfee7a3578ac5b2c6d54c357da23c44c598ffb Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Tue, 30 Oct 2012 15:06:04 +0100
+Subject: [PATCH 903/944] video:sunxi:disp: remove empty files
+
+Most of them only contained a single header include. hdmi_interface
+contained two empty functions which were trivially written out.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/disp_combined.c  |  1 -
+ drivers/video/sunxi/disp/disp_combined.h  | 27 ----------------
+ drivers/video/sunxi/disp/disp_display.c   |  1 -
+ drivers/video/sunxi/disp/disp_hwc.c       |  1 -
+ drivers/video/sunxi/disp/disp_hwc.h       | 29 ------------------
+ drivers/video/sunxi/disp/disp_vga.c       |  1 -
+ drivers/video/sunxi/disp/disp_vga.h       | 27 ----------------
+ drivers/video/sunxi/disp/vga_std.c        | 51 -------------------------------
+ drivers/video/sunxi/hdmi/Makefile         |  3 +-
+ drivers/video/sunxi/hdmi/dev_hdmi.c       |  4 ---
+ drivers/video/sunxi/hdmi/drv_hdmi_i.h     |  3 --
+ drivers/video/sunxi/hdmi/hdmi_core.h      |  1 -
+ drivers/video/sunxi/hdmi/hdmi_hal.c       |  1 -
+ drivers/video/sunxi/hdmi/hdmi_interface.c | 32 -------------------
+ drivers/video/sunxi/hdmi/hdmi_interface.h | 27 ----------------
+ 15 files changed, 1 insertion(+), 208 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/disp_combined.h
+ delete mode 100644 drivers/video/sunxi/disp/disp_hwc.h
+ delete mode 100644 drivers/video/sunxi/disp/disp_vga.h
+ delete mode 100644 drivers/video/sunxi/disp/vga_std.c
+ delete mode 100644 drivers/video/sunxi/hdmi/hdmi_interface.c
+ delete mode 100644 drivers/video/sunxi/hdmi/hdmi_interface.h
+
+diff --git a/drivers/video/sunxi/disp/disp_combined.c b/drivers/video/sunxi/disp/disp_combined.c
+index 39e612e..b58cb9d 100644
+--- a/drivers/video/sunxi/disp/disp_combined.c
++++ b/drivers/video/sunxi/disp/disp_combined.c
+@@ -20,7 +20,6 @@
+  */
+ 
+ #include "disp_display.h"
+-#include "disp_combined.h"
+ #include "disp_event.h"
+ 
+ __s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t *color)
+diff --git a/drivers/video/sunxi/disp/disp_combined.h b/drivers/video/sunxi/disp/disp_combined.h
+deleted file mode 100644
+index c87db8b..0000000
+--- a/drivers/video/sunxi/disp/disp_combined.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef __DISP_COMBINED_H__
+-#define __DISP_COMBINED_H__
+-
+-#include "disp_display_i.h"
+-
+-#endif
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index fd41dad..262eb7e 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -25,7 +25,6 @@
+ #include "disp_tv.h"
+ #include "disp_event.h"
+ #include "disp_sprite.h"
+-#include "disp_combined.h"
+ #include "disp_scaler.h"
+ #include "disp_video.h"
+ #include "disp_clk.h"
+diff --git a/drivers/video/sunxi/disp/disp_hwc.c b/drivers/video/sunxi/disp/disp_hwc.c
+index 7da7828..dfb3958 100644
+--- a/drivers/video/sunxi/disp/disp_hwc.c
++++ b/drivers/video/sunxi/disp/disp_hwc.c
+@@ -20,7 +20,6 @@
+  */
+ 
+ #include "disp_display.h"
+-#include "disp_hwc.h"
+ 
+ __s32 BSP_disp_hwc_enable(__u32 sel, __bool enable)
+ {
+diff --git a/drivers/video/sunxi/disp/disp_hwc.h b/drivers/video/sunxi/disp/disp_hwc.h
+deleted file mode 100644
+index da07f75..0000000
+--- a/drivers/video/sunxi/disp/disp_hwc.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef _DISP_HWC_H_
+-#define _DISP_HWC_H_
+-
+-#include "disp_display_i.h"
+-
+-/* basic data information definition */
+-
+-#endif
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index 5d52ed0..950a2fe 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -19,7 +19,6 @@
+  * MA 02111-1307 USA
+  */
+ 
+-#include "disp_vga.h"
+ #include "disp_de.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sunxi/disp/disp_vga.h b/drivers/video/sunxi/disp/disp_vga.h
+deleted file mode 100644
+index 076306d..0000000
+--- a/drivers/video/sunxi/disp/disp_vga.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef __DISP_VGA_H__
+-#define __DISP_VGA_H__
+-
+-#include "disp_display_i.h"
+-
+-#endif
+diff --git a/drivers/video/sunxi/disp/vga_std.c b/drivers/video/sunxi/disp/vga_std.c
+deleted file mode 100644
+index 63b2eba..0000000
+--- a/drivers/video/sunxi/disp/vga_std.c
++++ /dev/null
+@@ -1,51 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#if 0
+-const __disp_vga_t disp_vga_h1024_v768 = {
+-	/* __u32 pixel_clk; */
+-	65000000,
+-	/* __u16 hor_pixels; */
+-	1024,
+-	/* __u16 ver_pixels; */
+-	768,
+-	/* __u16 hor_total_time; */
+-	1344,
+-	/* __u16 hor_front_porch; */
+-	24,
+-	/* __u16 hor_sync_time; */
+-	136,
+-	/* __u16 hor_back_porch; */
+-	160,
+-	/* __u16 ver_total_time; */
+-	806,
+-	/* __u16 ver_front_porch; */
+-	3,
+-	/* __u16 ver_sync_time; */
+-	6,
+-	/* __u16 ver_back_porch; */
+-	9,
+-	/* __bool hor_sync_polarity; */
+-	0,
+-	/* __bool ver_sync_polarity; */
+-	0,
+-};
+-#endif
+diff --git a/drivers/video/sunxi/hdmi/Makefile b/drivers/video/sunxi/hdmi/Makefile
+index c5ef008..a2f205f 100644
+--- a/drivers/video/sunxi/hdmi/Makefile
++++ b/drivers/video/sunxi/hdmi/Makefile
+@@ -3,6 +3,5 @@ obj-$(CONFIG_FB_SUNXI_HDMI) += hdmi.o
+ #hdmi-objs := anx7150/hdmi_core.o anx7150/hdmi_hal.o anx7150/hdmi_i2c.o\
+ #            dev_hdmi.o drv_hdmi.o
+ 
+-hdmi-objs := hdmi_core.o hdmi_hal.o hdmi_interface.o hdmi_edid.o\
+-            dev_hdmi.o drv_hdmi.o
++hdmi-objs := hdmi_core.o hdmi_hal.o hdmi_edid.o dev_hdmi.o drv_hdmi.o
+ 
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.c b/drivers/video/sunxi/hdmi/dev_hdmi.c
+index 29b88bb..7813424 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.c
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.c
+@@ -156,8 +156,6 @@ hdmi_module_init(void)
+ 		return -1;
+ 	}
+ 
+-	ret |= hdmi_i2c_add_driver();
+-
+ 	ret = platform_device_register(&hdmi_device);
+ 
+ 	if (ret == 0)
+@@ -173,8 +171,6 @@ static void __exit hdmi_module_exit(void)
+ 	platform_driver_unregister(&hdmi_driver);
+ 	platform_device_unregister(&hdmi_device);
+ 
+-	hdmi_i2c_del_driver();
+-
+ 	class_destroy(hdmi_class);
+ 
+ 	cdev_del(my_cdev);
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi_i.h b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+index 907b7ac..58f97b2 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+@@ -64,9 +64,6 @@ __s32 Hdmi_get_HPD_status(void);
+ __s32 Hdmi_Audio_Enable(__u8 mode, __u8 channel);
+ __s32 Hdmi_Set_Audio_Para(hdmi_audio_t *audio_para);
+ 
+-extern __s32 hdmi_i2c_add_driver(void);
+-extern __s32 hdmi_i2c_del_driver(void);
+-
+ #define sys_get_wvalue(n)   (*((volatile __u32 *)(n)))	/* word input */
+ #define sys_put_wvalue(n,c) (*((volatile __u32 *)(n))  = (c))	/* word output */
+ 
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.h b/drivers/video/sunxi/hdmi/hdmi_core.h
+index d291b2d..7ed1945 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.h
++++ b/drivers/video/sunxi/hdmi/hdmi_core.h
+@@ -23,7 +23,6 @@
+ #define __HDMI_CORE_H__
+ 
+ #include "hdmi_hal.h"
+-#include "hdmi_interface.h"
+ 
+ extern void __iomem *HDMI_BASE;
+ 
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.c b/drivers/video/sunxi/hdmi/hdmi_hal.c
+index 389ac34..cabf809 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.c
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.c
+@@ -20,7 +20,6 @@
+  */
+ 
+ #include "hdmi_hal.h"
+-#include "hdmi_interface.h"
+ #include "hdmi_core.h"
+ 
+ void __iomem *HDMI_BASE;
+diff --git a/drivers/video/sunxi/hdmi/hdmi_interface.c b/drivers/video/sunxi/hdmi/hdmi_interface.c
+deleted file mode 100644
+index dfa3a69..0000000
+--- a/drivers/video/sunxi/hdmi/hdmi_interface.c
++++ /dev/null
+@@ -1,32 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "hdmi_interface.h"
+-
+-__s32 hdmi_i2c_add_driver(void)
+-{
+-	return 0;
+-}
+-
+-__s32 hdmi_i2c_del_driver(void)
+-{
+-	return 0;
+-}
+diff --git a/drivers/video/sunxi/hdmi/hdmi_interface.h b/drivers/video/sunxi/hdmi/hdmi_interface.h
+deleted file mode 100644
+index 4c0e817..0000000
+--- a/drivers/video/sunxi/hdmi/hdmi_interface.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef __HDMI_INTERFACE_H__
+-#define __HDMI_INTERFACE_H__
+-
+-#include "hdmi_hal.h"
+-
+-#endif
+-- 
+1.8.0
+

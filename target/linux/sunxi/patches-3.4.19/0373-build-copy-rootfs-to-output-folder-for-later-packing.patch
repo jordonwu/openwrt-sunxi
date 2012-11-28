@@ -1,0 +1,25 @@
+From 36f62a3eeb917a2b57dcf4c2619e3f6a7c624068 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Thu, 24 Nov 2011 14:55:45 +0800
+Subject: [PATCH 373/944] build: copy rootfs to output folder for later
+ packing use
+
+---
+ scripts/build_sun4i.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 5ba8adf..d6f5ea0 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -74,6 +74,7 @@ build_kernel()
+ 	${OBJCOPY} -R .note.gnu.build-id -S -O binary vmlinux output/bImage
+ 	cp -vf arch/arm/boot/[zu]Image output/
+ 	cp .config output/
++	cp rootfs/sun4i_rootfs.cpio.gz output/
+ 
+ 
+ 	for file in $(find drivers sound crypto block fs security net -name "*.ko"); do
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 53606ea1140f7a3a567784c5ecc4b860f6e5c802 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:26 +0100
+Subject: [PATCH 918/944] video:sunxi:hdmi: make hdmi kthread stoppable
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/hdmi/drv_hdmi.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index f154d8a..a5a3f41 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -243,6 +243,10 @@ Hdmi_run_thread(void *parg)
+ {
+ 	while (1) {
+ 		Hdmi_hal_main_task();
++
++		if (kthread_should_stop())
++			break;
++
+ 		hdmi_delay_ms(2000);
+ 	}
+ 
+-- 
+1.8.0
+

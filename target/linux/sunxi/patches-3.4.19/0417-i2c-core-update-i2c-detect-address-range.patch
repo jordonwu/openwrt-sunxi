@@ -1,0 +1,25 @@
+From b4c5a80a0e67c842d64a0beb1624544203314c84 Mon Sep 17 00:00:00 2001
+From: pannan <pannan@allwinnertech.com>
+Date: Fri, 2 Dec 2011 19:13:47 +0800
+Subject: [PATCH 417/944] i2c-core: update i2c detect address range
+
+---
+ drivers/i2c/i2c-core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index 319ffb9..2829ffd 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -380,7 +380,7 @@ static int i2c_check_addr_validity(unsigned short addr)
+ 	 *  0x78-0x7b  10-bit slave addressing
+ 	 *  0x7c-0x7f  Reserved for future purposes
+ 	 */
+-	if (addr < 0x08 || addr > 0x77)
++	if (addr < 0x03 || addr > 0x77)
+ 		return -EINVAL;
+ 	return 0;
+ }
+-- 
+1.8.0
+

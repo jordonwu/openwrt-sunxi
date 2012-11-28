@@ -1,0 +1,659 @@
+From b370c35d11d8a1b4c2c29fe6ee5c9cf07a91a628 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 18 Oct 2012 11:17:00 +0200
+Subject: [PATCH 856/944] video:sunxi:disp: remove OSAL_Lib_C.*
+
+Only had vmalloc/vfree and some function which had virt_to_phys
+commented out.
+
+Warning: display overlay, scaler and sprite userspace programs (are
+there any?) might have been broken before due to the FB addresses
+passed needing to be physical.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile          |   2 +-
+ drivers/video/sunxi/disp/OSAL/OSAL.h       |   1 -
+ drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c | 150 -----------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h | 109 ---------------------
+ drivers/video/sunxi/disp/disp_layer.c      |  14 +--
+ drivers/video/sunxi/disp/disp_scaler.c     |  60 ++++++------
+ drivers/video/sunxi/disp/disp_sprite.c     |  18 ++--
+ drivers/video/sunxi/disp/disp_video.c      |  28 +++---
+ include/linux/drv_display_sunxi.h          |   4 +
+ 9 files changed, 65 insertions(+), 321 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index ff44c89..fb4d964 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -2,7 +2,7 @@ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+ disp-objs += OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+-	OSAL/OSAL_Lib_C.o OSAL/OSAL_Pin.o OSAL/OSAL_Parser.o
++	OSAL/OSAL_Pin.o OSAL/OSAL_Parser.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+ 	de_layer.o de_lcdc.o de_tvec.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index 2a07cea..e665822 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -26,7 +26,6 @@
+ #include  "OSAL_Cache.h"
+ #include  "OSAL_Clock.h"
+ #include  "OSAL_Pin.h"
+-#include  "OSAL_Lib_C.h"
+ #include  "OSAL_Int.h"
+ #include  "OSAL_IrqLock.h"
+ #include  "OSAL_Pin.h"
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
+deleted file mode 100644
+index c767c18..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
++++ /dev/null
+@@ -1,150 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-
+-#include "OSAL.h"
+-
+-extern int kdb_trap_printk;
+-
+-/* 普通内存分配 */
+-void * OSAL_malloc(__u32 Size)
+-{
+-	return vmalloc(Size);
+-}
+-
+-void OSAL_free(void *pAddr)
+-{
+-    vfree(pAddr);
+-}
+-
+-/* 连续的物理内存分配 */
+-void * OSAL_PhyAlloc(__u32 Size)
+-{
+-	return NULL;
+-}
+-
+-void OSAL_PhyFree(void *pAddr, __u32 Size)
+-{
+-
+-}
+-
+-
+-/* 虚拟内存和物理内存之间的转化 */
+-unsigned int OSAL_VAtoPA(void *va)
+-{
+-	return (unsigned int)va;
+-    //return virt_to_phys(va);
+-}
+-
+-void *OSAL_PAtoVA(unsigned int pa)
+-{
+-	return (void *)pa;
+-    //return phys_to_virt(pa);
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     IO地址转换
+-*
+-* Description:
+-*    	将一块物理地址转化为虚拟地址
+-*
+-* Parameters:
+-*		phy_addr	：	物理地址
+-*		size		:	地址的长度
+-*
+-* Return value:
+-*		==0			:	失败
+-*		!=0			:	虚拟地址
+-*
+-* note:
+-*    	size必须以4K为递增颗粒，既4k的整数倍
+-*
+-*******************************************************************************
+-*/
+-void *	 OSAL_io_remap(u32 phy_addr , u32 size)
+-{
+-    return ioremap(phy_addr,  size);
+-}
+-
+-int OSAL_printf(const char *fmt, ...)
+-{
+-	va_list args;
+-	int r;
+-
+-#ifdef CONFIG_KGDB_KDB
+-	if (unlikely(kdb_trap_printk)) {
+-		va_start(args, fmt);
+-		r = vkdb_printf(fmt, args);
+-		va_end(args);
+-		return r;
+-	}
+-#endif
+-	va_start(args, fmt);
+-	r = vprintk(fmt, args);
+-	va_end(args);
+-
+-	return r;
+-}
+-
+-int OSAL_putchar(int value)
+-{
+-	return 0;
+-	}
+-int OSAL_puts(const char * value)
+-{
+-	return 0;
+-	}
+-int OSAL_getchar(void)
+-{
+-	return 0;
+-	}
+-char * OSAL_gets(char *value)
+-{
+-	return NULL;
+-	}
+-
+-//----------------------------------------------------------------
+-//  实用函数
+-//----------------------------------------------------------------
+-/* 字符串转长整形 */
+-long OSAL_strtol (const char *str, const char **err, int base)
+-{
+-	return 0;
+-	}
+-
+-/* 有符号十进制整形转字符串*/
+-void OSAL_int2str_dec(int input, char * str)
+-{
+-}
+-
+-/* 十六进制整形转字符串*/
+-void OSAL_int2str_hex(int input, char * str, int hex_flag)
+-{
+-}
+-
+-/* 无符号十进制整形转字符串*/
+-void OSAL_uint2str_dec(unsigned int input, char * str)
+-{
+-}
+-
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
+deleted file mode 100644
+index 1a79a28..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
++++ /dev/null
+@@ -1,109 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_LIB_C_H__
+-#define  __OSAL_LIB_C_H__
+-
+-//----------------------------------------------------------------
+-//  字符串操作
+-//----------------------------------------------------------------
+-//__size_t OSAL_strlen(const char *str);
+-//int OSAL_strcmp(const char * p1_str, const char * p2_str);
+-//int OSAL_strncmp( const char * p1_str, const char * p2_str, __size_t size);
+-//char * OSAL_strcpy(char *dest, const char *src);
+-//char * OSAL_strncpy(char *dest, const char *src, __size_t n);
+-//char * OSAL_strcat(char *dest, const char *src);
+-//char * OSAL_strncat(char *dest, const char *src, __size_t n);
+-//char * OSAL_strchr(const char * str, char ch);
+-//char * OSAL_strstr(const char * str, const char * substr);
+-
+-////----------------------------------------------------------------
+-////  内存操作
+-////----------------------------------------------------------------
+-//void * OSAL_memset(void * pmem, int value, __size_t size);
+-//void * OSAL_memcpy (void * pdest,  const void * psrc, __size_t size);
+-//int OSAL_memcmp (const void * p1_mem, const void * p2_mem, __size_t size);
+-//void * OSAL_memchr(const void *s, int c, __size_t n);
+-
+-/* 普通内存分配 */
+-void * OSAL_malloc(__u32 Size);
+-void OSAL_free(void *pAddr);
+-
+-/* 连续的物理内存分配 */
+-void * OSAL_PhyAlloc(__u32 Size);
+-void OSAL_PhyFree(void *pAddr, __u32 Size);
+-
+-/* 虚拟内存和物理内存之间的转化 */
+-unsigned int OSAL_VAtoPA(void *va);
+-void *OSAL_PAtoVA(unsigned int pa);
+-
+-
+-/*
+-*******************************************************************************
+-*                     IO地址转换
+-*
+-* Description:
+-*    	将一块物理地址转化为虚拟地址
+-*
+-* Parameters:
+-*		phy_addr	：	物理地址
+-*		size		:	地址的长度
+-*
+-* Return value:
+-*		==0			:	失败
+-*		!=0			:	虚拟地址
+-*
+-* note:
+-*    	size必须以4K为递增颗粒，既4k的整数倍
+-*
+-*******************************************************************************
+-*/
+-void *	 OSAL_io_remap(u32 phy_addr , u32 size);
+-
+-//----------------------------------------------------------------
+-//  串口输入输出操作
+-//----------------------------------------------------------------
+-int OSAL_printf(const char *, ...);
+-
+-
+-
+-int OSAL_putchar(int);
+-int OSAL_puts(const char *);
+-int OSAL_getchar(void);
+-char * OSAL_gets(char *);
+-
+-//----------------------------------------------------------------
+-//  实用函数
+-//----------------------------------------------------------------
+-/* 字符串转长整形 */
+-long OSAL_strtol (const char *str, const char **err, int base);
+-
+-/* 有符号十进制整形转字符串*/
+-void OSAL_int2str_dec(int input, char * str);
+-
+-/* 十六进制整形转字符串*/
+-void OSAL_int2str_hex(int input, char * str, int hex_flag);
+-
+-/* 无符号十进制整形转字符串*/
+-void OSAL_uint2str_dec(unsigned int input, char * str);
+-
+-
+-#endif   //__OSAL_LIB_C_H__
+-
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 07fd776..5035d2f 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -329,9 +329,9 @@ __s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t * pfb, __u32 xoffset, _
+     yuv_src.format = img_sw_para_to_reg(0,pfb->mode,pfb->format);
+     yuv_src.mode = (__u8)pfb->mode;
+     yuv_src.pixseq = img_sw_para_to_reg(1,pfb->mode,pfb->seq);
+-    yuv_src.ch0_base = (__u32)OSAL_VAtoPA((void*)pfb->addr[0]);
+-    yuv_src.ch1_base = (__u32)OSAL_VAtoPA((void*)pfb->addr[1]);
+-    yuv_src.ch2_base = (__u32)OSAL_VAtoPA((void*)pfb->addr[2]);
++    yuv_src.ch0_base = pfb->addr[0];
++    yuv_src.ch1_base = pfb->addr[1];
++    yuv_src.ch2_base = pfb->addr[2];
+     yuv_src.line_width= pfb->size.width;
+     yuv_src.offset_x = xoffset;
+     yuv_src.offset_y = yoffset;
+@@ -574,8 +574,8 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)//k
+         		Yuv_Channel_Set_framebuffer(sel, pfb, layer_man->para.src_win.x, layer_man->para.src_win.y);
+         	}
+         	else
+-        	{
+-                layer_fb.fb_addr    = (__u32)OSAL_VAtoPA((void*)pfb->addr[0]);
++		{
++			layer_fb.fb_addr = pfb->addr[0];
+                 layer_fb.pixseq     = img_sw_para_to_reg(3,0,pfb->seq);
+                 layer_fb.br_swap    = pfb->br_swap;
+                 layer_fb.fb_width   = pfb->size.width;
+@@ -682,7 +682,7 @@ __s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid,__disp_rect_t *regn)//i
+         	{
+         	    layer_src_t layer_fb;
+ 
+-                layer_fb.fb_addr    = (__u32)OSAL_VAtoPA((void*)layer_man->para.fb.addr[0]);
++		    layer_fb.fb_addr = layer_man->para.fb.addr[0];
+                 layer_fb.format     = layer_man->para.fb.format;
+                 layer_fb.pixseq     = img_sw_para_to_reg(3,0,layer_man->para.fb.seq);
+                 layer_fb.br_swap    = layer_man->para.fb.br_swap;
+@@ -981,7 +981,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+         	    layer_src_t layer_fb;
+         	    __u32 bpp, size;
+ 
+-                layer_fb.fb_addr    = (__u32)OSAL_VAtoPA((void*)player->fb.addr[0]);
++		    layer_fb.fb_addr = player->fb.addr[0];
+                 layer_fb.format = player->fb.format;
+                 layer_fb.pixseq     = img_sw_para_to_reg(3,0,player->fb.seq);
+                 layer_fb.br_swap    = player->fb.br_swap;
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 9871268..4b821a2 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -468,9 +468,9 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)//keep the source windo
+ 	in_type.byte_seq = 0;
+ 	in_type.sample_method = 0;
+ 
+-	scal_addr.ch0_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[0]));
+-	scal_addr.ch1_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[1]));
+-	scal_addr.ch2_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[2]));
++	scal_addr.ch0_addr = scaler->in_fb.addr[0];
++	scal_addr.ch1_addr = scaler->in_fb.addr[1];
++	scal_addr.ch2_addr = scaler->in_fb.addr[2];
+ 
+ 	in_size.src_width = scaler->in_fb.size.width;
+ 	in_size.src_height = scaler->in_fb.size.height;
+@@ -514,9 +514,9 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)//keep the source windo
+             DE_SCAL_Get_3D_Out_Single_Size(outmode, &out_size, &out_size);
+         }
+ 
+-    	scal_addr_right.ch0_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[0]));
+-    	scal_addr_right.ch1_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[1]));
+-    	scal_addr_right.ch2_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[2]));
++	scal_addr_right.ch0_addr = scaler->in_fb.trd_right_addr[0];
++	scal_addr_right.ch1_addr = scaler->in_fb.trd_right_addr[1];
++	scal_addr_right.ch2_addr = scaler->in_fb.trd_right_addr[2];
+ 
+         DE_SCAL_Set_3D_Ctrl(sel, scaler->b_trd_out, inmode, outmode);
+         DE_SCAL_Config_3D_Src(sel, &scal_addr, &in_size, &in_type, inmode, &scal_addr_right);
+@@ -660,9 +660,9 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+ 	in_type.byte_seq = 0;
+ 	in_type.sample_method = 0;
+ 
+-	scal_addr.ch0_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[0]));
+-	scal_addr.ch1_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[1]));
+-	scal_addr.ch2_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[2]));
++	scal_addr.ch0_addr = scaler->in_fb.addr[0];
++	scal_addr.ch1_addr = scaler->in_fb.addr[1];
++	scal_addr.ch2_addr = scaler->in_fb.addr[2];
+ 
+ 	in_size.src_width = scaler->in_fb.size.width;
+ 	in_size.src_height = scaler->in_fb.size.height;
+@@ -706,9 +706,9 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+             DE_SCAL_Get_3D_Out_Single_Size(outmode, &out_size, &out_size);
+         }
+ 
+-    	scal_addr_right.ch0_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[0]));
+-    	scal_addr_right.ch1_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[1]));
+-    	scal_addr_right.ch2_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[2]));
++	scal_addr_right.ch0_addr = scaler->in_fb.trd_right_addr[0];
++	scal_addr_right.ch1_addr = scaler->in_fb.trd_right_addr[1];
++	scal_addr_right.ch2_addr = scaler->in_fb.trd_right_addr[2];
+ 
+         DE_SCAL_Set_3D_Ctrl(sel, scaler->b_trd_out, inmode, outmode);
+         DE_SCAL_Config_3D_Src(sel, &scal_addr, &in_size, &in_type, inmode, &scal_addr_right);
+@@ -780,9 +780,9 @@ __s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl)
+ 	in_type.byte_seq = 0;
+ 	in_type.sample_method = 0;
+ 
+-	scal_addr.ch0_addr = (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[0]));
+-	scal_addr.ch1_addr = (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[1]));
+-	scal_addr.ch2_addr = (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.addr[2]));
++	scal_addr.ch0_addr = scaler->in_fb.addr[0];
++	scal_addr.ch1_addr = scaler->in_fb.addr[1];
++	scal_addr.ch2_addr = scaler->in_fb.addr[2];
+ 
+ 	in_size.src_width = scaler->in_fb.size.width;
+ 	in_size.src_height = scaler->in_fb.size.height;
+@@ -826,9 +826,9 @@ __s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl)
+             DE_SCAL_Get_3D_Out_Single_Size(outmode, &out_size, &out_size);
+         }
+ 
+-    	scal_addr_right.ch0_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[0]));
+-    	scal_addr_right.ch1_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[1]));
+-    	scal_addr_right.ch2_addr= (__u32)OSAL_VAtoPA((void*)(scaler->in_fb.trd_right_addr[2]));
++	scal_addr_right.ch0_addr = scaler->in_fb.trd_right_addr[0];
++	scal_addr_right.ch1_addr = scaler->in_fb.trd_right_addr[1];
++	scal_addr_right.ch2_addr = scaler->in_fb.trd_right_addr[2];
+ 
+         DE_SCAL_Set_3D_Ctrl(sel, scaler->b_trd_out, inmode, outmode);
+         DE_SCAL_Config_3D_Src(sel, &scal_addr, &in_size, &in_type, inmode, &scal_addr_right);
+@@ -1054,9 +1054,9 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     out_size.width     = para->output_fb.size.width;
+     out_size.height = para->output_fb.size.height;
+ 
+-    in_addr.ch0_addr = (__u32)OSAL_VAtoPA((void*)(para->input_fb.addr[0]));
+-    in_addr.ch1_addr = (__u32)OSAL_VAtoPA((void*)(para->input_fb.addr[1]));
+-    in_addr.ch2_addr = (__u32)OSAL_VAtoPA((void*)(para->input_fb.addr[2]));
++    in_addr.ch0_addr = para->input_fb.addr[0];
++    in_addr.ch1_addr = para->input_fb.addr[1];
++    in_addr.ch2_addr = para->input_fb.addr[2];
+ 
+     in_size.src_width = para->input_fb.size.width;
+     in_size.src_height = para->input_fb.size.height;
+@@ -1071,9 +1071,9 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     out_scan.field = FALSE;	//when use scaler as writeback, won't be outinterlaced for any display device
+     out_scan.bottom = FALSE;
+ 
+-    out_addr.ch0_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[0]));
+-    out_addr.ch1_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[1]));
+-    out_addr.ch2_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[2]));
++    out_addr.ch0_addr = para->output_fb.addr[0];
++    out_addr.ch1_addr = para->output_fb.addr[1];
++    out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+     size = (para->input_fb.size.width * para->input_fb.size.height * de_format_to_bpp(para->input_fb.format) + 7)/8;
+     OSAL_CacheRangeFlush((void *)para->input_fb.addr[0],size ,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+@@ -1095,9 +1095,9 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+             DE_SCAL_Get_3D_Out_Single_Size(outmode, &out_size, &out_size);
+         }
+ 
+-    	scal_addr_right.ch0_addr= (__u32)OSAL_VAtoPA((void*)(para->input_fb.trd_right_addr[0]));
+-    	scal_addr_right.ch1_addr= (__u32)OSAL_VAtoPA((void*)(para->input_fb.trd_right_addr[1]));
+-    	scal_addr_right.ch2_addr= (__u32)OSAL_VAtoPA((void*)(para->input_fb.trd_right_addr[2]));
++	scal_addr_right.ch0_addr = para->input_fb.trd_right_addr[0];
++	scal_addr_right.ch1_addr = para->input_fb.trd_right_addr[1];
++	scal_addr_right.ch2_addr = para->input_fb.trd_right_addr[2];
+ 
+         DE_SCAL_Set_3D_Ctrl(sel, para->output_fb.b_trd_src, inmode, outmode);
+         DE_SCAL_Config_3D_Src(sel, &in_addr, &in_size, &in_type, inmode, &scal_addr_right);
+@@ -1308,9 +1308,9 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para)
+     in_addr.ch1_addr = 0;
+     in_addr.ch2_addr = 0;
+ 
+-    out_addr.ch0_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[0]));
+-    out_addr.ch1_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[1]));
+-    out_addr.ch2_addr = (__u32)OSAL_VAtoPA((void*)(para->output_fb.addr[2]));
++    out_addr.ch0_addr = para->output_fb.addr[0];
++    out_addr.ch1_addr = para->output_fb.addr[1];
++    out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+     size = (para->output_fb.size.width * para->output_fb.size.height * de_format_to_bpp(para->output_fb.format) + 7)/8;
+     OSAL_CacheRangeFlush((void *)para->output_fb.addr[0],size ,CACHE_FLUSH_D_CACHE_REGION);
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index f9aef06..0e72151 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -108,8 +108,8 @@ static __inline void list_free_node(list_head_t * node)
+ {
+ 	if(node != NULL)
+ 	{
+-		OSAL_free((void *)(node->data));
+-		OSAL_free((void *)node);
++		vfree((void *)(node->data));
++		vfree((void *)node);
+ 		node = NULL;
+ 	}
+ }
+@@ -125,7 +125,7 @@ static list_head_t * List_New_Sprite_Block(__u32 sel, __disp_sprite_block_para_t
+ 
+ 	if(id != DIS_NO_RES)
+ 	{
+-		data = (sprite_block_data_t *)OSAL_malloc(sizeof(sprite_block_data_t));
++		data = vmalloc(sizeof(sprite_block_data_t));
+ 		data->enable = FALSE;
+ 		data->id = id;
+ 		data->src_win.x = para->src_win.x;
+@@ -137,7 +137,7 @@ static list_head_t * List_New_Sprite_Block(__u32 sel, __disp_sprite_block_para_t
+ 		data->address = (__u32)para->fb.addr[0];
+ 		data->size.width = para->fb.size.width;
+ 
+-		node = (list_head_t *)OSAL_malloc(sizeof(list_head_t));
++		node = vmalloc(sizeof(list_head_t));
+ 		node->next = node->prev = node;
+ 		node->data = data;
+ 
+@@ -313,7 +313,7 @@ static __s32 sprite_set_sprite_block_para(__u32 sel, __u32 id, __u32 next_id, __
+     bpp = de_format_to_bpp(gsprite[sel].format);
+ 
+ 	addr = DE_BE_Offset_To_Addr((__u32)para->fb.addr[0] ,para->fb.size.width, para->src_win.x, para->src_win.y, bpp);
+-	DE_BE_Sprite_Block_Set_fb(sel, id, (__u32)OSAL_VAtoPA((void*)addr), para->fb.size.width*(bpp>>3));
++	DE_BE_Sprite_Block_Set_fb(sel, id, addr, para->fb.size.width * (bpp >> 3));
+ 	DE_BE_Sprite_Block_Set_Pos(sel, id, para->scn_win.x, para->scn_win.y);
+ 	DE_BE_Sprite_Block_Set_Size(sel, id, para->scn_win.width, para->scn_win.height);
+ 	DE_BE_Sprite_Block_Set_Next_Id(sel, id, next_id);
+@@ -823,8 +823,8 @@ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid, __disp_rect_t * sr
+         node = List_Find_Sprite_Block(sel, id);
+ 
+         bpp = de_format_to_bpp(gsprite[sel].format);
+-        addr = DE_BE_Offset_To_Addr(node->data->address, node->data->size.width, src_win->x, src_win->y, bpp);
+-        DE_BE_Sprite_Block_Set_fb(sel, id,(__u32)OSAL_VAtoPA((void*)addr),node->data->size.width*(bpp>>3));
++	addr = DE_BE_Offset_To_Addr(node->data->address, node->data->size.width, src_win->x, src_win->y, bpp);
++	DE_BE_Sprite_Block_Set_fb(sel, id, addr, node->data->size.width * (bpp >> 3));
+ 
+         OSAL_IrqLock(&cpu_sr);
+         node->data->src_win.x = src_win->x;
+@@ -879,8 +879,8 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid, __disp_fb_t *
+ 		bpp = de_format_to_bpp(gsprite[sel].format);
+ 		OSAL_CacheRangeFlush((void *)fb->addr[0], (fb->size.width * node->data->src_win.height * bpp + 7)/8,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+ 
+-    	addr = DE_BE_Offset_To_Addr( fb->addr[0], fb->size.width, node->data->src_win.x, node->data->src_win.y, bpp);
+-        DE_BE_Sprite_Block_Set_fb(sel, id,(__u32)OSAL_VAtoPA((void*)addr), fb->size.width*(bpp>>3));
++		addr = DE_BE_Offset_To_Addr(fb->addr[0], fb->size.width, node->data->src_win.x, node->data->src_win.y, bpp);
++		DE_BE_Sprite_Block_Set_fb(sel, id, addr, fb->size.width * (bpp >> 3));
+ 
+ 		OSAL_IrqLock(&cpu_sr);
+ 		node->data->address = fb->addr[0];
+diff --git a/drivers/video/sunxi/disp/disp_video.c b/drivers/video/sunxi/disp/disp_video.c
+index f6c88ed..2b4c7ec 100644
+--- a/drivers/video/sunxi/disp/disp_video.c
++++ b/drivers/video/sunxi/disp/disp_video.c
+@@ -196,8 +196,8 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     			if(g_video[sel][id].video_cur.maf_valid == TRUE)
+     			{
+     				g_video[sel][id].dit_mode = DIT_MODE_MAF;
+-                	maf_flag_addr = (__u32)OSAL_VAtoPA((void*)g_video[sel][id].video_cur.flag_addr);
+-            		maf_linestride =  g_video[sel][id].video_cur.flag_stride;
++				maf_flag_addr = g_video[sel][id].video_cur.flag_addr;
++				maf_linestride = g_video[sel][id].video_cur.flag_stride;
+     			}
+     			else
+     			{
+@@ -207,7 +207,7 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     			if(g_video[sel][id].video_cur.pre_frame_valid == TRUE)
+     			{
+     				g_video[sel][id].tempdiff_en = TRUE;
+-    				pre_frame_addr = (__u32)OSAL_VAtoPA((void*)g_video[sel][id].pre_frame_addr0);
++				pre_frame_addr = g_video[sel][id].pre_frame_addr0;
+     			}
+     			else
+     			{
+@@ -248,9 +248,9 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     	in_type.byte_seq = 0;
+     	in_type.sample_method = 0;
+ 
+-    	scal_addr.ch0_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[0]));
+-    	scal_addr.ch1_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[1]));
+-    	scal_addr.ch2_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[2]));
++	scal_addr.ch0_addr = g_video[sel][id].video_cur.addr[0];
++	scal_addr.ch1_addr = g_video[sel][id].video_cur.addr[1];
++	scal_addr.ch2_addr = g_video[sel][id].video_cur.addr[2];
+ 
+     	in_size.src_width = scaler->in_fb.size.width;
+     	in_size.src_height = scaler->in_fb.size.height;
+@@ -294,9 +294,9 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+                 DE_SCAL_Get_3D_Out_Single_Size(outmode, &out_size, &out_size);
+             }
+ 
+-        	scal_addr_right.ch0_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr_right[0]));
+-        	scal_addr_right.ch1_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr_right[1]));
+-        	scal_addr_right.ch2_addr= (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr_right[2]));
++	    scal_addr_right.ch0_addr = g_video[sel][id].video_cur.addr_right[0];
++	    scal_addr_right.ch1_addr = g_video[sel][id].video_cur.addr_right[1];
++	    scal_addr_right.ch2_addr = g_video[sel][id].video_cur.addr_right[2];
+ 
+             DE_SCAL_Set_3D_Ctrl(scaler_index, scaler->b_trd_out, inmode, outmode);
+             DE_SCAL_Config_3D_Src(scaler_index, &scal_addr, &in_size, &in_type, inmode, &scal_addr_right);
+@@ -325,9 +325,9 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+         layer_man = &gdisp.screen[sel].layer_manage[id];
+ 
+         BSP_disp_layer_get_framebuffer(sel, id, &fb);
+-        fb.addr[0] = (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[0]));
+-        fb.addr[1] = (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[1]));
+-        fb.addr[2] = (__u32)OSAL_VAtoPA((void*)(g_video[sel][id].video_cur.addr[2]));
++	fb.addr[0] = g_video[sel][id].video_cur.addr[0];
++	fb.addr[1] = g_video[sel][id].video_cur.addr[1];
++	fb.addr[2] = g_video[sel][id].video_cur.addr[2];
+ 
+     	if(get_fb_type(fb.format) == DISP_FB_TYPE_YUV)
+     	{
+@@ -335,8 +335,8 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     		Yuv_Channel_Set_framebuffer(sel, &fb, layer_man->para.src_win.x, layer_man->para.src_win.y);
+     	}
+     	else
+-    	{
+-            layer_fb.fb_addr    = (__u32)OSAL_VAtoPA((void*)fb.addr[0]);
++	{
++		layer_fb.fb_addr = fb.addr[0];
+             layer_fb.pixseq     = img_sw_para_to_reg(3,0,fb.seq);
+             layer_fb.br_swap    = fb.br_swap;
+             layer_fb.fb_width   = fb.size.width;
+diff --git a/include/linux/drv_display_sunxi.h b/include/linux/drv_display_sunxi.h
+index ea9f3e0..7254cd6 100644
+--- a/include/linux/drv_display_sunxi.h
++++ b/include/linux/drv_display_sunxi.h
+@@ -303,6 +303,10 @@ typedef enum//only for debug!!!
+ 
+ typedef struct
+ {
++   /*
++    * The way these are treated today, these are physical addresses. Are there
++    * any actual userspace applications out there that use this? -- libv.
++    */
+     __u32                   addr[3];    // frame buffer的内容地址，对于rgb类型，只有addr[0]有效
+     __disp_rectsz_t         size;//单位是pixel
+     __disp_pixel_fmt_t      format;
+-- 
+1.8.0
+

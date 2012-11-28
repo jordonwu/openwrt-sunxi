@@ -1,0 +1,277 @@
+From 03a653153a01283085abb9fdadfb19f3e08a74ab Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Tue, 29 Nov 2011 18:43:57 +0800
+Subject: [PATCH 399/944] bt: rfkill: add sunxi rfkill driver
+
+---
+ arch/arm/configs/sun4i_crane_defconfig |  15 +++-
+ arch/arm/configs/sun4i_defconfig       |  27 ++++---
+ net/rfkill/Kconfig                     |   9 +++
+ net/rfkill/Makefile                    |   1 +
+ net/rfkill/sunxi-rfkill.c              | 130 +++++++++++++++++++++++++++++++++
+ 5 files changed, 169 insertions(+), 13 deletions(-)
+ create mode 100644 net/rfkill/sunxi-rfkill.c
+
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index 288db10..6b588e9 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -659,15 +659,24 @@ CONFIG_NET_PKTGEN=m
+ # CONFIG_CAN is not set
+ # CONFIG_IRDA is not set
+ CONFIG_BT=y
+-# CONFIG_BT_L2CAP is not set
+-# CONFIG_BT_SCO is not set
++CONFIG_BT_L2CAP=y
++CONFIG_BT_SCO=y
++CONFIG_BT_RFCOMM=y
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=y
++CONFIG_BT_BNEP_MC_FILTER=y
++CONFIG_BT_BNEP_PROTO_FILTER=y
+ 
+ #
+ # Bluetooth device drivers
+ #
+ # CONFIG_BT_HCIBTUSB is not set
+ # CONFIG_BT_HCIBTSDIO is not set
+-# CONFIG_BT_HCIUART is not set
++CONFIG_BT_HCIUART=y
++CONFIG_BT_HCIUART_H4=y
++CONFIG_BT_HCIUART_BCSP=y
++# CONFIG_BT_HCIUART_ATH3K is not set
++CONFIG_BT_HCIUART_LL=y
+ # CONFIG_BT_HCIBCM203X is not set
+ # CONFIG_BT_HCIBPA10X is not set
+ # CONFIG_BT_HCIBFUSB is not set
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index d959aaa..ff3eaa6 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -101,12 +101,6 @@ CONFIG_RD_BZIP2=y
+ CONFIG_RD_LZMA=y
+ CONFIG_RD_XZ=y
+ CONFIG_RD_LZO=y
+-# CONFIG_INITRAMFS_COMPRESSION_NONE is not set
+-# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set
+-# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set
+-# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set
+-# CONFIG_INITRAMFS_COMPRESSION_XZ is not set
+-# CONFIG_INITRAMFS_COMPRESSION_LZO is not set
+ # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+ CONFIG_SYSCTL=y
+ CONFIG_ANON_INODES=y
+@@ -491,15 +485,24 @@ CONFIG_NET_PKTGEN=m
+ # CONFIG_CAN is not set
+ # CONFIG_IRDA is not set
+ CONFIG_BT=y
+-# CONFIG_BT_L2CAP is not set
+-# CONFIG_BT_SCO is not set
++CONFIG_BT_L2CAP=y
++CONFIG_BT_SCO=y
++CONFIG_BT_RFCOMM=y
++CONFIG_BT_RFCOMM_TTY=y
++CONFIG_BT_BNEP=y
++CONFIG_BT_BNEP_MC_FILTER=y
++CONFIG_BT_BNEP_PROTO_FILTER=y
+ 
+ #
+ # Bluetooth device drivers
+ #
+ # CONFIG_BT_HCIBTUSB is not set
+ # CONFIG_BT_HCIBTSDIO is not set
+-# CONFIG_BT_HCIUART is not set
++CONFIG_BT_HCIUART=y
++CONFIG_BT_HCIUART_H4=y
++CONFIG_BT_HCIUART_BCSP=y
++# CONFIG_BT_HCIUART_ATH3K is not set
++CONFIG_BT_HCIUART_LL=y
+ # CONFIG_BT_HCIBCM203X is not set
+ # CONFIG_BT_HCIBPA10X is not set
+ # CONFIG_BT_HCIBFUSB is not set
+@@ -523,8 +526,11 @@ CONFIG_WIRELESS_EXT_SYSFS=y
+ # CONFIG_CFG80211_ALLOW_RECONNECT is not set
+ # CONFIG_MAC80211 is not set
+ # CONFIG_WIMAX is not set
+-# CONFIG_RFKILL is not set
++CONFIG_RFKILL=y
++CONFIG_RFKILL_PM=y
++CONFIG_RFKILL_INPUT=y
+ # CONFIG_RFKILL_REGULATOR is not set
++CONFIG_SUNXI_RFKILL=y
+ # CONFIG_NET_9P is not set
+ # CONFIG_CAIF is not set
+ 
+@@ -668,6 +674,7 @@ CONFIG_RTL8192CU_SW=m
+ # CONFIG_USB_KAWETH is not set
+ # CONFIG_USB_PEGASUS is not set
+ # CONFIG_USB_USBNET is not set
++# CONFIG_USB_HSO is not set
+ # CONFIG_USB_IPHETH is not set
+ # CONFIG_WAN is not set
+ 
+diff --git a/net/rfkill/Kconfig b/net/rfkill/Kconfig
+index 8e12c8a..7c651b1 100644
+--- a/net/rfkill/Kconfig
++++ b/net/rfkill/Kconfig
+@@ -47,3 +47,12 @@ config RFKILL_GPIO
+ 	  If you say yes here you get support of a generic gpio RFKILL
+ 	  driver. The platform should fill in the appropriate fields in the
+ 	  rfkill_gpio_platform_data structure and pass that to the driver.
++
++
++config SUNXI_RFKILL
++	bool "Winner's GPIO RFKILL driver"
++	depends on RFKILL
++    depends on ARCH_SUN4I || ARCH_SUN5I
++    default y if ARCH_SUN4I
++    default y if ARCH_SUN5I
++
+diff --git a/net/rfkill/Makefile b/net/rfkill/Makefile
+index 3117687..f026cb4 100644
+--- a/net/rfkill/Makefile
++++ b/net/rfkill/Makefile
+@@ -7,3 +7,4 @@ rfkill-$(CONFIG_RFKILL_INPUT)	+= input.o
+ obj-$(CONFIG_RFKILL)		+= rfkill.o
+ obj-$(CONFIG_RFKILL_REGULATOR)	+= rfkill-regulator.o
+ obj-$(CONFIG_RFKILL_GPIO)	+= rfkill-gpio.o
++obj-$(CONFIG_SUNXI_RFKILL) += sunxi-rfkill.o
+diff --git a/net/rfkill/sunxi-rfkill.c b/net/rfkill/sunxi-rfkill.c
+new file mode 100644
+index 0000000..cbe1646
+--- /dev/null
++++ b/net/rfkill/sunxi-rfkill.c
+@@ -0,0 +1,130 @@
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/rfkill.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++#include <mach/sys_config.h>
++
++#if defined CONFIG_BT_HCIUART_DEBUG
++#define RF_MSG(...)     do {printk("[rfkill]: "__VA_ARGS__);} while(0)
++#else
++#define RF_MSG(...)
++#endif
++
++#if (defined CONFIG_MMC_SUNXI_POWER_CONTROL)
++extern int mmc_pm_get_mod_type(void);
++extern int mmc_pm_gpio_ctrl(char* name, int level);
++extern int mmc_pm_get_io_val(char* name);
++#else
++static __inline int mmc_pm_get_mod_type(void) {return 0;}
++static __inline int mmc_pm_gpio_ctrl(char* name, int level) {return -1;}
++static __inline int mmc_pm_get_io_val(char* name) {return -1;}
++#endif
++
++static DEFINE_SPINLOCK(bt_power_lock);
++static const char bt_name[] = "bcm4329";
++static struct rfkill *sw_rfkill;
++static int rfkill_set_power(void *data, bool blocked)
++{
++    unsigned int mod_sel = mmc_pm_get_mod_type();
++
++    RF_MSG("rfkill set power %d\n", blocked);
++
++    spin_lock(&bt_power_lock);
++    switch (mod_sel)
++    {
++        case 2: /* usi bm01a */
++            if (!blocked) {
++                mmc_pm_gpio_ctrl("usi_bm01a_bt_regon", 1);
++                mmc_pm_gpio_ctrl("usi_bm01a_bt_rst", 1);
++            } else {
++                mmc_pm_gpio_ctrl("usi_bm01a_bt_regon", 0);
++                mmc_pm_gpio_ctrl("usi_bm01a_bt_rst", 0);
++            }
++            break;
++        case 5: /* swb b23 */
++            if (!blocked) {
++                mmc_pm_gpio_ctrl("swbb23_bt_shdn", 1);
++            } else {
++                mmc_pm_gpio_ctrl("swbb23_bt_shdn", 0);
++            }
++            break;
++        case 6: /* huawei mw269x */
++            if (!blocked) {
++                mmc_pm_gpio_ctrl("hw_mw269x_bt_wake", 1);
++                mmc_pm_gpio_ctrl("hw_mw269x_bt_enb", 1);
++            } else {
++                mmc_pm_gpio_ctrl("hw_mw269x_bt_enb", 0);
++                mmc_pm_gpio_ctrl("hw_mw269x_bt_wake", 0);
++            }
++            break;
++        default:
++            RF_MSG("no bt module matched !!\n");
++    }
++
++    spin_unlock(&bt_power_lock);
++    msleep(100);
++    return 0;
++}
++
++static struct rfkill_ops sw_rfkill_ops = {
++    .set_block = rfkill_set_power,
++};
++
++static int sw_rfkill_probe(struct platform_device *pdev)
++{
++    int ret = 0;
++
++    sw_rfkill = rfkill_alloc(bt_name, &pdev->dev,
++                        RFKILL_TYPE_BLUETOOTH, &sw_rfkill_ops, NULL);
++    if (unlikely(!sw_rfkill))
++        return -ENOMEM;
++
++    ret = rfkill_register(sw_rfkill);
++    if (unlikely(ret)) {
++        rfkill_destroy(sw_rfkill);
++    }
++    return ret;
++}
++
++static int sw_rfkill_remove(struct platform_device *pdev)
++{
++    if (likely(sw_rfkill)) {
++        rfkill_unregister(sw_rfkill);
++        rfkill_destroy(sw_rfkill);
++    }
++    return 0;
++}
++
++static struct platform_driver sw_rfkill_driver = {
++    .probe = sw_rfkill_probe,
++    .remove = sw_rfkill_remove,
++    .driver = {
++        .name = "sunxi-rfkill",
++        .owner = THIS_MODULE,
++    },
++};
++
++static struct platform_device sw_rfkill_dev = {
++    .name = "sunxi-rfkill",
++};
++
++static int __init sw_rfkill_init(void)
++{
++    platform_device_register(&sw_rfkill_dev);
++    return platform_driver_register(&sw_rfkill_driver);
++}
++
++static void __exit sw_rfkill_exit(void)
++{
++    platform_device_unregister(&sw_rfkill_dev);
++    platform_driver_unregister(&sw_rfkill_driver);
++}
++
++module_init(sw_rfkill_init);
++module_exit(sw_rfkill_exit);
++
++MODULE_DESCRIPTION("sunxi-rfkill driver");
++MODULE_AUTHOR("Aaron.yemao<leafy.myeh@allwinnertech.com>");
++MODULE_LICENSE(GPL);
++
+-- 
+1.8.0
+

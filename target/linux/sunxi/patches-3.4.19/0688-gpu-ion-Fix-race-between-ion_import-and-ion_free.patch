@@ -1,0 +1,57 @@
+From 782d901cf1b3b4b710c0f4016fc0a1398277cd4c Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Mon, 20 Aug 2012 15:41:11 -0700
+Subject: [PATCH 688/944] gpu: ion: Fix race between ion_import and ion_free
+
+If preemted during ion_free after the refcount is updated but
+before the handle can be removed from the rb_tree, import
+might find that handle in the tree and try to reuse it
+when execution returns to free, the handle will be cleaned
+up leaving the caller of import with a corrupt handle.
+This patch modifies the locking to protect agains this race.
+
+Change-Id: I31d18cc6398f0ca18e05cd919e2bcf86fa18d568
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 34c12df..3ae7785 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -253,8 +253,6 @@ static void ion_handle_destroy(struct kref *kref)
+ 	struct ion_client *client = handle->client;
+ 	struct ion_buffer *buffer = handle->buffer;
+ 
+-	mutex_lock(&client->lock);
+-
+ 	mutex_lock(&buffer->lock);
+ 	while (handle->kmap_cnt)
+ 		ion_handle_kmap_put(handle);
+@@ -262,7 +260,6 @@ static void ion_handle_destroy(struct kref *kref)
+ 
+ 	if (!RB_EMPTY_NODE(&handle->node))
+ 		rb_erase(&handle->node, &client->handles);
+-	mutex_unlock(&client->lock);
+ 
+ 	ion_buffer_put(buffer);
+ 	kfree(handle);
+@@ -406,13 +403,13 @@ void ion_free(struct ion_client *client, struct ion_handle *handle)
+ 
+ 	mutex_lock(&client->lock);
+ 	valid_handle = ion_handle_validate(client, handle);
+-	mutex_unlock(&client->lock);
+ 
+ 	if (!valid_handle) {
+ 		WARN(1, "%s: invalid handle passed to free.\n", __func__);
+ 		return;
+ 	}
+ 	ion_handle_put(handle);
++	mutex_unlock(&client->lock);
+ }
+ EXPORT_SYMBOL(ion_free);
+ 
+-- 
+1.8.0
+

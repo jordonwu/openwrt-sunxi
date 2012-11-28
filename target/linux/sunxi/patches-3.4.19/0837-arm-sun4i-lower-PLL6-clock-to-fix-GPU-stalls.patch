@@ -1,0 +1,36 @@
+From 1813b92cda31d9b045fdedaeb31cf6ee71c1a001 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@linux-sunxi.org>
+Date: Sun, 28 Oct 2012 22:21:03 +0000
+Subject: [PATCH 837/944] arm: sun4i: lower PLL6 clock to fix GPU stalls
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Running PLL6 clock at 1.2Ghz causes the GPU to run too fast
+(400Mhz versus 320Mhz before the "SATA fix" patch), and makes it
+stall after doing GL operations for a while.
+
+This restores the PLL6 clock to the value used before commit
+99fe31a98bcfd96f3cd600e7b6719f87624d9c39
+
+Signed-off-by: Emilio López <turl@linux-sunxi.org>
+---
+ arch/arm/mach-sun4i/clock/clock.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/clock/clock.c b/arch/arm/mach-sun4i/clock/clock.c
+index 2619c6d..3b9a2b6 100644
+--- a/arch/arm/mach-sun4i/clock/clock.c
++++ b/arch/arm/mach-sun4i/clock/clock.c
+@@ -180,7 +180,7 @@ int clk_init(void)
+ 
+ 	/* initiate PLL6 */
+ 	tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
+-	tmpSclk->clk->rate  = 1200000000;
++	tmpSclk->clk->rate  = 960000000;
+ 	tmpSclk->set_clk(tmpSclk->clk);
+ 	tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+ 	tmpSclk->set_clk(tmpSclk->clk);
+-- 
+1.8.0
+

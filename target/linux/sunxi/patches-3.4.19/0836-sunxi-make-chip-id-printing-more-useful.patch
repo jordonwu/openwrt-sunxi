@@ -1,0 +1,55 @@
+From fef9f2856bc689f1e004e99e5131fc5a9301326e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 26 Oct 2012 16:34:11 +0200
+Subject: [PATCH 836/944] sunxi: make chip-id printing more useful
+
+---
+ arch/arm/plat-sunxi/core.c | 22 +++++++++++++++++++---
+ 1 file changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/plat-sunxi/core.c b/arch/arm/plat-sunxi/core.c
+index 4466d95..3420178 100644
+--- a/arch/arm/plat-sunxi/core.c
++++ b/arch/arm/plat-sunxi/core.c
+@@ -21,9 +21,11 @@
+ 
+ #include <asm/setup.h>
+ #include <asm/sizes.h>
++#include <asm/mach-types.h>
+ 
+ #include <plat/core.h>
+ #include <plat/platform.h>
++#include <plat/system.h>
+ 
+ struct brom_header {
+ 	u32 jump_instruction;	/* one intruction jumping to real code */
+@@ -75,9 +77,23 @@ u32 sunxi_chip_id(void)
+ int sunxi_pr_chip_id()
+ {
+ 	u32 chip_id = sunxi_chip_id();
+-	pr_info("BROM chip-id: %u (%s)\n", chip_id,
+-		(chip_id == SUNXI_CHIP_ID_A10) ? "A10" :
+-		((chip_id == SUNXI_CHIP_ID_A13) ? "A13" : "Unknown"));
++	const char *name;
++
++	switch (chip_id) {
++	case SUNXI_CHIP_ID_A10:
++		name = "A10"; break;
++	case SUNXI_CHIP_ID_A13:
++		name = "A13"; break;
++	default:
++		name = "Unknown";
++	}
++
++	if (machine_is_sun4i())
++		pr_info("chip-id: %s (AW%u revision %c)\n", name,
++			chip_id, 'A' + sw_get_ic_ver());
++	else
++		pr_info("chip-id: %s (AW%u)\n", name, chip_id);
++
+ 	return (chip_id != 0);
+ }
+ 
+-- 
+1.8.0
+

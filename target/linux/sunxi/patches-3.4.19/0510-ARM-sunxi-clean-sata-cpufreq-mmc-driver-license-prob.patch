@@ -1,0 +1,297 @@
+From ae1aaa9c369478ec61380220aa29d904a8f99960 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Mon, 4 Jun 2012 16:44:03 +0800
+Subject: [PATCH 510/944] ARM: sunxi: clean sata, cpufreq, mmc driver license
+ problem
+
+---
+ drivers/ata/sw_ahci_platform.c       | 48 ++++++++++++++++++++----------------
+ drivers/ata/sw_ahci_platform.h       | 27 +++++++++++++-------
+ drivers/cpufreq/cpufreq_fantasy.c    | 38 ++++++++++++++++------------
+ drivers/mmc/sunxi-host/Kconfig       |  1 -
+ drivers/mmc/sunxi-host/Makefile      |  2 --
+ drivers/mmc/sunxi-host/host_fs.c     |  2 --
+ drivers/mmc/sunxi-host/host_op.c     |  2 --
+ drivers/mmc/sunxi-host/host_op.h     |  3 +--
+ drivers/mmc/sunxi-host/host_plat.h   |  3 +--
+ drivers/mmc/sunxi-host/sdxc.c        |  1 -
+ drivers/mmc/sunxi-host/sdxc.h        |  3 ---
+ drivers/mmc/sunxi-host/smc_syscall.h |  2 --
+ 12 files changed, 69 insertions(+), 63 deletions(-)
+
+diff --git a/drivers/ata/sw_ahci_platform.c b/drivers/ata/sw_ahci_platform.c
+index 661624a..bebccae 100644
+--- a/drivers/ata/sw_ahci_platform.c
++++ b/drivers/ata/sw_ahci_platform.c
+@@ -1,25 +1,31 @@
+ /*
+-*************************************************************************************
+-*                         			      Linux
+-*					           AHCI SATA platform driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: sw_ahci_platform.c
+-*
+-* Author 		: danielwang
+-*
+-* Description 	: SATA Host Controller Driver for AW1623 Platform
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    danielwang        2011-6-29            1.0          create this file
+-*
+-*************************************************************************************
+-*/
++ * drivers/ata/sw_ahci_platform.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Daniel Wang <danielwang@allwinnertech.com>
++ *
++ * Based on ahci_platform.c AHCI SATA platform driver
++ *
++ * Copyright 2004-2005  Red Hat, Inc.
++ *   Jeff Garzik <jgarzik@pobox.com>
++ * Copyright 2010  MontaVista Software, LLC.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/kernel.h>
+ #include <linux/gfp.h>
+diff --git a/drivers/ata/sw_ahci_platform.h b/drivers/ata/sw_ahci_platform.h
+index 7eecc97..edb6085 100644
+--- a/drivers/ata/sw_ahci_platform.h
++++ b/drivers/ata/sw_ahci_platform.h
+@@ -1,15 +1,24 @@
+ /*
+- * AHCI SATA platform driver
++ * drivers/ata/sw_ahci_platform.h
+  *
+- * Copyright 2004-2005  Red Hat, Inc.
+- *   Jeff Garzik <jgarzik@pobox.com>
+- * Copyright 2010  MontaVista Software, LLC.
+- *   Anton Vorontsov <avorontsov@ru.mvista.com>
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Daniel Wang <danielwang@allwinnertech.com>
+  *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2, or (at your option)
+- * any later version.
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef _SW_AHCI_PLATFORM_H
+diff --git a/drivers/cpufreq/cpufreq_fantasy.c b/drivers/cpufreq/cpufreq_fantasy.c
+index 2ce2cb2..d8e4076 100644
+--- a/drivers/cpufreq/cpufreq_fantasy.c
++++ b/drivers/cpufreq/cpufreq_fantasy.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : cpufreq_fantasy.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-7-9 11:07
+-* Descript: a policy of cpu dynamic frequency.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * drivers/cpufreq/cpufreq_fantasy.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+ #include <linux/init.h>
+diff --git a/drivers/mmc/sunxi-host/Kconfig b/drivers/mmc/sunxi-host/Kconfig
+index 0dbfc44..38acf0d 100644
+--- a/drivers/mmc/sunxi-host/Kconfig
++++ b/drivers/mmc/sunxi-host/Kconfig
+@@ -16,4 +16,3 @@ config MMC_SUNXI
+ config MMC_SUNXI_DBG
+ 	bool "SUNXI MMC Card Host driver debug control"
+ 	depends on MMC_SUNXI
+-
+diff --git a/drivers/mmc/sunxi-host/Makefile b/drivers/mmc/sunxi-host/Makefile
+index e134f16..14732a2 100644
+--- a/drivers/mmc/sunxi-host/Makefile
++++ b/drivers/mmc/sunxi-host/Makefile
+@@ -1,4 +1,3 @@
+-
+ #
+ # Makefile for MMC/SD host controller drivers
+ #
+@@ -7,7 +6,6 @@ ifeq ($(CONFIG_MMC_DEBUG),y)
+ 	EXTRA_CFLAGS		+= -DDEBUG
+ endif
+ 
+-
+ obj-$(CONFIG_MMC_SUNXI)    += mmc_host.o
+ 
+ mmc_host-y := sdxc.o host_op.o host_fs.o
+diff --git a/drivers/mmc/sunxi-host/host_fs.c b/drivers/mmc/sunxi-host/host_fs.c
+index abc6972..df790ff 100644
+--- a/drivers/mmc/sunxi-host/host_fs.c
++++ b/drivers/mmc/sunxi-host/host_fs.c
+@@ -4,8 +4,6 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index e9832e0..47ee70c 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -4,8 +4,6 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+diff --git a/drivers/mmc/sunxi-host/host_op.h b/drivers/mmc/sunxi-host/host_op.h
+index c40015a..cc35885 100644
+--- a/drivers/mmc/sunxi-host/host_op.h
++++ b/drivers/mmc/sunxi-host/host_op.h
+@@ -4,14 +4,13 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
+  */
++
+ #ifndef _SW_HOST_OP_H_
+ #define _SW_HOST_OP_H_ "host_op.h"
+ 
+diff --git a/drivers/mmc/sunxi-host/host_plat.h b/drivers/mmc/sunxi-host/host_plat.h
+index e24bec65..c5cb360 100644
+--- a/drivers/mmc/sunxi-host/host_plat.h
++++ b/drivers/mmc/sunxi-host/host_plat.h
+@@ -4,14 +4,13 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
+  */
++
+ #ifndef HOST_PLAT_H
+ #define HOST_PLAT_H
+ 
+diff --git a/drivers/mmc/sunxi-host/sdxc.c b/drivers/mmc/sunxi-host/sdxc.c
+index 73715fd..134d2ba95 100644
+--- a/drivers/mmc/sunxi-host/sdxc.c
++++ b/drivers/mmc/sunxi-host/sdxc.c
+@@ -4,7 +4,6 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+  * sdxc.c - operation for register level control of mmc controller
+  *
+  * This program is free software; you can redistribute it and/or
+diff --git a/drivers/mmc/sunxi-host/sdxc.h b/drivers/mmc/sunxi-host/sdxc.h
+index 5e67089..0d83e7c 100644
+--- a/drivers/mmc/sunxi-host/sdxc.h
++++ b/drivers/mmc/sunxi-host/sdxc.h
+@@ -4,9 +4,6 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- * sdxc.h -
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+diff --git a/drivers/mmc/sunxi-host/smc_syscall.h b/drivers/mmc/sunxi-host/smc_syscall.h
+index abbb3ec..e7e909a 100644
+--- a/drivers/mmc/sunxi-host/smc_syscall.h
++++ b/drivers/mmc/sunxi-host/smc_syscall.h
+@@ -4,8 +4,6 @@
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Aaron.Maoye <leafy.myeh@allwinnertech.com>
+  *
+- * description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+-- 
+1.8.0
+

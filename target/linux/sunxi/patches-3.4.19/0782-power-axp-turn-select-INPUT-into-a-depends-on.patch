@@ -1,0 +1,44 @@
+From 07fb3258528916f55f57888bb059dfbecb6039e3 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 9 Oct 2012 12:46:54 +0200
+Subject: [PATCH 782/944] power: axp: turn `select` INPUT into a `depends on`
+
+---
+ drivers/power/axp_power/Kconfig | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/power/axp_power/Kconfig b/drivers/power/axp_power/Kconfig
+index 56b1248..039679f 100644
+--- a/drivers/power/axp_power/Kconfig
++++ b/drivers/power/axp_power/Kconfig
+@@ -1,6 +1,6 @@
+ menuconfig AW_AXP
+ 	bool "AXP Power drivers"
+-	depends on REGULATOR
++	depends on REGULATOR && INPUT
+ 	default n
+ 	---help---
+ 	  This option allows you to select AXP power driver
+@@ -13,19 +13,16 @@ choice
+ 
+ config AW_AXP18
+ 	bool "AXP18 driver"
+-	select INPUT
+ 	---help---
+ 	  AXP18 driver
+ 
+ config AW_AXP19
+ 	bool "AXP19 driver"
+-	select INPUT
+ 	---help---
+ 	  AXP19 driver
+ 
+ config AW_AXP20
+ 	bool "AXP20 driver"
+-	select INPUT
+ 	---help---
+ 	  AXP20 driver
+ 
+-- 
+1.8.0
+

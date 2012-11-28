@@ -1,0 +1,649 @@
+From 7e08da1fab9c184a9e4b1f640e0100b6e92a3e0b Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 13 Apr 2012 18:36:06 -0700
+Subject: [PATCH 187/944] net: wireless: bcmdhd: Update to version 1.26
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/Makefile               |   2 +-
+ drivers/net/wireless/bcmdhd/bcmevent.c             |  16 ++-
+ drivers/net/wireless/bcmdhd/dhd.h                  |   9 +-
+ drivers/net/wireless/bcmdhd/include/bcmdevs.h      |   3 +-
+ drivers/net/wireless/bcmdhd/include/bcmsdh.h       |   4 +-
+ drivers/net/wireless/bcmdhd/include/bcmsrom_fmt.h  |  54 +++++++-
+ drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h  |  32 +++--
+ drivers/net/wireless/bcmdhd/include/dhdioctl.h     |   4 +-
+ drivers/net/wireless/bcmdhd/include/epivers.h      |  10 +-
+ drivers/net/wireless/bcmdhd/include/linux_osl.h    |   8 +-
+ .../net/wireless/bcmdhd/include/proto/bcmevent.h   |   7 +-
+ drivers/net/wireless/bcmdhd/include/wlioctl.h      | 148 ++++++++++++---------
+ 12 files changed, 201 insertions(+), 96 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/Makefile b/drivers/net/wireless/bcmdhd/Makefile
+index adb796c..7925661 100644
+--- a/drivers/net/wireless/bcmdhd/Makefile
++++ b/drivers/net/wireless/bcmdhd/Makefile
+@@ -31,7 +31,7 @@ DHDCFLAGS += -DSOFTAP -DUSE_IW
+ endif
+ ifneq ($(CONFIG_CFG80211),)
+ bcmdhd-objs += wl_cfg80211.o wl_cfgp2p.o wl_linux_mon.o dhd_cfg80211.o
+-DHDCFLAGS += -DWL_CFG80211
++DHDCFLAGS += -DWL_CFG80211 -DWL_CFG80211_STA_EVENT -DWL_ENABLE_P2P_IF
+ endif
+ EXTRA_CFLAGS = $(DHDCFLAGS)
+ ifeq ($(CONFIG_BCMDHD),m)
+diff --git a/drivers/net/wireless/bcmdhd/bcmevent.c b/drivers/net/wireless/bcmdhd/bcmevent.c
+index 04d04a9..4cc398c 100644
+--- a/drivers/net/wireless/bcmdhd/bcmevent.c
++++ b/drivers/net/wireless/bcmdhd/bcmevent.c
+@@ -20,7 +20,7 @@
+  *      Notwithstanding the above, under no circumstances may you combine this
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+- * $Id: bcmevent.c 320583 2012-03-12 15:09:36Z $
++ * $Id: bcmevent.c 326276 2012-04-06 23:16:42Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -29,7 +29,7 @@
+ #include <proto/bcmeth.h>
+ #include <proto/bcmevent.h>
+ 
+-#if WLC_E_LAST != 93
++#if WLC_E_LAST != 94
+ #error "You need to add an entry to bcmevent_names[] for the new event"
+ #endif
+ 
+@@ -98,6 +98,18 @@ const bcmevent_name_t bcmevent_names[] = {
+ 	{ WLC_E_ACTION_FRAME_RX, "ACTION_FRAME_RX" },
+ 	{ WLC_E_ACTION_FRAME_COMPLETE, "ACTION_FRAME_COMPLETE" },
+ #endif
++#if defined(NDISVER) && (NDISVER >= 0x0620)
++	{ WLC_E_PRE_ASSOC_IND, "ASSOC_RECV" },
++	{ WLC_E_PRE_REASSOC_IND, "REASSOC_RECV" },
++	{ WLC_E_CHANNEL_ADOPTED, "CHANNEL_ADOPTED" },
++	{ WLC_E_AP_STARTED, "AP_STARTED" },
++	{ WLC_E_DFS_AP_STOP, "DFS_AP_STOP" },
++	{ WLC_E_DFS_AP_RESUME, "DFS_AP_RESUME" },
++	{ WLC_E_ASSOC_IND_NDIS, "ASSOC_IND_NDIS"},
++	{ WLC_E_REASSOC_IND_NDIS, "REASSOC_IND_NDIS"},
++	{ WLC_E_ACTION_FRAME_RX_NDIS, "WLC_E_ACTION_FRAME_RX_NDIS" },
++	{ WLC_E_AUTH_REQ, "WLC_E_AUTH_REQ" },
++#endif /* NDISVER && NDISVER >= 0x0620 */
+ #ifdef BCMWAPI_WAI
+ 	{ WLC_E_WAI_STA_EVENT, "WAI_STA_EVENT" },
+ 	{ WLC_E_WAI_MSG, "WAI_MSG" },
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 3c8ca44..2728146 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd.h 322404 2012-03-20 20:41:32Z $
++ * $Id: dhd.h 327089 2012-04-12 02:05:07Z $
+  */
+ 
+ /****************
+@@ -74,9 +74,12 @@ enum dhd_bus_state {
+ 
+ /* Firmware requested operation mode */
+ #define STA_MASK			0x0001
+-#define HOSTAPD_MASK			0x0002
++#define HOSTAPD_MASK		0x0002
+ #define WFD_MASK			0x0004
+-#define SOFTAP_FW_MASK			0x0008
++#define SOFTAP_FW_MASK	0x0008
++#define P2P_GO_ENABLED		0x0010
++#define P2P_GC_ENABLED		0x0020
++#define CONCURENT_MASK		0x00F0
+ 
+ /* max sequential rxcntl timeouts to set HANG event */
+ #define MAX_CNTL_TIMEOUT  2
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmdevs.h b/drivers/net/wireless/bcmdhd/include/bcmdevs.h
+index da0e92f..7b0f9b1 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmdevs.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmdevs.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmdevs.h 324551 2012-03-29 18:36:03Z $
++ * $Id: bcmdevs.h 327007 2012-04-11 22:45:50Z $
+  */
+ 
+ #ifndef	_BCMDEVS_H
+@@ -340,6 +340,7 @@
+ #define	BFL_PACTRL		0x00000002  
+ #define BFL_AIRLINEMODE	0x00000004  
+ #define	BFL_ADCDIV		0x00000008  
++#define	BFL_RFPLL	        0x00000008  
+ #define	BFL_ENETROBO		0x00000010  
+ #define	BFL_NOPLLDOWN		0x00000020  
+ #define	BFL_CCKHIPWR		0x00000040  
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmsdh.h b/drivers/net/wireless/bcmdhd/include/bcmsdh.h
+index acab225..4c62dba 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmsdh.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmsdh.h
+@@ -23,7 +23,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmsdh.h 313885 2012-02-09 03:55:26Z $
++ * $Id: bcmsdh.h 326276 2012-04-06 23:16:42Z $
+  */
+ 
+ /**
+@@ -56,7 +56,7 @@ typedef void (*bcmsdh_cb_fn_t)(void *);
+  *    most recent one) to enable single-instance implementations to pass NULL.
+  */
+ 
+-#if defined(NDIS630)
++#if defined(NDISVER) && (NDISVER >= 0x0630) && 1
+ extern bcmsdh_info_t *bcmsdh_attach(osl_t *osh, void *cfghdl,
+ 	void **regsva, uint irq, shared_info_t *sh);
+ #else
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmsrom_fmt.h b/drivers/net/wireless/bcmdhd/include/bcmsrom_fmt.h
+index 8e38edc..074601f 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmsrom_fmt.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmsrom_fmt.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmsrom_fmt.h 309193 2012-01-19 00:03:57Z $
++ * $Id: bcmsrom_fmt.h 326494 2012-04-09 13:29:57Z $
+  */
+ 
+ #ifndef	_bcmsrom_fmt_h_
+@@ -433,12 +433,38 @@
+ #define SROM11_FEM_CFG1			85
+ #define SROM11_FEM_CFG2			86
+ 
++/* Masks and offsets for FEM_CFG */
++#define SROM11_FEMCTRL_MASK		0xf800
++#define SROM11_FEMCTRL_SHIFT		11
++#define SROM11_PAPDCAP_MASK		0x0400
++#define SROM11_PAPDCAP_SHIFT		10
++#define SROM11_TWORANGETSSI_MASK	0x0200
++#define SROM11_TWORANGETSSI_SHIFT	9
++#define SROM11_PDGAIN_MASK		0x01f0
++#define SROM11_PDGAIN_SHIFT		4
++#define SROM11_EPAGAIN_MASK		0x000e
++#define SROM11_EPAGAIN_SHIFT		1
++#define SROM11_TSSIPOSSLOPE_MASK	0x0001
++#define SROM11_TSSIPOSSLOPE_SHIFT	0
++#define SROM11_GAINCTRLSPH_MASK		0xf800
++#define SROM11_GAINCTRLSPH_SHIFT	11
++
+ #define SROM11_THERMAL			87
+ #define SROM11_MPWR_RAWTS		88
+ #define SROM11_TS_SLP_OPT_CORRX		89
+ #define SROM11_PHYCAL_TEMPDELTA  	92
+ #define SROM11_MPWR_1_AND_2 		93
+ 
++/* Masks and offsets for Terrmal parameters */
++#define SROM11_TEMPS_PERIOD_MASK	0xf0
++#define SROM11_TEMPS_PERIOD_SHIFT	4
++#define SROM11_TEMPS_HYSTERESIS_MASK	0x0f
++#define SROM11_TEMPS_HYSTERESIS_SHIFT	0
++#define SROM11_TEMPCORRX_MASK		0xfc
++#define SROM11_TEMPCORRX_SHIFT		2
++#define SROM11_TEMPSENSE_OPTION_MASK	0x3
++#define SROM11_TEMPSENSE_OPTION_SHIFT	0
++
+ #define SROM11_PDOFF_40M_A0		101
+ #define SROM11_PDOFF_40M_A1		102
+ #define SROM11_PDOFF_40M_A2		103
+@@ -464,6 +490,32 @@
+ #define	SROM11_5GB2_PA			14
+ #define	SROM11_5GB3_PA			17
+ 
++/* Masks and offsets for rxgains */
++#define SROM11_RXGAINS5GTRELNABYPA_MASK		0x8000
++#define SROM11_RXGAINS5GTRELNABYPA_SHIFT	15
++#define SROM11_RXGAINS5GTRISOA_MASK		0x7800
++#define SROM11_RXGAINS5GTRISOA_SHIFT		11
++#define SROM11_RXGAINS5GELNAGAINA_MASK		0x0700
++#define SROM11_RXGAINS5GELNAGAINA_SHIFT		8
++#define SROM11_RXGAINS2GTRELNABYPA_MASK		0x0080
++#define SROM11_RXGAINS2GTRELNABYPA_SHIFT	7
++#define SROM11_RXGAINS2GTRISOA_MASK		0x0078
++#define SROM11_RXGAINS2GTRISOA_SHIFT		3
++#define SROM11_RXGAINS2GELNAGAINA_MASK		0x0007
++#define SROM11_RXGAINS2GELNAGAINA_SHIFT		0
++#define SROM11_RXGAINS5GHTRELNABYPA_MASK	0x8000
++#define SROM11_RXGAINS5GHTRELNABYPA_SHIFT	15
++#define SROM11_RXGAINS5GHTRISOA_MASK		0x7800
++#define SROM11_RXGAINS5GHTRISOA_SHIFT		11
++#define SROM11_RXGAINS5GHELNAGAINA_MASK		0x0700
++#define SROM11_RXGAINS5GHELNAGAINA_SHIFT	8
++#define SROM11_RXGAINS5GMTRELNABYPA_MASK	0x0080
++#define SROM11_RXGAINS5GMTRELNABYPA_SHIFT	7
++#define SROM11_RXGAINS5GMTRISOA_MASK		0x0078
++#define SROM11_RXGAINS5GMTRISOA_SHIFT		3
++#define SROM11_RXGAINS5GMELNAGAINA_MASK		0x0007
++#define SROM11_RXGAINS5GMELNAGAINA_SHIFT	0
++
+ /* Power per rate */
+ #define SROM11_CCKBW202GPO		168
+ #define SROM11_CCKBW20UL2GPO		169
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h b/drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h
+index 9ed3a5d..682b187 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmsrom_tbl.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmsrom_tbl.h 322893 2012-03-22 03:31:32Z $
++ * $Id: bcmsrom_tbl.h 326655 2012-04-10 05:23:43Z $
+  */
+ 
+ #ifndef	_bcmsrom_tbl_h_
+@@ -828,15 +828,17 @@ static const cis_tuple_t cis_hnbuvars[] = {
+ 	{HNBU_MCS5GHPO,	0xffffffff, 13,	"4mcsbw205ghpo 4mcsbw20ul5ghpo 4mcsbw405ghpo"},
+ 	{HNBU_MCS32PO,	0xffffffff, 3,	"2mcs32po"},
+ 	{HNBU_LEG40DUPPO, 	0xffffffff, 3,	"2legofdm40duppo"},
+-	{HNBU_TEMPTHRESH, 	0xffffffff, 6,	"1tempthresh 1periodhyst 1tempoffset 1tempcoropt "
+-	"1phycal_tempdelta"},
+-	{HNBU_FEM_CFG,		0xfffff800, 5,	"2fem_cfg1 2fem_cfg2"},
+-	{HNBU_ACPA_C0,		0xfffff800, 41,	"2subband5gver 2maxp2ga0 2*3pa2ga0 2rxgainsa0 "
++	{HNBU_TEMPTHRESH, 	0xffffffff, 7,	"1tempthresh 0temps_period 0temps_hysteresis "
++	"1tempoffset 1tempsense_slope 0tempcorrx 0tempsense_option "
++	"1phycal_tempdelta"}, /* special case */
++	{HNBU_MUXENAB,		0xffffffff, 2,	"1muxenab"},
++	{HNBU_FEM_CFG,		0xfffff800, 5,	"0femctrl 0papdcap2g 0tworangetssi2g 0pdgain2g "
++	"0epagain2g 0tssiposslope2g 0gainctrlsph 0papdcap5g 0tworangetssi5g 0pdgain5g 0epagain5g "
++	"0tssiposslope5g"}, /* special case */
++	{HNBU_ACPA_C0,		0xfffff800, 39,	"2subband5gver 2maxp2ga0 2*3pa2ga0 "
+ 	"1*4maxp5ga0 2*12pa5ga0"},
+-	{HNBU_ACPA_C1,		0xfffff800, 39,	"2maxp2ga1 2*3pa2ga1 2rxgainsa1 1*4maxp5ga1 "
+-	"2*12pa5ga1"},
+-	{HNBU_ACPA_C2,		0xfffff800, 39,	"2maxp2ga2 2*3pa2ga2 2rxgainsa2 1*4maxp5ga2 "
+-	"2*12pa5ga2"},
++	{HNBU_ACPA_C1,		0xfffff800, 37,	"2maxp2ga1 2*3pa2ga1 1*4maxp5ga1 2*12pa5ga1"},
++	{HNBU_ACPA_C2,		0xfffff800, 37,	"2maxp2ga2 2*3pa2ga2 1*4maxp5ga2 2*12pa5ga2"},
+ 	{HNBU_MEAS_PWR,		0xfffff800, 5,	"1measpower 1measpower1 1measpower2 2rawtempsense"},
+ 	{HNBU_PDOFF,		0xfffff800, 13,	"2pdoffset40ma0 2pdoffset40ma1 2pdoffset40ma2 "
+ 	"2pdoffset80ma0 2pdoffset80ma1 2pdoffset80ma2"},
+@@ -854,6 +856,18 @@ static const cis_tuple_t cis_hnbuvars[] = {
+ 	{HNBU_AGBGA,		0xfffff800, 7, "1agbg0 1agbg1 1agbg2 1aga0 1aga1 1aga2"},
+ 	{HNBU_UUID, 		0xffffffff, 17,	"16uuid"},
+ 	{HNBU_WOWLGPIO,		0xffffffff, 2,  "1wowl_gpio"},
++	{HNBU_ACRXGAINS_C0,	0xfffff800, 5, "0rxgains5gtrelnabypa0 0rxgains5gtrisoa0 "
++	"0rxgains5gelnagaina0 0rxgains2gtrelnabypa0 0rxgains2gtrisoa0 0rxgains2gelnagaina0 "
++	"0rxgains5ghtrelnabypa0 0rxgains5ghtrisoa0 0rxgains5ghelnagaina0 0rxgains5gmtrelnabypa0 "
++	"0rxgains5gmtrisoa0 0rxgains5gmelnagaina0"},	/* special case */
++	{HNBU_ACRXGAINS_C1,	0xfffff800, 5, "0rxgains5gtrelnabypa1 0rxgains5gtrisoa1 "
++	"0rxgains5gelnagaina1 0rxgains2gtrelnabypa1 0rxgains2gtrisoa1 0rxgains2gelnagaina1 "
++	"0rxgains5ghtrelnabypa1 0rxgains5ghtrisoa1 0rxgains5ghelnagaina1 0rxgains5gmtrelnabypa1 "
++	"0rxgains5gmtrisoa1 0rxgains5gmelnagaina1"},	/* special case */
++	{HNBU_ACRXGAINS_C2,	0xfffff800, 5, "0rxgains5gtrelnabypa2 0rxgains5gtrisoa2 "
++	"0rxgains5gelnagaina2 0rxgains2gtrelnabypa2 0rxgains2gtrisoa2 0rxgains2gelnagaina2 "
++	"0rxgains5ghtrelnabypa2 0rxgains5ghtrisoa2 0rxgains5ghelnagaina2 0rxgains5gmtrelnabypa2 "
++	"0rxgains5gmtrisoa2 0rxgains5gmelnagaina2"},	/* special case */
+ 	{0xFF,			0xffffffff, 0, ""}
+ };
+ 
+diff --git a/drivers/net/wireless/bcmdhd/include/dhdioctl.h b/drivers/net/wireless/bcmdhd/include/dhdioctl.h
+index 0dd96ff..21a5ecb 100644
+--- a/drivers/net/wireless/bcmdhd/include/dhdioctl.h
++++ b/drivers/net/wireless/bcmdhd/include/dhdioctl.h
+@@ -25,7 +25,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhdioctl.h 321498 2012-03-15 12:54:13Z $
++ * $Id: dhdioctl.h 326276 2012-04-06 23:16:42Z $
+  */
+ 
+ #ifndef _dhdioctl_h_
+@@ -85,7 +85,7 @@ enum {
+ #define DHD_GLOM_VAL	0x0400
+ #define DHD_EVENT_VAL	0x0800
+ #define DHD_BTA_VAL	0x1000
+-#if defined(NDIS630)
++#if defined(NDISVER) && (NDISVER >= 0x0630) && 1
+ #define DHD_SCAN_VAL	0x2000
+ #else
+ #define DHD_ISCAN_VAL	0x2000
+diff --git a/drivers/net/wireless/bcmdhd/include/epivers.h b/drivers/net/wireless/bcmdhd/include/epivers.h
+index 6e380ce..8141510 100644
+--- a/drivers/net/wireless/bcmdhd/include/epivers.h
++++ b/drivers/net/wireless/bcmdhd/include/epivers.h
+@@ -28,7 +28,7 @@
+ 
+ #define	EPI_MAJOR_VERSION	1
+ 
+-#define	EPI_MINOR_VERSION	23
++#define	EPI_MINOR_VERSION	26
+ 
+ #define	EPI_RC_NUMBER		0
+ 
+@@ -36,13 +36,13 @@
+ 
+ #define	EPI_BUILD_NUMBER	0
+ 
+-#define	EPI_VERSION		1, 23, 0, 0
++#define	EPI_VERSION		1, 26, 0, 0
+ 
+-#define	EPI_VERSION_NUM		0x01170000
++#define	EPI_VERSION_NUM		0x011a0000
+ 
+-#define EPI_VERSION_DEV		1.23.0
++#define EPI_VERSION_DEV		1.26.0
+ 
+ 
+-#define	EPI_VERSION_STR		"1.23 (r325707)"
++#define	EPI_VERSION_STR		"1.26 (r327295)"
+ 
+ #endif 
+diff --git a/drivers/net/wireless/bcmdhd/include/linux_osl.h b/drivers/net/wireless/bcmdhd/include/linux_osl.h
+index 0eacaa3..257aaf6 100644
+--- a/drivers/net/wireless/bcmdhd/include/linux_osl.h
++++ b/drivers/net/wireless/bcmdhd/include/linux_osl.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: linux_osl.h 325514 2012-04-03 17:18:09Z $
++ * $Id: linux_osl.h 326751 2012-04-10 20:13:19Z $
+  */
+ 
+ #ifndef _linux_osl_h_
+@@ -286,8 +286,8 @@ typedef struct ctfpool {
+ 	uint 		slow_allocs;
+ } ctfpool_t;
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
+-#define	FASTBUF	(1 << 4)
+-#define	CTFBUF	(1 << 5)
++#define	FASTBUF	(1 << 16)
++#define	CTFBUF	(1 << 17)
+ #define	PKTSETFAST(osh, skb)	((((struct sk_buff*)(skb))->mac_len) |= FASTBUF)
+ #define	PKTCLRFAST(osh, skb)	((((struct sk_buff*)(skb))->mac_len) &= (~FASTBUF))
+ #define	PKTSETCTF(osh, skb)	((((struct sk_buff*)(skb))->mac_len) |= CTFBUF)
+@@ -320,7 +320,7 @@ extern void osl_ctfpool_stats(osl_t *osh, void *b);
+ 
+ #ifdef HNDCTF
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
+-#define	SKIPCT	(1 << 6)
++#define	SKIPCT	(1 << 18)
+ #define	PKTSETSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->mac_len |= SKIPCT)
+ #define	PKTCLRSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->mac_len &= (~SKIPCT))
+ #define	PKTSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->mac_len & SKIPCT)
+diff --git a/drivers/net/wireless/bcmdhd/include/proto/bcmevent.h b/drivers/net/wireless/bcmdhd/include/proto/bcmevent.h
+index 5cf2f87..3bbbbbc 100644
+--- a/drivers/net/wireless/bcmdhd/include/proto/bcmevent.h
++++ b/drivers/net/wireless/bcmdhd/include/proto/bcmevent.h
+@@ -23,7 +23,7 @@
+  *
+  * Dependencies: proto/bcmeth.h
+  *
+- * $Id: bcmevent.h 320583 2012-03-12 15:09:36Z $
++ * $Id: bcmevent.h 326276 2012-04-06 23:16:42Z $
+  *
+  */
+ 
+@@ -185,9 +185,10 @@ typedef BWL_PRE_PACKED_STRUCT struct bcm_event {
+ #define WLC_E_ASSOC_RESP_IE 		88
+ #define WLC_E_ASSOC_RECREATED	89	
+ #define WLC_E_ACTION_FRAME_RX_NDIS	90	
+-#define WLC_E_AUTH_REQ	91		
++#define WLC_E_AUTH_REQ		91	
+ #define WLC_E_TDLS_PEER_EVENT 	92	
+-#define WLC_E_LAST			93	
++#define WLC_E_SPEEDY_RECREATE_FAIL	93	
++#define WLC_E_LAST			94	
+ 
+ 
+ typedef struct {
+diff --git a/drivers/net/wireless/bcmdhd/include/wlioctl.h b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+index 13cf76d..44cce45 100644
+--- a/drivers/net/wireless/bcmdhd/include/wlioctl.h
++++ b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wlioctl.h 325538 2012-04-03 19:46:57Z $
++ * $Id: wlioctl.h 326733 2012-04-10 18:54:41Z $
+  */
+ 
+ #ifndef _wlioctl_h_
+@@ -194,8 +194,7 @@ typedef struct wl_bss_info {
+ 	int8		phy_noise;		/* noise (in dBm) */
+ 
+ 	uint8		n_cap;			/* BSS is 802.11N Capable */
+-	uint32		nbss_cap;		/* 802.11N BSS Capabilities (based on HT_CAP_*) */
+-	uint32		vbss_cap;		/* 802.11AC BSS Capabilities (based on VHT_CAP) */
++	uint32		nbss_cap;		/* 802.11N+AC BSS Capabilities */
+ 	uint8		ctl_ch;			/* 802.11N BSS control channel number */
+ 	uint8		padding1[3];		/* explicit struct alignment padding */
+ 	uint16		vht_rxmcsmap;		/* VHT rx mcs map */
+@@ -212,6 +211,14 @@ typedef struct wl_bss_info {
+ 	/* variable length Information Elements */
+ } wl_bss_info_t;
+ 
++/* bss_info_cap_t flags */
++#define WL_BSS_FLAGS_FROM_BEACON	0x01	/* bss_info derived from beacon */
++#define WL_BSS_FLAGS_FROM_CACHE		0x02	/* bss_info collected from cache */
++#define WL_BSS_FLAGS_RSSI_ONCHANNEL 0x04 /* rssi info was received on channel (vs offchannel) */
++
++/* bssinfo flag for nbss_cap */
++#define VHT_BI_SGI_80MHZ			0x00000100
++
+ typedef struct wl_bsscfg {
+ 	uint32	wsec;
+ 	uint32	WPA_auth;
+@@ -312,10 +319,6 @@ typedef enum wl_scan_type {
+ 
+ #define WLC_EXTDSCAN_MAX_SSID		5
+ 
+-#define WL_BSS_FLAGS_FROM_BEACON	0x01	/* bss_info derived from beacon */
+-#define WL_BSS_FLAGS_FROM_CACHE		0x02	/* bss_info collected from cache */
+-#define WL_BSS_FLAGS_RSSI_ONCHANNEL     0x04 /* rssi info was received on channel (vs offchannel) */
+-
+ typedef struct wl_extdscan_params {
+ 	int8 		nprobes;		/* 0, passive, otherwise active */
+ 	int8    	split_scan;		/* split scan */
+@@ -910,12 +913,6 @@ typedef struct {
+ #define MFP_SHA256		0x0800 /* a special configuration for STA for WIFI test tool */
+ #endif /* MFP */
+ 
+-#ifdef MFP
+-#define MFP_CAPABLE		0x0200
+-#define MFP_REQUIRED	0x0400
+-#define MFP_SHA256		0x0800 /* a special configuration for STA for WIFI test tool */
+-#endif /* MFP */
+-
+ /* WPA authentication mode bitvec */
+ #define WPA_AUTH_DISABLED	0x0000	/* Legacy (i.e., non-WPA) */
+ #define WPA_AUTH_NONE		0x0001	/* none (IBSS) */
+@@ -1856,7 +1853,7 @@ typedef struct wl_po {
+ /* bitflags for SGI support (sgi_rx iovar) */
+ #define WLC_N_SGI_20			0x01
+ #define WLC_N_SGI_40			0x02
+-#define WLC_AC_SGI_80			0x04
++#define WLC_VHT_SGI_80			0x04
+ 
+ /* when sgi_tx==WLC_SGI_ALL, bypass rate selection, enable sgi for all mcs */
+ #define WLC_SGI_ALL				0x02
+@@ -2689,6 +2686,7 @@ typedef struct wl_txchain_pwr_offsets {
+ #define WL_PSTA_VAL		0x00008000
+ #define WL_TBTT_VAL		0x00010000
+ #define WL_NIC_VAL		0x00020000
++#define WL_PWRSEL_VAL	0x00040000
+ /* use top-bit for WL_TIME_STAMP_VAL because this is a modifier
+  * rather than a message-type of its own
+  */
+@@ -3639,6 +3637,8 @@ enum {
+ #define	ENABLE_BD_SCAN_BIT		5
+ #define ENABLE_ADAPTSCAN_BIT		6
+ #define IMMEDIATE_EVENT_BIT		8
++#define SUPPRESS_SSID_BIT		9
++#define ENABLE_NET_OFFLOAD_BIT		10
+ 
+ #define SORT_CRITERIA_MASK		0x0001
+ #define AUTO_NET_SWITCH_MASK	0x0002
+@@ -3649,6 +3649,8 @@ enum {
+ #define ENABLE_BD_SCAN_MASK		0x0020
+ #define ENABLE_ADAPTSCAN_MASK	0x00c0
+ #define IMMEDIATE_EVENT_MASK	0x0100
++#define SUPPRESS_SSID_MASK	0x0200
++#define ENABLE_NET_OFFLOAD_MASK	0x0400
+ 
+ #define PFN_VERSION				2
+ #define PFN_SCANRESULT_VERSION	1
+@@ -4903,78 +4905,98 @@ typedef struct {
+  * Traffic management structures/defines.
+  */
+ 
+-/* Traffic management bandwidth	parameters */
+-#define	TRF_MGMT_MAX_PRIORITIES		3
+-
+-#define	TRF_MGMT_FLAG_ADD_DSCP		0x0001	/* Add DSCP	to IP TOS field	*/
+-#define	TRF_MGMT_FLAG_DISABLE_SHAPING	0x0002	/* Only	support	traffic	clasification */
++/* Traffic management bandwidth parameters */
++#define TRF_MGMT_MAX_PRIORITIES                 3
+ 
++#define TRF_MGMT_FLAG_ADD_DSCP                  0x0001  /* Add DSCP to IP TOS field */
++#define TRF_MGMT_FLAG_DISABLE_SHAPING           0x0002  /* Only support traffic clasification */
++#define TRF_MGMT_FLAG_DISABLE_PRIORITY_TAGGING  0x0004  /* Don't override packet's priority */
+ 
+ /* Traffic management priority classes */
+-typedef	enum trf_mgmt_priority_class {
+-	trf_mgmt_priority_low		= 0,	/* Maps	to 802.1p BK */
+-	trf_mgmt_priority_medium	= 1,	/* Maps	to 802.1p BE */
+-	trf_mgmt_priority_high		= 2,	/* Maps	to 802.1p VI */
+-	trf_mgmt_priority_invalid	= (trf_mgmt_priority_high + 1)
++typedef enum trf_mgmt_priority_class {
++	trf_mgmt_priority_low           = 0,            /* Maps to 802.1p BO */
++	trf_mgmt_priority_medium        = 1,            /* Maps to 802.1p BE */
++	trf_mgmt_priority_high          = 2,            /* Maps to 802.1p VI */
++	trf_mgmt_priority_invalid       = (trf_mgmt_priority_high + 1)
+ } trf_mgmt_priority_class_t;
+ 
+ /* Traffic management configuration parameters */
+-typedef	struct trf_mgmt_config {
+-	uint32	trf_mgmt_enabled;				/* 0 - disabled, 1 - enabled */
+-	uint32	flags;						/* See TRF_MGMT_FLAG_xxx defines */
+-	uint32	host_ip_addr;
+-	uint32	host_subnet_mask;
+-	uint32	downlink_bandwidth;				/* In units of kbps */
+-	uint32	uplink_bandwidth;				/* In units of kbps */
+-	uint32	min_tx_bandwidth[TRF_MGMT_MAX_PRIORITIES];
+-	uint32	min_rx_bandwidth[TRF_MGMT_MAX_PRIORITIES];
++typedef struct trf_mgmt_config {
++	uint32  trf_mgmt_enabled;                           /* 0 - disabled, 1 - enabled */
++	uint32  flags;                                      /* See TRF_MGMT_FLAG_xxx defines */
++	uint32  host_ip_addr;                               /* My IP address to determine subnet */
++	uint32  host_subnet_mask;                           /* My subnet mask */
++	uint32  downlink_bandwidth;                         /* In units of kbps */
++	uint32  uplink_bandwidth;                           /* In units of kbps */
++	uint32  min_tx_bandwidth[TRF_MGMT_MAX_PRIORITIES];  /* Minimum guaranteed tx bandwidth */
++	uint32  min_rx_bandwidth[TRF_MGMT_MAX_PRIORITIES];  /* Minimum guaranteed rx bandwidth */
+ } trf_mgmt_config_t;
+ 
+ /* Traffic management filter */
+-typedef	struct trf_mgmt_filter {
+-	uint32	dst_ip_addr;	/* His IP address */
+-	uint16	dst_port;	/* His L4 port */
+-	uint16	src_port;	/* My L4 port */
+-	uint16	prot;		/* L4 protocol (only TCP or UDP protocols) */
+-	uint16	flags;		/* TBD.	For	now, this must be zero.	*/
+-	trf_mgmt_priority_class_t priority;	/* 802.1p priority for filtered	packets	*/
++typedef struct trf_mgmt_filter {
++	struct ether_addr           dst_ether_addr;         /* His L2 address */
++	uint32                      dst_ip_addr;            /* His IP address */
++	uint16                      dst_port;               /* His L4 port */
++	uint16                      src_port;               /* My L4 port */
++	uint16                      prot;                   /* L4 protocol (only TCP or UDP) */
++	uint16                      flags;                  /* TBD. For now, this must be zero. */
++	trf_mgmt_priority_class_t   priority;               /* Priority for filtered packets */
+ } trf_mgmt_filter_t;
+ 
+-/* Traffic management filter list (variable length)	*/
+-typedef	struct trf_mgmt_filter_list	{
+-	uint32		    num_filters;
++/* Traffic management filter list (variable length) */
++typedef struct trf_mgmt_filter_list     {
++	uint32              num_filters;
+ 	trf_mgmt_filter_t   filter[1];
+ } trf_mgmt_filter_list_t;
+ 
+-/* Traffic management shaping info */
+-typedef	struct trf_mgmt_shaping_info {
+-	uint32	max_bps;			/* Max bytes consumed or produced per second */
+-	uint32	max_bytes_per_sampling_period;	/* Max bytes consumed or produced per sample */
+-	uint32	shaping_delay_threshold;	/* Theshold for starting traffic delays	 */
+-	uint32	num_bytes_produced_per_sec;	/* Bytes produced over the sampling period */
+-	uint32	num_bytes_consumed_per_sec;	/* Bytes consumed over the sampling period */
++/* Traffic management global info used for all queues */
++typedef struct trf_mgmt_global_info {
++	uint32  maximum_bytes_per_second;
++	uint32  maximum_bytes_per_sampling_period;
++	uint32  total_bytes_consumed_per_second;
++	uint32  total_bytes_consumed_per_sampling_period;
++	uint32  total_unused_bytes_per_sampling_period;
++} trf_mgmt_global_info_t;
++
++/* Traffic management shaping info per priority queue */
++typedef struct trf_mgmt_shaping_info {
++	uint32  gauranteed_bandwidth_percentage;
++	uint32  guaranteed_bytes_per_second;
++	uint32  guaranteed_bytes_per_sampling_period;
++	uint32  num_bytes_produced_per_second;
++	uint32  num_bytes_consumed_per_second;
++	uint32  num_queued_packets;                         /* Number of packets in queue */
++	uint32  num_queued_bytes;                           /* Number of bytes in queue */
+ } trf_mgmt_shaping_info_t;
+ 
+ /* Traffic management shaping info array */
+-typedef	struct trf_mgmt_shaping_info_array {
+-	trf_mgmt_shaping_info_t	   tx_queue_shaping_info[TRF_MGMT_MAX_PRIORITIES];
+-	trf_mgmt_shaping_info_t	   rx_queue_shaping_info[TRF_MGMT_MAX_PRIORITIES];
++typedef struct trf_mgmt_shaping_info_array {
++	trf_mgmt_global_info_t   tx_global_shaping_info;
++	trf_mgmt_shaping_info_t  tx_queue_shaping_info[TRF_MGMT_MAX_PRIORITIES];
++	trf_mgmt_global_info_t   rx_global_shaping_info;
++	trf_mgmt_shaping_info_t  rx_queue_shaping_info[TRF_MGMT_MAX_PRIORITIES];
+ } trf_mgmt_shaping_info_array_t;
+ 
+ 
+ /* Traffic management statistical counters */
+-typedef	struct trf_mgmt_stats {
+-	uint32	num_processed_packets;	/* Number of packets processed */
+-	uint32	num_processed_bytes;	/* Number of bytes processed */
+-	uint32	num_queued_packets;	/* Number of packets in	queue */
+-	uint32	num_queued_bytes;	/* Number of bytes in queue	*/
+-	uint32	num_discarded_packets;	/* Number of packets discarded from queue */
++typedef struct trf_mgmt_stats {
++	uint32  num_processed_packets;      /* Number of packets processed */
++	uint32  num_processed_bytes;        /* Number of bytes processed */
++	uint32  num_discarded_packets;      /* Number of packets discarded from queue */
+ } trf_mgmt_stats_t;
+ 
+-/* Traffic management statisics	array */
+-typedef	struct trf_mgmt_stats_array	{
+-	trf_mgmt_stats_t    tx_queue_stats[TRF_MGMT_MAX_PRIORITIES];
+-	trf_mgmt_stats_t    rx_queue_stats[TRF_MGMT_MAX_PRIORITIES];
++/* Traffic management statisics array */
++typedef struct trf_mgmt_stats_array     {
++	trf_mgmt_stats_t  tx_queue_stats[TRF_MGMT_MAX_PRIORITIES];
++	trf_mgmt_stats_t  rx_queue_stats[TRF_MGMT_MAX_PRIORITIES];
+ } trf_mgmt_stats_array_t;
+ 
++typedef struct powersel_params {
++	/* LPC Params exposed via IOVAR */
++	int32		tp_ratio_thresh;  /* Throughput ratio threshold */
++	uint8		rate_stab_thresh; /* Thresh for rate stability based on nupd */
++	uint8		pwr_stab_thresh; /* Number of successes before power step down */
++	uint8		pwr_sel_exp_time; /* Time lapse for expiry of database */
++} powersel_params_t;
++
+ #endif /* _wlioctl_h_ */
+-- 
+1.8.0
+

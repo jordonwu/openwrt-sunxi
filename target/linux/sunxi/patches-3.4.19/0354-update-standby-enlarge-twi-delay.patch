@@ -1,0 +1,25 @@
+From 4067297f0b4c0a0768efac3acf621fd61e02bb5e Mon Sep 17 00:00:00 2001
+From: kevin <kevin@allwinnertech.com>
+Date: Fri, 18 Nov 2011 14:33:20 +0800
+Subject: [PATCH 354/944] update standby, enlarge twi delay
+
+---
+ arch/arm/mach-sun4i/pm/standby/standby_twi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_twi.c b/arch/arm/mach-sun4i/pm/standby/standby_twi.c
+index 024847d5..4afdabe 100644
+--- a/arch/arm/mach-sun4i/pm/standby/standby_twi.c
++++ b/arch/arm/mach-sun4i/pm/standby/standby_twi.c
+@@ -17,7 +17,7 @@
+ */
+ #include "standby_i.h"
+ 
+-#define TWI_CHECK_TIMEOUT       (0xff)
++#define TWI_CHECK_TIMEOUT       (0x2ff)
+ 
+ static __twic_reg_t*   TWI_REG_BASE[3] = {
+     (__twic_reg_t*)SW_VA_TWI0_IO_BASE,
+-- 
+1.8.0
+

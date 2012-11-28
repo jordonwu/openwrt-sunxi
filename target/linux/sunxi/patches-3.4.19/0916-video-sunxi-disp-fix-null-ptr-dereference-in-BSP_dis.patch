@@ -1,0 +1,38 @@
+From 91ca9c98bc543770729ddce81f3ebb34a2b35a23 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:24 +0100
+Subject: [PATCH 916/944] video:sunxi:disp: fix null ptr dereference in
+ BSP_disp_sprite_exit
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/disp_sprite.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 0a40f3d..6a0250c 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -329,11 +329,14 @@ __s32 BSP_disp_sprite_exit(__u32 sel)
+ 	}
+ 
+ 	pGuard = gsprite[sel].header;
+-	pGuard->prev->next = NULL;
+-	while (pGuard != NULL) {
+-		pNext = pGuard->next;
+-		list_free_node(pGuard);
+-		pGuard = pNext;
++	if (pGuard) {
++		pGuard->prev->next = NULL;
++
++		while (pGuard != NULL) {
++			pNext = pGuard->next;
++			list_free_node(pGuard);
++			pGuard = pNext;
++		}
+ 	}
+ 
+ 	return DIS_SUCCESS;
+-- 
+1.8.0
+

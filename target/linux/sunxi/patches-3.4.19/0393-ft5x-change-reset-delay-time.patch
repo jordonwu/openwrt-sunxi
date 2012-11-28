@@ -1,0 +1,27 @@
+From 01db374001ec7e76d3a80ca766c5d65d01d6b813 Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@MServer.allwinnertech.com>
+Date: Mon, 28 Nov 2011 17:22:59 +0800
+Subject: [PATCH 393/944] ft5x: change reset delay time
+
+---
+ drivers/input/touchscreen/ft5x_ts.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/touchscreen/ft5x_ts.c b/drivers/input/touchscreen/ft5x_ts.c
+index e858d44..f493625 100644
+--- a/drivers/input/touchscreen/ft5x_ts.c
++++ b/drivers/input/touchscreen/ft5x_ts.c
+@@ -97,8 +97,8 @@ static int key_val = 0;
+ #define CTP_IRQ_NO			(IRQ_EINT21)
+ #define CTP_IRQ_MODE			(NEGEGIVE_EDGE)
+ #define CTP_NAME			FT5X_NAME
+-#define TS_RESET_LOW_PERIOD		(15)
+-#define TS_INITIAL_HIGH_PERIOD		(15)
++#define TS_RESET_LOW_PERIOD		(20)
++#define TS_INITIAL_HIGH_PERIOD		(10)
+ #define TS_WAKEUP_LOW_PERIOD	(15)
+ #define TS_WAKEUP_HIGH_PERIOD	(15)
+ #define TS_POLL_DELAY			(10)	/* ms delay between samples */
+-- 
+1.8.0
+

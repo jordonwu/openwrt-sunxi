@@ -1,0 +1,66 @@
+From bb992d1f9e83b9f50ebe8462604af345e993010e Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Thu, 1 Dec 2011 20:12:38 +0800
+Subject: [PATCH 411/944] mmc: fix a bug on card detect sometime when you
+ insert and remove card quickly and frenquently mmc
+ controller would never identify the card. something
+ wrong in ahb access mode made it
+
+---
+ drivers/mmc/sunxi-host/host_op.c |  6 ++++--
+ drivers/mmc/sunxi-host/sdxc.c    | 14 ++++++++------
+ 2 files changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index 5b18e2e..4fb3248 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -579,9 +579,11 @@ static void sunximmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+     smc_host->mrq = mrq;
+ 
+-    if (sunximmc_card_present(mmc) == 0 || smc_host->ferror)
++    if (sunximmc_card_present(mmc) == 0
++        || smc_host->ferror || !smc_host->power_on)
+     {
+-    	SMC_DBG("no medium present, ferr %d\n", smc_host->ferror);
++    	SMC_DBG("no medium present, ferr %d, pwd %d\n",
++    	        smc_host->ferror, smc_host->power_on);
+     	smc_host->mrq->cmd->error = -ENOMEDIUM;
+     	mmc_request_done(mmc, mrq);
+     }
+diff --git a/drivers/mmc/sunxi-host/sdxc.c b/drivers/mmc/sunxi-host/sdxc.c
+index 823d037..7873bef 100644
+--- a/drivers/mmc/sunxi-host/sdxc.c
++++ b/drivers/mmc/sunxi-host/sdxc.c
+@@ -920,7 +920,7 @@ void sdxc_request(struct sunxi_mmc_host* smc_host, struct mmc_request* request)
+         writel(byte_cnt, SDXC_REG_BCNTR);
+ 
+         SMC_DBG("-> with data %d bytes, sg_len %d\n", byte_cnt, data->sg_len);
+-        if (byte_cnt > 64)
++        if (byte_cnt > 0)
+         {
+ //            SMC_MSG("-> trans by dma\n");
+             sdxc_sel_access_mode(smc_host, SDXC_ACCESS_BY_DMA);
+@@ -1131,11 +1131,13 @@ _out_:
+     {
+         if (!(req->data->flags & MMC_DATA_WRITE) && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy))
+         {
+-            if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                    if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                        if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                            SMC_MSG("mmc %d fsm busy 0x%x len %d\n", smc_host->pdev->id, readl(SDXC_REG_STAS), req->data->blksz * req->data->blocks);
++            if ((readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy))
++                    SMC_DBG("mmc %d fsm busy 0x%x len %d\n",
++                        smc_host->pdev->id, readl(SDXC_REG_STAS), req->data->blksz * req->data->blocks);
+         }
+         if (smc_host->dodma)
+         {
+-- 
+1.8.0
+

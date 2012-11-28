@@ -1,0 +1,61 @@
+From 85d16ef9e26572c7ba60cd6d96cfed42aee38b1e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 4 Jun 2012 17:16:47 +0000
+Subject: [PATCH 572/944] gpu: mali: made depend on config option
+
+---
+ drivers/Kconfig           | 2 ++
+ drivers/gpu/Kconfig       | 5 +++++
+ drivers/gpu/mali/Kconfig  | 6 ++++++
+ drivers/gpu/mali/Makefile | 2 +-
+ 4 files changed, 14 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/gpu/Kconfig
+ create mode 100644 drivers/gpu/mali/Kconfig
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 715f0ba..6ccb2b0 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -143,4 +143,6 @@ source "drivers/virt/Kconfig"
+ 
+ source "drivers/devfreq/Kconfig"
+ 
++source "drivers/gpu/Kconfig"
++
+ endmenu
+diff --git a/drivers/gpu/Kconfig b/drivers/gpu/Kconfig
+new file mode 100644
+index 0000000..882b9aa
+--- /dev/null
++++ b/drivers/gpu/Kconfig
+@@ -0,0 +1,5 @@
++menu "GPU drivers"
++
++source "drivers/gpu/mali/Kconfig"
++
++endmenu
+diff --git a/drivers/gpu/mali/Kconfig b/drivers/gpu/mali/Kconfig
+new file mode 100644
+index 0000000..0616f34
+--- /dev/null
++++ b/drivers/gpu/mali/Kconfig
+@@ -0,0 +1,6 @@
++config GPU_MALI
++	boolean "ARM Mali GPU modules"
++	depends on ARM
++	default n
++	help
++	  This enables the generation of mali.ko and ump.ko.
+diff --git a/drivers/gpu/mali/Makefile b/drivers/gpu/mali/Makefile
+index cd1f6ef..c4322d9 100644
+--- a/drivers/gpu/mali/Makefile
++++ b/drivers/gpu/mali/Makefile
+@@ -7,4 +7,4 @@ BUILD:=release
+ TARGET_PLATFORM:=mali400-pmu
+ export CONFIG USING_MMU USING_UMP USING_PMM BUILD TARGET_PLATFORM
+ 
+-obj-y += ump/ mali/
++obj-$(CONFIG_GPU_MALI) += ump/ mali/
+-- 
+1.8.0
+

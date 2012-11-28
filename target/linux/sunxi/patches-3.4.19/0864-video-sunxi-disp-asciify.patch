@@ -1,0 +1,327 @@
+From 10385054a6c4410e06434f2572c106367105925c Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 18 Oct 2012 00:37:41 +0200
+Subject: [PATCH 864/944] video:sunxi:disp: asciify
+
+* Pull a handful of chinese comments through google translate,
+no surprises there.
+* Exchange remaining characters by equivalent ascii ones.
+
+No functional changes.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/OSAL_Pin.c    | 10 +++++++---
+ drivers/video/sunxi/disp/bsp_display.h |  4 ++--
+ drivers/video/sunxi/disp/de_fe.h       | 20 ++++++++++----------
+ drivers/video/sunxi/disp/de_hwc.c      |  2 +-
+ drivers/video/sunxi/disp/de_tvec.c     |  4 ++--
+ drivers/video/sunxi/disp/dev_disp.h    |  6 +++---
+ drivers/video/sunxi/disp/disp_iep.c    | 14 ++++++--------
+ drivers/video/sunxi/disp/disp_lcd.c    |  2 +-
+ drivers/video/sunxi/disp/disp_sprite.c | 18 +++++++++---------
+ drivers/video/sunxi/hdmi/drv_hdmi_i.h  |  4 ++--
+ drivers/video/sunxi/lcd/dev_lcd.h      |  4 ++--
+ 11 files changed, 45 insertions(+), 43 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL_Pin.c b/drivers/video/sunxi/disp/OSAL_Pin.c
+index 29400a3..378462b 100644
+--- a/drivers/video/sunxi/disp/OSAL_Pin.c
++++ b/drivers/video/sunxi/disp/OSAL_Pin.c
+@@ -55,9 +55,13 @@ __hdle OSAL_GPIO_Request_Ex(char *main_name, const char *sub_name)
+     return gpio_request_ex(main_name, sub_name);
+ }
+ 
+-//if_release_to_default_status:
+-    //如果是0或者1，表示释放后的GPIO处于输入状态，输入状状态不会导致外部电平的错误。
+-    //如果是2，表示释放后的GPIO状态不变，即释放的时候不管理当前GPIO的硬件寄存器。
++/*
++ * if_release_to_default_status:
++ * If it is 0 or 1, and represents the input state, after release of the GPIO
++ * input shaped state does not lead to the error of the external level.
++ * If it is 2, said that the the GPIO status quo after the release, the release
++ * does not manage the current GPIO hardware register.
++ */
+ __s32 OSAL_GPIO_Release(__hdle p_handler, __s32 if_release_to_default_status)
+ {
+     //__inf("OSAL_GPIO_Release\n");
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index 3806d90..f844de9 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -34,8 +34,8 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/fb.h>
+ #include <linux/sched.h>   //wake_up_process()
+-#include <linux/kthread.h> //kthread_create()、kthread_run()
+-#include <linux/err.h> //IS_ERR()、PTR_ERR()
++#include <linux/kthread.h> //kthread_create(),kthread_run()
++#include <linux/err.h> //IS_ERR(),PTR_ERR()
+ #include <linux/delay.h>
+ #include <linux/platform_device.h>
+ #include "asm-generic/int-ll64.h"
+diff --git a/drivers/video/sunxi/disp/de_fe.h b/drivers/video/sunxi/disp/de_fe.h
+index 42079c8..041a95b 100644
+--- a/drivers/video/sunxi/disp/de_fe.h
++++ b/drivers/video/sunxi/disp/de_fe.h
+@@ -955,12 +955,12 @@ typedef union
+ 	u32 dwval;
+ 	struct
+ 	{
+-		u32 field_cnt                    :  8 ;    // Default: 0x0; FIELD_CNT , Field counter, each bit specify a field to display，0：top
+-                                                   // field，1：bottom field,
++		u32 field_cnt                    :  8 ;    // Default: 0x0; FIELD_CNT , Field counter, each bit specify a field to display; 0: top
++                                                   // field, 1: bottom field,
+ 		u32 valid_field_cnt              :  3 ;    // Default: 0x0; VALID_FIELD_CNT , Valid field counter bit, the valid value = this
+-                                                   // value + 1；
++                                                   // value + 1;
+ 		u32 res0                         :  1 ;    // Default: ; /
+-		u32 field_loop_mod               :  1 ;    // Default: 0x0; FIELD_LOOP_MOD , Field loop mode, 0：the last field； 1：the full
++		u32 field_loop_mod               :  1 ;    // Default: 0x0; FIELD_LOOP_MOD , Field loop mode, 0: the last field; 1: the full
+                                                    // frame
+ 		u32 res1                         : 19 ;    // Default: ; /
+ 	} bits;
+@@ -995,10 +995,10 @@ typedef union
+ 		u32 res1                         :  1 ;    // Default: ; /
+ 		u32 out_ctrl                     :  1 ;    // Default: 0x0; OUT_CTRL , Scaler output control, 0: enable scaler output to image,
+                                                    // 1: disable scaler output to image, , If scaler write back function is enable, scaler
+-                                                   // output to image isn’t recommended.
++                                                   // output to image isn't recommended.
+ 		u32 in_ctrl                      :  3 ;    // Default: 0x0; IN_CTRL , Scaler input source control, 000: from dram, 100: from
+-                                                   // image0 interface of image2lcd (don’t influence the interface timing of image),
+-                                                   // 101: from image1 interface of image2lcd(don’t influence the interface timing of
++                                                   // image0 interface of image2lcd (don't influence the interface timing of image),
++                                                   // 101: from image1 interface of image2lcd(don't influence the interface timing of
+                                                    // image), 110: from image0(influence the interface timing of image), 111: from image1(influence
+                                                    // the interface timing of image), Other: reserved
+ 		u32 res2                         :  1 ;    // Default: ; /
+@@ -1286,11 +1286,11 @@ typedef union
+                                                    //
+ 		u32 uv_diff_sign_maxmin_mode_sel :  1 ;    // Default: 0x0; UV_DIFF_SIGN_ MAX/MIN_MODE_SEL , UV direction detection using max
+                                                    // or min of |U|/|V| in different sign condition, when related separate mode select
+-                                                   // “Using Max/Min mode” and U/V path shift are in the different sign, path shift
++                                                   // "Using Max/Min mode" and U/V path shift are in the different sign, path shift
+                                                    // use, 0: min(|U|,|V|), 1: max(|U|,|V|)
+ 		u32 uv_same_sign_maxmin_mode_sel :  1 ;    // Default: 0x0; UV_SAME_SIGN_MAX/MIN_MODE_SEL , UV direction detection using max
+-                                                   // or min of |U|/|V| in same sign condition, when related separate mode select “Using
+-                                                   // Max/Min mode” and U/V path shift are in the same sign, path shift use, 0: min(|U|,|V|),
++                                                   // or min of |U|/|V| in same sign condition, when related separate mode select "Using
++                                                   // Max/Min mode" and U/V path shift are in the same sign, path shift use, 0: min(|U|,|V|),
+                                                    // 1: max(|U|,|V|)
+ 		u32 res2                         :  1 ;    // Default: ; /
+ 		u32 uv_separate_en               :  1 ;    // Default: 0x0; UV_SEPARATE_EN , UV separate enable, 0: U/V will be under direction
+diff --git a/drivers/video/sunxi/disp/de_hwc.c b/drivers/video/sunxi/disp/de_hwc.c
+index b6cea32..3918166 100644
+--- a/drivers/video/sunxi/disp/de_hwc.c
++++ b/drivers/video/sunxi/disp/de_hwc.c
+@@ -114,7 +114,7 @@ __s32 DE_BE_HWC_Set_Src(__u32 sel, de_hwc_src_t *hwc_pat)
+ 		 	break;
+ 	}
+ 
+-	if(hwc_pat->paddr & 0x3)//地址非32位对齐
++	if(hwc_pat->paddr & 0x3)// Address not 32bit aligned
+ 	{
+ 		for(i = 0; i < size; i+=4)
+ 		{
+diff --git a/drivers/video/sunxi/disp/de_tvec.c b/drivers/video/sunxi/disp/de_tvec.c
+index adf5d2b..fb70413 100644
+--- a/drivers/video/sunxi/disp/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_tvec.c
+@@ -317,7 +317,7 @@ __s32 TVE_set_tv_mode(__u32 sel, __u8 mode)
+ 		TVE_WUINT32(sel,TVE_13C, 0x07000000);
+ 		TVE_WUINT32(sel,TVE_00C, 0x01be0124);
+ 		TVE_WUINT32(sel,TVE_128, 0x00000000);//
+-		TVE_WUINT32(sel,TVE_020, 0x00fc00c0);//0x00fc00fc重影？
++		TVE_WUINT32(sel,TVE_020, 0x00fc00c0);//0x00fc00fc ghost?
+ 		TVE_WUINT32(sel,TVE_118, 0x0000a0a0);
+ 		break;
+ 
+@@ -327,7 +327,7 @@ __s32 TVE_set_tv_mode(__u32 sel, __u8 mode)
+ 		TVE_WUINT32(sel,TVE_014, 0x00c0002c);//60hz
+ 		TVE_WUINT32(sel,TVE_018, 0x07bc002c);//60hz
+ 		TVE_WUINT32(sel,TVE_01C, 0x00290465);//
+-		TVE_WUINT32(sel,TVE_020, 0x00fc00c0);//0x00fc00fc重影？
++		TVE_WUINT32(sel,TVE_020, 0x00fc00c0);//0x00fc00fc ghost?
+ 		TVE_WUINT32(sel,TVE_114, 0x582c022c);//
+ 		TVE_WUINT32(sel,TVE_118, 0x0000a0a0);
+ 		TVE_WUINT32(sel,TVE_124, 0x00000780);//
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index dbc734d..f0c3842 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -87,9 +87,9 @@ typedef struct
+ 
+ struct alloc_struct_t
+ {
+-    __u32 address;                      //申请内存的地址
+-    __u32 size;                         //分配的内存大小，用户实际得到的内存大小
+-    __u32 o_size;                       //用户申请的内存大小
++    __u32 address;                      // Application memory address
++    __u32 size;                         // The size of the allocated memory, the actual memory size users
++    __u32 o_size;                       // User application memory size
+     struct alloc_struct_t *next;
+ };
+ 
+diff --git a/drivers/video/sunxi/disp/disp_iep.c b/drivers/video/sunxi/disp/disp_iep.c
+index 2cd6b47..ae8560d 100644
+--- a/drivers/video/sunxi/disp/disp_iep.c
++++ b/drivers/video/sunxi/disp/disp_iep.c
+@@ -178,10 +178,9 @@ static __inline __s32 PWRSAVE_CORE(__u32 sel)
+ 
+ #define ____SEPARATOR_IEP_BSP____
+ 
+-/******************************************************************************/
+-/************BSP_disp_iep_drc_enable********************************/
+-/**开启/关闭自动背光控制功能**************************/
+-/******************************************************************************/
++/*
++ *Enable / disable automatic backlight control function
++ */
+ __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en)
+ {
+ 	if(sel == 0)
+@@ -231,10 +230,9 @@ __s32 BSP_disp_iep_get_drc_enable(__u32 sel)
+ 	}
+ }
+ 
+-/******************************************************************************/
+-/************BSP_disp_iep_deflicker_enable*************************/
+-/**开启/关闭去行间抖动功能      **************************/
+-/******************************************************************************/
++/*
++ *On / Off go jitter function between the lines
++ */
+ __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en)
+ {
+ 	if(sel == 0)
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 0baf9ad..6054b66 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -207,7 +207,7 @@ void Lcd_Panel_Parameter_Check(__u32 sel)
+ 		OSAL_PRINTF("*** lcd_vspw:   %d\n",info->lcd_hv_vspw);
+ 		OSAL_PRINTF("*** lcd_frame_frq:  %dHz\n",lcd_fclk_frq);
+ 
+-		//打印错误提示
++		// Print Error
+ 		OSAL_PRINTF("*** \n");
+ 		if(Lcd_Panel_Err_Flag & BIT0)
+ 			{OSAL_PRINTF("*** Err01: Violate \"lcd_hbp > lcd_hspw\"\n");}
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 7898f6c..fe236d3 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -72,7 +72,7 @@ static __s32 Sprite_Hid_To_Id(__u32 sel, __s32 hid)
+ 	}
+ }
+ 
+-//--hgl--用这个的前提：prev,next必须是存在的，否则崩溃。
++//--hgl-- With this premise: prev, next must be there, otherwise collapse.
+ static __inline void ___list_add(list_head_t *node,list_head_t *prev,list_head_t *next)
+ {
+ 	node->next = next;
+@@ -81,7 +81,7 @@ static __inline void ___list_add(list_head_t *node,list_head_t *prev,list_head_t
+ 	next->prev = node;
+ }
+ 
+-//将node添加到list的最后面，也既其前面
++// Node is added to the list of the last surface, also both front
+ static  __inline void list_add_node_tail(list_head_t *node, list_head_t **head)
+ {
+ 	if(*head == NULL)
+@@ -94,7 +94,7 @@ static  __inline void list_add_node_tail(list_head_t *node, list_head_t **head)
+ 	}
+ }
+ 
+-//从list中删除entry
++// Delete the entry from the list in
+ static __inline void list_del_node(list_head_t *entry)
+ {
+ 	entry->prev->next = entry->next;
+@@ -103,7 +103,7 @@ static __inline void list_del_node(list_head_t *entry)
+ 	entry->prev = entry;
+ }
+ 
+-//内部函数,释放该节点的空间
++// Internal function, the release space of the node
+ static __inline void list_free_node(list_head_t * node)
+ {
+ 	if(node != NULL)
+@@ -114,7 +114,7 @@ static __inline void list_free_node(list_head_t * node)
+ 	}
+ }
+ 
+-//申请一个新的结点,并初始化
++// To apply for a new node, and initialize
+ static list_head_t * List_New_Sprite_Block(__u32 sel, __disp_sprite_block_para_t * para)
+ {
+ 	list_head_t * node = NULL;
+@@ -149,7 +149,7 @@ static list_head_t * List_New_Sprite_Block(__u32 sel, __disp_sprite_block_para_t
+ 	}
+ }
+ 
+-//在链表的尾部增加新结点
++// Add a new node at the end of the list
+ static void* List_Add_Sprite_Block(__u32 sel, __disp_sprite_block_para_t * para)
+ {
+ 	list_head_t * node = NULL;
+@@ -164,7 +164,7 @@ static void* List_Add_Sprite_Block(__u32 sel, __disp_sprite_block_para_t * para)
+ 	return NULL;
+ }
+ 
+-//在链表中寻找block id,并返回该结点的指针
++// In the linked list to find the block id, and returns the node pointer
+ static list_head_t *  List_Find_Sprite_Block(__u32 sel, __s32 id)
+ {
+ 	list_head_t * guard = NULL;
+@@ -188,7 +188,7 @@ static list_head_t *  List_Find_Sprite_Block(__u32 sel, __s32 id)
+ 
+ }
+ 
+-//从链表中删除block id,并返回该block的指针
++// Block id, removed from the list and return to the block pointer
+ static list_head_t * List_Delete_Sprite_Block(__u32 sel, list_head_t * node)
+ {
+ 	__s32 id = 0;
+@@ -231,7 +231,7 @@ static list_head_t * List_Delete_Sprite_Block(__u32 sel, list_head_t * node)
+ 	}
+ }
+ 
+-//从链表中删除block id,并释放其空间,返回该block的id(该id可能不是其原来的id)
++// Block id, and the release of its space removed from the list and return to the block id (the id may not be the original id)
+ static __s32 List_Delete_Free_Sprite_Block(__u32 sel, list_head_t * node)
+ {
+     __s32 ret = -1;
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi_i.h b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+index 345411b..bb02937 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+@@ -34,8 +34,8 @@
+ #include <linux/fs.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/sched.h>   //wake_up_process()
+-#include <linux/kthread.h> //kthread_create()、kthread_run()
+-#include <linux/err.h> //IS_ERR()、PTR_ERR()
++#include <linux/kthread.h> //kthread_create(),kthread_run()
++#include <linux/err.h> //IS_ERR(),PTR_ERR()
+ #include <linux/delay.h>
+ #include <linux/platform_device.h>
+ #include <linux/errno.h>
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index 1d92a7e..c53176a 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -33,8 +33,8 @@
+ #include <linux/fs.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/sched.h>   //wake_up_process()
+-#include <linux/kthread.h> //kthread_create()?￠kthread_run()
+-#include <linux/err.h> //IS_ERR()?￠PTR_ERR()
++#include <linux/kthread.h> //kthread_create() / kthread_run()
++#include <linux/err.h> //IS_ERR() / PTR_ERR()
+ #include <linux/delay.h>
+ #include <linux/platform_device.h>
+ #include <linux/errno.h>
+-- 
+1.8.0
+

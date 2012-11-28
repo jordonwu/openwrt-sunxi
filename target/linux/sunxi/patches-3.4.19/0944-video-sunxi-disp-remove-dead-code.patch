@@ -1,0 +1,116 @@
+From 1ac9dcb4f272458bf67584ec00392110d374bf34 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 19 Nov 2012 21:38:21 +0200
+Subject: [PATCH 944/944] video: sunxi: disp: remove dead code
+
+---
+ drivers/video/sunxi/disp/disp_layer.c  | 14 --------------
+ drivers/video/sunxi/disp/disp_scaler.c | 11 -----------
+ 2 files changed, 25 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index f18bac6..f63fe0e 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -383,7 +383,6 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t *pfb)
+ 	__s32 ret;
+ 	layer_src_t layer_fb;
+ 	__layer_man_t *layer_man;
+-	__u32 size;
+ 
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+@@ -436,10 +435,6 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t *pfb)
+ 
+ 			memcpy(&layer_man->para.fb, pfb, sizeof(__disp_fb_t));
+ 
+-			size = (pfb->size.width *
+-				layer_man->para.src_win.height *
+-				DE_BE_Format_To_Bpp(pfb->format) + 7) / 8;
+-
+ 			if (layer_man->para.mode ==
+ 			    DISP_LAYER_WORK_MODE_SCALER) {
+ 				gdisp.scaler[layer_man->scaler_index].
+@@ -689,7 +684,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 	__s32 ret;
+ 	__layer_man_t *layer_man;
+ 	__u32 prio_tmp = 0;
+-	__u32 size;
+ 
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+@@ -813,7 +807,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 							    player->src_win.y);
+ 			} else { /* normal rgb */
+ 				layer_src_t layer_fb;
+-				__u32 bpp, size;
+ 
+ 				layer_fb.fb_addr = player->fb.addr[0];
+ 				layer_fb.format = player->fb.format;
+@@ -824,10 +817,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 				layer_fb.offset_x = player->src_win.x;
+ 				layer_fb.offset_y = player->src_win.y;
+ 
+-				bpp = DE_BE_Format_To_Bpp(layer_fb.format);
+-				size = (player->fb.size.width *
+-					player->scn_win.height * bpp + 7) / 8;
+-
+ 				DE_BE_Layer_Set_Framebuffer(sel, hid,
+ 							    &layer_fb);
+ 			}
+@@ -849,9 +838,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 			layer_man->para.b_from_screen = player->b_from_screen;
+ 		}
+ 
+-		size = (player->fb.size.width * player->src_win.height *
+-				DE_BE_Format_To_Bpp(player->fb.format) + 7) / 8;
+-
+ 		if (layer_man->para.mode == DISP_LAYER_WORK_MODE_SCALER) {
+ 			gdisp.scaler[layer_man->scaler_index].b_reg_change =
+ 			    TRUE;
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index c2d4b08..6158859 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -890,7 +890,6 @@ __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t *para)
+ 	__scal_out_type_t out_type;
+ 	__scal_scan_mod_t in_scan;
+ 	__scal_scan_mod_t out_scan;
+-	__u32 size = 0;
+ 	__u32 sel = 0;
+ 	__s32 ret = 0;
+ #ifdef CONFIG_ARCH_SUN5I
+@@ -965,12 +964,6 @@ __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t *para)
+ 	out_addr.ch1_addr = para->output_fb.addr[1];
+ 	out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+-	size = (para->input_fb.size.width * para->input_fb.size.height *
+-		DE_BE_Format_To_Bpp(para->input_fb.format) + 7) / 8;
+-
+-	size = (para->output_fb.size.width * para->output_fb.size.height *
+-		DE_BE_Format_To_Bpp(para->output_fb.format) + 7) / 8;
+-
+ 	if (para->input_fb.b_trd_src) {
+ 		__scal_3d_inmode_t inmode;
+ 		__scal_3d_outmode_t outmode = 0;
+@@ -1115,7 +1108,6 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t *para)
+ 	__scal_out_type_t out_type;
+ 	__scal_scan_mod_t in_scan;
+ 	__scal_scan_mod_t out_scan;
+-	__u32 size = 0;
+ 	__s32 scaler_idx = 0;
+ 	__s32 ret = 0;
+ 
+@@ -1202,9 +1194,6 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t *para)
+ 	out_addr.ch1_addr = para->output_fb.addr[1];
+ 	out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+-	size = (para->output_fb.size.width * para->output_fb.size.height *
+-		DE_BE_Format_To_Bpp(para->output_fb.format) + 7) / 8;
+-
+ 	if (BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE) {
+ 		DE_SCAL_Input_Select(scaler_idx, 6 + sel);
+ 		DE_BE_set_display_size(sel, para->screen_size.width,
+-- 
+1.8.0
+

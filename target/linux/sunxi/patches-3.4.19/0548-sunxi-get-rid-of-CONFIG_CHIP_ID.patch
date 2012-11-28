@@ -1,0 +1,225 @@
+From e59d0817c0151492c9d4ea7e43cb45727591760a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 13 Jun 2012 16:50:50 +0200
+Subject: [PATCH 548/944] sunxi: get rid of CONFIG_CHIP_ID
+
+---
+ arch/arm/Kconfig                                      |  6 ------
+ arch/arm/kernel/head.S                                |  9 +++------
+ drivers/mmc/mmc-pm/mmc_pm_usi_bm01a.c                 | 14 +++++++-------
+ drivers/mmc/sunxi-host/host_plat.h                    |  4 ++--
+ drivers/net/wireless/bcm4330/dhd_custom_gpio.c        |  7 ++++++-
+ drivers/tty/serial/8250/8250_sunxi.c                  |  4 ++--
+ include/linux/drv_display.h                           | 19 +++----------------
+ modules/wifi/nano-c047.12/kernel/ksdio/ksdio.c        |  6 +++++-
+ .../open-src/src/dhd/sys/dhd_custom_gpio.c            |  6 +++++-
+ 9 files changed, 33 insertions(+), 42 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index e97c75a..69a68ae 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -42,12 +42,6 @@ config ARM
+ 	  Europe.  There is an ARM Linux project with a web page at
+ 	  <http://www.arm.linux.org.uk/>.
+ 
+-config CHIP_ID
+-        int
+-        default 1120 if ARCH_SUN3I
+-        default 1123 if ARCH_SUN4I
+-	default 1125 if ARCH_SUN5I
+-
+ config ARM_HAS_SG_CHAIN
+ 	bool
+ 
+diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
+index 52741af..6fee45d 100644
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -95,16 +95,13 @@ ENTRY(stext)
+ 	mov	r0, #0
+ 	b	_real_start
+ 
+-#if CONFIG_CHIP_ID == 1120
+-#warning "chip id: 1120"
++#if defined(CONFIG_ARCH_SUN3I)
+ 1:	.long 0xf37
+ 	.long 0x81000000
+-#elif CONFIG_CHIP_ID == 1123
+-#warning "chip id: 1123"
++#elif defined(CONFIG_ARCH_SUN4I)
+ 1:	.long 0x1008
+ 	.long 0x81000000
+-#elif CONFIG_CHIP_ID == 1125
+-#warning "chip id: 1125"
++#elif defined(CONFIG_ARCH_SUN5I)
+ 1:      .long 0xf35
+         .long 0x81000000
+ #else
+diff --git a/drivers/mmc/mmc-pm/mmc_pm_usi_bm01a.c b/drivers/mmc/mmc-pm/mmc_pm_usi_bm01a.c
+index b7ef43e..5703f7b 100644
+--- a/drivers/mmc/mmc-pm/mmc_pm_usi_bm01a.c
++++ b/drivers/mmc/mmc-pm/mmc_pm_usi_bm01a.c
+@@ -31,13 +31,13 @@
+ static int usi_bm01a_wl_on = 0;
+ static int usi_bm01a_bt_on = 0;
+ 
+-#if CONFIG_CHIP_ID==1125
++#ifdef CONFIG_ARCH_SUN5I
+ #include <linux/regulator/consumer.h>
+ static int usi_bm01a_power_onoff(int onoff)
+ {
+ 	struct regulator* wifi_ldo = NULL;
+ 	static int first = 1;
+-	  
++
+ #ifndef CONFIG_AW_AXP
+ 	usi_msg("AXP driver is disabled, pls check !!\n");
+ 	return 0;
+@@ -133,13 +133,13 @@ static int usi_bm01a_gpio_ctrl(char* name, int level)
+     return 0;
+     
+ power_change:
+-    #if CONFIG_CHIP_ID==1123
++#if defined(CONFIG_ARCH_SUN4I)
+     ret = gpio_write_one_pin_value(ops->pio_hdle, level, "usi_bm01a_wl_pwr");
+-    #elif CONFIG_CHIP_ID==1125
++#elif defined(CONFIG_ARCH_SUN5I)
+     ret = usi_bm01a_power_onoff(level);
+-    #else
+-    #error "Found wrong chip id in wifi onoff\n"
+-    #endif
++#else
++#error "Found wrong chip id in wifi onoff\n"
++#endif
+     if (ret) {
+         usi_msg("Failed to power off USI-BM01A module!\n");
+         return -1;
+diff --git a/drivers/mmc/sunxi-host/host_plat.h b/drivers/mmc/sunxi-host/host_plat.h
+index c5cb360..1e5fc4e 100644
+--- a/drivers/mmc/sunxi-host/host_plat.h
++++ b/drivers/mmc/sunxi-host/host_plat.h
+@@ -39,7 +39,7 @@
+ #define  SUNXI_MMC2_USED           (0x1 << 2)
+ #define  SUNXI_MMC3_USED           (0x1 << 3)
+ 
+-#if CONFIG_CHIP_ID==1123
++#if defined(CONFIG_ARCH_SUN4I)
+ #define  SUNXI_MMC_HOST_NUM        4
+ #define  SUNXI_MMC_USED_CTRL       (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED | SUNXI_MMC3_USED)
+ #define  SUNXI_MMC_MAX_DMA_DES_BIT  13
+@@ -54,7 +54,7 @@ enum mclk_src {
+ #define SMC_MAX_IO_CLOCK(n)     ((n)==3 ? 45000000 : 45000000)
+ #define SMC_MOD_CLK_SRC(n)      ((n)==3 ? SMC_MCLK_SRC_DRAMPLL : SMC_MCLK_SRC_DRAMPLL)
+ 
+-#elif CONFIG_CHIP_ID==1125
++#elif defined(CONFIG_ARCH_SUN5I)
+ #define  SUNXI_MMC_HOST_NUM     3
+ #define  SUNXI_MMC_USED_CTRL    (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED)
+ #define  SUNXI_MMC_MAX_DMA_DES_BIT  16
+diff --git a/drivers/net/wireless/bcm4330/dhd_custom_gpio.c b/drivers/net/wireless/bcm4330/dhd_custom_gpio.c
+index eb11708..34c73fe 100644
+--- a/drivers/net/wireless/bcm4330/dhd_custom_gpio.c
++++ b/drivers/net/wireless/bcm4330/dhd_custom_gpio.c
+@@ -39,7 +39,12 @@
+ #define WL_TRACE(x)
+ 
+ #if defined CONFIG_MMC_SUNXI_POWER_CONTROL
+-#define SDIOID (CONFIG_CHIP_ID==1123 ? 3 : 1)
++#ifdef CONFIG_ARCH_SUN4I
++#define SDIOID 3
++#else
++#define SDIOID 1
++#endif
++
+ extern void sunximmc_rescan_card(unsigned id, unsigned insert);
+ extern int mmc_pm_get_mod_type(void);
+ extern int mmc_pm_gpio_ctrl(char* name, int level);
+diff --git a/drivers/tty/serial/8250/8250_sunxi.c b/drivers/tty/serial/8250/8250_sunxi.c
+index a37bacf..b672662 100644
+--- a/drivers/tty/serial/8250/8250_sunxi.c
++++ b/drivers/tty/serial/8250/8250_sunxi.c
+@@ -29,9 +29,9 @@
+ #include <mach/irqs.h>
+ 
+ #include "8250.h"
+-#if CONFIG_CHIP_ID==1123
++#if defined(CONFIG_ARCH_SUN4I)
+ #define MAX_PORTS	    8
+-#elif CONFIG_CHIP_ID==1125
++#elif defined(CONFIG_ARCH_SUN5I)
+ #define MAX_PORTS	    4
+ #else
+ #error "Unknown chip ID for Serial"
+diff --git a/include/linux/drv_display.h b/include/linux/drv_display.h
+index 0b986e2..f66fde6 100644
+--- a/include/linux/drv_display.h
++++ b/include/linux/drv_display.h
+@@ -1,27 +1,14 @@
+ #ifndef _DRV_DISPLAY_COMMON_H_
+ #define _DRV_DISPLAY_COMMON_H_
+ 
+-#if CONFIG_CHIP_ID == 1120
+-
++#if defined(CONFIG_ARCH_SUN3I)
+ #include <linux/drv_display_sun3i.h>
+-
+-#elif CONFIG_CHIP_ID == 1123
+-
++#elif defined(CONFIG_ARCH_SUN4I)
+ #include <linux/drv_display_sun4i.h>
+-
+-#elif CONFIG_CHIP_ID == 1125
+-
++#elif defined(CONFIG_ARCH_SUN5I)
+ #include <linux/drv_display_sun5i.h>
+-
+ #else
+-
+ #error "no chip id defined"
+-
+ #endif
+ 
+-
+-
+ #endif
+-
+-
+-
+diff --git a/modules/wifi/nano-c047.12/kernel/ksdio/ksdio.c b/modules/wifi/nano-c047.12/kernel/ksdio/ksdio.c
+index 7bea1ff..d6fb903 100644
+--- a/modules/wifi/nano-c047.12/kernel/ksdio/ksdio.c
++++ b/modules/wifi/nano-c047.12/kernel/ksdio/ksdio.c
+@@ -106,7 +106,11 @@
+ 
+ 
+ #if defined WINNER_POWER_ONOFF_CTRL && defined CONFIG_MMC_SUNXI_POWER_CONTROL
+-#define SDIOID  (CONFIG_CHIP_ID==1123 ? 3 : 1)
++#ifdef CONFIG_ARCH_SUN4I
++#define SDIOID 3
++#else
++#define SDIOID 1
++#endif
+ extern void sunximmc_rescan_card(unsigned id, unsigned insert);
+ extern int mmc_pm_get_mod_type(void);
+ extern int mmc_pm_gpio_ctrl(char* name, int level);
+diff --git a/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_custom_gpio.c b/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_custom_gpio.c
+index c541507..bed1f06 100644
+--- a/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_custom_gpio.c
++++ b/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_custom_gpio.c
+@@ -39,7 +39,11 @@
+ #define WL_TRACE(x)
+ 
+ #if defined CONFIG_MMC_SUNXI_POWER_CONTROL
+-#define SDIOID (CONFIG_CHIP_ID==1123 ? 3 : 1)
++#ifdef CONFIG_ARCH_SUN4I
++#define SDIOID 3
++#else
++#define SDIOID 1
++#endif
+ extern void sunximmc_rescan_card(unsigned id, unsigned insert);
+ extern int mmc_pm_get_mod_type(void);
+ extern int mmc_pm_gpio_ctrl(char* name, int level);
+-- 
+1.8.0
+

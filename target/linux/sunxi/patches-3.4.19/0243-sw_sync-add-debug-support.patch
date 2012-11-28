@@ -1,0 +1,49 @@
+From 2c959d7b8d87672f1444126c50da5c373a0484af Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Thu, 15 Mar 2012 14:23:23 -0700
+Subject: [PATCH 243/944] sw_sync: add debug support
+
+Change-Id: Ibcc5fa8cb36e283cdf0e3308064876722e2675fc
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sw_sync.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/base/sw_sync.c b/drivers/base/sw_sync.c
+index e94ecc7..41beb9e 100644
+--- a/drivers/base/sw_sync.c
++++ b/drivers/base/sw_sync.c
+@@ -69,11 +69,30 @@ static int sw_sync_pt_compare(struct sync_pt *a, struct sync_pt *b)
+ 	return sw_sync_cmp(pt_a->value, pt_b->value);
+ }
+ 
++static void sw_sync_print_obj(struct seq_file *s,
++			      struct sync_timeline *sync_timeline)
++{
++	struct sw_sync_timeline *obj = (struct sw_sync_timeline *)sync_timeline;
++
++	seq_printf(s, "%d", obj->value);
++}
++
++static void sw_sync_print_pt(struct seq_file *s, struct sync_pt *sync_pt)
++{
++	struct sw_sync_pt *pt = (struct sw_sync_pt *)sync_pt;
++	struct sw_sync_timeline *obj =
++		(struct sw_sync_timeline *)sync_pt->parent;
++
++	seq_printf(s, "%d / %d", pt->value, obj->value);
++}
++
+ struct sync_timeline_ops sw_sync_timeline_ops = {
+ 	.driver_name = "sw_sync",
+ 	.dup = sw_sync_pt_dup,
+ 	.has_signaled = sw_sync_pt_has_signaled,
+ 	.compare = sw_sync_pt_compare,
++	.print_obj = sw_sync_print_obj,
++	.print_pt = sw_sync_print_pt,
+ };
+ 
+ 
+-- 
+1.8.0
+

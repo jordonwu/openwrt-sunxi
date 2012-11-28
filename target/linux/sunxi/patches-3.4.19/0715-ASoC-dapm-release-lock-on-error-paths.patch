@@ -1,0 +1,70 @@
+From 44bfe4ca45983be08f182a9db61298f6f0900b76 Mon Sep 17 00:00:00 2001
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Fri, 13 Apr 2012 22:25:43 +0300
+Subject: [PATCH 715/944] ASoC: dapm: release lock on error paths
+
+We added locking here but there were a couple error paths where we
+forgot to drop the lock before returning.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ sound/soc/soc-dapm.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/soc-dapm.c b/sound/soc/soc-dapm.c
+index 8413b3d..64bcd4e 100644
+--- a/sound/soc/soc-dapm.c
++++ b/sound/soc/soc-dapm.c
+@@ -2115,7 +2115,7 @@ err:
+ int snd_soc_dapm_add_routes(struct snd_soc_dapm_context *dapm,
+ 			    const struct snd_soc_dapm_route *route, int num)
+ {
+-	int i, ret;
++	int i, ret = 0;
+ 
+ 	mutex_lock_nested(&dapm->card->dapm_mutex, SND_SOC_DAPM_CLASS_INIT);
+ 	for (i = 0; i < num; i++) {
+@@ -2123,13 +2123,13 @@ int snd_soc_dapm_add_routes(struct snd_soc_dapm_context *dapm,
+ 		if (ret < 0) {
+ 			dev_err(dapm->dev, "Failed to add route %s->%s\n",
+ 				route->source, route->sink);
+-			return ret;
++			break;
+ 		}
+ 		route++;
+ 	}
+ 	mutex_unlock(&dapm->card->dapm_mutex);
+ 
+-	return 0;
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_dapm_add_routes);
+ 
+@@ -2833,6 +2833,7 @@ int snd_soc_dapm_new_controls(struct snd_soc_dapm_context *dapm,
+ {
+ 	struct snd_soc_dapm_widget *w;
+ 	int i;
++	int ret = 0;
+ 
+ 	mutex_lock_nested(&dapm->card->dapm_mutex, SND_SOC_DAPM_CLASS_INIT);
+ 	for (i = 0; i < num; i++) {
+@@ -2841,12 +2842,13 @@ int snd_soc_dapm_new_controls(struct snd_soc_dapm_context *dapm,
+ 			dev_err(dapm->dev,
+ 				"ASoC: Failed to create DAPM control %s\n",
+ 				widget->name);
+-			return -ENOMEM;
++			ret = -ENOMEM;
++			break;
+ 		}
+ 		widget++;
+ 	}
+ 	mutex_unlock(&dapm->card->dapm_mutex);
+-	return 0;
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_dapm_new_controls);
+ 
+-- 
+1.8.0
+

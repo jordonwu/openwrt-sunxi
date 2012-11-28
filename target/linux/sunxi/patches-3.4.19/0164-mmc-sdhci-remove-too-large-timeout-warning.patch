@@ -1,0 +1,35 @@
+From 09cc1c88758916bf193f742fe57d21bbbb42446e Mon Sep 17 00:00:00 2001
+From: "Torne (Richard Coles)" <torne@google.com>
+Date: Wed, 14 Mar 2012 15:08:26 -0700
+Subject: [PATCH 164/944] mmc: sdhci: remove too large timeout warning
+
+Some MMC cards specify timeouts that are larger than the highest
+possible timeout in the host controller. sdhci is the only host
+controller driver which complains about this; remove the warning to
+match the behaviour of the other drivers.
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/mmc/host/sdhci.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 9aa77f3..2e8cde3 100644
+--- a/drivers/mmc/host/sdhci.c
++++ b/drivers/mmc/host/sdhci.c
+@@ -679,11 +679,8 @@ static u8 sdhci_calc_timeout(struct sdhci_host *host, struct mmc_command *cmd)
+ 			break;
+ 	}
+ 
+-	if (count >= 0xF) {
+-		pr_warning("%s: Too large timeout requested for CMD%d!\n",
+-		       mmc_hostname(host->mmc), cmd->opcode);
++	if (count >= 0xF)
+ 		count = 0xE;
+-	}
+ 
+ 	return count;
+ }
+-- 
+1.8.0
+

@@ -1,0 +1,375 @@
+From 51fd3d49546e505dd170252a9d07dea546d3af9b Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Sat, 26 Nov 2011 19:43:52 +0800
+Subject: [PATCH 385/944] wifi: fix the issue of nano sdio wifi card
+ ----------------------- There is some inconsistence
+ between the SDIO Spec. Std. and design of nano's
+ hardware The SDIO INTx pending register cannot be
+ cleared after nano_sdio_isr() is called. The new
+ feature on Linux3.0 made it, aim of which is to
+ optimize the performance of SDIO interrupt event
+ handling. Change the codes like Linux2.6.36 as a
+ temporary version.
+
+---
+ drivers/mmc/core/sdio_irq.c          | 14 +++----
+ drivers/mmc/sunxi-host/host_fs.c     | 18 ++++++++-
+ drivers/mmc/sunxi-host/host_op.c     |  5 +--
+ drivers/mmc/sunxi-host/sdxc.c        | 25 +++++++++++-
+ drivers/mmc/sunxi-host/smc_syscall.h | 77 ++++++++++++++++++++++++++++++++++++
+ scripts/build_sun4i-lite.sh          |  8 ++--
+ scripts/build_sun4i.sh               | 21 ++++++++--
+ scripts/build_sun4i_crane.sh         |  8 ++--
+ 8 files changed, 151 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/mmc/core/sdio_irq.c b/drivers/mmc/core/sdio_irq.c
+index 3d8ceb4..e8398849 100644
+--- a/drivers/mmc/core/sdio_irq.c
++++ b/drivers/mmc/core/sdio_irq.c
+@@ -40,11 +40,11 @@ static int process_sdio_pending_irqs(struct mmc_host *host)
+ 	 * and we know an IRQ was signaled then call irq handler directly.
+ 	 * Otherwise do the full probe.
+ 	 */
+-	func = card->sdio_single_irq;
+-	if (func && host->sdio_irq_pending) {
+-		func->irq_handler(func);
+-		return 1;
+-	}
++//	func = card->sdio_single_irq;
++//	if (func && host->sdio_irq_pending) {
++//		func->irq_handler(func);
++//		return 1;
++//	}
+ 
+ 	ret = mmc_io_rw_direct(card, 0, 0, SDIO_CCCR_INTx, 0, &pending);
+ 	if (ret) {
+@@ -266,7 +266,7 @@ int sdio_claim_irq(struct sdio_func *func, sdio_irq_handler_t *handler)
+ 	ret = sdio_card_irq_get(func->card);
+ 	if (ret)
+ 		func->irq_handler = NULL;
+-	sdio_single_irq_set(func->card);
++//	sdio_single_irq_set(func->card);
+ 
+ 	return ret;
+ }
+@@ -291,7 +291,7 @@ int sdio_release_irq(struct sdio_func *func)
+ 	if (func->irq_handler) {
+ 		func->irq_handler = NULL;
+ 		sdio_card_irq_put(func->card);
+-		sdio_single_irq_set(func->card);
++//		sdio_single_irq_set(func->card);
+ 	}
+ 
+ 	ret = mmc_io_rw_direct(func->card, 0, 0, SDIO_CCCR_IENx, 0, &reg);
+diff --git a/drivers/mmc/sunxi-host/host_fs.c b/drivers/mmc/sunxi-host/host_fs.c
+index 32d638d..ea2c236 100644
+--- a/drivers/mmc/sunxi-host/host_fs.c
++++ b/drivers/mmc/sunxi-host/host_fs.c
+@@ -21,7 +21,7 @@
+ 
+ extern unsigned int smc_debug;
+ 
+-void hexdump(char* name, char* base, int len)
++void dumphex32(char* name, char* base, int len)
+ {
+     __u32 i;
+ 
+@@ -35,6 +35,22 @@ void hexdump(char* name, char* base, int len)
+     printk("\n");
+ }
+ 
++void hexdump(char* name, char* base, int len)
++{
++    __u32 i;
++
++    printk("%s :", name);
++    for (i=0; i<len; i++)
++    {
++        if (!(i&0x1f))
++            printk("\n0x%p : ", base + i);
++        if (!(i&0xf))
++            printk(" ");
++        printk("%02x ", readb(base + i));
++    }
++    printk("\n");
++}
++
+ #ifdef CONFIG_PROC_FS
+ static const char sunximmc_drv_version[] = DRIVER_VERSION;
+ 
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index c4e2be0..906b2d6 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -448,7 +448,7 @@ static irqreturn_t sunximmc_irq(int irq, void *dev_id)
+     if (smc_host->sdio_int)
+     {
+         mmc_signal_sdio_irq(smc_host->mmc);
+-    	//SMC_DBG("- sdio int -\n");
++//    	SMC_MSG("- sdio int -\n");
+     }
+ 
+     /* card detect change */
+@@ -623,7 +623,7 @@ static struct mmc_host_ops sunximmc_ops = {
+ #ifdef CONFIG_SUNXI_MMC_POWER_CONTROL
+ extern int mmc_pm_io_shd_suspend_host(void);
+ #else
+-static inline int mmc_pm_io_shd_suspend_host(void) {return 1;};
++static inline int mmc_pm_io_shd_suspend_host(void) {return 1;}
+ #endif
+ 
+ static int __devinit sunximmc_probe(struct platform_device *pdev)
+@@ -944,7 +944,6 @@ static int __init sunximmc_init(void)
+     int used = 0;
+ 
+     SMC_MSG("sunximmc_init\n");
+-
+     for (i=0; i<SUNXI_MMC_HOST_NUM; i++)
+     {
+         memset(mmc_para, 0, sizeof(mmc_para));
+diff --git a/drivers/mmc/sunxi-host/sdxc.c b/drivers/mmc/sunxi-host/sdxc.c
+index c4996d3..b175203 100644
+--- a/drivers/mmc/sunxi-host/sdxc.c
++++ b/drivers/mmc/sunxi-host/sdxc.c
+@@ -884,7 +884,7 @@ int sdxc_send_manual_stop(struct sunxi_mmc_host* smc_host, struct mmc_request* r
+ 		ret = -1;
+ 	}
+ 
+-	writel(iflags, SDXC_REG_RINTR);
++	writel(iflags & (~SDXC_SDIOInt), SDXC_REG_RINTR);
+     data->stop->resp[0] = readl(SDXC_REG_RESP0);
+ 
+ 	sdxc_int_enable(smc_host);
+@@ -1131,7 +1131,13 @@ _out_:
+     {
+         if (!(req->data->flags & MMC_DATA_WRITE) && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy))
+         {
+-            printk("data fsm busy\n");
++            if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                    if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                        if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                            if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                                if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
++                                    SMC_ERR("data fsm busy %08x, len %d\n", readl(SDXC_REG_STAS), req->data->blksz * req->data->blocks);
+         }
+         if (smc_host->dodma)
+         {
+@@ -1143,6 +1149,21 @@ _out_:
+         }
+ 
+         sdxc_fifo_reset(smc_host);
++        #if 0
++        if (smc_host->pdev->id == 3)
++        {
++            int i = 0;
++            char* dirstr = req->data->flags & MMC_DATA_WRITE ? "== Tx Data ==" : "== Rx Data ==";
++            u32 sg_len = req->data->sg_len;
++
++            SMC_MSG("%s\n", dirstr);
++            for (i=0; i<sg_len; i++) {
++                char sgstr[8] = {0};
++                sprintf(sgstr, "sg[%d]", i);
++                hexdump(sgstr, sg_virt(&req->data->sg[i]), req->data->sg[i].length > 64 ? 64 : req->data->sg[i].length);
++            }
++        }
++        #endif
+     }
+ 
+     temp = readl(SDXC_REG_STAS);
+diff --git a/drivers/mmc/sunxi-host/smc_syscall.h b/drivers/mmc/sunxi-host/smc_syscall.h
+index c452282..ded5995 100644
+--- a/drivers/mmc/sunxi-host/smc_syscall.h
++++ b/drivers/mmc/sunxi-host/smc_syscall.h
+@@ -162,6 +162,83 @@ static inline void aw_gpio_trigger_single1(void)
+     writel(backup, cfg_base);
+ }
+ 
++static inline void aw_gpio_cfg_pi1(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //pull high data
++    rval = readl(data_base);
++ 	rval |= 0xf;
++    writel(rval, data_base);
++
++    rval = readl(cfg_base);
++    rval &= ~(0x7777);
++    rval |= 0x1111;
++    writel(rval, cfg_base);
++}
++
++static inline void aw_gpio_one_pulse_on_pi0(void)
++{
++	u32 rval;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //pull low data
++    rval = readl(data_base);
++	rval &= ~(1 << 0);
++	writel(rval, data_base);
++
++    //pull high data
++ 	rval |= 1 << 0;
++    writel(rval, data_base);
++}
++
++static inline void aw_gpio_one_pulse_on_pi1(void)
++{
++	u32 rval;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //pull low data
++    rval = readl(data_base);
++	rval &= ~(1 << 1);
++	writel(rval, data_base);
++
++    //pull high data
++ 	rval |= 1 << 1;
++    writel(rval, data_base);
++}
++
++static inline void aw_gpio_one_pulse_on_pi2(void)
++{
++	u32 rval;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //pull low data
++    rval = readl(data_base);
++	rval &= ~(1 << 2);
++	writel(rval, data_base);
++
++    //pull high data
++ 	rval |= 1 << 2;
++    writel(rval, data_base);
++}
++
++static inline void aw_gpio_one_pulse_on_pi3(void)
++{
++	u32 rval;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //pull low data
++    rval = readl(data_base);
++	rval &= ~(1 << 3);
++	writel(rval, data_base);
++
++    //pull high data
++ 	rval |= 1 << 3;
++    writel(rval, data_base);
++}
+ 
+ static inline void aw_gpio_trigger_single2(void)
+ {
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 50ca3c2..ad64ea8 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -109,8 +109,8 @@ build_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+@@ -141,8 +141,8 @@ clean_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 7753977..27bce3f 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -111,8 +111,8 @@ build_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+@@ -123,6 +123,13 @@ build_modules()
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+ 	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all
++
++	#build usi-bmc4329 sdio wifi module
++#	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
++#			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
++#			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++#			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl-debug
++
+ }
+ 
+ clean_kernel()
+@@ -143,8 +150,8 @@ clean_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+@@ -154,6 +161,12 @@ clean_modules()
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+ 	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
++
++	#build usi-bmc4329 sdio wifi module
++#	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
++#			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
++#			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++#			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+ #####################################################################
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index e3505fd..9e40c25 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -110,8 +110,8 @@ build_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+@@ -142,8 +142,8 @@ clean_modules()
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+-#	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-#	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
++	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-- 
+1.8.0
+

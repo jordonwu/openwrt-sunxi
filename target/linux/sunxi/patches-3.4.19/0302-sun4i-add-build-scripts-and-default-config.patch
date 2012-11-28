@@ -1,0 +1,511 @@
+From 3fa9ba634ed36b4817aa7d1dc9a5f5f286e5b49b Mon Sep 17 00:00:00 2001
+From: Benn Huang <benn@allwinnertech.com>
+Date: Tue, 15 Nov 2011 15:15:35 +0800
+Subject: [PATCH 302/944] [sun4i] add build scripts and default config
+
+---
+ arch/arm/configs/sun4i_defconfig |  98 ++++++++++++++++++++++++++++----
+ build.sh                         |  48 ++++++++++++++++
+ scripts/build_sun4i-lite.sh      | 119 +++++++++++++++++++++++++++++++++++++++
+ scripts/build_sun4i.sh           | 119 +++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 373 insertions(+), 11 deletions(-)
+ create mode 100755 build.sh
+ create mode 100755 scripts/build_sun4i-lite.sh
+ create mode 100755 scripts/build_sun4i.sh
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index bad3518..3c3a7bd 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -95,12 +95,20 @@ CONFIG_MM_OWNER=y
+ # CONFIG_SYSFS_DEPRECATED is not set
+ CONFIG_RELAY=y
+ CONFIG_BLK_DEV_INITRD=y
+-CONFIG_INITRAMFS_SOURCE=""
++CONFIG_INITRAMFS_SOURCE="rootfs/rootfs.cpio.gz"
++CONFIG_INITRAMFS_ROOT_UID=0
++CONFIG_INITRAMFS_ROOT_GID=0
+ CONFIG_RD_GZIP=y
+ CONFIG_RD_BZIP2=y
+ CONFIG_RD_LZMA=y
+ CONFIG_RD_XZ=y
+ CONFIG_RD_LZO=y
++# CONFIG_INITRAMFS_COMPRESSION_NONE is not set
++CONFIG_INITRAMFS_COMPRESSION_GZIP=y
++# CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set
++# CONFIG_INITRAMFS_COMPRESSION_LZMA is not set
++# CONFIG_INITRAMFS_COMPRESSION_XZ is not set
++# CONFIG_INITRAMFS_COMPRESSION_LZO is not set
+ # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+ CONFIG_SYSCTL=y
+ CONFIG_ANON_INODES=y
+@@ -505,6 +513,7 @@ CONFIG_BLK_DEV_RAM_SIZE=4096
+ # CONFIG_BLK_DEV_XIP is not set
+ # CONFIG_CDROM_PKTCDVD is not set
+ # CONFIG_ATA_OVER_ETH is not set
++CONFIG_SUN4I_NANDFLASH=y
+ # CONFIG_SENSORS_LIS3LV02D is not set
+ # CONFIG_MISC_DEVICES is not set
+ CONFIG_HAVE_IDE=y
+@@ -602,6 +611,7 @@ CONFIG_PHYLIB=y
+ # CONFIG_NETCONSOLE is not set
+ # CONFIG_NETPOLL is not set
+ # CONFIG_NET_POLL_CONTROLLER is not set
++# CONFIG_WEMAC_SUN4I is not set
+ # CONFIG_ISDN is not set
+ # CONFIG_PHONE is not set
+ 
+@@ -688,11 +698,11 @@ CONFIG_DEVMEM=y
+ #
+ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+-CONFIG_SERIAL_8250_NR_UARTS=4
++CONFIG_SERIAL_8250_NR_UARTS=1
+ CONFIG_SERIAL_8250_RUNTIME_UARTS=1
+ CONFIG_SERIAL_8250_EXTENDED=y
+ CONFIG_SERIAL_8250_MANY_PORTS=y
+-CONFIG_SERIAL_8250_SHARE_IRQ=y
++# CONFIG_SERIAL_8250_SHARE_IRQ is not set
+ CONFIG_SERIAL_8250_DETECT_IRQ=y
+ CONFIG_SERIAL_8250_RSA=y
+ 
+@@ -709,10 +719,10 @@ CONFIG_SERIAL_CORE_CONSOLE=y
+ # CONFIG_IPMI_HANDLER is not set
+ # CONFIG_HW_RANDOM is not set
+ # CONFIG_R3964 is not set
+-CONFIG_RAW_DRIVER=y
+-CONFIG_MAX_RAW_DEVS=8192
++# CONFIG_RAW_DRIVER is not set
+ # CONFIG_DCC_TTY is not set
+ # CONFIG_RAMOOPS is not set
++CONFIG_SUN4I_G2D=y
+ CONFIG_I2C=y
+ CONFIG_I2C_BOARDINFO=y
+ CONFIG_I2C_COMPAT=y
+@@ -811,6 +821,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
++# CONFIG_LYCHEE_HDMI_SUN4I is not set
++CONFIG_LYCHEE_FB_SUN4I=m
++CONFIG_LYCHEE_LCD_SUN4I=m
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+ # CONFIG_FB_VIRTUAL is not set
+@@ -843,7 +856,43 @@ CONFIG_RTC_LIB=y
+ # CONFIG_DMADEVICES is not set
+ # CONFIG_AUXDISPLAY is not set
+ # CONFIG_UIO is not set
+-# CONFIG_STAGING is not set
++CONFIG_STAGING=y
++# CONFIG_RISCOM8 is not set
++# CONFIG_SPECIALIX is not set
++# CONFIG_ECHO is not set
++# CONFIG_BRCMUTIL is not set
++
++#
++# Android
++#
++CONFIG_ANDROID=y
++CONFIG_ANDROID_BINDER_IPC=y
++CONFIG_ANDROID_LOGGER=y
++CONFIG_ANDROID_RAM_CONSOLE=y
++CONFIG_ANDROID_RAM_CONSOLE_ENABLE_VERBOSE=y
++CONFIG_ANDROID_RAM_CONSOLE_EARLY_INIT=y
++CONFIG_ANDROID_RAM_CONSOLE_EARLY_ADDR=0
++CONFIG_ANDROID_RAM_CONSOLE_EARLY_SIZE=0
++CONFIG_ANDROID_TIMED_OUTPUT=y
++CONFIG_ANDROID_LOW_MEMORY_KILLER=y
++# CONFIG_POHMELFS is not set
++# CONFIG_IIO is not set
++# CONFIG_XVMALLOC is not set
++# CONFIG_ZRAM is not set
++# CONFIG_FB_SM7XX is not set
++CONFIG_MACH_NO_WESTBRIDGE=y
++# CONFIG_FT1000 is not set
++
++#
++# Speakup console speech
++#
++# CONFIG_SPEAKUP is not set
++# CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4 is not set
++
++#
++# Altera FPGA firmware download module
++#
++# CONFIG_ALTERA_STAPL is not set
+ CONFIG_CLKDEV_LOOKUP=y
+ CONFIG_CLKSRC_MMIO=y
+ 
+@@ -853,8 +902,21 @@ CONFIG_CLKSRC_MMIO=y
+ CONFIG_EXT2_FS=y
+ # CONFIG_EXT2_FS_XATTR is not set
+ # CONFIG_EXT2_FS_XIP is not set
+-# CONFIG_EXT3_FS is not set
+-# CONFIG_EXT4_FS is not set
++CONFIG_EXT3_FS=y
++CONFIG_EXT3_DEFAULTS_TO_ORDERED=y
++CONFIG_EXT3_FS_XATTR=y
++# CONFIG_EXT3_FS_POSIX_ACL is not set
++# CONFIG_EXT3_FS_SECURITY is not set
++CONFIG_EXT4_FS=y
++CONFIG_EXT4_FS_XATTR=y
++# CONFIG_EXT4_FS_POSIX_ACL is not set
++# CONFIG_EXT4_FS_SECURITY is not set
++# CONFIG_EXT4_DEBUG is not set
++CONFIG_JBD=y
++# CONFIG_JBD_DEBUG is not set
++CONFIG_JBD2=y
++# CONFIG_JBD2_DEBUG is not set
++CONFIG_FS_MBCACHE=y
+ # CONFIG_REISERFS_FS is not set
+ # CONFIG_JFS_FS is not set
+ # CONFIG_XFS_FS is not set
+@@ -923,7 +985,22 @@ CONFIG_TMPFS_XATTR=y
+ # CONFIG_HUGETLB_PAGE is not set
+ CONFIG_CONFIGFS_FS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+-# CONFIG_NETWORK_FILESYSTEMS is not set
++CONFIG_NETWORK_FILESYSTEMS=y
++CONFIG_NFS_FS=y
++# CONFIG_NFS_V3 is not set
++# CONFIG_NFS_V4 is not set
++# CONFIG_NFS_FSCACHE is not set
++# CONFIG_NFSD is not set
++CONFIG_LOCKD=y
++CONFIG_NFS_COMMON=y
++CONFIG_SUNRPC=y
++CONFIG_CIFS=y
++# CONFIG_CIFS_STATS is not set
++# CONFIG_CIFS_WEAK_PW_HASH is not set
++# CONFIG_CIFS_XATTR is not set
++# CONFIG_CIFS_DEBUG2 is not set
++# CONFIG_NCP_FS is not set
++# CONFIG_CODA_FS is not set
+ 
+ #
+ # Partition Types
+@@ -999,7 +1076,7 @@ CONFIG_MAGIC_SYSRQ=y
+ CONFIG_STRIP_ASM_SYMS=y
+ # CONFIG_UNUSED_SYMBOLS is not set
+ CONFIG_DEBUG_FS=y
+-CONFIG_HEADERS_CHECK=y
++# CONFIG_HEADERS_CHECK is not set
+ # CONFIG_DEBUG_SECTION_MISMATCH is not set
+ CONFIG_DEBUG_KERNEL=y
+ CONFIG_DEBUG_SHIRQ=y
+@@ -1057,7 +1134,6 @@ CONFIG_HAVE_FTRACE_MCOUNT_RECORD=y
+ CONFIG_HAVE_C_RECORDMCOUNT=y
+ CONFIG_TRACING_SUPPORT=y
+ # CONFIG_FTRACE is not set
+-CONFIG_BUILD_DOCSRC=y
+ CONFIG_DYNAMIC_DEBUG=y
+ # CONFIG_DMA_API_DEBUG is not set
+ # CONFIG_ATOMIC64_SELFTEST is not set
+diff --git a/build.sh b/build.sh
+new file mode 100755
+index 0000000..4fb2cf1
+--- /dev/null
++++ b/build.sh
+@@ -0,0 +1,48 @@
++#!/bin/bash
++set -e
++
++PLATFORM=""
++MODULE=""
++
++show_help()
++{
++	printf "\nbuild.sh - Top level build scritps\n"
++	echo "Valid Options:"
++	echo "  -h  Show help message"
++	echo "  -p <platform> platform, e.g. sun4i, sun4i-lite, sun4i_crane"
++	printf "  -m <module> module\n\n"
++}
++
++while getopts hp:m: OPTION
++do
++	case $OPTION in
++	h) show_help
++	;;
++	p) PLATFORM=$OPTARG
++	;;
++	m) MODULE=$OPTARG
++	;;
++	*) show_help
++	;;
++esac
++done
++
++if [ -z "$PLATFORM" ]; then
++	show_help
++	exit 1
++fi
++
++if [ -z "$MODULE" ]; then
++	MODULE="all"
++fi
++
++if [ -x ./scripts/build_${PLATFORM}.sh ]; then
++	./scripts/build_${PLATFORM}.sh $MODULE
++else
++	printf "\nERROR: Invalid Platform\n"
++	show_help
++	exit 1
++fi
++
++
++
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+new file mode 100755
+index 0000000..06c5117
+--- /dev/null
++++ b/scripts/build_sun4i-lite.sh
+@@ -0,0 +1,119 @@
++#!/bin/bash
++set -e
++#########################################################################
++#
++#          Simple build scripts to build krenel(with rootfs)  -- by Benn
++#
++#########################################################################
++
++
++#Setup common variables
++export ARCH=arm
++export CROSS_COMPILE=arm-none-linux-gnueabi-
++export AS=${CROSS_COMPILE}as
++export LD=${CROSS_COMPILE}ld
++export CC=${CROSS_COMPILE}gcc
++export AR=${CROSS_COMPILE}ar
++export NM=${CROSS_COMPILE}nm
++export STRIP=${CROSS_COMPILE}strip
++export OBJCOPY=${CROSS_COMPILE}objcopy
++export OBJDUMP=${CROSS_COMPILE}objdump
++
++KERNEL_VERSION="3.0"
++LICHEE_KDIR=`pwd`
++LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++
++CONFIG_CHIP_ID=1123
++
++update_kern_ver()
++{
++    if [ -r include/generated/utsrelease.h ]; then
++        KERNEL_VERSION=`cat include/generated/utsrelease.h |awk -F\" '{print $2}'`
++    fi
++    LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++}
++
++show_help()
++{
++    printf "Build script for Lichee system\n"
++    printf "  Invalid Option:\n"
++    printf "  help      - show this help\n"
++    printf "  kernel    - build kernel for sun4i\n"
++    printf "  modules   - build external modules for sun4i\n"
++    printf "  clean     - clean all\n"
++    printf "\n"
++}
++
++
++build_kernel()
++{
++    if [ ! -e .config ]; then
++	echo -e "\n\t\tUsing default config... ...!\n"
++	cp arch/arm/configs/sun4i_defconfig .config
++
++    fi
++
++    make KALLSYMS_EXTRA_PASS=1 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8
++    update_kern_ver
++
++    if [ -d output ]; then
++	rm -rf output
++    fi
++    mkdir -p $LICHEE_MOD_DIR
++
++    ${OBJCOPY} -R .note.gnu.build-id -S -O binary vmlinux output/bImage
++    cp -vf arch/arm/boot/[zu]Image output/
++    cp .config output/
++
++
++    for file in $(find drivers sound crypto block fs security net -name "*.ko"); do
++	cp $file ${LICHEE_MOD_DIR}
++    done
++    cp -f Module.symvers modules.* ${LICHEE_MOD_DIR}
++}
++
++build_modules()
++{
++    echo "Building modules"
++}
++
++clean_kernel()
++{
++    make clean
++    rm -rf output/*
++}
++
++clean_modules()
++{
++    echo "Cleaning modules"
++}
++
++#####################################################################
++#
++#                      Main Runtine
++#
++#####################################################################
++
++LICHEE_ROOT=`(cd ${LICHEE_KDIR}/..; pwd)`
++export PATH=${LICHEE_ROOT}/buildroot/output/external-toolchain/bin:$PATH
++
++case "$1" in
++kernel)
++    build_kernel
++    ;;
++modules)
++    build_modules
++    ;;
++clean)
++    clean_kernel
++    clean_modules
++    ;;
++all)
++    build_kernel
++    build_modules
++    ;;
++*)
++    show_help
++    ;;
++esac
++
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+new file mode 100755
+index 0000000..06c5117
+--- /dev/null
++++ b/scripts/build_sun4i.sh
+@@ -0,0 +1,119 @@
++#!/bin/bash
++set -e
++#########################################################################
++#
++#          Simple build scripts to build krenel(with rootfs)  -- by Benn
++#
++#########################################################################
++
++
++#Setup common variables
++export ARCH=arm
++export CROSS_COMPILE=arm-none-linux-gnueabi-
++export AS=${CROSS_COMPILE}as
++export LD=${CROSS_COMPILE}ld
++export CC=${CROSS_COMPILE}gcc
++export AR=${CROSS_COMPILE}ar
++export NM=${CROSS_COMPILE}nm
++export STRIP=${CROSS_COMPILE}strip
++export OBJCOPY=${CROSS_COMPILE}objcopy
++export OBJDUMP=${CROSS_COMPILE}objdump
++
++KERNEL_VERSION="3.0"
++LICHEE_KDIR=`pwd`
++LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++
++CONFIG_CHIP_ID=1123
++
++update_kern_ver()
++{
++    if [ -r include/generated/utsrelease.h ]; then
++        KERNEL_VERSION=`cat include/generated/utsrelease.h |awk -F\" '{print $2}'`
++    fi
++    LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++}
++
++show_help()
++{
++    printf "Build script for Lichee system\n"
++    printf "  Invalid Option:\n"
++    printf "  help      - show this help\n"
++    printf "  kernel    - build kernel for sun4i\n"
++    printf "  modules   - build external modules for sun4i\n"
++    printf "  clean     - clean all\n"
++    printf "\n"
++}
++
++
++build_kernel()
++{
++    if [ ! -e .config ]; then
++	echo -e "\n\t\tUsing default config... ...!\n"
++	cp arch/arm/configs/sun4i_defconfig .config
++
++    fi
++
++    make KALLSYMS_EXTRA_PASS=1 ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8
++    update_kern_ver
++
++    if [ -d output ]; then
++	rm -rf output
++    fi
++    mkdir -p $LICHEE_MOD_DIR
++
++    ${OBJCOPY} -R .note.gnu.build-id -S -O binary vmlinux output/bImage
++    cp -vf arch/arm/boot/[zu]Image output/
++    cp .config output/
++
++
++    for file in $(find drivers sound crypto block fs security net -name "*.ko"); do
++	cp $file ${LICHEE_MOD_DIR}
++    done
++    cp -f Module.symvers modules.* ${LICHEE_MOD_DIR}
++}
++
++build_modules()
++{
++    echo "Building modules"
++}
++
++clean_kernel()
++{
++    make clean
++    rm -rf output/*
++}
++
++clean_modules()
++{
++    echo "Cleaning modules"
++}
++
++#####################################################################
++#
++#                      Main Runtine
++#
++#####################################################################
++
++LICHEE_ROOT=`(cd ${LICHEE_KDIR}/..; pwd)`
++export PATH=${LICHEE_ROOT}/buildroot/output/external-toolchain/bin:$PATH
++
++case "$1" in
++kernel)
++    build_kernel
++    ;;
++modules)
++    build_modules
++    ;;
++clean)
++    clean_kernel
++    clean_modules
++    ;;
++all)
++    build_kernel
++    build_modules
++    ;;
++*)
++    show_help
++    ;;
++esac
++
+-- 
+1.8.0
+

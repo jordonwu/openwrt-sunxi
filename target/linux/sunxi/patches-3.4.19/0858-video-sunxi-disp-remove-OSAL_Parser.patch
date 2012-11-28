@@ -1,0 +1,784 @@
+From b5f22850bef7b905f4d33fd5ad5bd17b3e6a26a5 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 00:26:02 +0200
+Subject: [PATCH 858/944] video:sunxi:disp: remove OSAL_Parser.*
+
+OSAL_sw_get_ic_ver() is rewritten into sunxi_is_version_A().
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile           |  2 +-
+ drivers/video/sunxi/disp/OSAL/OSAL.h        |  1 -
+ drivers/video/sunxi/disp/OSAL/OSAL_Parser.c | 52 -----------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Parser.h | 29 ----------
+ drivers/video/sunxi/disp/bsp_display.h      |  3 +
+ drivers/video/sunxi/disp/dev_disp.c         | 11 ++++
+ drivers/video/sunxi/disp/dev_fb.c           | 28 ++++-----
+ drivers/video/sunxi/disp/disp_clk.c         |  4 +-
+ drivers/video/sunxi/disp/disp_de.c          |  4 +-
+ drivers/video/sunxi/disp/disp_lcd.c         | 88 ++++++++++++++---------------
+ drivers/video/sunxi/disp/disp_tv.c          |  8 +--
+ 11 files changed, 81 insertions(+), 149 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index dfaa540..bd4809a 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -2,7 +2,7 @@ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+ disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+-	OSAL/OSAL_Pin.o OSAL/OSAL_Parser.o
++	OSAL/OSAL_Pin.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+ 	de_layer.o de_lcdc.o de_tvec.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index b6c8417..64b086b 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -28,7 +28,6 @@
+ #include  "OSAL_Int.h"
+ #include  "OSAL_IrqLock.h"
+ #include  "OSAL_Pin.h"
+-#include  "OSAL_Parser.h"
+ 
+ #endif   //__OSAL_H__
+ 
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
+deleted file mode 100644
+index c28acb1..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
++++ /dev/null
+@@ -1,52 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "OSAL_Parser.h"
+-
+-int OSAL_Script_FetchParser_Data(char *main_name, char *sub_name, int value[], int count)
+-{
+-	return script_parser_fetch(main_name, sub_name, value, count);
+-}
+-
+-int OSAL_sw_get_ic_ver(void)
+-{
+-#ifdef CONFIG_ARCH_SUN5I
+-    return 0xB;
+-#else
+-    enum sw_ic_ver ic_ver;
+-    int ret = 0xA;
+-
+-    ic_ver = sw_get_ic_ver();
+-    if(ic_ver == MAGIC_VER_A)
+-    {
+-        ret = 0xA;
+-    }
+-    else if(ic_ver == MAGIC_VER_B)
+-    {
+-        ret = 0xB;
+-    }
+-    if(ic_ver == MAGIC_VER_C)
+-    {
+-        ret = 0xC;
+-    }
+-
+-    return ret;
+-#endif
+-}
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
+deleted file mode 100644
+index 367fae9..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_PARSER_H__
+-#define  __OSAL_PARSER_H__
+-
+-#include "OSAL.h"
+-
+-int OSAL_Script_FetchParser_Data(char *main_name, char *sub_name, int value[], int count);
+-int OSAL_sw_get_ic_ver(void);
+-
+-#endif
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index 63c3940..bba7245 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -329,4 +329,7 @@ extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *reg
+ __s32 Display_set_fb_timming(__u32 sel);
+ #endif
+ 
++/* symbol exists in dev_disp.c */
++int sunxi_is_version_A(void);
++
+ #endif
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 2e82695..fe5c010 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -180,6 +180,17 @@ void  disp_free(void *p)
+     return ;
+ }
+ 
++int
++sunxi_is_version_A(void)
++{
++#ifdef CONFIG_ARCH_SUN4I
++	if (sw_get_ic_ver() == MAGIC_VER_A)
++		return 1;
++#endif
++
++	return 0;
++}
++
+ __s32 DRV_lcd_open(__u32 sel)
+ {
+     __u32 i = 0;
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 8d89f99..83d816c 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -38,14 +38,14 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+ 
+     memset(init_para, 0, sizeof(__disp_init_t));
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "disp_init_enable", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "disp_init_enable", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.disp_init_enable fail\n");
+         return -1;
+     }
+     init_para->b_init = value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "disp_mode", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "disp_mode", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.disp_mode fail\n");
+         return -1;
+@@ -53,7 +53,7 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+     init_para->disp_mode= value;
+ 
+ //screen0
+-    if(OSAL_Script_FetchParser_Data("disp_init", "screen0_output_type", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "screen0_output_type", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.screen0_output_type fail\n");
+         return -1;
+@@ -84,7 +84,7 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+         return -1;
+     }
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "screen0_output_mode", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "screen0_output_mode", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.screen0_output_mode fail\n");
+         return -1;
+@@ -99,7 +99,7 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+     }
+ 
+ //screen1
+-    if(OSAL_Script_FetchParser_Data("disp_init", "screen1_output_type", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "screen1_output_type", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.screen1_output_type fail\n");
+         return -1;
+@@ -130,7 +130,7 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+         return -1;
+     }
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "screen1_output_mode", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "screen1_output_mode", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.screen1_output_mode fail\n");
+         return -1;
+@@ -145,28 +145,28 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+     }
+ 
+ //fb0
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb0_framebuffer_num", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb0_framebuffer_num", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb0_framebuffer_num fail\n");
+         return -1;
+     }
+     init_para->buffer_num[0]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb0_format", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb0_format", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb0_format fail\n");
+         return -1;
+     }
+     init_para->format[0]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb0_pixel_sequence", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb0_pixel_sequence", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb0_pixel_sequence fail\n");
+         return -1;
+     }
+     init_para->seq[0]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb0_scaler_mode_enable", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb0_scaler_mode_enable", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb0_scaler_mode_enable fail\n");
+         return -1;
+@@ -174,28 +174,28 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+     init_para->scaler_mode[0]= value;
+ 
+ //fb1
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb1_framebuffer_num", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb1_framebuffer_num", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb1_framebuffer_num fail\n");
+         return -1;
+     }
+     init_para->buffer_num[1]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb1_format", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb1_format", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb1_format fail\n");
+         return -1;
+     }
+     init_para->format[1]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb1_pixel_sequence", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb1_pixel_sequence", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb1_pixel_sequence fail\n");
+         return -1;
+     }
+     init_para->seq[1]= value;
+ 
+-    if(OSAL_Script_FetchParser_Data("disp_init", "fb1_scaler_mode_enable", &value, 1) < 0)
++    if(script_parser_fetch("disp_init", "fb1_scaler_mode_enable", &value, 1) < 0)
+     {
+         __wrn("fetch script data disp_init.fb1_scaler_mode_enable fail\n");
+         return -1;
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index f8e9f02..660778d 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -743,7 +743,7 @@ static __s32 LCD_PLL_Calc(__u32 sel, __panel_para_t * info, __u32 *divider)
+ 	{
+ 	    __u32 clk_max;
+ 
+-	    if(OSAL_sw_get_ic_ver() > 0xA)
++	    if(!sunxi_is_version_A())
+ 	    {
+ 	        clk_max = 150000000;
+ 	    }
+@@ -823,7 +823,7 @@ static __s32 disp_pll_assign(__u32 sel, __u32 pll_clk)
+     }
+ 	else if(pll_clk <= 1200000000)
+ 	{
+-	    if(OSAL_sw_get_ic_ver() > 0xA)
++	    if(!sunxi_is_version_A())
+ 	    {
+ 	        ret = 2;//sata pll
+ 	    }
+diff --git a/drivers/video/sunxi/disp/disp_de.c b/drivers/video/sunxi/disp/disp_de.c
+index 2ec02c3..1f9de1a 100644
+--- a/drivers/video/sunxi/disp/disp_de.c
++++ b/drivers/video/sunxi/disp/disp_de.c
+@@ -197,7 +197,7 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+         out_color_range = DISP_COLOR_RANGE_16_255;
+ 		out_csc = DE_YUV_HDMI;
+ 
+-        ret = OSAL_Script_FetchParser_Data("disp_init", "screen0_out_color_range", &value, 1);
++        ret = script_parser_fetch("disp_init", "screen0_out_color_range", &value, 1);
+         if(ret < 0)
+         {
+             DE_INF("fetch script data disp_init.screen0_out_color_range fail\n");
+@@ -246,7 +246,7 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
+ 
+         out_color_range = DISP_COLOR_RANGE_16_255;
+ 
+-        ret = OSAL_Script_FetchParser_Data("disp_init", "screen0_out_color_range", &value, 1);
++        ret = script_parser_fetch("disp_init", "screen0_out_color_range", &value, 1);
+         if(ret < 0)
+         {
+             DE_INF("fetch script data disp_init.screen0_out_color_range fail\n");
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index c0ee384..e5e43b2 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -261,7 +261,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+ 
+     memset(info, 0, sizeof(__panel_para_t));
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_x", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_x", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_x fail\n", primary_key);
+@@ -272,7 +272,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_x = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_y", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_y", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_y fail\n", primary_key);
+@@ -283,7 +283,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_y = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_dclk_freq", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_dclk_freq", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_dclk_freq fail\n", primary_key);
+@@ -294,7 +294,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_dclk_freq = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_not_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_not_used", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_pwm_not_used fail\n", primary_key);
+@@ -305,7 +305,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_pwm_not_used = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_ch", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_ch", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_pwm_ch fail\n", primary_key);
+@@ -316,7 +316,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_pwm_ch = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_freq", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_freq", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_pwm_freq fail\n", primary_key);
+@@ -327,7 +327,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_pwm_freq = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_pol", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_pol", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_pwm_pol fail\n", primary_key);
+@@ -338,7 +338,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_pwm_pol = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_if", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_if", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_if fail\n", primary_key);
+@@ -349,7 +349,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_if = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hbp", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hbp", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_hbp fail\n", primary_key);
+@@ -360,7 +360,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hbp = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_ht", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_ht", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_ht fail\n", primary_key);
+@@ -371,7 +371,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_ht = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_vbp", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_vbp", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_vbp fail\n", primary_key);
+@@ -382,7 +382,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_vbp = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_vt", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_vt", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("fetch script data %s.lcd_vt fail\n", primary_key);
+@@ -393,7 +393,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_vt = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_if", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_if", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_if fail\n", primary_key);
+@@ -404,7 +404,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_if = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_smode", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_smode", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_smode fail\n", primary_key);
+@@ -415,7 +415,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_smode = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_s888_if", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_s888_if", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_s888_if fail\n", primary_key);
+@@ -426,7 +426,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_s888_if = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_syuv_if", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_syuv_if", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_syuv_if fail\n", primary_key);
+@@ -437,7 +437,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_syuv_if = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_vspw", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_vspw", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_vspw fail\n", primary_key);
+@@ -448,7 +448,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_vspw = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_hv_hspw", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_hv_hspw", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_hv_hspw fail\n", primary_key);
+@@ -459,7 +459,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_hv_hspw = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_lvds_ch", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_lvds_ch", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_lvds_ch fail\n", primary_key);
+@@ -470,7 +470,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_lvds_ch = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_lvds_mode", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_lvds_mode", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_lvds_mode fail\n", primary_key);
+@@ -481,7 +481,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_lvds_mode = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_lvds_bitwidth", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_lvds_bitwidth", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_lvds_bitwidth fail\n", primary_key);
+@@ -492,7 +492,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_lvds_bitwidth = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_lvds_io_cross", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_lvds_io_cross", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_lvds_io_cross fail\n", primary_key);
+@@ -503,7 +503,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_lvds_io_cross = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_cpu_if", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_cpu_if", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_cpu_if fail\n", primary_key);
+@@ -514,7 +514,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_cpu_if = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_frm", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_frm", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_frm fail\n", primary_key);
+@@ -525,7 +525,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_frm = %d\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_io_cfg0", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_io_cfg0", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_io_cfg0 fail\n", primary_key);
+@@ -536,7 +536,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+         DE_INF("lcd_io_cfg0 = 0x%08x\n", value);
+     }
+ 
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_gamma_correction_en", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_gamma_correction_en", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data %s.lcd_gamma_correction_en fail\n", primary_key);
+@@ -555,7 +555,7 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+ 
+             sprintf(name, "lcd_gamma_tbl_%d", i);
+ 
+-            ret = OSAL_Script_FetchParser_Data(primary_key, name, &value, 1);
++            ret = script_parser_fetch(primary_key, name, &value, 1);
+             if(ret < 0)
+             {
+                 info->lcd_gamma_tbl[i] = (i<<16) | (i<<8) | i;
+@@ -585,7 +585,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+     sprintf(primary_key, "lcd%d_para", sel);
+ 
+ //lcd_used
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_used", &value, 1);
+     if(ret < 0)
+     {
+         DE_WRN("%s.lcd_used not exit\n", primary_key);
+@@ -601,7 +601,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ //lcd_bl_en
+     lcd_cfg->lcd_bl_en_used = 0;
+     value = 1;
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_bl_en_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_bl_en_used", &value, 1);
+     if(value == 0)
+     {
+         DE_INF("%s.lcd_bl_en is not used\n", primary_key);
+@@ -609,7 +609,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+     else
+     {
+         gpio_info = &(lcd_cfg->lcd_bl_en);
+-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.lcd_bl_en not exist\n", primary_key);
+@@ -624,7 +624,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ //lcd_power
+     lcd_cfg->lcd_power_used= 0;
+     value = 1;
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_power_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_power_used", &value, 1);
+     if(value == 0)
+     {
+         DE_INF("%s.lcd_power is not used\n", primary_key);
+@@ -632,7 +632,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+     else
+     {
+         gpio_info = &(lcd_cfg->lcd_power);
+-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_power", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,"lcd_power", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.lcd_power not exist\n", primary_key);
+@@ -647,7 +647,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ //lcd_pwm
+     lcd_cfg->lcd_pwm_used= 0;
+     value = 1;
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_used", &value, 1);
+     if(value == 0)
+     {
+         DE_INF("%s.lcd_pwm is not used\n", primary_key);
+@@ -655,7 +655,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+     else
+     {
+         gpio_info = &(lcd_cfg->lcd_pwm);
+-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.lcd_pwm not exist\n", primary_key);
+@@ -673,7 +673,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+         sprintf(sub_name, "lcd_gpio_%d", i);
+ 
+         gpio_info = &(lcd_cfg->lcd_gpio[i]);
+-        ret = OSAL_Script_FetchParser_Data(primary_key,sub_name, (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,sub_name, (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.%s not exist\n",primary_key, sub_name);
+@@ -691,7 +691,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+     for(i=0; i<28; i++)
+     {
+         gpio_info = &(lcd_cfg->lcd_io[i]);
+-        ret = OSAL_Script_FetchParser_Data(primary_key,io_name[i], (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,io_name[i], (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.%s not exist\n",primary_key, io_name[i]);
+@@ -708,7 +708,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ 	sprintf(primary_key, "disp_init");
+ 	sprintf(sub_name, "lcd%d_bright", sel);
+ 
+-	ret = OSAL_Script_FetchParser_Data(primary_key, sub_name, &value, 1);
++	ret = script_parser_fetch(primary_key, sub_name, &value, 1);
+ 	if (ret < 0) {
+ 		DE_INF("%s.%s not exit\n", primary_key,sub_name);
+ 		lcd_cfg->init_bright = 192;
+@@ -1077,7 +1077,7 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
+ 
+         memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_pwm), sizeof(user_gpio_set_t));
+ 
+-        if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
++        if(!sunxi_is_version_A() && (gpanel_info[sel].lcd_pwm_not_used == 0))
+         {
+             if(b_en)
+             {
+@@ -1352,7 +1352,7 @@ __s32 Disp_lcdc_init(__u32 sel)
+         }
+         gpanel_info[sel].tcon_index = 0;
+ 
+-        if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
++        if(!sunxi_is_version_A() && (gpanel_info[sel].lcd_pwm_not_used == 0))
+         {
+             __pwm_info_t pwm_info;
+ 
+@@ -1853,7 +1853,7 @@ __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32  bright
+ {
+     __u32 duty_ns;
+ 
+-    if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
++    if(!sunxi_is_version_A() && (gpanel_info[sel].lcd_pwm_not_used == 0))
+     {
+ #ifdef CONFIG_ARCH_SUN4I
+         if(bright != 0)
+@@ -2025,14 +2025,14 @@ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+     char primary_key[20];
+     sprintf(primary_key, "lcd%d_para", sel);
+     value = 1;
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_bl_en_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_bl_en_used", &value, 1);
+     if(value == 0)
+     {
+         DE_INF("%s.lcd_bl_en is not used\n", primary_key);
+     }
+     else
+     {
+-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.lcd_bl_en not exist\n", primary_key);
+@@ -2045,14 +2045,14 @@ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+         }
+     }
+     value = 1;
+-    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_used", &value, 1);
++    ret = script_parser_fetch(primary_key, "lcd_pwm_used", &value, 1);
+     if(value == 0)
+     {
+         DE_INF("%s.lcd_pwm is not used\n", primary_key);
+     }
+     else
+     {
+-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        ret = script_parser_fetch(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+         if(ret < 0)
+         {
+             DE_INF("%s.lcd_pwm not exist\n", primary_key);
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index 8436594..232e5a1 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -45,7 +45,7 @@ __s32 Disp_TVEC_Init(__u32 sel)
+     gdisp.screen[sel].dac_source[2] = DISP_TV_DAC_SRC_PR;
+     gdisp.screen[sel].dac_source[3] = DISP_TV_DAC_SRC_COMPOSITE;
+ 
+-    ret = OSAL_Script_FetchParser_Data("tv_out_dac_para", "dac_used", &value, 1);
++    ret = script_parser_fetch("tv_out_dac_para", "dac_used", &value, 1);
+     if(ret < 0)
+     {
+         DE_INF("fetch script data tv_out_dac_para.dac_used fail\n");
+@@ -63,7 +63,7 @@ __s32 Disp_TVEC_Init(__u32 sel)
+ 	        {
+ 	            sprintf(sub_key, "dac%d_src", i);
+ 
+-	            ret = OSAL_Script_FetchParser_Data("tv_out_dac_para", sub_key, &value, 1);
++	            ret = script_parser_fetch("tv_out_dac_para", sub_key, &value, 1);
+ 	            if(ret < 0)
+ 	            {
+ 	                DE_INF("fetch script data tv_out_dac_para.%s fail\n", sub_key);
+@@ -262,7 +262,7 @@ __s32 BSP_disp_tv_open(__u32 sel)
+             __s32 ret;
+ 
+             memset(gpio_info, 0, sizeof(user_gpio_set_t));
+-            ret = OSAL_Script_FetchParser_Data("audio_para","audio_pa_ctrl", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++            ret = script_parser_fetch("audio_para","audio_pa_ctrl", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+             if(ret < 0)
+             {
+                 DE_WRN("fetch script data audio_para.audio_pa_ctrl fail\n");
+@@ -330,7 +330,7 @@ __s32 BSP_disp_tv_close(__u32 sel)
+             __s32 ret;
+ 
+             memset(gpio_info, 0, sizeof(user_gpio_set_t));
+-            ret = OSAL_Script_FetchParser_Data("audio_para","audio_pa_ctrl", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++            ret = script_parser_fetch("audio_para","audio_pa_ctrl", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+             if(ret < 0)
+             {
+                 DE_WRN("fetch script data audio_para.audio_pa_ctrl fail\n");
+-- 
+1.8.0
+

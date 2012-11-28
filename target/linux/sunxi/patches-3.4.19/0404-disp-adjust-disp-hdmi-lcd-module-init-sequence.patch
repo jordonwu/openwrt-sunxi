@@ -1,0 +1,54 @@
+From 87af5419ab4a80f39bba67f32af31913eb61fe94 Mon Sep 17 00:00:00 2001
+From: danling <danling@allwinnertech.com>
+Date: Wed, 30 Nov 2011 17:02:41 +0800
+Subject: [PATCH 404/944] disp:adjust disp/hdmi/lcd module init sequence
+
+---
+ drivers/video/sun4i/disp/dev_disp.c | 3 +--
+ drivers/video/sun4i/hdmi/dev_hdmi.c | 3 +--
+ drivers/video/sun4i/lcd/dev_lcd.c   | 1 -
+ 3 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/sun4i/disp/dev_disp.c b/drivers/video/sun4i/disp/dev_disp.c
+index d6c2b37..f743ddf 100644
+--- a/drivers/video/sun4i/disp/dev_disp.c
++++ b/drivers/video/sun4i/disp/dev_disp.c
+@@ -2006,8 +2006,7 @@ EXPORT_SYMBOL(disp_set_hdmi_func);
+ EXPORT_SYMBOL(DRV_DISP_Init);
+ 
+ 
+-late_initcall(disp_module_init);
+-//module_init(disp_module_init);
++module_init(disp_module_init);
+ module_exit(disp_module_exit);
+ 
+ MODULE_AUTHOR("danling_xiao");
+diff --git a/drivers/video/sun4i/hdmi/dev_hdmi.c b/drivers/video/sun4i/hdmi/dev_hdmi.c
+index 6a5bf0d..073df89 100644
+--- a/drivers/video/sun4i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun4i/hdmi/dev_hdmi.c
+@@ -213,8 +213,7 @@ static void __exit hdmi_module_exit(void)
+ 
+ 
+ 
+-//late_initcall(hdmi_module_init);
+-module_init(hdmi_module_init);
++late_initcall(hdmi_module_init);
+ module_exit(hdmi_module_exit);
+ 
+ MODULE_AUTHOR("danling_xiao");
+diff --git a/drivers/video/sun4i/lcd/dev_lcd.c b/drivers/video/sun4i/lcd/dev_lcd.c
+index d17cdff..4d61c6f 100644
+--- a/drivers/video/sun4i/lcd/dev_lcd.c
++++ b/drivers/video/sun4i/lcd/dev_lcd.c
+@@ -109,7 +109,6 @@ static void __exit lcd_module_exit(void)
+ }
+ 
+ late_initcall(lcd_module_init);
+-//module_init(lcd_module_init);
+ module_exit(lcd_module_exit);
+ 
+ MODULE_AUTHOR("danling_xiao");
+-- 
+1.8.0
+

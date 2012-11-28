@@ -1,0 +1,36 @@
+From cb24eeb76777efbc7acc753f76b760ec1d72fee5 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 10 Jun 2012 22:29:14 +0200
+Subject: [PATCH 518/944] power: axp: use machine_reboot() instead of
+ arch_reset()
+
+---
+ drivers/power/axp_power/axp-mfd.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/power/axp_power/axp-mfd.c b/drivers/power/axp_power/axp-mfd.c
+index 6af3de1..d2d7c4c 100644
+--- a/drivers/power/axp_power/axp-mfd.c
++++ b/drivers/power/axp_power/axp-mfd.c
+@@ -13,8 +13,8 @@
+ #include <linux/i2c.h>
+ #include <linux/clk.h>
+ #include <linux/delay.h>
++#include <linux/reboot.h>
+ #include <linux/slab.h>
+-#include <mach/system.h>
+ 
+ #include "axp-cfg.h"
+ #include "axp18-mfd.h"
+@@ -254,7 +254,7 @@ static void axp_power_off(void)
+ 	        	axp_write(&axp->dev, POWER20_DATA_BUFFERC, 0x0f);
+             	mdelay(20);
+ 		    	printk("[axp] reboot!\n");
+-		    	arch_reset(0,NULL);
++			machine_restart(NULL);
+ 		    	printk("[axp] warning!!! arch can't ,reboot, maybe some error happend!\n");
+ 	    	}
+ 		}
+-- 
+1.8.0
+

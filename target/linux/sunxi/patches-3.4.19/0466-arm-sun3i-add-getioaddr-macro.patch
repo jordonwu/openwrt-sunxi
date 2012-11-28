@@ -1,0 +1,28 @@
+From 342f940d4ea993478baef366c50c903ecd2b63a2 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 23 May 2012 15:35:32 +0200
+Subject: [PATCH 466/944] arm: sun3i: add getioaddr macro
+
+---
+ arch/arm/mach-sun3i/include/mach/entry-macro.S | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-sun3i/include/mach/entry-macro.S b/arch/arm/mach-sun3i/include/mach/entry-macro.S
+index 25bc130..b2837f0 100644
+--- a/arch/arm/mach-sun3i/include/mach/entry-macro.S
++++ b/arch/arm/mach-sun3i/include/mach/entry-macro.S
+@@ -11,6 +11,11 @@
+ #include <mach/platform.h>
+ #include <asm/hardware/vic.h>
+ 
++		.macro getioaddr, rp, rv
++		ldr	\rp, =SW_IO_PHYS
++		ldr	\rv, =SW_IO_VIRT
++		.endm
++
+ 		.macro	disable_fiq
+ 		.endm
+ 
+-- 
+1.8.0
+

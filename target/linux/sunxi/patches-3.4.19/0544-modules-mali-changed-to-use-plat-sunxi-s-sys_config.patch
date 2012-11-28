@@ -1,0 +1,40 @@
+From ce21b09ecb8e67e272740842f375214ebfb4c400 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 11 Jun 2012 12:45:25 +0200
+Subject: [PATCH 544/944] modules: mali: changed to use plat-sunxi's
+ sys_config
+
+---
+ .../src/devicedrv/mali/platform/mali400-pmu/mali_platform.c             | 2 +-
+ .../src/devicedrv/mali/platform/default/mali_platform.c                 | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c b/modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
+index fb3d297..b706cfb 100644
+--- a/modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
++++ b/modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
+@@ -20,7 +20,7 @@
+ #include <linux/clk.h>
+ #include <mach/irqs.h>
+ #include <mach/clock.h>
+-#include <mach/sys_config.h>
++#include <plat/sys_config.h>
+ 
+ 
+ int mali_clk_div = 3;
+diff --git a/modules/mali/DX910-SW-99002-r2p3-01rel0/src/devicedrv/mali/platform/default/mali_platform.c b/modules/mali/DX910-SW-99002-r2p3-01rel0/src/devicedrv/mali/platform/default/mali_platform.c
+index 44178f3..0602277 100644
+--- a/modules/mali/DX910-SW-99002-r2p3-01rel0/src/devicedrv/mali/platform/default/mali_platform.c
++++ b/modules/mali/DX910-SW-99002-r2p3-01rel0/src/devicedrv/mali/platform/default/mali_platform.c
+@@ -20,7 +20,7 @@
+ #include <linux/clk.h>
+ #include <mach/irqs.h>
+ #include <mach/clock.h>
+-#include <mach/sys_config.h>
++#include <plat/sys_config.h>
+ 
+ 
+ int mali_clk_div = 3;
+-- 
+1.8.0
+

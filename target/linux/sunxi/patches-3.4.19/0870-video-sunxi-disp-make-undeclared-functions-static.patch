@@ -1,0 +1,1258 @@
+From 3710437ea394f9b74d262bfd19bcc60171e5ff44 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 18:04:52 +0200
+Subject: [PATCH 870/944] video:sunxi:disp: make undeclared functions static
+
+Sparse revealed a load of them.
+
+* Mark unused as #ifdef UNUSED
+* remove disp symbol declarations from lcd and hdmi modules
+* have lcd and hdmi modules directly include disp headers.
+* add dev_fb.h to clear up separation issues in dev_disp.h
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/bsp_display.h             |  2 -
+ drivers/video/sunxi/disp/de_be.c                   |  8 ++-
+ drivers/video/sunxi/disp/de_fe.c                   | 26 +++++---
+ drivers/video/sunxi/disp/de_iep_tab.h              | 22 +++----
+ drivers/video/sunxi/disp/de_lcdc.c                 | 40 +++++++++----
+ drivers/video/sunxi/disp/de_tvec.c                 | 12 ++--
+ drivers/video/sunxi/disp/dev_disp.c                | 31 +++++++---
+ drivers/video/sunxi/disp/dev_disp.h                | 52 +---------------
+ drivers/video/sunxi/disp/dev_fb.c                  | 40 +++++++++----
+ drivers/video/sunxi/disp/dev_fb.h                  | 70 ++++++++++++++++++++++
+ drivers/video/sunxi/disp/disp_clk.c                | 24 ++++----
+ drivers/video/sunxi/disp/disp_clk.h                |  1 +
+ drivers/video/sunxi/disp/disp_hdmi.c               |  1 +
+ drivers/video/sunxi/disp/disp_hdmi.h               |  2 -
+ drivers/video/sunxi/disp/disp_lcd.c                | 58 ++++++++++++------
+ drivers/video/sunxi/disp/disp_lcd.h                | 27 +++++++--
+ drivers/video/sunxi/disp/disp_ump.c                | 12 +++-
+ drivers/video/sunxi/disp/disp_vga.c                |  8 ++-
+ drivers/video/sunxi/hdmi/drv_hdmi.c                |  3 +-
+ drivers/video/sunxi/lcd/dev_lcd.c                  |  2 +
+ drivers/video/sunxi/lcd/dev_lcd.h                  |  1 -
+ .../video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c |  1 +
+ drivers/video/sunxi/lcd/lcd_panel_cfg.h            | 24 --------
+ drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c    |  1 +
+ 24 files changed, 289 insertions(+), 179 deletions(-)
+ create mode 100644 drivers/video/sunxi/disp/dev_fb.h
+
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index f3e9de8..d5b9a82 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -246,8 +246,6 @@ extern __s32 LCD_PWM_EN(__u32 sel, __bool b_en);
+ extern __s32 LCD_BL_EN(__u32 sel, __bool b_en);
+ extern __s32 BSP_disp_lcd_user_defined_func(__u32 sel, __u32 para1, __u32 para2,
+ 					    __u32 para3);
+-extern __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+-extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt);
+ extern __u32 BSP_disp_get_cur_line(__u32 sel);
+ #ifdef CONFIG_ARCH_SUN5I
+diff --git a/drivers/video/sunxi/disp/de_be.c b/drivers/video/sunxi/disp/de_be.c
+index 13b8e0b..56fbe9a 100644
+--- a/drivers/video/sunxi/disp/de_be.c
++++ b/drivers/video/sunxi/disp/de_be.c
+@@ -368,8 +368,9 @@ __u32 fir_tab[FIR_TAB_SIZE] = {
+ };
+ 
+ #ifdef CONFIG_ARCH_SUN4I
++#ifdef UNUSED
+ /* smooth for video */
+-__u32 fir_tab_video[FIR_TAB_SIZE] = {
++static __u32 fir_tab_video[FIR_TAB_SIZE] = {
+ 	0x00053704, 0x00063703, 0x00073702, 0x00093601, 0x000b3500, 0x000c3400, 0x000e3200, 0x000f3100,
+ 	0x00112f00, 0x00132d00, 0x00152b00, 0x00162a00, 0x00182800, 0x001a2600, 0x001c2400, 0x001e2200,
+ 	0x00202000, 0x00211f00, 0x00231d00, 0x00251b00, 0x00271900, 0x00291700, 0x002a1600, 0x002c1400,
+@@ -601,6 +602,7 @@ __u32 fir_tab_video[FIR_TAB_SIZE] = {
+ 	0x0c0a0603, 0x00080b0e, 0x0c0a0603, 0x00080b0e, 0x0c0a0603, 0x00090b0d, 0x0b0a0603, 0x00090c0d,
+ 	0x0b0a0603, 0x00090c0d, 0x0b0a0603, 0x00090c0d, 0x0c090602, 0x00090c0e, 0x0c090602, 0x00090c0e
+ };
++#endif /* UNUSED */
+ #endif /* CONFIG_ARCH_SUN4I */
+ 
+ __s32 DE_Set_Reg_Base(__u32 sel, __u32 address)
+@@ -776,12 +778,14 @@ __s32 DE_BE_Sprite_Enable(__u32 sel, __bool enable)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_Sprite_Disable(__u32 sel)
++#ifdef UNUSED
++static __s32 DE_BE_Sprite_Disable(__u32 sel)
+ {
+ 	DE_BE_WUINT32(sel, DE_BE_SPRITE_EN_OFF,
+ 		      DE_BE_RUINT32(sel, DE_BE_SPRITE_EN_OFF) & 0xfffffffe);
+ 	return 0;
+ }
++#endif
+ 
+ __s32 DE_BE_Sprite_Set_Format(__u32 sel, __u8 pixel_seq, __u8 format)
+ {
+diff --git a/drivers/video/sunxi/disp/de_fe.c b/drivers/video/sunxi/disp/de_fe.c
+index 482473b..4661d92 100644
+--- a/drivers/video/sunxi/disp/de_fe.c
++++ b/drivers/video/sunxi/disp/de_fe.c
+@@ -1120,6 +1120,7 @@ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
+ }
+ #endif /* CONFIG_ARCH_SUN5I */
+ 
++#ifdef UNUSED
+ /*
+  * scaler input format get
+  *
+@@ -1131,7 +1132,8 @@ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
+  * 4: csirgb
+  * 5: rgb888
+  */
+-__u8 DE_SCAL_Get_Input_Format(__u8 sel)
++static __u8
++DE_SCAL_Get_Input_Format(__u8 sel)
+ {
+ 	__u8 fmt_ret;
+ 	fmt_ret = scal_dev[sel]->input_fmt.bits.data_fmt;
+@@ -1149,7 +1151,8 @@ __u8 DE_SCAL_Get_Input_Format(__u8 sel)
+  * 3 macro block plannar data
+  * 4 macro block uv combined data
+  */
+-__u8 DE_SCAL_Get_Input_Mode(__u8 sel)
++static __u8
++DE_SCAL_Get_Input_Mode(__u8 sel)
+ {
+ 	__u8 mode_ret;
+ 	mode_ret = scal_dev[sel]->input_fmt.bits.data_mod;
+@@ -1168,7 +1171,8 @@ __u8 DE_SCAL_Get_Input_Mode(__u8 sel)
+  * 6: plannar yuv422
+  * 7: plannar yuv411
+  */
+-__u8 DE_SCAL_Get_Output_Format(__u8 sel)
++static __u8
++DE_SCAL_Get_Output_Format(__u8 sel)
+ {
+ 	__u8 fmt_ret;
+ 	fmt_ret = scal_dev[sel]->output_fmt.bits.data_fmt;
+@@ -1181,7 +1185,8 @@ __u8 DE_SCAL_Get_Output_Format(__u8 sel)
+  *
+  * returns width: [8-8192]
+  */
+-__u16 DE_SCAL_Get_Input_Width(__u8 sel)
++static __u16
++DE_SCAL_Get_Input_Width(__u8 sel)
+ {
+ 	__u16 in_w;
+ 	in_w = scal_dev[sel]->ch0_insize.bits.in_width + 0x1;
+@@ -1194,7 +1199,8 @@ __u16 DE_SCAL_Get_Input_Width(__u8 sel)
+  *
+  * returns height: [8-8192]
+  */
+-__u16 DE_SCAL_Get_Input_Height(__u8 sel)
++static __u16
++DE_SCAL_Get_Input_Height(__u8 sel)
+ {
+ 	__u16 in_h;
+ 	in_h = scal_dev[sel]->ch0_insize.bits.in_height + 0x1;
+@@ -1207,7 +1213,8 @@ __u16 DE_SCAL_Get_Input_Height(__u8 sel)
+  *
+  * returns width: [8-8192]
+  */
+-__u16 DE_SCAL_Get_Output_Width(__u8 sel)
++static __u16
++DE_SCAL_Get_Output_Width(__u8 sel)
+ {
+ 	__u16 out_w;
+ 	out_w = scal_dev[sel]->ch0_outsize.bits.out_width + 0x1;
+@@ -1220,7 +1227,8 @@ __u16 DE_SCAL_Get_Output_Width(__u8 sel)
+  *
+  * returns height: [8-8192]
+  */
+-__u16 DE_SCAL_Get_Output_Height(__u8 sel)
++static __u16
++DE_SCAL_Get_Output_Height(__u8 sel)
+ {
+ 	__u16 out_h;
+ 	out_h = scal_dev[sel]->ch0_outsize.bits.out_height + 0x1;
+@@ -1235,7 +1243,8 @@ __u16 DE_SCAL_Get_Output_Height(__u8 sel)
+  *  0  scaler enable
+  * -1 scaler disable
+  */
+-__s32 DE_SCAL_Get_Start_Status(__u8 sel)
++static __s32
++DE_SCAL_Get_Start_Status(__u8 sel)
+ {
+ 	if (scal_dev[sel]->modl_en.bits.en &&
+ 	    scal_dev[sel]->frm_ctrl.bits.frm_start) {
+@@ -1244,6 +1253,7 @@ __s32 DE_SCAL_Get_Start_Status(__u8 sel)
+ 		return -1;
+ 	}
+ }
++#endif /* UNUSED */
+ 
+ /*
+  * lcd field status
+diff --git a/drivers/video/sunxi/disp/de_iep_tab.h b/drivers/video/sunxi/disp/de_iep_tab.h
+index c532fd7..b5f9c04 100644
+--- a/drivers/video/sunxi/disp/de_iep_tab.h
++++ b/drivers/video/sunxi/disp/de_iep_tab.h
+@@ -2,7 +2,7 @@
+ #error IEP should only be used on sun5i
+ #endif
+ 
+-__u16 pwrsv_lgc_tab[128][256] = {
++static __u16 pwrsv_lgc_tab[128][256] = {
+ 	/* tab index : 128 */
+ 	{2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896,
+ 	 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896, 2896,
+@@ -2949,14 +2949,13 @@ __u16 pwrsv_lgc_tab[128][256] = {
+ 	 2048, 2048, 2048, 2048}
+ };
+ 
+-__u8 spatial_coeff[9] = { 228, 241, 228, 241, 255, 241, 228, 241, 228 };
++static __u8 spatial_coeff[9] = { 228, 241, 228, 241, 255, 241, 228, 241, 228 };
+ 
+-__u8 intensity_coeff[256] = {
++static __u8 intensity_coeff[256] = {
+ 	0xFF, 0xFE, 0xFE, 0xFD, 0xFB, 0xF9, 0xF7, 0xF5,
+ 	0xF2, 0xEE, 0xEB, 0xE7, 0xE3, 0xDE, 0xD9, 0xD4,
+ 	0xCF, 0xCA, 0xC4, 0xBF, 0xB9, 0xB3, 0xAD, 0xA7,
+-	0xA0, 0x9A, 0x94, 0x8E,
+-	    0x88, 0x82, 0x7C, 0x76,
++	0xA0, 0x9A, 0x94, 0x8E, 0x88, 0x82, 0x7C, 0x76,
+ 	0x70, 0x6A, 0x65, 0x5F, 0x5A, 0x55, 0x50, 0x4B,
+ 	0x46, 0x42, 0x3E, 0x3A, 0x36, 0x32, 0x2E, 0x2B,
+ 	0x28, 0x25, 0x22, 0x1F, 0x1D, 0x1A, 0x18, 0x16,
+@@ -2987,8 +2986,11 @@ __u8 intensity_coeff[256] = {
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+ };
+ 
+-__u8 hist_thres_drc[8] = { 25, 30, 50, 70, 110, 180, 200, 255 };
+-__u8 hist_thres_pwrsv[8] = { 128, 147, 175, 199, 219, 235, 247, 255 };
+-__u8 drc_filter[IEP_LH_PWRSV_NUM] = { 9, 10, 11, 12, 14, 15, 17, 18,
+-				      20, 22, 25, 27, 30, 33, 37, 41,
+-				      45, 50, 55, 61, 67, 74, 82, 90 };
++#ifdef UNUSED
++static __u8 hist_thres_drc[8] = { 25, 30, 50, 70, 110, 180, 200, 255 };
++#endif
++
++static __u8 hist_thres_pwrsv[8] = { 128, 147, 175, 199, 219, 235, 247, 255 };
++static __u8 drc_filter[IEP_LH_PWRSV_NUM] = { 9, 10, 11, 12, 14, 15, 17, 18,
++					     20, 22, 25, 27, 30, 33, 37, 41,
++					     45, 50, 55, 61, 67, 74, 82, 90 };
+diff --git a/drivers/video/sunxi/disp/de_lcdc.c b/drivers/video/sunxi/disp/de_lcdc.c
+index 9633446..3e6cd2b 100644
+--- a/drivers/video/sunxi/disp/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_lcdc.c
+@@ -22,8 +22,8 @@
+ #include "ebios_lcdc_tve.h"
+ #include "de_lcdc_i.h"
+ 
+-__u32 lcdc_reg_base0 = 0;
+-__u32 lcdc_reg_base1 = 0;
++static __u32 lcdc_reg_base0 = 0;
++static __u32 lcdc_reg_base1 = 0;
+ 
+ #define ____SEPARATOR_LCDC____
+ 
+@@ -1236,12 +1236,16 @@ __asm void my_stmia(int addr,int data1,int data2)
+ }
+ #endif
+ 
+-void LCD_CPU_Burst_Write(__u32 sel, int addr, int data1, int data2)
++#ifdef UNUSED
++static void
++LCD_CPU_Burst_Write(__u32 sel, int addr, int data1, int data2)
+ {
+ 	//my_stmia(LCDC_GET_REG_BASE(sel) + addr,data1,data2);
+ }
++#endif /* UNUSED */
+ 
+-__u32 LCD_CPU_Busy(__u32 sel)
++static __u32
++LCD_CPU_Busy(__u32 sel)
+ {
+ #ifdef CONFIG_ARCH_SUN4I
+ 	volatile __u32 i;
+@@ -1267,7 +1271,8 @@ __u32 LCD_CPU_Busy(__u32 sel)
+ #endif /* CONFIG_ARCH_SUN4I */
+ }
+ 
+-void LCD_CPU_WR_INDEX_24b(__u32 sel, __u32 index)
++static void
++LCD_CPU_WR_INDEX_24b(__u32 sel, __u32 index)
+ {
+ 	while (LCD_CPU_Busy(sel)) /* check wr finish */
+ 		;
+@@ -1283,7 +1288,8 @@ void LCD_CPU_WR_INDEX_24b(__u32 sel, __u32 index)
+ #endif
+ }
+ 
+-void LCD_CPU_WR_DATA_24b(__u32 sel, __u32 data)
++static void
++LCD_CPU_WR_DATA_24b(__u32 sel, __u32 data)
+ {
+ 	while (LCD_CPU_Busy(sel)) /* check wr finish */
+ 		;
+@@ -1298,20 +1304,25 @@ void LCD_CPU_WR_DATA_24b(__u32 sel, __u32 data)
+ #endif
+ }
+ 
+-void LCD_CPU_WR_24b(__u32 sel, __u32 index, __u32 data)
++static void
++LCD_CPU_WR_24b(__u32 sel, __u32 index, __u32 data)
+ {
+ 	LCD_CPU_WR_INDEX_24b(sel, index);
+ 	LCD_CPU_WR_DATA_24b(sel, data);
+ }
+ 
+-void LCD_CPU_RD_24b(__u32 sel, __u32 index, __u32 * data)
++#ifdef UNUSED
++static void
++LCD_CPU_RD_24b(__u32 sel, __u32 index, __u32 *data)
+ {
+ }
++#endif
+ 
+ /*
+  * 16bit
+  */
+-__u32 LCD_CPU_IO_extend_16b(__u32 value)
++static __u32
++LCD_CPU_IO_extend_16b(__u32 value)
+ {
+ 	return ((value & 0xfc00) << 8) |
+ 		((value & 0x0300) << 6) |
+@@ -1319,13 +1330,16 @@ __u32 LCD_CPU_IO_extend_16b(__u32 value)
+ 		((value & 0x001f) << 3);
+ }
+ 
+-__u32 LCD_CPU_IO_shrink_16b(__u32 value)
++#ifdef UNUSED
++static __u32
++LCD_CPU_IO_shrink_16b(__u32 value)
+ {
+ 	return ((value & 0xfc0000) >> 8) |
+ 		((value & 0x00c000) >> 6) |
+ 		((value & 0x001c00) >> 5) |
+ 		((value & 0x0000f8) >> 3);
+ }
++#endif
+ 
+ void LCD_CPU_WR(__u32 sel, __u32 index, __u32 data)
+ {
+@@ -1429,6 +1443,7 @@ __u8 TCON_set_tv_src(__u32 tv_index, __u8 src)
+ }
+ #endif /* CONFIG_ARCH_SUN4I */
+ 
++#ifdef UNUSED
+ #define ____TCON_CEU____
+ 
+ static __u32 range_cut(__s32 * x_value, __s32 x_min, __s32 x_max)
+@@ -1631,7 +1646,6 @@ static void lcd_ceu(__u32 r2y_type, __u32 cen_type, __u32 y2r_type, __s32 b,
+ 		*(p_coff + i) = *(p_rect + i);
+ }
+ 
+-
+ /*
+  * lcdc color enhance
+  *
+@@ -1645,7 +1659,8 @@ static void lcd_ceu(__u32 r2y_type, __u32 cen_type, __u32 y2r_type, __s32 b,
+  * s:    saturation [0:300]
+  * h:    hue [0:360]
+  */
+-void LCDC_ceu(__u32 sel, __u32 func, __s32 b, __s32 c, __s32 s, __s32 h)
++static void
++LCDC_ceu(__u32 sel, __u32 func, __s32 b, __s32 c, __s32 s, __s32 h)
+ {
+ 	__s32 ceu_coff[12];
+ 	__u32 error;
+@@ -1724,3 +1739,4 @@ void LCDC_ceu(__u32 sel, __u32 func, __s32 b, __s32 c, __s32 s, __s32 h)
+ 		LCDC_CLR_BIT(sel, LCDC_CEU_OFF, (__u32) 1 << 31);
+ 	}
+ }
++#endif
+diff --git a/drivers/video/sunxi/disp/de_tvec.c b/drivers/video/sunxi/disp/de_tvec.c
+index 83c0800..5cbdf8e 100644
+--- a/drivers/video/sunxi/disp/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_tvec.c
+@@ -22,8 +22,8 @@
+ #include "ebios_lcdc_tve.h"
+ #include "de_tvec_i.h"
+ 
+-__u32 tve_reg_base0;
+-__u32 tve_reg_base1;
++static __u32 tve_reg_base0;
++static __u32 tve_reg_base1;
+ 
+ __s32 TVE_set_reg_base(__u32 sel, __u32 address)
+ {
+@@ -626,14 +626,18 @@ __u8 TVE_csc_init(__u32 sel, __u8 type)
+ 		return 0;
+ }
+ 
+-__u8 TVE_csc_enable(__u32 sel)
++#ifdef UNUSED
++static __u8
++TVE_csc_enable(__u32 sel)
+ {
+ 	TVE_SET_BIT(sel, TVE_040, (__u32) (0x1 << 31));
+ 	return 0;
+ }
+ 
+-__u8 TVE_csc_disable(__u32 sel)
++static __u8
++TVE_csc_disable(__u32 sel)
+ {
+ 	TVE_CLR_BIT(sel, TVE_040, 0x1 << 31);
+ 	return 0;
+ }
++#endif
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 8796555..18a876a 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -20,13 +20,21 @@
+  */
+ 
+ #include <linux/module.h>
+-#include "dev_disp.h"
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
+ #endif
+ 
+-fb_info_t g_fbi;
++#ifdef CONFIG_FB_SUNXI_UMP
++#include <ump/ump_kernel_interface.h>
++#endif
++
++#include "drv_disp_i.h"
++#include "dev_disp.h"
++#include "disp_lcd.h"
++#include "dev_fb.h"
++
++
+ __disp_drv_t g_disp_drv;
+ 
+ /* alloc based on 4K byte */
+@@ -303,7 +311,8 @@ __s32 DRV_DISP_Exit(void)
+ 	return 0;
+ }
+ 
+-int disp_mem_request(int sel, __u32 size)
++static int
++disp_mem_request(int sel, __u32 size)
+ {
+ #ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = 0;
+@@ -355,7 +364,8 @@ int disp_mem_request(int sel, __u32 size)
+ 
+ }
+ 
+-int disp_mem_release(int sel)
++static int
++disp_mem_release(int sel)
+ {
+ #ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = PAGE_ALIGN(g_disp_mm[sel].mem_len);
+@@ -529,7 +539,8 @@ static struct early_suspend backlight_early_suspend_handler = {
+ 
+ #endif
+ 
+-int disp_suspend(struct platform_device *pdev, pm_message_t state)
++static int
++disp_suspend(struct platform_device *pdev, pm_message_t state)
+ {
+ #ifndef CONFIG_HAS_EARLYSUSPEND
+ 	int i = 0;
+@@ -558,7 +569,8 @@ int disp_suspend(struct platform_device *pdev, pm_message_t state)
+ 	return 0;
+ }
+ 
+-int disp_resume(struct platform_device *pdev)
++static int
++disp_resume(struct platform_device *pdev)
+ {
+ #ifndef CONFIG_HAS_EARLYSUSPEND
+ 	int i = 0;
+@@ -587,7 +599,8 @@ int disp_resume(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-void disp_shutdown(struct platform_device *pdev)
++static void
++disp_shutdown(struct platform_device *pdev)
+ {
+ 	__u32 type = 0, i = 0;
+ 
+@@ -1830,7 +1843,7 @@ static struct platform_driver disp_driver = {
+ 		   },
+ };
+ 
+-struct platform_device disp_device = {
++static struct platform_device disp_device = {
+ 	.name = "disp",
+ 	.id = -1,
+ 	.num_resources = ARRAY_SIZE(disp_resource),
+@@ -1838,7 +1851,7 @@ struct platform_device disp_device = {
+ 	.dev = {}
+ };
+ 
+-int __init disp_module_init(void)
++static int __init disp_module_init(void)
+ {
+ 	int ret, err;
+ 
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index a7e03f2..ef3fec6 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -22,12 +22,6 @@
+ #ifndef __DEV_DISP_H__
+ #define __DEV_DISP_H__
+ 
+-#include "drv_disp_i.h"
+-
+-#ifdef CONFIG_FB_SUNXI_UMP
+-#include <ump/ump_kernel_interface.h>
+-#endif
+-
+ #define SUNXI_MAX_FB 2
+ 
+ struct info_mm {
+@@ -38,44 +32,6 @@ struct info_mm {
+ };
+ 
+ typedef struct {
+-	struct device *dev;
+-
+-	__u32 base_image0;
+-	__u32 base_image1;
+-	__u32 base_scaler0;
+-	__u32 base_scaler1;
+-	__u32 base_lcdc0;
+-	__u32 base_lcdc1;
+-	__u32 base_tvec0;
+-	__u32 base_tvec1;
+-	__u32 base_hdmi;
+-	__u32 base_ccmu;
+-	__u32 base_sdram;
+-	__u32 base_pioc;
+-	__u32 base_pwm;
+-#ifdef CONFIG_ARCH_SUN5I
+-	__u32 base_iep;
+-#endif
+-	__disp_init_t disp_init;
+-
+-	__bool fb_enable[SUNXI_MAX_FB];
+-	__fb_mode_t fb_mode[SUNXI_MAX_FB];
+-	/*
+-	 * [fb_id][0]: screen0 layer handle;
+-	 * [fb_id][1]: screen1 layer handle
+-	 */
+-	__u32 layer_hdl[SUNXI_MAX_FB][2];
+-	struct fb_info *fbinfo[SUNXI_MAX_FB];
+-	__disp_fb_create_para_t fb_para[SUNXI_MAX_FB];
+-	wait_queue_head_t wait[SUNXI_MAX_FB];
+-	unsigned long wait_count[SUNXI_MAX_FB];
+-	__u32 pseudo_palette[SUNXI_MAX_FB][16];
+-#ifdef CONFIG_FB_SUNXI_UMP
+-	ump_dd_handle ump_wrapped_buffer[SUNXI_MAX_FB][2];
+-#endif
+-} fb_info_t;
+-
+-typedef struct {
+ 	__u32 mid;
+ 	__u32 used;
+ 	__u32 status;
+@@ -115,17 +71,13 @@ extern __s32 DRV_disp_int_process(__u32 sel);
+ extern __s32 DRV_DISP_Init(void);
+ extern __s32 DRV_DISP_Exit(void);
+ 
+-extern fb_info_t g_fbi;
+-
+ extern __disp_drv_t g_disp_drv;
+ 
+ extern __s32 DRV_lcd_open(__u32 sel);
+ extern __s32 DRV_lcd_close(__u32 sel);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 Fb_Exit(void);
+-#ifdef CONFIG_FB_SUNXI_UMP
+-extern int (*disp_get_ump_secure_id) (struct fb_info * info, fb_info_t * g_fbi,
+-				      unsigned long arg, int buf);
+-#endif
++
++__s32 disp_set_hdmi_func(__disp_hdmi_func * func);
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 07915ad..364913b 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -19,12 +19,20 @@
+  * MA 02111-1307 USA
+  */
+ 
+-#include "drv_disp_i.h"
+-#include "dev_disp.h"
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/fb.h>
+ 
++#ifdef CONFIG_FB_SUNXI_UMP
++#include <ump/ump_kernel_interface.h>
++#endif
++
++#include "drv_disp_i.h"
++#include "dev_disp.h"
++#include "dev_fb.h"
++
++fb_info_t g_fbi;
++
+ #define FBHANDTOID(handle)  ((handle) - 100)
+ #define FBIDTOHAND(ID)  ((ID) + 100)
+ 
+@@ -33,7 +41,8 @@
+  *     seq:  ARGB    BRGA    ARGB    BRGA
+  * br_swqp:   0       0       1       1
+  */
+-__s32 parser_disp_init_para(__disp_init_t * init_para)
++static __s32
++parser_disp_init_para(__disp_init_t *init_para)
+ {
+ 	int value;
+ 	int i;
+@@ -202,8 +211,10 @@ __s32 parser_disp_init_para(__disp_init_t * init_para)
+ 	return 0;
+ }
+ 
+-__s32 fb_draw_colorbar(__u32 base, __u32 width, __u32 height,
+-		       struct fb_var_screeninfo * var)
++#ifdef UNUSED
++static __s32
++fb_draw_colorbar(__u32 base, __u32 width, __u32 height,
++		 struct fb_var_screeninfo *var)
+ {
+ 	__u32 i = 0, j = 0;
+ 
+@@ -279,8 +290,9 @@ __s32 fb_draw_colorbar(__u32 base, __u32 width, __u32 height,
+ 	return 0;
+ }
+ 
+-__s32 fb_draw_gray_pictures(__u32 base, __u32 width, __u32 height,
+-			    struct fb_var_screeninfo * var)
++static __s32
++fb_draw_gray_pictures(__u32 base, __u32 width, __u32 height,
++		      struct fb_var_screeninfo *var)
+ {
+ 	__u32 time = 0;
+ 
+@@ -302,6 +314,7 @@ __s32 fb_draw_gray_pictures(__u32 base, __u32 width, __u32 height,
+ 	}
+ 	return 0;
+ }
++#endif /* UNUSED */
+ 
+ static int __init Fb_map_video_memory(struct fb_info *info)
+ {
+@@ -347,8 +360,9 @@ static inline void Fb_unmap_video_memory(struct fb_info *info)
+ /*
+  * todo.
+  */
+-__s32 disp_fb_to_var(__disp_pixel_fmt_t format, __disp_pixel_seq_t seq,
+-		     __bool br_swap, struct fb_var_screeninfo *var)
++static __s32
++disp_fb_to_var(__disp_pixel_fmt_t format, __disp_pixel_seq_t seq,
++	       __bool br_swap, struct fb_var_screeninfo *var)
+ {
+ 	if (format == DISP_FORMAT_ARGB8888) {
+ 		var->bits_per_pixel = 32;
+@@ -511,8 +525,9 @@ __s32 disp_fb_to_var(__disp_pixel_fmt_t format, __disp_pixel_seq_t seq,
+ /*
+  * todo
+  */
+-__s32 var_to_disp_fb(__disp_fb_t * fb, struct fb_var_screeninfo * var,
+-		     struct fb_fix_screeninfo * fix)
++static __s32
++var_to_disp_fb(__disp_fb_t *fb, struct fb_var_screeninfo *var,
++	       struct fb_fix_screeninfo *fix)
+ {
+ 	if (var->nonstd == 0) { /* argb */
+ 		var->reserved[0] = DISP_MOD_INTERLEAVED;
+@@ -1053,7 +1068,8 @@ static int Fb_setcmap(struct fb_cmap *cmap, struct fb_info *info)
+ 	return 0;
+ }
+ 
+-int Fb_blank(int blank_mode, struct fb_info *info)
++static int
++Fb_blank(int blank_mode, struct fb_info *info)
+ {
+ 	__u32 sel = 0;
+ 
+diff --git a/drivers/video/sunxi/disp/dev_fb.h b/drivers/video/sunxi/disp/dev_fb.h
+new file mode 100644
+index 0000000..c390db1
+--- /dev/null
++++ b/drivers/video/sunxi/disp/dev_fb.h
+@@ -0,0 +1,70 @@
++/*
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#ifndef __DEV_FB_H__
++#define __DEV_FB_H__
++
++typedef struct {
++	struct device *dev;
++
++	__u32 base_image0;
++	__u32 base_image1;
++	__u32 base_scaler0;
++	__u32 base_scaler1;
++	__u32 base_lcdc0;
++	__u32 base_lcdc1;
++	__u32 base_tvec0;
++	__u32 base_tvec1;
++	__u32 base_hdmi;
++	__u32 base_ccmu;
++	__u32 base_sdram;
++	__u32 base_pioc;
++	__u32 base_pwm;
++#ifdef CONFIG_ARCH_SUN5I
++	__u32 base_iep;
++#endif
++	__disp_init_t disp_init;
++
++	__bool fb_enable[SUNXI_MAX_FB];
++	__fb_mode_t fb_mode[SUNXI_MAX_FB];
++	/*
++	 * [fb_id][0]: screen0 layer handle;
++	 * [fb_id][1]: screen1 layer handle
++	 */
++	__u32 layer_hdl[SUNXI_MAX_FB][2];
++	struct fb_info *fbinfo[SUNXI_MAX_FB];
++	__disp_fb_create_para_t fb_para[SUNXI_MAX_FB];
++	wait_queue_head_t wait[SUNXI_MAX_FB];
++	unsigned long wait_count[SUNXI_MAX_FB];
++	__u32 pseudo_palette[SUNXI_MAX_FB][16];
++#ifdef CONFIG_FB_SUNXI_UMP
++	ump_dd_handle ump_wrapped_buffer[SUNXI_MAX_FB][2];
++#endif
++} fb_info_t;
++
++extern fb_info_t g_fbi;
++
++#ifdef CONFIG_FB_SUNXI_UMP
++extern int (*disp_get_ump_secure_id) (struct fb_info *info, fb_info_t *g_fbi,
++				      unsigned long arg, int buf);
++#endif
++
++#endif /* __DEV_FB_H__ */
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index 0634ce4..7651ae8 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -21,6 +21,7 @@
+ 
+ #include "disp_display_i.h"
+ #include "disp_display.h"
++#include "disp_lcd.h"
+ #include "disp_clk.h"
+ #include "OSAL_Clock.h"
+ 
+@@ -55,23 +56,22 @@
+ #define CLK_HDMI_MOD_ON		0x20000000
+ //#define CLK_LVDS_MOD_ON
+ 
+-__hdle h_debe0ahbclk, h_debe0mclk, h_debe0dramclk;
+-__hdle h_debe1ahbclk, h_debe1mclk, h_debe1dramclk;
+-__hdle h_defe0ahbclk, h_defe0mclk, h_defe0dramclk;
+-__hdle h_defe1ahbclk, h_defe1mclk, h_defe1dramclk;
+-__hdle h_tvenc0ahbclk;
+-__hdle h_tvenc1ahbclk;
+-__hdle h_lcd0ahbclk, h_lcd0ch0mclk0, h_lcd0ch1mclk1, h_lcd0ch1mclk2;
+-__hdle h_lcd1ahbclk, h_lcd1ch0mclk0, h_lcd1ch1mclk1, h_lcd1ch1mclk2;
+-__hdle h_lvdsmclk;		/* only for reset */
+-__hdle h_hdmiahbclk, h_hdmimclk;
++static __hdle h_debe0ahbclk, h_debe0mclk, h_debe0dramclk;
++static __hdle h_debe1ahbclk, h_debe1mclk, h_debe1dramclk;
++static __hdle h_defe0ahbclk, h_defe0mclk, h_defe0dramclk;
++static __hdle h_defe1ahbclk, h_defe1mclk, h_defe1dramclk;
++static __hdle h_tvenc0ahbclk;
++static __hdle h_tvenc1ahbclk;
++static __hdle h_lcd0ahbclk, h_lcd0ch0mclk0, h_lcd0ch1mclk1, h_lcd0ch1mclk2;
++static __hdle h_lcd1ahbclk, h_lcd1ch0mclk0, h_lcd1ch1mclk1, h_lcd1ch1mclk2;
++static __hdle h_lvdsmclk;		/* only for reset */
++static __hdle h_hdmiahbclk, h_hdmimclk;
+ 
+-__u32 g_clk_status = 0x0;
++__u32 g_clk_status;
+ 
+ #define RESET_OSAL
+ 
+ extern __disp_dev_t gdisp;
+-extern __panel_para_t gpanel_info[2];
+ 
+ /* record tv/vga/hdmi mode clock requirement */
+ __disp_clk_tab clk_tab = {
+diff --git a/drivers/video/sunxi/disp/disp_clk.h b/drivers/video/sunxi/disp/disp_clk.h
+index c649c1f..230fd5e 100644
+--- a/drivers/video/sunxi/disp/disp_clk.h
++++ b/drivers/video/sunxi/disp/disp_clk.h
+@@ -85,5 +85,6 @@ __s32 disp_pll_init(void);
+ __s32 disp_clk_cfg(__u32 sel, __u32 type, __u8 mode);
+ 
+ extern __disp_clk_tab clk_tab;
++extern __u32 g_clk_status;
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index b61205a..0af62a9 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -19,6 +19,7 @@
+  * MA 02111-1307 USA
+  */
+ 
++#include "disp_display_i.h"
+ #include "disp_hdmi.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.h b/drivers/video/sunxi/disp/disp_hdmi.h
+index 8109935..2fb0bed 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.h
++++ b/drivers/video/sunxi/disp/disp_hdmi.h
+@@ -22,8 +22,6 @@
+ #ifndef __DISP_HDMI_H__
+ #define __DISP_HDMI_H__
+ 
+-#include "disp_display_i.h"
+-
+ __s32 Display_Hdmi_Init(void);
+ __s32 Display_Hdmi_Exit(void);
+ 
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 42a75e1..67ca037 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include <linux/module.h>
++#include "disp_display_i.h"
+ #include "disp_lcd.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+@@ -32,7 +33,8 @@ static __lcd_flow_t close_flow[2];
+ __panel_para_t gpanel_info[2];
+ static __lcd_panel_fun_t lcd_panel_fun[2];
+ 
+-void LCD_get_reg_bases(__reg_bases_t * para)
++static void
++LCD_get_reg_bases(__reg_bases_t *para)
+ {
+ 	para->base_lcdc0 = gdisp.init_para.base_lcdc0;
+ 	para->base_lcdc1 = gdisp.init_para.base_lcdc1;
+@@ -41,7 +43,8 @@ void LCD_get_reg_bases(__reg_bases_t * para)
+ 	para->base_pwm = gdisp.init_para.base_pwm;
+ }
+ 
+-void Lcd_Panel_Parameter_Check(__u32 sel)
++static void
++Lcd_Panel_Parameter_Check(__u32 sel)
+ {
+ 	__panel_para_t *info;
+ 	__u32 cycle_num = 1;
+@@ -253,7 +256,8 @@ void Lcd_Panel_Parameter_Check(__u32 sel)
+ 	}
+ }
+ 
+-__s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
++static __s32
++LCD_get_panel_para(__u32 sel, __panel_para_t *info)
+ {
+ 	__s32 ret = 0;
+ 	char primary_key[20];
+@@ -502,7 +506,8 @@ __s32 LCD_get_panel_para(__u32 sel, __panel_para_t * info)
+ 	return 0;
+ }
+ 
+-void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t * lcd_cfg)
++static void
++LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ {
+ 	char io_name[28][20] = {
+ 		"lcdd0", "lcdd1", "lcdd2", "lcdd3", "lcdd4", "lcdd5",
+@@ -664,21 +669,24 @@ void LCD_delay_us(__u32 us)
+ 	udelay(us);
+ }
+ 
+-void LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
++void
++LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+ {
+ 	open_flow[sel].func[open_flow[sel].func_num].func = func;
+ 	open_flow[sel].func[open_flow[sel].func_num].delay = delay;
+ 	open_flow[sel].func_num++;
+ }
+ 
+-void LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
++void
++LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+ {
+ 	close_flow[sel].func[close_flow[sel].func_num].func = func;
+ 	close_flow[sel].func[close_flow[sel].func_num].delay = delay;
+ 	close_flow[sel].func_num++;
+ }
+ 
+-void TCON_open(__u32 sel)
++void
++TCON_open(__u32 sel)
+ {
+ 	if (gpanel_info[sel].tcon_index == 0) {
+ 		TCON0_open(sel);
+@@ -693,7 +701,8 @@ void TCON_open(__u32 sel)
+ 	}
+ }
+ 
+-void TCON_close(__u32 sel)
++void
++TCON_close(__u32 sel)
+ {
+ 	if (gpanel_info[sel].lcd_if == 3) {
+ 		LCD_LVDS_close(sel);
+@@ -728,7 +737,8 @@ static __s32 pwm_write_reg(__u32 offset, __u32 value)
+ 	return 0;
+ }
+ 
+-__s32 pwm_enable(__u32 channel, __bool b_en)
++static __s32
++pwm_enable(__u32 channel, __bool b_en)
+ {
+ 	__u32 tmp = 0;
+ 	__hdle hdl;
+@@ -950,7 +960,8 @@ __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info)
+ 	return 0;
+ }
+ 
+-__s32 pwm_set_duty_ns(__u32 channel, __u32 duty_ns)
++static __s32
++pwm_set_duty_ns(__u32 channel, __u32 duty_ns)
+ {
+ 	__u32 active_cycle = 0;
+ 	__u32 tmp;
+@@ -1031,7 +1042,8 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
+ 	return 0;
+ }
+ 
+-__s32 LCD_POWER_EN(__u32 sel, __bool b_en)
++__s32
++LCD_POWER_EN(__u32 sel, __bool b_en)
+ {
+ 	user_gpio_set_t gpio_info[1];
+ 	__hdle hdl;
+@@ -1051,17 +1063,20 @@ __s32 LCD_POWER_EN(__u32 sel, __bool b_en)
+ 	return 0;
+ }
+ 
+-__s32 LCD_GPIO_request(__u32 sel, __u32 io_index)
++__s32
++LCD_GPIO_request(__u32 sel, __u32 io_index)
+ {
+ 	return 0;
+ }
+ 
+-__s32 LCD_GPIO_release(__u32 sel, __u32 io_index)
++__s32
++LCD_GPIO_release(__u32 sel, __u32 io_index)
+ {
+ 	return 0;
+ }
+ 
+-__s32 LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output)
++__s32
++LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output)
+ {
+ 	char gpio_name[20];
+ 
+@@ -1071,7 +1086,8 @@ __s32 LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output)
+ 						gpio_name);
+ }
+ 
+-__s32 LCD_GPIO_read(__u32 sel, __u32 io_index)
++__s32
++LCD_GPIO_read(__u32 sel, __u32 io_index)
+ {
+ 	char gpio_name[20];
+ 
+@@ -1080,7 +1096,8 @@ __s32 LCD_GPIO_read(__u32 sel, __u32 io_index)
+ 					     gpio_hdl[io_index], gpio_name);
+ }
+ 
+-__s32 LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data)
++__s32
++LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data)
+ {
+ 	char gpio_name[20];
+ 
+@@ -1090,7 +1107,8 @@ __s32 LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data)
+ 					      gpio_name);
+ }
+ 
+-__s32 LCD_GPIO_init(__u32 sel)
++static __s32
++LCD_GPIO_init(__u32 sel)
+ {
+ 	__u32 i = 0;
+ 
+@@ -1111,7 +1129,8 @@ __s32 LCD_GPIO_init(__u32 sel)
+ 	return 0;
+ }
+ 
+-__s32 LCD_GPIO_exit(__u32 sel)
++static __s32
++LCD_GPIO_exit(__u32 sel)
+ {
+ 	__u32 i = 0;
+ 
+@@ -1124,7 +1143,8 @@ __s32 LCD_GPIO_exit(__u32 sel)
+ 	return 0;
+ }
+ 
+-void LCD_CPU_register_irq(__u32 sel, void (*Lcd_cpuisr_proc) (void))
++static void
++LCD_CPU_register_irq(__u32 sel, void (*Lcd_cpuisr_proc) (void))
+ {
+ 	gdisp.screen[sel].LCD_CPUIF_ISR = Lcd_cpuisr_proc;
+ }
+diff --git a/drivers/video/sunxi/disp/disp_lcd.h b/drivers/video/sunxi/disp/disp_lcd.h
+index 7b746ff..31ab198 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.h
++++ b/drivers/video/sunxi/disp/disp_lcd.h
+@@ -22,11 +22,7 @@
+ #ifndef __DISP_LCD_H__
+ #define __DISP_LCD_H__
+ 
+-#include "disp_display_i.h"
+-
+-#ifdef CONFIG_ARCH_SUN5I
+ extern __panel_para_t gpanel_info[2];
+-#endif
+ 
+ __s32 Disp_lcdc_init(__u32 sel);
+ __s32 Disp_lcdc_exit(__u32 sel);
+@@ -42,7 +38,26 @@ __u32 vga_mode_to_height(__disp_vga_mode_t mode);
+ void LCD_delay_ms(__u32 ms);
+ void LCD_delay_us(__u32 ns);
+ 
+-extern void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+-extern void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
++void TCON_open(__u32 sel);
++void TCON_close(__u32 sel);
++__s32 LCD_PWM_EN(__u32 sel, __bool b_en);
++__s32 LCD_BL_EN(__u32 sel, __bool b_en);
++__s32 LCD_POWER_EN(__u32 sel, __bool b_en);
++
++__s32 LCD_GPIO_request(__u32 sel, __u32 io_index);
++__s32 LCD_GPIO_release(__u32 sel,__u32 io_index);
++__s32 LCD_GPIO_set_attr(__u32 sel,__u32 io_index, __bool b_output);
++__s32 LCD_GPIO_read(__u32 sel,__u32 io_index);
++__s32 LCD_GPIO_write(__u32 sel,__u32 io_index, __u32 data);
++
++__s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
++__s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
++
++void LCD_set_panel_funs(__lcd_panel_fun_t *lcd0_cfg,
++			__lcd_panel_fun_t *lcd1_cfg);
++
++void LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay);
++void LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay);
++__s32 LCD_POWER_EN(__u32 sel, __bool b_en);
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+index b7f6be3..f88c988 100644
+--- a/drivers/video/sunxi/disp/disp_ump.c
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -19,9 +19,17 @@
+  */
+ 
+ #include <linux/module.h>
+-#include "dev_disp.h"
++
++#ifndef CONFIG_FB_SUNXI_UMP
++#error This file should not be built without UMP enabled
++#endif
++
+ #include <ump/ump_kernel_interface_ref_drv.h>
+ 
++#include "drv_disp_i.h"
++#include "dev_disp.h"
++#include "dev_fb.h"
++
+ static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi,
+ 				   unsigned long arg, int buf)
+ {
+@@ -49,7 +57,7 @@ static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi,
+ 	return put_user((unsigned int)secure_id, psecureid);
+ }
+ 
+-int __init disp_ump_module_init(void)
++static int __init disp_ump_module_init(void)
+ {
+ 	int ret = 0;
+ 
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index 1abbc2c..5d52ed0 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -27,7 +27,9 @@
+ #include "disp_lcd.h"
+ #include "disp_clk.h"
+ 
+-__s32 VGA_Init(void)
++#ifdef UNUSED
++static __s32
++VGA_Init(void)
+ {
+ 	gdisp.screen[0].vga_mode = DISP_VGA_H1024_V768;
+ 	gdisp.screen[1].vga_mode = DISP_VGA_H1024_V768;
+@@ -35,10 +37,12 @@ __s32 VGA_Init(void)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 VGA_Exit(void)
++static __s32
++VGA_Exit(void)
+ {
+ 	return DIS_SUCCESS;
+ }
++#endif /* UNUSED */
+ 
+ __s32 BSP_disp_vga_open(__u32 sel)
+ {
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index 60df34d..dec02e1 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -23,7 +23,7 @@
+ #include "drv_hdmi_i.h"
+ #include "hdmi_hal.h"
+ #include "dev_hdmi.h"
+-
++#include "../disp/dev_disp.h"
+ 
+ static struct semaphore *run_sem = NULL;
+ static struct task_struct * HDMI_task;
+@@ -241,7 +241,6 @@ int Hdmi_run_thread(void *parg)
+ }
+ 
+ extern void audio_set_hdmi_func(__audio_hdmi_func * hdmi_func);
+-extern __s32 disp_set_hdmi_func(__disp_hdmi_func * func);
+ 
+ __s32 Hdmi_init(void)
+ {
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.c b/drivers/video/sunxi/lcd/dev_lcd.c
+index a97ebe4..bcd7176 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.c
++++ b/drivers/video/sunxi/lcd/dev_lcd.c
+@@ -23,6 +23,8 @@
+ #include "dev_lcd.h"
+ #include "lcd_panel_cfg.h"
+ 
++#include "../disp/disp_lcd.h"
++
+ static struct cdev *my_cdev;
+ static dev_t devid ;
+ static struct class *lcd_class;
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index c53176a..b8dfb9b 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -54,7 +54,6 @@
+ 
+ extern void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+ extern void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
+-extern void LCD_set_panel_funs(__lcd_panel_fun_t * lcd0_cfg, __lcd_panel_fun_t * lcd1_cfg);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 DRV_DISP_Init(void);
+ 
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index e5a05f3..b775ec1 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -26,6 +26,7 @@
+  **********************************************************************/
+ 
+ #include "lcd_panel_cfg.h"
++#include "../disp/ebios_lcdc_tve.h"
+ 
+ //delete this line if you want to use the lcd para define in sys_config1.fex
+ #define LCD_PARA_USE_CONFIG
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg.h b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+index 841075c..ba97664 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+@@ -38,30 +38,6 @@ void LCD_get_panel_funs_generic(__lcd_panel_fun_t * fun);
+ void LCD_get_panel_funs_0(__lcd_panel_fun_t * fun);
+ void LCD_get_panel_funs_1(__lcd_panel_fun_t * fun);
+ 
+-extern void LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay/*ms*/);
+-extern void LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay/*ms*/);
+-extern void LCD_get_reg_bases(__reg_bases_t *para);
+-extern void LCD_delay_ms(__u32 ms) ;
+-extern void LCD_delay_us(__u32 ns);
+-extern void TCON_open(__u32 sel);
+-extern void TCON_close(__u32 sel);
+-extern __s32 LCD_PWM_EN(__u32 sel, __bool b_en);
+-extern __s32 LCD_BL_EN(__u32 sel, __bool b_en);
+-extern __s32 LCD_POWER_EN(__u32 sel, __bool b_en);
+-extern void LCD_CPU_register_irq(__u32 sel, void (*Lcd_cpuisr_proc) (void));
+-extern void LCD_CPU_WR(__u32 sel, __u32 index, __u32 data);
+-extern void LCD_CPU_WR_INDEX(__u32 sel,__u32 index);
+-extern void LCD_CPU_WR_DATA(__u32 sel, __u32 data);
+-extern void LCD_CPU_AUTO_FLUSH(__u32 sel, __bool en);
+-extern __s32 LCD_GPIO_request(__u32 sel, __u32 io_index);
+-extern __s32 LCD_GPIO_release(__u32 sel,__u32 io_index);
+-extern __s32 LCD_GPIO_set_attr(__u32 sel,__u32 io_index, __bool b_output);
+-extern __s32 LCD_GPIO_read(__u32 sel,__u32 io_index);
+-extern __s32 LCD_GPIO_write(__u32 sel,__u32 io_index, __u32 data);
+-
+-extern __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+-extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+-
+ #define OSAL_Script_FetchParser_Data script_parser_fetch
+ #define OSAL_GPIO_Request gpio_request
+ #define OSAL_GPIO_Release gpio_release
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+index 6891c5c..6a60b74 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+@@ -20,6 +20,7 @@
+  */
+ 
+ #include "lcd_panel_cfg.h"
++#include "../disp/disp_lcd.h"
+ 
+ #define CMD_WIRTE_DELAY 2
+ 
+-- 
+1.8.0
+

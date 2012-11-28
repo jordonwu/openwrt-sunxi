@@ -1,0 +1,26 @@
+From 65201ac2b7aa8765041179fcdafc1909fc6b2385 Mon Sep 17 00:00:00 2001
+From: Jens Andersen <jens.andersen@gmail.com>
+Date: Fri, 10 Aug 2012 20:23:52 +0200
+Subject: [PATCH 696/944] sun5i: Fix NAND driver
+
+* Fix taken from sun4i - don't use system clock
+---
+ drivers/block/sun5i_nand/nfd/nand_blk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/block/sun5i_nand/nfd/nand_blk.c b/drivers/block/sun5i_nand/nfd/nand_blk.c
+index 5a24af2..d3a28c2 100644
+--- a/drivers/block/sun5i_nand/nfd/nand_blk.c
++++ b/drivers/block/sun5i_nand/nfd/nand_blk.c
+@@ -89,7 +89,7 @@ struct nand_disk disk_array[MAX_PART_COUNT];
+ //#define NAND_BIO_ALIGN
+ #define NAND_CACHE_RW
+ #define USE_SYS_PIN
+-#define USE_SYS_CLK
++//#define USE_SYS_CLK
+ 
+ /**
+ *USE_BIO_MERGE level description:
+-- 
+1.8.0
+

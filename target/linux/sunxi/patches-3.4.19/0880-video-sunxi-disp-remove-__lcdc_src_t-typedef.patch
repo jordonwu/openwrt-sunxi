@@ -1,0 +1,143 @@
+From ba48d45f2ff4b8bd0bf50f089950f803542c7bf2 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sun, 28 Oct 2012 02:39:00 +0200
+Subject: [PATCH 880/944] video:sunxi:disp: remove __lcdc_src_t typedef
+
+And add proper typechecking to TON?_select_src() in the process.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/de_lcdc.c        | 32 ++++++++++++++++++++-----------
+ drivers/video/sunxi/disp/ebios_lcdc_tve.h |  8 ++++----
+ 2 files changed, 25 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_lcdc.c b/drivers/video/sunxi/disp/de_lcdc.c
+index d953443..7355a3c 100644
+--- a/drivers/video/sunxi/disp/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_lcdc.c
+@@ -57,8 +57,8 @@ __s32 LCDC_init(__u32 sel)
+ 	LCDC_enable_int(sel, LCDC_LTI_LCD_EN);
+ 	LCDC_enable_int(sel, LCDC_LTI_HD_EN);
+ 
+-	TCON0_select_src(sel, 0);
+-	TCON1_select_src(sel, 0);
++	TCON0_select_src(sel, LCDC_SRC_DE1);
++	TCON1_select_src(sel, LCDC_SRC_DE1);
+ 
+ 	LCDC_open(sel);
+ 
+@@ -391,33 +391,34 @@ void TCON0_cfg(__u32 sel, __panel_para_t *info)
+ 	LCDC_set_int_line(sel, 0, info->start_delay + 2);
+ }
+ 
+-__s32 TCON0_select_src(__u32 sel, __u8 src)
++__s32 TCON0_select_src(__u32 sel, enum lcdc_src src)
+ {
+ 	__u32 tmp;
+ 
+ 	tmp = LCDC_RUINT32(sel, LCDC_CTL_OFF);
+ 	tmp = tmp & 0xffbffffc;
++
+ 	switch (src) {
+ 	case LCDC_SRC_DE1:
+ 		tmp = tmp | 0x00;
+ 		break;
+-
+ 	case LCDC_SRC_DE2:
+ 		tmp = tmp | 0x01;
+ 		break;
+-
+ 	case LCDC_SRC_DMA:
+ 		tmp = tmp | 0x02;
+ 		break;
+-
+ 	case LCDC_SRC_WHITE:
+ 		tmp = tmp | 0x00400003;
+ 		break;
+-
+ 	case LCDC_SRC_BLACK:
+ 		tmp = tmp | 0x03;
+ 		break;
++	default:
++		pr_warn("%s: unknown source %d\n", __func__, src);
++		break;
+ 	}
++
+ 	LCDC_WUINT32(sel, LCDC_CTL_OFF, tmp);
+ 	return 0;
+ }
+@@ -1124,19 +1125,28 @@ __s32 TCON1_set_vga_mode(__u32 sel, __u8 mode)
+ 	return 0;
+ }
+ 
+-__s32 TCON1_select_src(__u32 sel, __u8 src)
++__s32 TCON1_select_src(__u32 sel, enum lcdc_src src)
+ {
+ 	__u32 tv_tmp;
+ 
+ 	tv_tmp = LCDC_RUINT32(sel, LCDC_HDTVIF_OFF);
+ 
+ 	tv_tmp = tv_tmp & 0xfffffffc;
+-	if (src == LCDC_SRC_DE1)
++
++	switch (src) {
++	case LCDC_SRC_DE1:
+ 		tv_tmp = tv_tmp | 0x00;
+-	else if (src == LCDC_SRC_DE2)
++		break;
++	case LCDC_SRC_DE2:
+ 		tv_tmp = tv_tmp | 0x01;
+-	else if (src == LCDC_SRC_BLUE)
++		break;
++	case LCDC_SRC_BLUE:
+ 		tv_tmp = tv_tmp | 0x02;
++		break;
++	default:
++		pr_warn("%s: unknown source %d\n", __func__, src);
++		break;
++	}
+ 
+ 	LCDC_WUINT32(sel, LCDC_HDTVIF_OFF, tv_tmp);
+ 
+diff --git a/drivers/video/sunxi/disp/ebios_lcdc_tve.h b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+index e1b9eaf..4f53f95 100644
+--- a/drivers/video/sunxi/disp/ebios_lcdc_tve.h
++++ b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+@@ -33,14 +33,14 @@
+ #define LCDC_LTI_LCD_FLAG	0x00002000
+ #define LCDC_LTI_HD_FLAG	0x00001000
+ 
+-typedef enum {
++enum lcdc_src {
+ 	LCDC_SRC_DE1 = 0,
+ 	LCDC_SRC_DE2 = 1,
+ 	LCDC_SRC_DMA = 2,
+ 	LCDC_SRC_BLACK = 3,
+ 	LCDC_SRC_WHITE = 4,
+ 	LCDC_SRC_BLUE = 5,
+-} __lcdc_src_t;
++};
+ 
+ typedef enum {
+ 	LCDC_LCDIF_HV = 0,
+@@ -160,7 +160,7 @@ void TCON0_cfg(__u32 sel, __panel_para_t *info);
+ __s32 TCON0_get_width(__u32 sel);
+ __s32 TCON0_get_height(__u32 sel);
+ __s32 TCON0_set_dclk_div(__u32 sel, __u8 div);
+-__s32 TCON0_select_src(__u32 sel, __u8 src);
++__s32 TCON0_select_src(__u32 sel, enum lcdc_src src);
+ __u32 TCON0_get_dclk_div(__u32 sel);
+ 
+ __u32 TCON1_open(__u32 sel);
+@@ -170,7 +170,7 @@ __u32 TCON1_cfg_ex(__u32 sel, __panel_para_t *info);
+ __u32 TCON1_set_hdmi_mode(__u32 sel, __u8 mode);
+ __u32 TCON1_set_tv_mode(__u32 sel, __u8 mode);
+ __s32 TCON1_set_vga_mode(__u32 sel, __u8 mode);
+-__s32 TCON1_select_src(__u32 sel, __u8 src);
++__s32 TCON1_select_src(__u32 sel, enum lcdc_src src);
+ __bool TCON1_in_valid_regn(__u32 sel, __u32 juststd);
+ __s32 TCON1_get_width(__u32 sel);
+ __s32 TCON1_get_height(__u32 sel);
+-- 
+1.8.0
+

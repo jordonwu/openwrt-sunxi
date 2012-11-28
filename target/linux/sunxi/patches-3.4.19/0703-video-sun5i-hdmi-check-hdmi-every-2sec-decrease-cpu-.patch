@@ -1,0 +1,43 @@
+From 76d987ae1bcb2242c6837b9de97e04fcf6e3a2bb Mon Sep 17 00:00:00 2001
+From: Nicholas Semendyaev <agent00791@gmail.com>
+Date: Sun, 24 Jun 2012 14:57:17 +0700
+Subject: [PATCH 703/944] video: sun5i-hdmi: check hdmi every 2sec, decrease
+ cpu usage (ksoftirqd/0)
+
+close #43
+
+merge 791c38fa90b2ae52beafc0430493ea5b12c318a5 intended for sun4i-hdmi
+---
+ drivers/video/sun5i/hdmi/drv_hdmi.c | 15 +--------------
+ 1 file changed, 1 insertion(+), 14 deletions(-)
+
+diff --git a/drivers/video/sun5i/hdmi/drv_hdmi.c b/drivers/video/sun5i/hdmi/drv_hdmi.c
+index cc17b76..9f78cd1 100644
+--- a/drivers/video/sun5i/hdmi/drv_hdmi.c
++++ b/drivers/video/sun5i/hdmi/drv_hdmi.c
+@@ -236,21 +236,8 @@ int Hdmi_run_thread(void *parg)
+ {
+ 	while (1)
+ 	{
+-		//if(ghdmi.bopen == 0)
+-		//{
+-		//	down(run_sem);
+-		//}
+-
+ 		Hdmi_hal_main_task();
+-
+-		if(ghdmi.bopen)
+-		{
+-			hdmi_delay_ms(200);
+-		}
+-		else
+-		{
+-			hdmi_delay_ms(200);
+-		}
++		hdmi_delay_ms(2000);
+ 	}
+ 
+ 	return 0;
+-- 
+1.8.0
+

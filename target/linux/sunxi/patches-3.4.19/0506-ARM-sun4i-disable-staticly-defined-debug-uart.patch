@@ -1,0 +1,42 @@
+From 6e1ef11cf34ee768c89c3e2012271c13829026ad Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 4 Jun 2012 10:37:13 +0200
+Subject: [PATCH 506/944] ARM: sun4i: disable staticly defined debug uart
+
+---
+ arch/arm/mach-sun4i/devices.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-sun4i/devices.c b/arch/arm/mach-sun4i/devices.c
+index a2f07b2..c19de93 100644
+--- a/arch/arm/mach-sun4i/devices.c
++++ b/arch/arm/mach-sun4i/devices.c
+@@ -30,6 +30,7 @@
+ #include <mach/hardware.h>
+ #include <mach/i2c.h>
+ 
++#if 0
+ /* uart */
+ static struct plat_serial8250_port debug_uart_platform_data[] = {
+ 	{
+@@ -52,6 +53,7 @@ static struct platform_device debug_uart = {
+ 		.platform_data = debug_uart_platform_data,
+ 	},
+ };
++#endif
+ 
+ /* dma */
+ static struct platform_device sw_pdev_dmac = {
+@@ -165,7 +167,9 @@ struct platform_device sun4i_twi2_device = {
+ };
+ 
+ static struct platform_device *sw_pdevs[] __initdata = {
++#if 0
+ 	&debug_uart,
++#endif
+ 	&sw_pdev_dmac,
+ 	&sw_pdev_nand,
+ 	&sun4i_twi0_device,
+-- 
+1.8.0
+

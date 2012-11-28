@@ -1,0 +1,25 @@
+From ba2a99737e8a26b700804779ecc1b72f592d3f56 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 16 May 2012 09:11:15 +0200
+Subject: [PATCH 442/944] arm: sun4i: dma: fix section mismatch
+
+---
+ arch/arm/mach-sun4i/dma/dma_15.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/dma/dma_15.c b/arch/arm/mach-sun4i/dma/dma_15.c
+index 0092e62..3ce9119 100644
+--- a/arch/arm/mach-sun4i/dma/dma_15.c
++++ b/arch/arm/mach-sun4i/dma/dma_15.c
+@@ -222,7 +222,7 @@ static struct sw_dma_map __initdata sw_dma_mappings[DMACH_MAX] = {
+ 	},
+ };
+ 
+-static struct sw_dma_selection __initdata sw_dma_sel = {
++static struct sw_dma_selection __refdata sw_dma_sel = {
+ 	.dcon_mask	= 0xffffffff,
+ 	.map		= sw_dma_mappings,
+ 	.map_size	= ARRAY_SIZE(sw_dma_mappings),
+-- 
+1.8.0
+

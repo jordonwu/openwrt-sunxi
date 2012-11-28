@@ -1,0 +1,36 @@
+From d4fe84dd6eebc11774808f2eb094ed0826fa3c33 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Wed, 26 Sep 2012 19:52:59 -0700
+Subject: [PATCH 746/944] staging: android: lowmemorykiller: Change default
+ debug_level to 1
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The select...to kill messages are not very useful when not debugging
+the lowmemorykiller itself. After the change to check TIF_MEMDIE
+instead of using a task notifer this message can also get very
+noisy.
+
+Change-Id: Ice171c25801d6faa454b885a23b24b002423b754
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+---
+ drivers/staging/android/lowmemorykiller.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/android/lowmemorykiller.c b/drivers/staging/android/lowmemorykiller.c
+index 77b3500..12f0a13 100644
+--- a/drivers/staging/android/lowmemorykiller.c
++++ b/drivers/staging/android/lowmemorykiller.c
+@@ -39,7 +39,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/notifier.h>
+ 
+-static uint32_t lowmem_debug_level = 2;
++static uint32_t lowmem_debug_level = 1;
+ static int lowmem_adj[6] = {
+ 	0,
+ 	1,
+-- 
+1.8.0
+

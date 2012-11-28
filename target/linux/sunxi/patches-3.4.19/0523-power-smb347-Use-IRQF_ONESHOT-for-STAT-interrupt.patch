@@ -1,0 +1,32 @@
+From 0c3158e9965ad76cf2a4b44fe36be52159f8fc0c Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Tue, 10 Jul 2012 15:14:38 -0700
+Subject: [PATCH 523/944] power: smb347: Use IRQF_ONESHOT for STAT interrupt
+
+From code by HongMin Son <hongmin.son@samsung.com>
+
+Change-Id: I87645392efceff9ea2d0edd5bb84a089ccbd4f86
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+Signed-off-by: HongMin Son <hongmin.son@samsung.com>
+---
+ drivers/power/smb347-charger.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index dcaa546..33784e5 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -902,8 +902,8 @@ static int smb347_irq_init(struct smb347_charger *smb)
+ 		goto fail;
+ 
+ 	ret = request_threaded_irq(irq, NULL, smb347_interrupt,
+-				   IRQF_TRIGGER_FALLING, smb->client->name,
+-				   smb);
++				   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
++				   smb->client->name, smb);
+ 	if (ret < 0)
+ 		goto fail_gpio;
+ 
+-- 
+1.8.0
+

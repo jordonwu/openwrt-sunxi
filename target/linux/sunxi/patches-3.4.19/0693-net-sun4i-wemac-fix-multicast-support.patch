@@ -1,0 +1,26 @@
+From 518095534c85454340e54eacfc4cd5d2346a1b1b Mon Sep 17 00:00:00 2001
+From: Roman Mamedov <rm@romanrm.ru>
+Date: Fri, 27 Jul 2012 21:14:40 +0200
+Subject: [PATCH 693/944] net: sun4i-wemac: fix multicast support
+
+by disabling the not-implemented hash filer. closes #59
+---
+ drivers/net/ethernet/sun4i/sun4i_wemac.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/sun4i/sun4i_wemac.h b/drivers/net/ethernet/sun4i/sun4i_wemac.h
+index 84dad74..d4834d9 100644
+--- a/drivers/net/ethernet/sun4i/sun4i_wemac.h
++++ b/drivers/net/ethernet/sun4i/sun4i_wemac.h
+@@ -180,7 +180,7 @@
+ #define EMAC_RX_UCAD        1  //0: Not accept             1: Accept unicast Packets(default)
+ #define EMAC_RX_DAF         1  //0: Normal(default)        1: DA Filtering
+ #define EMAC_RX_MCO         1  //0: Not accept             1: Accept multicast Packets(default)
+-#define EMAC_RX_MHF         1  //0: Disable(default)       1: Enable Hash filter
++#define EMAC_RX_MHF         0  //0: Disable(default)       1: Enable Hash filter
+ #define EMAC_RX_BCO		    1  //0: Not accept             1: Accept Broadcast Packets(default)
+ #define EMAC_RX_SAF         0  //0: Disable(default)       1: Enable SA Filtering
+ #define EMAC_RX_SAIF        0  //0: Normal(default)        1: Inverse Filtering
+-- 
+1.8.0
+

@@ -1,0 +1,75 @@
+From cc572ee80bb833cd5df03d69a35c3f64708d3423 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Fri, 14 Sep 2012 12:00:22 +0200
+Subject: [PATCH 751/944] sunxi: Remove incorrect Allwinner copyright
+
+---
+ kernel/power/console.c | 22 ----------------------
+ kernel/power/suspend.c | 22 ----------------------
+ 2 files changed, 44 deletions(-)
+
+diff --git a/kernel/power/console.c b/kernel/power/console.c
+index 6650aca..e3939b0 100644
+--- a/kernel/power/console.c
++++ b/kernel/power/console.c
+@@ -1,26 +1,4 @@
+ /*
+- * kernel/power/console.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+  * drivers/power/process.c - Functions for saving/restoring console.
+  *
+  * Originally from swsusp.
+diff --git a/kernel/power/suspend.c b/kernel/power/suspend.c
+index 6f39488..b1a8891 100644
+--- a/kernel/power/suspend.c
++++ b/kernel/power/suspend.c
+@@ -1,26 +1,4 @@
+ /*
+- * kernel/power/suspend.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+  * kernel/power/suspend.c - Suspend to RAM and standby functionality.
+  *
+  * Copyright (c) 2003 Patrick Mochel
+-- 
+1.8.0
+

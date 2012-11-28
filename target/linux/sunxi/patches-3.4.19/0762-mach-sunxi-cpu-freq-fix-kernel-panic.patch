@@ -1,0 +1,66 @@
+From 712e16f95d95ef4d75ab2bce9cdfdad5668fc358 Mon Sep 17 00:00:00 2001
+From: Aliaksei Katovich <aliaksei.katovich@gmail.com>
+Date: Tue, 25 Sep 2012 15:27:27 +0300
+Subject: [PATCH 762/944] mach-sunxi: cpu-freq: fix kernel panic
+
+Result of regulator_get() call is not checked properly against error causing
+kernel to panic:
+
+[...]
+[    2.010000] Unable to handle kernel paging request at virtual address fffffe2b
+[    2.010000] pgd = c0004000
+[    2.020000] [fffffe2b] *pgd=6f7fe821, *pte=00000000, *ppte=00000000
+[    2.020000] Internal error: Oops: 17 [#1] PREEMPT ARM
+[    2.020000] Modules linked in:
+[    2.020000] CPU: 0    Not tainted  (3.6.0-rc6+ #50)
+[    2.020000] PC is at regulator_get_voltage+0xc/0x3c
+[    2.020000] LR is at sun4i_cpufreq_initcall+0xd0/0x12c
+[...]
+
+Signed-off-by: Aliaksei Katovich <aliaksei.katovich@gmail.com>
+---
+ arch/arm/mach-sun4i/cpu-freq/cpu-freq.c | 8 ++++----
+ arch/arm/mach-sun5i/cpu-freq/cpu-freq.c | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
+index b305b64..04e7f0d 100644
+--- a/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
++++ b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
+@@ -730,10 +730,10 @@ static __init int sun4i_cpufreq_initclks(void)
+ 
+     #ifdef CONFIG_CPU_FREQ_DVFS
+     corevdd = regulator_get(NULL, "axp20_core");
+-    if(!corevdd) {
+-        CPUFREQ_INF("try to get regulator failed, core vdd will not changed!\n");
+-    }
+-    else {
++	if (IS_ERR(corevdd)) {
++		CPUFREQ_INF("try to get regulator failed, core vdd will not changed!\n");
++		corevdd = NULL;
++	} else {
+         CPUFREQ_INF("try to get regulator(0x%x) successed.\n", (__u32)corevdd);
+         last_vdd = regulator_get_voltage(corevdd) / 1000;
+     }
+diff --git a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
+index 7907b76..7da2e90 100644
+--- a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
++++ b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
+@@ -725,10 +725,10 @@ static __init int sun4i_cpufreq_initclks(void)
+ 
+     #ifdef CONFIG_CPU_FREQ_DVFS
+     corevdd = regulator_get(NULL, "axp20_core");
+-    if(!corevdd) {
+-        CPUFREQ_INF("try to get regulator failed, core vdd will not changed!\n");
+-    }
+-    else {
++	if (IS_ERR(corevdd)) {
++		CPUFREQ_INF("try to get regulator failed, core vdd will not changed!\n");
++		corevdd = NULL;
++	} else {
+         CPUFREQ_INF("try to get regulator(0x%x) successed.\n", (__u32)corevdd);
+         last_vdd = regulator_get_voltage(corevdd) / 1000;
+     }
+-- 
+1.8.0
+

@@ -1,0 +1,25 @@
+From 8396545ac7a7d642a52c854a6f039a11f9acf645 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 24 May 2012 09:55:41 +0200
+Subject: [PATCH 468/944] arm: sun5i: standby: use your own standby, not
+ sun4i's!
+
+---
+ arch/arm/mach-sun5i/pm/standby.S | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun5i/pm/standby.S b/arch/arm/mach-sun5i/pm/standby.S
+index 843c7f4..0aca885 100644
+--- a/arch/arm/mach-sun5i/pm/standby.S
++++ b/arch/arm/mach-sun5i/pm/standby.S
+@@ -1,6 +1,6 @@
+ 	.globl	standby_bin_start
+ standby_bin_start:
+-	.incbin	"arch/arm/mach-sun4i/pm/standby/standby.code"
++	.incbin	"arch/arm/mach-sun5i/pm/standby/standby.code"
+ 	.globl	standby_bin_end
+ standby_bin_end:
+ 	.align	2
+-- 
+1.8.0
+

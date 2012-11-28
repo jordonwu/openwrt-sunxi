@@ -1,0 +1,35 @@
+From cf3bfd9426609a72cc480ff2ce4b5168ed900e6b Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Mon, 6 Aug 2012 12:01:51 -0700
+Subject: [PATCH 636/944] power: android_battery: fix negative temperature
+ display
+
+Change-Id: Ic9798bc5194b6192fec726a8f136867f111e4765
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/android_battery.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/power/android_battery.c b/drivers/power/android_battery.c
+index b8f9350..f8de0c8 100644
+--- a/drivers/power/android_battery.c
++++ b/drivers/power/android_battery.c
+@@ -330,11 +330,11 @@ static void android_bat_monitor_work(struct work_struct *work)
+ 		break;
+ 	}
+ 
+-	pr_info("battery: l=%d v=%d c=%d temp=%d.%d h=%d st=%d type=%s\n",
++	pr_info("battery: l=%d v=%d c=%d temp=%s%ld.%ld h=%d st=%d type=%s\n",
+ 		battery->batt_soc, battery->batt_vcell/1000,
+-		battery->batt_current, battery->batt_temp / 10,
+-		battery->batt_temp % 10, battery->batt_health,
+-		battery->charging_status,
++		battery->batt_current, battery->batt_temp < 0 ? "-" : "",
++		abs(battery->batt_temp / 10), abs(battery->batt_temp % 10),
++		battery->batt_health, battery->charging_status,
+ 		charge_source_str(battery->charge_source));
+ 	power_supply_changed(&battery->psy_bat);
+ 	battery->last_poll = ktime_get_boottime();
+-- 
+1.8.0
+

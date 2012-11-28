@@ -1,0 +1,95 @@
+From e76272a21fa559cdb2f420b039492d6ab65d4590 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 13 May 2012 02:20:01 +0200
+Subject: [PATCH 427/944] lichee: use linaro's toolchain
+
+---
+ scripts/build_a12.sh         | 2 +-
+ scripts/build_a13.sh         | 2 +-
+ scripts/build_sun4i-lite.sh  | 2 +-
+ scripts/build_sun4i.sh       | 2 +-
+ scripts/build_sun4i_crane.sh | 2 +-
+ scripts/build_sun5i.sh       | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/scripts/build_a12.sh b/scripts/build_a12.sh
+index 9d0afa8..b26efec 100755
+--- a/scripts/build_a12.sh
++++ b/scripts/build_a12.sh
+@@ -3,7 +3,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+diff --git a/scripts/build_a13.sh b/scripts/build_a13.sh
+index 2824254..7dbfb46 100755
+--- a/scripts/build_a13.sh
++++ b/scripts/build_a13.sh
+@@ -3,7 +3,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index ac042fd..4b9a6a6 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -9,7 +9,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index dab592d..3b5b2b0 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -9,7 +9,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index 82f9b09..2ee868f 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -9,7 +9,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+diff --git a/scripts/build_sun5i.sh b/scripts/build_sun5i.sh
+index 86532b1..86f6caf 100755
+--- a/scripts/build_sun5i.sh
++++ b/scripts/build_sun5i.sh
+@@ -3,7 +3,7 @@ set -e
+ 
+ #Setup common variables
+ export ARCH=arm
+-export CROSS_COMPILE=arm-none-linux-gnueabi-
++export CROSS_COMPILE=arm-linux-gnueabi-
+ export AS=${CROSS_COMPILE}as
+ export LD=${CROSS_COMPILE}ld
+ export CC=${CROSS_COMPILE}gcc
+-- 
+1.8.0
+

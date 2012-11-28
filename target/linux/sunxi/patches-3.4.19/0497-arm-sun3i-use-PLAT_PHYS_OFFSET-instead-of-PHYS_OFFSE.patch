@@ -1,0 +1,25 @@
+From 02b509e3f4980e09e99722c68627fe18af57c472 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 1 Jun 2012 22:09:20 +0200
+Subject: [PATCH 497/944] arm: sun3i: use PLAT_PHYS_OFFSET instead of
+ PHYS_OFFSET
+
+---
+ arch/arm/mach-sun3i/include/mach/memory.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun3i/include/mach/memory.h b/arch/arm/mach-sun3i/include/mach/memory.h
+index e6b3ad8..0bea228 100644
+--- a/arch/arm/mach-sun3i/include/mach/memory.h
++++ b/arch/arm/mach-sun3i/include/mach/memory.h
+@@ -23,6 +23,6 @@
+ /*
+  * Physical DRAM offset.
+  */
+-#define PHYS_OFFSET	UL(0x80000000)
++#define PLAT_PHYS_OFFSET	UL(0x80000000)
+ 
+ #endif
+-- 
+1.8.0
+

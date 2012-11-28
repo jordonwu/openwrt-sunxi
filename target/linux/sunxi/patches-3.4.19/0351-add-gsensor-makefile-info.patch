@@ -1,0 +1,37 @@
+From 3638b0ec9edf855521d39b9d2f0db0bf9f011294 Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@LServer.(none)>
+Date: Fri, 18 Nov 2011 14:07:28 +0800
+Subject: [PATCH 351/944] add gsensor makefile info
+
+---
+ drivers/Kconfig  | 1 +
+ drivers/Makefile | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index a765f40..715f0ba 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -44,6 +44,7 @@ source "drivers/isdn/Kconfig"
+ 
+ source "drivers/input/Kconfig"
+ 
++source "drivers/gsensor/Kconfig"
+ source "drivers/char/Kconfig"
+ 
+ source "drivers/i2c/Kconfig"
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 4949da3..432edfa 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -79,6 +79,7 @@ obj-$(CONFIG_USB_SW_SUN4I_USB) += usb/sun4i_usb/
+ obj-$(CONFIG_SERIO)		+= input/serio/
+ obj-$(CONFIG_GAMEPORT)		+= input/gameport/
+ obj-$(CONFIG_INPUT)		+= input/
++obj-$(CONFIG_GSENSOR)		+= gsensor/
+ obj-$(CONFIG_I2O)		+= message/
+ obj-$(CONFIG_RTC_LIB)		+= rtc/
+ obj-y				+= i2c/ media/
+-- 
+1.8.0
+

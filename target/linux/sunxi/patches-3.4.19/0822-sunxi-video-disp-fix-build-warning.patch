@@ -1,0 +1,26 @@
+From 88851251780f601bc9d06c45c9f11a2d91b8aee4 Mon Sep 17 00:00:00 2001
+From: Alexsey Shestacov <wingrime@gmail.com>
+Date: Sat, 20 Oct 2012 20:27:18 +0600
+Subject: [PATCH 822/944] sunxi: video: disp: fix build warning
+
+drivers/video/sunxi/disp/dev_disp.c:1686: warning: 'state.event' may be used uninitialized in this function
+---
+ drivers/video/sunxi/disp/dev_disp.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index b59d29c..cd364c3 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -1682,7 +1682,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 
+ 		case DISP_CMD_SUSPEND:
+ 		{
+-		    pm_message_t state;
++		  pm_message_t state = {};
+ 
+ 			ret = disp_suspend(0, state);
+ 			break;
+-- 
+1.8.0
+

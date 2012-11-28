@@ -1,0 +1,24 @@
+From 03a3dba918ef63f83e6e30123950e7ee44d84c77 Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Sat, 26 Nov 2011 19:48:16 +0800
+Subject: [PATCH 386/944] mmc: clear warning in compiling.
+
+---
+ drivers/mmc/sunxi-host/smc_syscall.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/mmc/sunxi-host/smc_syscall.h b/drivers/mmc/sunxi-host/smc_syscall.h
+index ded5995..abbb3ec 100644
+--- a/drivers/mmc/sunxi-host/smc_syscall.h
++++ b/drivers/mmc/sunxi-host/smc_syscall.h
+@@ -165,7 +165,6 @@ static inline void aw_gpio_trigger_single1(void)
+ static inline void aw_gpio_cfg_pi1(void)
+ {
+ 	u32 rval;
+-    u32 backup;
+     void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
+     void __iomem* data_base = (void __iomem*)PI_DAT_REG;
+ 
+-- 
+1.8.0
+

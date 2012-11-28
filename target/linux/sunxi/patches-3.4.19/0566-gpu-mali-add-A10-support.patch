@@ -1,0 +1,262 @@
+From 514b9ab1d3a5199fcbda75cafbc1b9e6747661a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 4 Jun 2012 12:29:50 +0000
+Subject: [PATCH 566/944] gpu: mali: add A10 support
+
+---
+ .../mali/arch-ca8-virtex820-m400-1/config.h        |  82 +++++++++++++
+ .../mali/platform/mali400-pmu/mali_platform.c      | 136 +++++++++++++++++++++
+ .../ump/arch-ca8-virtex820-m400-1/config.h         |   8 ++
+ 3 files changed, 226 insertions(+)
+ create mode 100644 drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/arch-ca8-virtex820-m400-1/config.h
+ create mode 100644 drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
+ create mode 100644 drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/ump/arch-ca8-virtex820-m400-1/config.h
+
+diff --git a/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/arch-ca8-virtex820-m400-1/config.h b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/arch-ca8-virtex820-m400-1/config.h
+new file mode 100644
+index 0000000..6cc6a47
+--- /dev/null
++++ b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/arch-ca8-virtex820-m400-1/config.h
+@@ -0,0 +1,82 @@
++/*
++ * This confidential and proprietary software may be used only as
++ * authorised by a licensing agreement from ARM Limited
++ * (C) COPYRIGHT 2008-2010 ARM Limited
++ * ALL RIGHTS RESERVED
++ * The entire notice above must be reproduced on all authorised
++ * copies and copies may only be made to the extent permitted
++ * by a licensing agreement from ARM Limited.
++ */
++
++#ifndef __ARCH_CONFIG_H__
++#define __ARCH_CONFIG_H__
++
++/* Configuration for the EB platform with ZBT memory enabled */
++
++static _mali_osk_resource_t arch_configuration [] =
++{
++	{
++		.type = PMU,
++		.description = "Mali-400 PMU",
++		.base = 0x01C42000,
++		.irq = 73,
++		.mmu_id = 0
++	},
++	{
++		.type = MALI400GP,
++		.description = "Mali-400 GP",
++		.base = 0x01C40000,
++		.irq = 69,
++		.mmu_id = 1
++	},
++	{
++		.type = MALI400PP,
++		.base = 0x01C48000,
++		.irq = 71,
++		.description = "Mali-400 PP",
++		.mmu_id = 2
++	},
++	{
++		.type = MMU,
++		.base = 0x01C43000,
++		.irq = 70,
++		.description = "Mali-400 MMU for GP",
++		.mmu_id = 1
++	},
++	{
++		.type = MMU,
++		.base = 0x01C44000,
++		.irq = 72,
++		.description = "Mali-400 MMU for PP",
++		.mmu_id = 2
++	},
++	{
++		.type = MEMORY,
++		.description = "Mali Sdram",
++		.alloc_order = 0,    /* highest preference for this memory */
++		.base = 0x5C000000,
++		.size = 64 * 1024 * 1024, /*64M*/
++		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_MMU_READABLE | _MALI_MMU_WRITEABLE
++	},
++	{
++		.type = MEM_VALIDATION,
++		.description = "Framebuffer",
++		.base = 0x5A000000,
++		.size = 32 * 1024 * 1024,  /*32M*/
++		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_MMU_READABLE | _MALI_MMU_WRITEABLE
++	},
++	{
++		.type = OS_MEMORY,
++		.description = "OS Memory",
++		.alloc_order = 1, /* Lowest preference for this memory */
++		.size = 192 * 1024 * 1024, /* 64 MB */
++		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_MMU_READABLE | _MALI_MMU_WRITEABLE
++	},
++	{
++		.type = MALI400L2,
++		.base = 0x01C41000,
++		.description = "Mali-400 L2 cache"
++	},
++};
++
++#endif /* __ARCH_CONFIG_H__ */
+diff --git a/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
+new file mode 100644
+index 0000000..0b1c023
+--- /dev/null
++++ b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/mali/platform/mali400-pmu/mali_platform.c
+@@ -0,0 +1,136 @@
++/*
++ * Copyright (C) 2010-2011 ARM Limited. All rights reserved.
++ *
++ * This program is free software and is provided to you under the terms of the GNU General Public License version 2
++ * as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
++ *
++ * A copy of the licence is included with the program, and can also be obtained from Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++ */
++
++/**
++ * @file mali_platform.c
++ * Platform specific Mali driver functions for a default platform
++ */
++#include "mali_kernel_common.h"
++#include "mali_osk.h"
++#include "mali_platform.h"
++
++#include <linux/module.h>
++#include <linux/clk.h>
++#include <mach/irqs.h>
++#include <mach/clock.h>
++#include <mach/sys_config.h>
++
++
++int mali_clk_div = 3;
++module_param(mali_clk_div, int, S_IRUSR | S_IWUSR | S_IWGRP | S_IRGRP | S_IROTH);
++MODULE_PARM_DESC(mali_clk_div, "Clock divisor for mali");
++
++struct clk *h_ahb_mali, *h_mali_clk, *h_ve_pll;
++int mali_clk_flag=0;
++
++
++_mali_osk_errcode_t mali_platform_init(void)
++{
++	unsigned long rate;
++	int clk_div;
++	int mali_used = 0;
++
++	//get mali ahb clock
++	h_ahb_mali = clk_get(NULL, "ahb_mali");
++	if(!h_ahb_mali){
++		MALI_PRINT(("try to get ahb mali clock failed!\n"));
++	}
++	//get mali clk
++	h_mali_clk = clk_get(NULL, "mali");
++	if(!h_mali_clk){
++		MALI_PRINT(("try to get mali clock failed!\n"));
++	}
++
++	h_ve_pll = clk_get(NULL, "ve_pll");
++	if(!h_ve_pll){
++		MALI_PRINT(("try to get ve pll clock failed!\n"));
++	}
++
++	//set mali parent clock
++	if(clk_set_parent(h_mali_clk, h_ve_pll)){
++		MALI_PRINT(("try to set mali clock source failed!\n"));
++	}
++
++	//set mali clock
++	rate = clk_get_rate(h_ve_pll);
++
++	if(!script_parser_fetch("mali_para", "mali_used", &mali_used, 1)) {
++		if (mali_used == 1) {
++			if (!script_parser_fetch("mali_para", "mali_clkdiv", &clk_div, 1)) {
++				if (clk_div > 0) {
++					pr_info("mali: use config clk_div %d\n", clk_div);
++					mali_clk_div = clk_div;
++				}
++			}
++		}
++	}
++
++	pr_info("mali: clk_div %d\n", mali_clk_div);
++	rate /= mali_clk_div;
++
++	if(clk_set_rate(h_mali_clk, rate)){
++		MALI_PRINT(("try to set mali clock failed!\n"));
++	}
++
++	if(clk_reset(h_mali_clk,0)){
++		MALI_PRINT(("try to reset release failed!\n"));
++	}
++
++	MALI_PRINT(("mali clock set completed, clock is  %d Mhz\n", rate));
++
++
++	/*enable mali axi/apb clock*/
++	if(mali_clk_flag == 0)
++	{
++		//printk(KERN_WARNING "enable mali clock\n");
++		//MALI_PRINT(("enable mali clock\n"));
++		mali_clk_flag = 1;
++	       if(clk_enable(h_ahb_mali))
++	       {
++		     MALI_PRINT(("try to enable mali ahb failed!\n"));
++	       }
++	       if(clk_enable(h_mali_clk))
++	       {
++		       MALI_PRINT(("try to enable mali clock failed!\n"));
++	        }
++	}
++
++
++    MALI_SUCCESS;
++}
++
++_mali_osk_errcode_t mali_platform_deinit(void)
++{
++	/*close mali axi/apb clock*/
++	if(mali_clk_flag == 1)
++	{
++		//MALI_PRINT(("disable mali clock\n"));
++		mali_clk_flag = 0;
++	       clk_disable(h_mali_clk);
++	       clk_disable(h_ahb_mali);
++	}
++
++    MALI_SUCCESS;
++}
++
++_mali_osk_errcode_t mali_platform_power_mode_change(mali_power_mode power_mode)
++{
++    MALI_SUCCESS;
++}
++
++void mali_gpu_utilization_handler(u32 utilization)
++{
++}
++
++void set_mali_parent_power_domain(void* dev)
++{
++}
++
++
+diff --git a/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/ump/arch-ca8-virtex820-m400-1/config.h b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/ump/arch-ca8-virtex820-m400-1/config.h
+new file mode 100644
+index 0000000..9560e96
+--- /dev/null
++++ b/drivers/gpu/mali/DX910-SW-99002-r2p4-02rel1/driver/src/devicedrv/ump/arch-ca8-virtex820-m400-1/config.h
+@@ -0,0 +1,8 @@
++#ifndef __ARCH_CONFIG_H__
++#define __ARCH_CONFIG_H__
++
++#define ARCH_UMP_BACKEND_DEFAULT          1
++#define ARCH_UMP_MEMORY_ADDRESS_DEFAULT   0x5E000000
++#define ARCH_UMP_MEMORY_SIZE_DEFAULT 128UL * 1024UL * 1024UL
++
++#endif /* __ARCH_CONFIG_H__ */
+\ No newline at end of file
+-- 
+1.8.0
+

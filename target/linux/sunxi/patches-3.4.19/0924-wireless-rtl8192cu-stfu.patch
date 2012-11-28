@@ -1,0 +1,26 @@
+From cca3f01b2767bc0c9512222c04786ca14fdb5722 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Fri, 2 Nov 2012 02:31:24 +0100
+Subject: [PATCH 924/944] wireless:rtl8192cu: stfu
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/net/wireless/rtl8192cu/include/rtw_debug.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/rtl8192cu/include/rtw_debug.h b/drivers/net/wireless/rtl8192cu/include/rtw_debug.h
+index 65cf1f8..18a5f50e 100644
+--- a/drivers/net/wireless/rtl8192cu/include/rtw_debug.h
++++ b/drivers/net/wireless/rtl8192cu/include/rtw_debug.h
+@@ -244,7 +244,7 @@ extern void rtl871x_cedbg(const char *fmt, ...);
+ 		#endif
+ 
+ 	#elif defined PLATFORM_LINUX
+-		#define _dbgdump	printk
++		#define _dbgdump	pr_debug
+ 	#endif
+ #endif
+ 
+-- 
+1.8.0
+

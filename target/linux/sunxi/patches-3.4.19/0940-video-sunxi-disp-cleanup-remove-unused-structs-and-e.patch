@@ -1,0 +1,176 @@
+From ad84ac606574dd19ac23c808d37b5dd0cb0f81ee Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 19 Nov 2012 21:38:17 +0200
+Subject: [PATCH 940/944] video: sunxi: disp: cleanup, remove unused structs
+ and enumerations
+
+---
+ drivers/video/sunxi/disp/de_layer.c | 30 +++++++++++++-------------
+ drivers/video/sunxi/disp/ebios_de.h | 43 +++----------------------------------
+ 2 files changed, 18 insertions(+), 55 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_layer.c b/drivers/video/sunxi/disp/de_layer.c
+index dcd3e36..4ad9357 100644
+--- a/drivers/video/sunxi/disp/de_layer.c
++++ b/drivers/video/sunxi/disp/de_layer.c
+@@ -19,45 +19,45 @@
+ 
+ #include "de_be.h"
+ 
+-__s32 DE_BE_Format_To_Bpp(__u32 sel, __u8 format)
++__s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format)
+ {
+ 	__u8 bpp = 0;
+ 
+ 	switch (format) {
+-	case DE_MONO_1BPP:
++	case DISP_FORMAT_1BPP:
+ 		bpp = 1;
+ 		break;
+ 
+-	case DE_MONO_2BPP:
++	case DISP_FORMAT_2BPP:
+ 		bpp = 2;
+ 		break;
+ 
+-	case DE_MONO_4BPP:
++	case DISP_FORMAT_4BPP:
+ 		bpp = 4;
+ 		break;
+ 
+-	case DE_MONO_8BPP:
++	case DISP_FORMAT_8BPP:
+ 		bpp = 8;
+ 		break;
+ 
+-	case DE_COLOR_RGB655:
+-	case DE_COLOR_RGB565:
+-	case DE_COLOR_RGB556:
+-	case DE_COLOR_ARGB1555:
+-	case DE_COLOR_RGBA5551:
+-	case DE_COLOR_ARGB4444:
++	case DISP_FORMAT_RGB655:
++	case DISP_FORMAT_RGB565:
++	case DISP_FORMAT_RGB556:
++	case DISP_FORMAT_ARGB1555:
++	case DISP_FORMAT_RGBA5551:
++	case DISP_FORMAT_ARGB4444:
+ 		bpp = 16;
+ 		break;
+ 
+-	case DE_COLOR_RGB0888:
++	case DISP_FORMAT_ARGB888:
+ 		bpp = 32;
+ 		break;
+ 
+-	case DE_COLOR_ARGB8888:
++	case DISP_FORMAT_ARGB8888:
+ 		bpp = 32;
+ 		break;
+ 
+-	case DE_COLOR_RGB888:
++	case DISP_FORMAT_RGB888:
+ 		bpp = 24;
+ 		break;
+ 
+@@ -133,7 +133,7 @@ static __s32 DE_BE_Layer_Set_Line_Width(__u32 sel, __u8 layidx, __u32 width)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __u8 format,
++__s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __disp_pixel_fmt_t format,
+ 			     __bool br_swap, __u8 order)
+ {
+ 	__u32 tmp;
+diff --git a/drivers/video/sunxi/disp/ebios_de.h b/drivers/video/sunxi/disp/ebios_de.h
+index 00ac298..00eaac2 100644
+--- a/drivers/video/sunxi/disp/ebios_de.h
++++ b/drivers/video/sunxi/disp/ebios_de.h
+@@ -33,24 +33,6 @@
+ /* unvalid write back */
+ #define SCAL_WB_ERR_STATUS (1<<12)
+ 
+-/* layer framebuffer format enum definition */
+-typedef enum {
+-	DE_MONO_1BPP = 0,
+-	DE_MONO_2BPP,
+-	DE_MONO_4BPP,
+-	DE_MONO_8BPP,
+-	DE_COLOR_RGB655,
+-	DE_COLOR_RGB565,
+-	DE_COLOR_RGB556,
+-	DE_COLOR_ARGB1555,
+-	DE_COLOR_RGBA5551,
+-	DE_COLOR_RGB0888,
+-	DE_COLOR_ARGB8888,
+-	DE_COLOR_RGB888,
+-	DE_COLOR_ARGB4444,
+-
+-} de_fbfmt_e;
+-
+ /* internal layer framebuffer format enum definition */
+ typedef enum {
+ 	DE_IF1BPP = 0,
+@@ -147,7 +129,7 @@ typedef enum __SCAL_3D_OUTMODE {
+ } __scal_3d_outmode_t;
+ 
+ typedef struct layer_input_src {
+-	__u8 format;
++	__disp_pixel_fmt_t format;
+ 	__u8 pixseq;
+ 	__u8 br_swap;
+ 	__u32 fb_width;
+@@ -158,16 +140,6 @@ typedef struct layer_input_src {
+ 	__bool yuv_ch;
+ } layer_src_t;
+ 
+-/* direct lcd pipe input source definition */
+-typedef struct dlcdp_src {
+-	__u8 format;
+-	__u8 pixseq;
+-	__u32 fb_width;
+-	__u32 fb_addr;
+-	__u32 offset_x;
+-	__u32 offset_y;
+-} de_dlcdp_src_t;
+-
+ typedef struct hwc_src {
+ 	__u8 mode;
+ 	__u32 paddr;
+@@ -193,15 +165,6 @@ typedef struct yuv_ch_src {
+ 	__u8 cs_mode;
+ } de_yuv_ch_src_t;
+ 
+-typedef struct sprite_src {
+-	__u8 pixel_seq;	/* 0,1 */
+-	__u8 format;	/* 0: 32bpp; 1: 8bpp */
+-	__u32 offset_x;
+-	__u32 offset_y;
+-	__u32 fb_addr;
+-	__u32 fb_width;
+-} de_sprite_src_t;
+-
+ typedef struct __SCAL_SRC_TYPE {
+ 	/*
+ 	 * for yuv420, 0: uv_hphase=-0.25, uv_vphase=-0.25;
+@@ -388,7 +351,7 @@ __u32 DE_BE_ClearINT(__u8 sel, __u32 irqsrc);
+ __s32 DE_BE_reg_auto_load_en(__u32 sel, __u32 en);
+ 
+ __s32 DE_BE_Layer_Enable(__u32 sel, __u8 layidx, __bool enable);
+-__s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __u8 format,
++__s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __disp_pixel_fmt_t format,
+ 			     __bool br_swap, __u8 order);
+ __s32 DE_BE_Layer_Set_Framebuffer(__u32 sel, __u8 layidx,
+ 				  layer_src_t *layer_fb);
+@@ -443,7 +406,7 @@ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_output_csc_enable(__u32 sel, __bool enable);
+ #endif
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable);
+-__s32 DE_BE_Format_To_Bpp(__u32 sel, __u8 format);
++__s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format);
+ __u32 DE_BE_Offset_To_Addr(__u32 src_addr, __u32 width, __u32 x, __u32 y,
+ 			   __u32 bpp);
+ __u32 DE_BE_Addr_To_Offset(__u32 src_addr, __u32 off_addr, __u32 width,
+-- 
+1.8.0
+

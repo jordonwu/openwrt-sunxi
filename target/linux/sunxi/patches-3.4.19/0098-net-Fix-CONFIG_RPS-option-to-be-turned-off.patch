@@ -1,0 +1,26 @@
+From 0dcd84058bba9e26f380c4482e208c24e53b2f42 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Mon, 30 Aug 2010 10:29:37 -0700
+Subject: [PATCH 098/944] net: Fix CONFIG_RPS option to be turned off
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/Kconfig b/net/Kconfig
+index e569181..c8ee300 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -232,7 +232,7 @@ source "net/batman-adv/Kconfig"
+ source "net/openvswitch/Kconfig"
+ 
+ config RPS
+-	boolean
++	boolean "RPS"
+ 	depends on SMP && SYSFS && USE_GENERIC_SMP_HELPERS
+ 	default y
+ 
+-- 
+1.8.0
+

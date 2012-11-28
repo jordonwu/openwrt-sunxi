@@ -1,0 +1,38 @@
+From 815a782ba64660bd4db589d5d05f4b8a8412f7ff Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 17 May 2012 13:50:37 +0200
+Subject: [PATCH 444/944] spi: spi-sunxi: fix compilation and section mismatch
+
+---
+ drivers/spi/spi.c       | 1 +
+ drivers/spi/spi_sunxi.c | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 3d8f662..d5c2f13 100644
+--- a/drivers/spi/spi.c
++++ b/drivers/spi/spi.c
+@@ -507,6 +507,7 @@ spi_register_board_info(struct spi_board_info const *info, unsigned n)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(spi_register_board_info);
+ 
+ /*-------------------------------------------------------------------------*/
+ 
+diff --git a/drivers/spi/spi_sunxi.c b/drivers/spi/spi_sunxi.c
+index f9cc400..f3dcac6 100644
+--- a/drivers/spi/spi_sunxi.c
++++ b/drivers/spi/spi_sunxi.c
+@@ -1578,7 +1578,7 @@ static int spi_sunxi_resume(struct platform_device *pdev)
+ #define spi_sunxi_resume	NULL
+ #endif /* CONFIG_PM */
+ 
+-static struct platform_driver spi_sunxi_driver = {
++static struct platform_driver __refdata spi_sunxi_driver = {
+ 	.driver = {
+ #if defined CONFIG_ARCH_SUN4I
+ 		.name	= "sun4i-spi",
+-- 
+1.8.0
+

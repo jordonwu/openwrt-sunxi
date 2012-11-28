@@ -1,0 +1,40 @@
+From 95d23bba446f08a8d60b5ee7736d9014254fb8d9 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Tue, 23 Oct 2012 15:32:42 +0200
+Subject: [PATCH 869/944] video:sunxi:disp: correctly disable screen states in
+ disp_close
+
+Loop over gdisp.screen[] correctly.
+
+Fixes warning: array subscript is above array bounds [-Warray-bounds]
+because without a separate loop, sel is still 2 from the loop before.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/disp_display.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index e9ecd9a..401411c 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -175,9 +175,13 @@ __s32 BSP_disp_close(void)
+ 		}
+ 	}
+ 
+-	gdisp.screen[sel].status &=
+-		~(IMAGE_USED | LCD_ON | TV_ON | VGA_ON | HDMI_ON);
+-	gdisp.screen[sel].lcdc_status &= ~(LCDC_TCON0_USED & LCDC_TCON1_USED);
++	for (sel = 0; sel < 2; sel++) {
++		gdisp.screen[sel].status &=
++			~(IMAGE_USED | LCD_ON | TV_ON | VGA_ON | HDMI_ON);
++		gdisp.screen[sel].lcdc_status &=
++			~(LCDC_TCON0_USED & LCDC_TCON1_USED);
++	}
++
+ 	return DIS_SUCCESS;
+ }
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,186 @@
+From 41c0bbfa8728168afaf69b4fbc976c7c6a5d629c Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 11 Jun 2012 12:13:21 +0200
+Subject: [PATCH 542/944] usb: suxi-udc: convert to use the new udc
+ infrastructure
+ (0f91349b89f37dfad7b77f7829a105b6a0f526ec)
+
+---
+ drivers/usb/sun3i_usb/udc/sw_udc.c | 16 ++++++++++------
+ drivers/usb/sun4i_usb/udc/sw_udc.c | 15 +++++++++------
+ drivers/usb/sun5i_usb/udc/sw_udc.c | 18 ++++++++++--------
+ 3 files changed, 29 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/usb/sun3i_usb/udc/sw_udc.c b/drivers/usb/sun3i_usb/udc/sw_udc.c
+index 7b23694..aaa090d 100644
+--- a/drivers/usb/sun3i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun3i_usb/udc/sw_udc.c
+@@ -2515,6 +2515,10 @@ static int sw_udc_vbus_draw(struct usb_gadget *_gadget, unsigned ma)
+ 	return 0;
+ }
+ 
++static int sun3i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *));
++static int sun3i_stop(struct usb_gadget_driver *driver);
++
+ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.get_frame		    = sw_udc_get_frame,
+ 	.wakeup			    = sw_udc_wakeup,
+@@ -2522,6 +2526,9 @@ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.pullup			    = sw_udc_pullup,
+ 	.vbus_session		= sw_udc_vbus_session,
+ 	.vbus_draw		    = sw_udc_vbus_draw,
++
++	.start		= sun3i_start,
++	.stop		= sun3i_stop,
+ };
+ 
+ //---------------------------------------------------------------
+@@ -2693,8 +2700,8 @@ s32  usbd_stop_work(void)
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
+-		                    int (*bind)(struct usb_gadget *))
++static int sun3i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *))
+ {
+ 	struct sw_udc *udc = the_controller;
+ 	int retval = 0;
+@@ -2771,7 +2778,7 @@ register_error:
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
++static int sun3i_stop(struct usb_gadget_driver *driver)
+ {
+ 	struct sw_udc *udc = the_controller;
+ 
+@@ -3400,9 +3407,6 @@ static void __exit udc_exit(void)
+ 	return ;
+ }
+ 
+-EXPORT_SYMBOL(usb_gadget_probe_driver);
+-EXPORT_SYMBOL(usb_gadget_unregister_driver);
+-
+ module_init(udc_init);
+ module_exit(udc_exit);
+ 
+diff --git a/drivers/usb/sun4i_usb/udc/sw_udc.c b/drivers/usb/sun4i_usb/udc/sw_udc.c
+index 3fd3a45..0f204a3 100644
+--- a/drivers/usb/sun4i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun4i_usb/udc/sw_udc.c
+@@ -2849,6 +2849,10 @@ static int sw_udc_vbus_draw(struct usb_gadget *_gadget, unsigned ma)
+ 	return 0;
+ }
+ 
++static int sun4i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *));
++static int sun4i_stop(struct usb_gadget_driver *driver);
++
+ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.get_frame		    = sw_udc_get_frame,
+ 	.wakeup			    = sw_udc_wakeup,
+@@ -2856,6 +2860,8 @@ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.pullup			    = sw_udc_pullup,
+ 	.vbus_session		= sw_udc_vbus_session,
+ 	.vbus_draw		    = sw_udc_vbus_draw,
++	.start			= sun4i_start,
++	.stop			= sun4i_stop,
+ };
+ 
+ //---------------------------------------------------------------
+@@ -3027,8 +3033,8 @@ s32  usbd_stop_work(void)
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
+-		                    int (*bind)(struct usb_gadget *))
++static int sun4i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *))
+ {
+ 	struct sw_udc *udc = the_controller;
+ 	int retval = 0;
+@@ -3105,7 +3111,7 @@ register_error:
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
++static int sun4i_stop(struct usb_gadget_driver *driver)
+ {
+ 	struct sw_udc *udc = the_controller;
+ 
+@@ -3824,9 +3830,6 @@ static void __exit udc_exit(void)
+ 	return ;
+ }
+ 
+-EXPORT_SYMBOL(usb_gadget_probe_driver);
+-EXPORT_SYMBOL(usb_gadget_unregister_driver);
+-
+ //module_init(udc_init);
+ fs_initcall(udc_init);
+ module_exit(udc_exit);
+diff --git a/drivers/usb/sun5i_usb/udc/sw_udc.c b/drivers/usb/sun5i_usb/udc/sw_udc.c
+index 13294f7..25964e6 100644
+--- a/drivers/usb/sun5i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun5i_usb/udc/sw_udc.c
+@@ -2821,6 +2821,10 @@ static int sw_udc_vbus_draw(struct usb_gadget *_gadget, unsigned ma)
+ 	return 0;
+ }
+ 
++static int sun5i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *));
++static int sun5i_stop(struct usb_gadget_driver *driver);
++
+ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.get_frame		    = sw_udc_get_frame,
+ 	.wakeup			    = sw_udc_wakeup,
+@@ -2828,6 +2832,9 @@ static const struct usb_gadget_ops sw_udc_ops = {
+ 	.pullup			    = sw_udc_pullup,
+ 	.vbus_session		= sw_udc_vbus_session,
+ 	.vbus_draw		    = sw_udc_vbus_draw,
++
++	.start		= sun5i_start,
++	.stop		= sun5i_stop,
+ };
+ 
+ //---------------------------------------------------------------
+@@ -2999,8 +3006,8 @@ s32  usbd_stop_work(void)
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
+-		                    int (*bind)(struct usb_gadget *))
++static int sun5i_start(struct usb_gadget_driver *driver,
++		       int (*bind)(struct usb_gadget *))
+ {
+ 	struct sw_udc *udc = the_controller;
+ 	int retval = 0;
+@@ -3077,7 +3084,7 @@ register_error:
+ *
+ *******************************************************************************
+ */
+-int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
++static int sun5i_stop(struct usb_gadget_driver *driver)
+ {
+ 	struct sw_udc *udc = the_controller;
+ 
+@@ -3787,9 +3794,6 @@ static void __exit udc_exit(void)
+ 	return ;
+ }
+ 
+-EXPORT_SYMBOL(usb_gadget_probe_driver);
+-EXPORT_SYMBOL(usb_gadget_unregister_driver);
+-
+ //module_init(udc_init);
+ fs_initcall(udc_init);
+ module_exit(udc_exit);
+@@ -3799,5 +3803,3 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+ MODULE_VERSION(DRIVER_VERSION);
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS("platform:softwinner-usbgadget");
+-
+-
+-- 
+1.8.0
+

@@ -1,0 +1,37 @@
+From 408962b1326a2c23f91ca4e0061b64528d82e2bc Mon Sep 17 00:00:00 2001
+From: zhangxu <zhangxu@allwinnertech.com>
+Date: Fri, 25 Nov 2011 15:49:03 +0800
+Subject: [PATCH 380/944] [crane] update config
+
+---
+ arch/arm/configs/sun4i_crane_defconfig | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index a81db2a..5c5b947 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -999,7 +999,10 @@ CONFIG_SERIO_LIBPS2=y
+ # CONFIG_SERIO_ALTERA_PS2 is not set
+ # CONFIG_SERIO_PS2MULT is not set
+ # CONFIG_GAMEPORT is not set
+-# CONFIG_GSENSOR is not set
++CONFIG_GSENSOR=y
++CONFIG_SENSORS_BMA250=m
++CONFIG_MEMSIC_ECOMPASS=m
++CONFIG_SENSORS_MXC622X=m
+ 
+ #
+ # Character devices
+@@ -1272,7 +1275,7 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-# CONFIG_LYCHEE_HDMI_SUN4I is not set
++CONFIG_LYCHEE_HDMI_SUN4I=m
+ CONFIG_LYCHEE_FB_SUN4I=m
+ CONFIG_LYCHEE_LCD_SUN4I=m
+ # CONFIG_FB_ARMCLCD is not set
+-- 
+1.8.0
+

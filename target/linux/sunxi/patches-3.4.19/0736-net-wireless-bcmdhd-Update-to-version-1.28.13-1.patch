@@ -1,0 +1,1561 @@
+From 35326a4297a7f6715bc05725b2f2c807af32f827 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Mon, 24 Sep 2012 12:42:34 -0700
+Subject: [PATCH 736/944] net: wireless: bcmdhd: Update to version 1.28.13-1
+
+- Fix sending unproper value for connection status to CFG80211 layer
+- Fix wl_scan_prep which can leave a hole in channel list if channel
+  is a DFS channel and it is virtual interface scan
+- SoftAP: Fix setting DTIM interval
+- Fix len variable to be signed in dhdsdio_download_code_file
+- Add ARP white packet filter list during P2P mode
+- Add extra check if glom is NOT default to update bus:txglom
+
+Change-Id: Ib1fd9f77eef2fb8333fb80e749fda5b7186aa83c
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/Makefile            |   4 +-
+ drivers/net/wireless/bcmdhd/dhd.h               |  29 +--
+ drivers/net/wireless/bcmdhd/dhd_cfg80211.c      |   6 +-
+ drivers/net/wireless/bcmdhd/dhd_common.c        |  42 ++--
+ drivers/net/wireless/bcmdhd/dhd_linux.c         | 158 ++++++++++-----
+ drivers/net/wireless/bcmdhd/dhd_sdio.c          |  54 ++++--
+ drivers/net/wireless/bcmdhd/include/epivers.h   |  16 +-
+ drivers/net/wireless/bcmdhd/include/proto/p2p.h |   2 +-
+ drivers/net/wireless/bcmdhd/include/wlioctl.h   |   2 +-
+ drivers/net/wireless/bcmdhd/wl_android.c        |  13 +-
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c       | 246 +++++++++++++++++-------
+ drivers/net/wireless/bcmdhd/wl_cfg80211.h       |   7 +-
+ drivers/net/wireless/bcmdhd/wl_cfgp2p.c         |  24 ++-
+ drivers/net/wireless/bcmdhd/wl_cfgp2p.h         |   6 +-
+ drivers/net/wireless/bcmdhd/wldev_common.c      |   5 +-
+ 15 files changed, 408 insertions(+), 206 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/Makefile b/drivers/net/wireless/bcmdhd/Makefile
+index aa36063..996dcad 100644
+--- a/drivers/net/wireless/bcmdhd/Makefile
++++ b/drivers/net/wireless/bcmdhd/Makefile
+@@ -17,8 +17,8 @@ DHDCFLAGS = -Wall -Wstrict-prototypes -Dlinux -DBCMDRIVER                     \
+ 	-DKEEP_ALIVE -DGET_CUSTOM_MAC_ENABLE -DPKT_FILTER_SUPPORT             \
+ 	-DEMBEDDED_PLATFORM -DENABLE_INSMOD_NO_FW_LOAD -DPNO_SUPPORT          \
+ 	-DDHD_USE_IDLECOUNT -DSET_RANDOM_MAC_SOFTAP -DROAM_ENABLE -DVSDB      \
+-	-DWL_CFG80211_VSDB_PRIORITIZE_SCAN_REQUEST -DAMPDU_HOSTREORDER \
+-	-DESCAN_RESULT_PATCH -DHT40_GO \
++	-DWL_CFG80211_VSDB_PRIORITIZE_SCAN_REQUEST -DAMPDU_HOSTREORDER        \
++	-DESCAN_RESULT_PATCH -DHT40_GO -DPASS_ARP_PACKET                      \
+ 	-Idrivers/net/wireless/bcmdhd -Idrivers/net/wireless/bcmdhd/include
+ 
+ DHDOFILES = aiutils.o bcmsdh_sdmmc_linux.o dhd_linux.o siutils.o bcmutils.o   \
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index d79f2c5..888fd42 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd.h 356056 2012-09-11 01:08:09Z $
++ * $Id: dhd.h 356711 2012-09-13 15:58:32Z $
+  */
+ 
+ /****************
+@@ -71,17 +71,20 @@ enum dhd_bus_state {
+ 	DHD_BUS_DATA		/* Ready for frame transfers */
+ };
+ 
+-
++enum dhd_op_flags {
+ /* Firmware requested operation mode */
+-#define STA_MASK			0x0001
+-#define HOSTAPD_MASK		0x0002
+-#define WFD_MASK			0x0004
+-#define SOFTAP_FW_MASK		0x0008
+-#define	CONCURRENT_FW_MASK	(STA_MASK | WFD_MASK)
+-#define P2P_GO_ENABLED		0x0010
+-#define P2P_GC_ENABLED		0x0020
+-#define CONCURENT_MASK		0x00F0
+-#define CONCURRENT_MULTI_CHAN	0x0100
++	DHD_FLAG_STA_MODE				= BIT(0), /* STA only */
++	DHD_FLAG_HOSTAP_MODE				= BIT(1), /* SOFTAP only */
++	DHD_FLAG_P2P_MODE				= BIT(2), /* P2P Only */
++	/* STA + P2P */
++	DHD_FLAG_CONCURR_SINGLE_CHAN_MODE = (DHD_FLAG_STA_MODE | DHD_FLAG_P2P_MODE),
++	DHD_FLAG_CONCURR_MULTI_CHAN_MODE		= BIT(4), /* STA + P2P */
++	/* Current P2P mode for P2P connection */
++	DHD_FLAG_P2P_GC_MODE				= BIT(5),
++	DHD_FLAG_P2P_GO_MODE				= BIT(6),
++	DHD_FLAG_MBSS_MODE				= BIT(7) /* MBSS in future */
++};
++
+ #define MANUFACTRING_FW 	"WLTEST"
+ 
+ /* max sequential rxcntl timeouts to set HANG event */
+@@ -491,7 +494,7 @@ extern int net_os_rxfilter_add_remove(struct net_device *dev, int val, int num);
+ #endif /* PKT_FILTER_SUPPORT */
+ 
+ extern int dhd_get_dtim_skip(dhd_pub_t *dhd);
+-extern bool dhd_check_ap_wfd_mode_set(dhd_pub_t *dhd);
++extern bool dhd_support_sta_mode(dhd_pub_t *dhd);
+ 
+ #ifdef DHD_DEBUG
+ extern int write_to_file(dhd_pub_t *dhd, uint8 *buf, int size);
+@@ -562,7 +565,7 @@ extern int dhd_keep_alive_onoff(dhd_pub_t *dhd);
+ extern void dhd_arp_offload_set(dhd_pub_t * dhd, int arp_mode);
+ extern void dhd_arp_offload_enable(dhd_pub_t * dhd, int arp_enable);
+ #endif /* ARP_OFFLOAD_SUPPORT */
+-
++extern bool dhd_is_concurrent_mode(dhd_pub_t *dhd);
+ 
+ typedef enum cust_gpio_modes {
+ 	WLAN_RESET_ON,
+diff --git a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+index b2e4417..073b407 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+@@ -80,7 +80,7 @@ s32 dhd_cfg80211_set_p2p_info(struct wl_priv *wl, int val)
+ {
+ 	dhd_pub_t *dhd =  (dhd_pub_t *)(wl->pub);
+ 	dhd->op_mode |= val;
+-	WL_ERR(("Set : op_mode=%d\n", dhd->op_mode));
++	WL_ERR(("Set : op_mode=0x%04x\n", dhd->op_mode));
+ #ifdef ARP_OFFLOAD_SUPPORT
+ 	/* IF P2P is enabled, disable arpoe */
+ 	dhd_arp_offload_set(dhd, 0);
+@@ -93,8 +93,8 @@ s32 dhd_cfg80211_set_p2p_info(struct wl_priv *wl, int val)
+ s32 dhd_cfg80211_clean_p2p_info(struct wl_priv *wl)
+ {
+ 	dhd_pub_t *dhd =  (dhd_pub_t *)(wl->pub);
+-	dhd->op_mode &= ~CONCURENT_MASK;
+-	WL_ERR(("Clean : op_mode=%d\n", dhd->op_mode));
++	dhd->op_mode &= ~(DHD_FLAG_P2P_GC_MODE | DHD_FLAG_P2P_GO_MODE);
++	WL_ERR(("Clean : op_mode=0x%04x\n", dhd->op_mode));
+ 
+ #ifdef ARP_OFFLOAD_SUPPORT
+ 	/* IF P2P is disabled, enable arpoe back for STA mode. */
+diff --git a/drivers/net/wireless/bcmdhd/dhd_common.c b/drivers/net/wireless/bcmdhd/dhd_common.c
+index 17d8361..8edf461 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_common.c
++++ b/drivers/net/wireless/bcmdhd/dhd_common.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_common.c 355340 2012-09-06 09:34:37Z $
++ * $Id: dhd_common.c 356374 2012-09-12 10:37:44Z $
+  */
+ #include <typedefs.h>
+ #include <osl.h>
+@@ -1653,34 +1653,16 @@ exit:
+ 	return bcn_li_dtim;
+ }
+ 
+-/* Check if HostAPD or WFD mode setup */
+-bool dhd_check_ap_wfd_mode_set(dhd_pub_t *dhd)
++/* Check if the mode supports STA MODE */
++bool dhd_support_sta_mode(dhd_pub_t *dhd)
+ {
+-#if !defined(AP) && defined(WLP2P)
+-	if ((dhd->op_mode & CONCURRENT_FW_MASK) == CONCURRENT_FW_MASK)
+-		return FALSE;
+-#endif
++
+ #ifdef  WL_CFG80211
+-#ifndef WL_ENABLE_P2P_IF
+-	/* To be back compatble with ICS MR1 release where p2p interface
+-	 * disable but wlan0 used for p2p
+-	 */
+-	if (((dhd->op_mode & HOSTAPD_MASK) == HOSTAPD_MASK) ||
+-		((dhd->op_mode & WFD_MASK) == WFD_MASK)) {
+-		return TRUE;
+-	}
+-	else
+-#else
+-	/* concurent mode with p2p interface for wfd and wlan0 for sta */
+-	if (((dhd->op_mode & P2P_GO_ENABLED) == P2P_GO_ENABLED) ||
+-		((dhd->op_mode & P2P_GC_ENABLED) == P2P_GC_ENABLED)) {
+-		DHD_ERROR(("%s P2P enabled for  mode=%d\n", __FUNCTION__, dhd->op_mode));
+-		return TRUE;
+-	}
++	if (!(dhd->op_mode & DHD_FLAG_STA_MODE))
++		return FALSE;
+ 	else
+-#endif /* WL_ENABLE_P2P_IF */
+ #endif /* WL_CFG80211 */
+-		return FALSE;
++		return TRUE;
+ }
+ 
+ #if defined(PNO_SUPPORT)
+@@ -1726,7 +1708,7 @@ dhd_pno_enable(dhd_pub_t *dhd, int pfn_enabled)
+ 	}
+ 
+ #ifndef WL_SCHED_SCAN
+-	if (dhd_check_ap_wfd_mode_set(dhd) == TRUE)
++	if (!dhd_support_sta_mode(dhd))
+ 		return (ret);
+ 
+ 	memset(iovbuf, 0, sizeof(iovbuf));
+@@ -1776,8 +1758,8 @@ dhd_pno_set(dhd_pub_t *dhd, wlc_ssid_t* ssids_local, int nssid, ushort scan_fr,
+ 		return err;
+ 	}
+ #ifndef WL_SCHED_SCAN
+-	if (dhd_check_ap_wfd_mode_set(dhd) == TRUE)
+-		return (err);
++	if (!dhd_support_sta_mode(dhd))
++		return err;
+ #endif /* !WL_SCHED_SCAN */
+ 
+ 	/* Check for broadcast ssid */
+@@ -1895,8 +1877,8 @@ int dhd_keep_alive_onoff(dhd_pub_t *dhd)
+ 	int					str_len;
+ 	int res 				= -1;
+ 
+-	if (dhd_check_ap_wfd_mode_set(dhd) == TRUE)
+-		return (res);
++	if (!dhd_support_sta_mode(dhd))
++		return res;
+ 
+ 	DHD_TRACE(("%s execution\n", __FUNCTION__));
+ 
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 853d90a..5ab3fd8 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -22,7 +22,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_linux.c 356141 2012-09-11 09:43:16Z $
++ * $Id: dhd_linux.c 358016 2012-09-20 22:36:51Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -332,6 +332,8 @@ typedef struct dhd_info {
+ #endif
+ } dhd_info_t;
+ 
++/* Flag to indicate if we should download firmware on driver load */
++uint dhd_download_fw_on_driverload = TRUE;
+ 
+ /* Definitions to provide path to the firmware and nvram
+  * example nvram_path[MOD_PARAM_PATHLEN]="/projects/wlan/nvram.txt"
+@@ -367,7 +369,7 @@ module_param(disable_proptx, int, 0644);
+ 
+ /* load firmware and/or nvram values from the filesystem */
+ module_param_string(firmware_path, firmware_path, MOD_PARAM_PATHLEN, 0660);
+-module_param_string(nvram_path, nvram_path, MOD_PARAM_PATHLEN, 0);
++module_param_string(nvram_path, nvram_path, MOD_PARAM_PATHLEN, 0660);
+ 
+ /* Watchdog interval */
+ uint dhd_watchdog_ms = 10;
+@@ -588,9 +590,17 @@ void dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
+ 	/* 1 - Enable packet filter, only allow unicast packet to send up */
+ 	/* 0 - Disable packet filter */
+ 	if (dhd_pkt_filter_enable && (!value ||
+-	    ((dhd_check_ap_wfd_mode_set(dhd) == FALSE) &&
+-	    !dhd->dhcp_in_progress))) {
++	    (dhd_support_sta_mode(dhd) && !dhd->dhcp_in_progress))) {
+ 		for (i = 0; i < dhd->pktfilter_count; i++) {
++#ifdef PASS_ARP_PACKET
++			if (value && (i == dhd->pktfilter_count -1) &&
++				!(dhd->op_mode & (DHD_FLAG_P2P_GC_MODE | DHD_FLAG_P2P_GO_MODE))) {
++				DHD_TRACE_HW4(("Do not turn on ARP white list pkt filter:"
++					"val %d, cnt %d, op_mode 0x%x\n",
++					value, i, dhd->op_mode));
++				continue;
++			}
++#endif
+ 			dhd_pktfilter_offload_enable(dhd, dhd->pktfilter[i],
+ 				value, dhd_master_mode);
+ 		}
+@@ -718,7 +728,7 @@ static int dhd_suspend_resume_helper(struct dhd_info *dhd, int val, int force)
+ 	/* Set flag when early suspend was called */
+ 	dhdp->in_suspend = val;
+ 	if ((force || !dhdp->suspend_disable_flag) &&
+-		(dhd_check_ap_wfd_mode_set(dhdp) == FALSE))
++		dhd_support_sta_mode(dhdp))
+ 	{
+ 		ret = dhd_set_suspend(val, dhdp);
+ 	}
+@@ -2358,7 +2368,7 @@ dhd_ioctl_entry(struct net_device *net, struct ifreq *ifr, int cmd)
+ 
+ 	/* Copy the ioc control structure part of ioctl request */
+ 	if (copy_from_user(&ioc, ifr->ifr_data, sizeof(wl_ioctl_t))) {
+-		bcmerror = -BCME_BADADDR;
++		bcmerror = BCME_BADADDR;
+ 		goto done;
+ 	}
+ 
+@@ -2366,7 +2376,7 @@ dhd_ioctl_entry(struct net_device *net, struct ifreq *ifr, int cmd)
+ 	if (ioc.buf) {
+ 		if (ioc.len == 0) {
+ 			DHD_TRACE(("%s: ioc.len=0, returns BCME_BADARG \n", __FUNCTION__));
+-			bcmerror = -BCME_BADARG;
++			bcmerror = BCME_BADARG;
+ 			goto done;
+ 		}
+ 		buflen = MIN(ioc.len, DHD_IOCTL_MAXLEN);
+@@ -2378,11 +2388,11 @@ dhd_ioctl_entry(struct net_device *net, struct ifreq *ifr, int cmd)
+ 		*/
+ 		{
+ 			if (!(buf = (char*)MALLOC(dhd->pub.osh, buflen))) {
+-				bcmerror = -BCME_NOMEM;
++				bcmerror = BCME_NOMEM;
+ 				goto done;
+ 			}
+ 			if (copy_from_user(buf, ioc.buf, buflen)) {
+-				bcmerror = -BCME_BADADDR;
++				bcmerror = BCME_BADADDR;
+ 				goto done;
+ 			}
+ 		}
+@@ -2391,12 +2401,12 @@ dhd_ioctl_entry(struct net_device *net, struct ifreq *ifr, int cmd)
+ 	/* To differentiate between wl and dhd read 4 more byes */
+ 	if ((copy_from_user(&driver, (char *)ifr->ifr_data + sizeof(wl_ioctl_t),
+ 		sizeof(uint)) != 0)) {
+-		bcmerror = -BCME_BADADDR;
++		bcmerror = BCME_BADADDR;
+ 		goto done;
+ 	}
+ 
+ 	if (!capable(CAP_NET_ADMIN)) {
+-		bcmerror = -BCME_EPERM;
++		bcmerror = BCME_EPERM;
+ 		goto done;
+ 	}
+ 
+@@ -2627,6 +2637,14 @@ dhd_open(struct net_device *net)
+ 		firmware_path[0] = '\0';
+ 	}
+ 
++	/* Update NVRAM path if it was changed */
++	if (!dhd_download_fw_on_driverload && (strlen(nvram_path) != 0)) {
++		if (nvram_path[strlen(nvram_path)-1] == '\n')
++			nvram_path[strlen(nvram_path)-1] = '\0';
++		strcpy(nv_path, nvram_path);
++		nvram_path[0] = '\0';
++	}
++
+ 	dhd->pub.dongle_trap_occured = 0;
+ 	dhd->pub.hang_was_sent = 0;
+ #if !defined(WL_CFG80211)
+@@ -3217,18 +3235,37 @@ dhd_bus_start(dhd_pub_t *dhdp)
+ 	return 0;
+ }
+ 
++bool dhd_is_concurrent_mode(dhd_pub_t *dhd)
++{
++	if (!dhd)
++		return FALSE;
++
++	if (dhd->op_mode & DHD_FLAG_CONCURR_MULTI_CHAN_MODE)
++		return TRUE;
++	else if ((dhd->op_mode & DHD_FLAG_CONCURR_SINGLE_CHAN_MODE) ==
++		DHD_FLAG_CONCURR_SINGLE_CHAN_MODE)
++		return TRUE;
++	else
++		return FALSE;
++}
++
+ #if !defined(AP) && defined(WLP2P)
+-/* For Android ICS MR2 release, the concurrent mode is enabled by default and the firmware
++/* From Android JerryBean release, the concurrent mode is enabled by default and the firmware
+  * name would be fw_bcmdhd.bin. So we need to determine whether P2P is enabled in the STA
+  * firmware and accordingly enable concurrent mode (Apply P2P settings). SoftAP firmware
+  * would still be named as fw_bcmdhd_apsta.
+  */
+-int
++uint32
+ dhd_get_concurrent_capabilites(dhd_pub_t *dhd)
+ {
+-	int ret = 0;
++	int32 ret = 0;
+ 	char buf[WLC_IOCTL_SMLEN];
+-	bool vsdb_supported = false;
++	bool mchan_supported = FALSE;
++	/* if dhd->op_mode is already set for HOSTAP,
++	  * that means we only will use the mode as it is
++	  */
++	if (dhd->op_mode & DHD_FLAG_HOSTAP_MODE)
++		return 0;
+ 	memset(buf, 0, sizeof(buf));
+ 	bcm_mkiovar("cap", 0, 0, buf, sizeof(buf));
+ 	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_GET_VAR, buf, sizeof(buf),
+@@ -3238,7 +3275,7 @@ dhd_get_concurrent_capabilites(dhd_pub_t *dhd)
+ 		return 0;
+ 	}
+ 	if (strstr(buf, "vsdb")) {
+-		vsdb_supported = true;
++		mchan_supported = TRUE;
+ 	}
+ 	if (strstr(buf, "p2p") == NULL) {
+ 		DHD_TRACE(("Chip does not support p2p\n"));
+@@ -3255,14 +3292,19 @@ dhd_get_concurrent_capabilites(dhd_pub_t *dhd)
+ 		}
+ 		else {
+ 			if (buf[0] == 1) {
+-				/* Chip supports p2p, now lets check for vsdb */
+-				if (vsdb_supported)
+-					return 2;
+-				else
+-#ifdef WL_ENABLE_P2P_IF
+-					return 1;
++				/* By default, chip supports single chan concurrency,
++				* now lets check for mchan
++				*/
++				ret = DHD_FLAG_CONCURR_SINGLE_CHAN_MODE;
++				if (mchan_supported)
++					ret |= DHD_FLAG_CONCURR_MULTI_CHAN_MODE;
++#if defined(WL_ENABLE_P2P_IF)
++				/* For customer_hw4, although ICS,
++				* we still support concurrent mode
++				*/
++				return ret;
+ #else
+-					return 0;
++				return 0;
+ #endif
+ 			}
+ 		}
+@@ -3331,9 +3373,13 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ #ifdef GET_CUSTOM_MAC_ENABLE
+ 	struct ether_addr ea_addr;
+ #endif /* GET_CUSTOM_MAC_ENABLE */
++#ifdef DISABLE_11N
++	uint32 nmode = 0;
++#else
+ #ifdef AMPDU_HOSTREORDER
+ 	uint32 hostreorder = 1;
+ #endif
++#endif /* DISABLE_11N */
+ #ifdef PROP_TXSTATUS
+ #ifdef PROP_TXSTATUS_VSDB
+ 	dhd->wlfc_enabled = FALSE;
+@@ -3374,11 +3420,12 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 
+ 	DHD_TRACE(("Firmware = %s\n", fw_path));
+ 
+-	if ((!op_mode && strstr(fw_path, "_apsta") != NULL) || (op_mode == HOSTAPD_MASK)) {
++	if ((!op_mode && strstr(fw_path, "_apsta") != NULL) ||
++		(op_mode == DHD_FLAG_HOSTAP_MODE)) {
+ #ifdef SET_RANDOM_MAC_SOFTAP
+ 		uint rand_mac;
+ #endif
+-		dhd->op_mode = HOSTAPD_MASK;
++		dhd->op_mode = DHD_FLAG_HOSTAP_MODE;
+ #if defined(ARP_OFFLOAD_SUPPORT)
+ 			arpoe = 0;
+ #endif
+@@ -3413,31 +3460,33 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 
+ 	}
+ 	else {
+-		int concurrent_capab = 0;
+-		if ((!op_mode && strstr(fw_path, "_p2p") != NULL) || (op_mode == WFD_MASK)) {
++		uint32 concurrent_mode = 0;
++		if ((!op_mode && strstr(fw_path, "_p2p") != NULL) ||
++			(op_mode == DHD_FLAG_P2P_MODE)) {
+ #if defined(ARP_OFFLOAD_SUPPORT)
+ 			arpoe = 0;
+ #endif
+ #ifdef PKT_FILTER_SUPPORT
+ 			dhd_pkt_filter_enable = FALSE;
+ #endif
+-			dhd->op_mode = WFD_MASK;
++			dhd->op_mode = DHD_FLAG_P2P_MODE;
+ 		}
+ 		else
+-			dhd->op_mode = STA_MASK;
++			dhd->op_mode = DHD_FLAG_STA_MODE;
+ #if !defined(AP) && defined(WLP2P)
+-		if ((concurrent_capab = dhd_get_concurrent_capabilites(dhd)) > 0) {
+-			dhd->op_mode = STA_MASK | WFD_MASK;
+-			if (concurrent_capab == 2)
+-				dhd->op_mode = STA_MASK | WFD_MASK | CONCURRENT_MULTI_CHAN;
++		if ((concurrent_mode = dhd_get_concurrent_capabilites(dhd))) {
++#if defined(ARP_OFFLOAD_SUPPORT)
++			arpoe = 1;
++#endif
++			dhd->op_mode |= concurrent_mode;
+ 		}
+ 
+ 		/* Check if we are enabling p2p */
+-		if (dhd->op_mode & WFD_MASK) {
++		if (dhd->op_mode & DHD_FLAG_P2P_MODE) {
+ 			bcm_mkiovar("apsta", (char *)&apsta, 4, iovbuf, sizeof(iovbuf));
+ 			if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR,
+ 				iovbuf, sizeof(iovbuf), TRUE, 0)) < 0) {
+-				DHD_ERROR(("%s APSTA for WFD failed ret= %d\n", __FUNCTION__, ret));
++				DHD_ERROR(("%s APSTA for P2P failed ret= %d\n", __FUNCTION__, ret));
+ 			}
+ 
+ 			memcpy(&p2p_ea, &dhd->mac, ETHER_ADDR_LEN);
+@@ -3452,11 +3501,11 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 			}
+ 		}
+ #else
+-	(void)concurrent_capab;
++	(void)concurrent_mode;
+ #endif 
+ 	}
+ 
+-	DHD_ERROR(("Firmware up: op_mode=%d, "
++	DHD_ERROR(("Firmware up: op_mode=0x%04x, "
+ 		"Broadcom Dongle Host Driver mac="MACDBG"\n",
+ 		dhd->op_mode,
+ 		MAC2STRDBG(dhd->mac.octet)));
+@@ -3534,7 +3583,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ #if defined(SOFTAP)
+ 	if (ap_fw_loaded == FALSE)
+ #endif 
+-		if ((dhd->op_mode & HOSTAPD_MASK) != HOSTAPD_MASK) {
++		if (!(dhd->op_mode & DHD_FLAG_HOSTAP_MODE)) {
+ 			if ((res = dhd_keep_alive_onoff(dhd)) < 0)
+ 				DHD_ERROR(("%s set keeplive failed %d\n",
+ 				__FUNCTION__, res));
+@@ -3585,7 +3634,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	setbit(eventmask, WLC_E_ROAM);
+ #ifdef WL_CFG80211
+ 	setbit(eventmask, WLC_E_ESCAN_RESULT);
+-	if ((dhd->op_mode & WFD_MASK) == WFD_MASK) {
++	if (dhd->op_mode & DHD_FLAG_P2P_MODE) {
+ 		setbit(eventmask, WLC_E_ACTION_FRAME_RX);
+ 		setbit(eventmask, WLC_E_ACTION_FRAME_COMPLETE);
+ 		setbit(eventmask, WLC_E_ACTION_FRAME_OFF_CHAN_COMPLETE);
+@@ -3639,10 +3688,16 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	}
+ #endif /* defined(SOFTAP) */
+ #endif /* PKT_FILTER_SUPPORT */
++#ifdef DISABLE_11N
++	bcm_mkiovar("nmode", (char *)&nmode, 4, iovbuf, sizeof(iovbuf));
++	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0)) < 0)
++		DHD_ERROR(("%s wl nmode 0 failed %d\n", __FUNCTION__, ret));
++#else
+ #ifdef AMPDU_HOSTREORDER
+ 	bcm_mkiovar("ampdu_hostreorder", (char *)&hostreorder, 4, buf, sizeof(buf));
+ 	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, buf, sizeof(buf), TRUE, 0);
+ #endif /* AMPDU_HOSTREORDER */
++#endif /* DISABLE_11N */
+ 
+ #if !defined(WL_CFG80211)
+ 	/* Force STA UP */
+@@ -3824,7 +3879,7 @@ static int dhd_device_event(struct notifier_block *this,
+ 			}
+ 
+ #ifdef AOE_IP_ALIAS_SUPPORT
+-			if ((dhd_pub->op_mode & HOSTAPD_MASK) != HOSTAPD_MASK) {
++			if (!(dhd_pub->op_mode & DHD_FLAG_HOSTAP_MODE)) {
+ 				if (ifa->ifa_label[strlen(ifa->ifa_label)-2] == 0x3a) {
+ 					/* 0x3a = ':' */
+ 					DHD_ARPOE(("%s:add aliased IP to AOE hostip cache\n",
+@@ -3842,20 +3897,21 @@ static int dhd_device_event(struct notifier_block *this,
+ 				__FUNCTION__, ifa->ifa_label, ifa->ifa_address));
+ 			dhd->pend_ipaddr = 0;
+ #ifdef AOE_IP_ALIAS_SUPPORT
+-		if ((dhd_pub->op_mode & HOSTAPD_MASK) != HOSTAPD_MASK) {
+-			if (!(ifa->ifa_label[strlen(ifa->ifa_label)-2] == 0x3a)) {
+-					/* 0x3a = ':' */
+-					DHD_ARPOE(("%s: primary interface is down, AOE clr all\n",
+-						__FUNCTION__));
+-					dhd_aoe_hostip_clr(&dhd->pub);
+-					dhd_aoe_arp_clr(&dhd->pub);
+-			} else
+-				aoe_update_host_ipv4_table(dhd_pub, ifa->ifa_address, FALSE);
+-		}
++			if (!(dhd_pub->op_mode & DHD_FLAG_HOSTAP_MODE)) {
++				if (!(ifa->ifa_label[strlen(ifa->ifa_label)-2] == 0x3a)) {
++						/* 0x3a = ':' */
++						DHD_ARPOE(("%s: primary interface is down,"
++						" AOE clr all\n", __FUNCTION__));
++						dhd_aoe_hostip_clr(&dhd->pub);
++						dhd_aoe_arp_clr(&dhd->pub);
++				} else
++					aoe_update_host_ipv4_table(dhd_pub,
++						ifa->ifa_address, FALSE);
++			}
+ #else
+ 			dhd_aoe_hostip_clr(&dhd->pub);
+ 			dhd_aoe_arp_clr(&dhd->pub);
+-#endif
++#endif /* AOE_IP_ALIAS_SUPPORT */
+ 			break;
+ 
+ 		default:
+diff --git a/drivers/net/wireless/bcmdhd/dhd_sdio.c b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+index 32c75f5..de9085a 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_sdio.c 355144 2012-09-05 14:04:28Z $
++ * $Id: dhd_sdio.c 357859 2012-09-20 06:34:26Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -403,9 +403,6 @@ static const uint retry_limit = 2;
+ /* Force even SD lengths (some host controllers mess up on odd bytes) */
+ static bool forcealign;
+ 
+-/* Flag to indicate if we should download firmware on driver load */
+-uint dhd_download_fw_on_driverload = TRUE;
+-
+ #define ALIGNMENT  4
+ 
+ #if defined(OOB_INTR_ONLY) && defined(HW_OOB)
+@@ -1007,7 +1004,7 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
+ static int
+ dhdsdio_htclk(dhd_bus_t *bus, bool on, bool pendok)
+ {
+-#define HT_AVAIL_ERROR_MAX	10
++#define HT_AVAIL_ERROR_MAX 10
+ 	static int ht_avail_error = 0;
+ 	int err;
+ 	uint8 clkctl, clkreq, devctl;
+@@ -1041,10 +1038,13 @@ dhdsdio_htclk(dhd_bus_t *bus, bool on, bool pendok)
+ 			ht_avail_error++;
+ 			if (ht_avail_error < HT_AVAIL_ERROR_MAX) {
+ 				DHD_ERROR(("%s: HT Avail request error: %d\n", __FUNCTION__, err));
+-			} else {
+-				if (ht_avail_error == HT_AVAIL_ERROR_MAX)
+-					dhd_os_send_hang_message(bus->dhd);
+ 			}
++
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
++			else if (ht_avail_error == HT_AVAIL_ERROR_MAX) {
++				dhd_os_send_hang_message(bus->dhd);
++			}
++#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+ 			return BCME_ERROR;
+ 		} else {
+ 			ht_avail_error = 0;
+@@ -2976,7 +2976,8 @@ dhd_serialconsole(dhd_bus_t *bus, bool set, bool enable, int *bcmerror)
+ 	if (bus->sih->chip == BCM4330_CHIP_ID) {
+ 		uart_enab = CC_PLL_CHIPCTRL_SERIAL_ENAB;
+ 	}
+-	else if (bus->sih->chip == BCM4334_CHIP_ID) {
++	else if (bus->sih->chip == BCM4334_CHIP_ID ||
++		bus->sih->chip == BCM43341_CHIP_ID) {
+ 		if (enable) {
+ 			/* Moved to PMU chipcontrol 1 from 4330 */
+ 			int_val &= ~gpio_sel;
+@@ -5654,6 +5655,22 @@ clkwait:
+ 		bcmsdh_intr_enable(sdh);
+ 	}
+ 
++#if defined(OOB_INTR_ONLY) && !defined(HW_OOB)
++	/* In case of SW-OOB(using edge trigger),
++	 * Check interrupt status in the dongle again after enable irq on the host.
++	 * and rechedule dpc if interrupt is pended in the dongle.
++	 * There is a chance to miss OOB interrupt while irq is disabled on the host.
++	 * No need to do this with HW-OOB(level trigger)
++	 */
++	R_SDREG(newstatus, &regs->intstatus, retries);
++	if (bcmsdh_regfail(bus->sdh))
++		newstatus = 0;
++	if (newstatus & bus->hostintmask) {
++		bus->ipend = TRUE;
++		resched = TRUE;
++	}
++#endif /* defined(OOB_INTR_ONLY) && !defined(HW_OOB) */
++
+ 	if (TXCTLOK(bus) && bus->ctrl_frame_stat && (bus->clkstate == CLK_AVAIL))  {
+ 		int ret, i;
+ 
+@@ -6325,6 +6342,8 @@ dhdsdio_chipmatch(uint16 chipid)
+ 		return TRUE;
+ 	if (chipid == BCM4334_CHIP_ID)
+ 		return TRUE;
++	if (chipid == BCM43341_CHIP_ID)
++		return TRUE;
+ 	if (chipid == BCM43239_CHIP_ID)
+ 		return TRUE;
+ 	if (chipid == BCM4324_CHIP_ID)
+@@ -6501,11 +6520,13 @@ dhdsdio_probe(uint16 venid, uint16 devid, uint16 bus_no, uint16 slot,
+ #endif /* GET_CUSTOM_MAC_ENABLE */
+ 
+ 	/* if firmware path present try to download and bring up bus */
+-	if (dhd_download_fw_on_driverload && (ret = dhd_bus_start(bus->dhd)) != 0) {
+-		DHD_ERROR(("%s: dhd_bus_start failed\n", __FUNCTION__));
+-		if (ret == BCME_NOTUP)
+-			goto fail;
++	if (dhd_download_fw_on_driverload) {
++		if ((ret = dhd_bus_start(bus->dhd)) != 0) {
++			DHD_ERROR(("%s: dhd_bus_start failed\n", __FUNCTION__));
++			if (ret == BCME_NOTUP)
++				goto fail;
+ 		}
++	}
+ 	/* Ok, have the per-port tell the stack we're open for business */
+ 	if (dhd_net_attach(bus->dhd, 0) != 0) {
+ 		DHD_ERROR(("%s: Net attach failed!!\n", __FUNCTION__));
+@@ -7121,7 +7142,7 @@ dhdsdio_download_code_file(struct dhd_bus *bus, char *pfw_path)
+ {
+ 	int bcmerror = -1;
+ 	int offset = 0;
+-	uint len;
++	int len;
+ 	void *image = NULL;
+ 	uint8 *memblock = NULL, *memptr;
+ 
+@@ -7141,6 +7162,11 @@ dhdsdio_download_code_file(struct dhd_bus *bus, char *pfw_path)
+ 
+ 	/* Download image */
+ 	while ((len = dhd_os_get_image_block((char*)memptr, MEMBLOCK, image))) {
++		if (len < 0) {
++			DHD_ERROR(("%s: dhd_os_get_image_block failed (%d)\n", __FUNCTION__, len));
++			bcmerror = BCME_ERROR;
++			goto err;
++		}
+ 		bcmerror = dhdsdio_membytes(bus, TRUE, offset, memptr, len);
+ 		if (bcmerror) {
+ 			DHD_ERROR(("%s: error %d on writing %d membytes at 0x%08x\n",
+diff --git a/drivers/net/wireless/bcmdhd/include/epivers.h b/drivers/net/wireless/bcmdhd/include/epivers.h
+index 1f362ce..dbfe2f7 100644
+--- a/drivers/net/wireless/bcmdhd/include/epivers.h
++++ b/drivers/net/wireless/bcmdhd/include/epivers.h
+@@ -30,27 +30,27 @@
+ 
+ #define	EPI_MINOR_VERSION	28
+ 
+-#define	EPI_RC_NUMBER		12
++#define	EPI_RC_NUMBER		13
+ 
+ #define	EPI_INCREMENTAL_NUMBER	1
+ 
+ #define	EPI_BUILD_NUMBER	0
+ 
+-#define	EPI_VERSION		1, 28, 12, 1
++#define	EPI_VERSION		1, 28, 13, 1
+ 
+-#define	EPI_VERSION_NUM		0x011c0c01
++#define	EPI_VERSION_NUM		0x011c0d01
+ 
+-#define EPI_VERSION_DEV		1.28.12
++#define EPI_VERSION_DEV		1.28.13
+ 
+ /* Driver Version String, ASCII, 32 chars max */
+ #ifdef BCMINTERNAL
+-#define	EPI_VERSION_STR		"1.28.12.1 (r BCMINT)"
++#define	EPI_VERSION_STR		"1.28.13.1 (r BCMINT)"
+ #else
+ #ifdef WLTEST
+-#define	EPI_VERSION_STR		"1.28.12.1 (r WLTEST)"
++#define	EPI_VERSION_STR		"1.28.13.1 (r WLTEST)"
+ #else
+-#define	EPI_VERSION_STR		"1.28.12.1 (r)"
++#define	EPI_VERSION_STR		"1.28.13.1 (r)"
+ #endif
+ #endif /* BCMINTERNAL */
+ 
+-#endif 
++#endif /* _epivers_h_ */
+diff --git a/drivers/net/wireless/bcmdhd/include/proto/p2p.h b/drivers/net/wireless/bcmdhd/include/proto/p2p.h
+index 19493eb..1bfe73b 100644
+--- a/drivers/net/wireless/bcmdhd/include/proto/p2p.h
++++ b/drivers/net/wireless/bcmdhd/include/proto/p2p.h
+@@ -376,7 +376,7 @@ typedef struct wifi_p2p_pub_act_frame wifi_p2p_pub_act_frame_t;
+ #define P2P_PAF_DEVDIS_RSP	6	
+ #define P2P_PAF_PROVDIS_REQ	7	
+ #define P2P_PAF_PROVDIS_RSP	8	
+-
++#define P2P_PAF_SUBTYPE_INVALID	255	/* Invalid Subtype */
+ 
+ #define P2P_TYPE_MNREQ		P2P_PAF_GON_REQ
+ #define P2P_TYPE_MNRSP		P2P_PAF_GON_RSP
+diff --git a/drivers/net/wireless/bcmdhd/include/wlioctl.h b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+index 4149db4..a93e8e8 100644
+--- a/drivers/net/wireless/bcmdhd/include/wlioctl.h
++++ b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wlioctl.h 354686 2012-09-01 12:17:25Z $
++ * $Id: wlioctl.h 357627 2012-09-19 12:42:22Z $
+  */
+ 
+ #ifndef _wlioctl_h_
+diff --git a/drivers/net/wireless/bcmdhd/wl_android.c b/drivers/net/wireless/bcmdhd/wl_android.c
+index 964c1d8..4dd024b 100644
+--- a/drivers/net/wireless/bcmdhd/wl_android.c
++++ b/drivers/net/wireless/bcmdhd/wl_android.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_android.c 355613 2012-09-07 13:03:47Z $
++ * $Id: wl_android.c 358186 2012-09-21 14:36:14Z $
+  */
+ 
+ #include <linux/module.h>
+@@ -141,9 +141,7 @@ extern bool ap_fw_loaded;
+ extern char iface_name[IFNAMSIZ];
+ #endif
+ 
+-#ifndef WIFI_TURNOFF_DELAY
+ #define WIFI_TURNOFF_DELAY	0
+-#endif
+ /**
+  * Local (static) functions and variables
+  */
+@@ -575,7 +573,16 @@ int wl_android_priv_cmd(struct net_device *net, struct ifreq *ifr, int cmd)
+ 	}
+ 	else if (strnicmp(command, CMD_SETBAND, strlen(CMD_SETBAND)) == 0) {
+ 		uint band = *(command + strlen(CMD_SETBAND) + 1) - '0';
++#ifdef WL_HOST_BAND_MGMT
++		if (wl_cfg80211_set_band(net, band) < 0) {
++			bytes_written = -1;
++			goto exit;
++		}
++		if (band == WLC_BAND_AUTO)
++			bytes_written = wldev_set_band(net, band);
++#else
+ 		bytes_written = wldev_set_band(net, band);
++#endif /* WL_HOST_BAND_MGMT */
+ 	}
+ 	else if (strnicmp(command, CMD_GETBAND, strlen(CMD_GETBAND)) == 0) {
+ 		bytes_written = wl_android_get_band(net, command, priv_cmd.total_len);
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index cd67488..16079aa 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfg80211.c 356173 2012-09-11 13:55:32Z $
++ * $Id: wl_cfg80211.c 358186 2012-09-21 14:36:14Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -54,7 +54,6 @@
+ #include <linux/wait.h>
+ #include <net/cfg80211.h>
+ #include <net/rtnetlink.h>
+-
+ #include <wlioctl.h>
+ #include <wldev_common.h>
+ #include <wl_cfg80211.h>
+@@ -71,7 +70,8 @@ u32 wl_dbg_level = WL_DBG_ERR;
+ 
+ #ifdef VSDB
+ /* sleep time to keep STA's connecting or connection for continuous af tx or finding a peer */
+-#define DEFAULT_SLEEP_TIME_VSDB 200
++#define DEFAULT_SLEEP_TIME_VSDB 	200
++#define OFF_CHAN_TIME_THRESHOLD_MS	200
+ 
+ /* if sta is connected or connecting, sleep for a while before retry af tx or finding a peer */
+ #define WL_AF_TX_KEEP_PRI_CONNECTION_VSDB(wl)	\
+@@ -928,9 +928,7 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 	s32 wlif_type = -1;
+ 	s32 mode = 0;
+ 	s32 val = 0;
+-#if defined(WL_ENABLE_P2P_IF)
+ 	s32 dhd_mode = 0;
+-#endif /* (WL_ENABLE_P2P_IF) */
+ 	chanspec_t chspec;
+ 	struct wl_priv *wl = wiphy_priv(wiphy);
+ 	struct net_device *_ndev;
+@@ -1104,13 +1102,11 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 					"created net attach done\n", wl->p2p->vir_ifname));
+ 				if (mode == WL_MODE_AP)
+ 					wl_set_drv_status(wl, CONNECTED, _ndev);
+-#if defined(WL_ENABLE_P2P_IF)
+ 				if (type == NL80211_IFTYPE_P2P_CLIENT)
+-					dhd_mode = P2P_GC_ENABLED;
++					dhd_mode = DHD_FLAG_P2P_GC_MODE;
+ 				else if (type == NL80211_IFTYPE_P2P_GO)
+-					dhd_mode = P2P_GO_ENABLED;
++					dhd_mode = DHD_FLAG_P2P_GO_MODE;
+ 				DNGL_FUNC(dhd_cfg80211_set_p2p_info, (wl, dhd_mode));
+-#endif /* (WL_ENABLE_P2P_IF) */
+ 			} else {
+ 				/* put back the rtnl_lock again */
+ 				if (rollback_lock)
+@@ -1179,12 +1175,11 @@ wl_cfg80211_del_virtual_iface(struct wiphy *wiphy, struct net_device *dev)
+ 					(&wl->iface_disable, msecs_to_jiffies(500));
+ 			}
+ 			wl_set_p2p_status(wl, IF_DELETING);
+-#if  defined(WL_ENABLE_P2P_IF)
+ 			DNGL_FUNC(dhd_cfg80211_clean_p2p_info, (wl));
+-#endif /*  (WL_ENABLE_P2P_IF)) */
+ 
+ 			/* for GO */
+ 			if (wl_get_mode_by_netdev(wl, dev) == WL_MODE_AP) {
++				wl_add_remove_eventmsg(dev, WLC_E_PROBREQ_MSG, false);
+ 				/* disable interface before bsscfg free */
+ 				ret = wl_cfgp2p_ifdisable(wl, &p2p_mac);
+ 				/* if fw doesn't support "ifdis",
+@@ -1239,7 +1234,7 @@ wl_cfg80211_change_virtual_iface(struct wiphy *wiphy, struct net_device *ndev,
+ 	s32 mode = 0;
+ 	chanspec_t chspec;
+ 	struct wl_priv *wl = wiphy_priv(wiphy);
+-
++	dhd_pub_t *dhd = (dhd_pub_t *)(wl->pub);
+ 	WL_DBG(("Enter type %d\n", type));
+ 	switch (type) {
+ 	case NL80211_IFTYPE_MONITOR:
+@@ -1266,7 +1261,8 @@ wl_cfg80211_change_virtual_iface(struct wiphy *wiphy, struct net_device *ndev,
+ 	default:
+ 		return -EINVAL;
+ 	}
+-
++	if (!dhd)
++		return -EINVAL;
+ 	if (ap) {
+ 		wl_set_mode_by_netdev(wl, ndev, mode);
+ 		if (wl->p2p_supported && wl->p2p->vif_created) {
+@@ -1291,6 +1287,8 @@ wl_cfg80211_change_virtual_iface(struct wiphy *wiphy, struct net_device *ndev,
+ 				(wl_get_p2p_status(wl, IF_CHANGED) == true),
+ 				msecs_to_jiffies(MAX_WAIT_TIME));
+ 			wl_set_mode_by_netdev(wl, ndev, mode);
++			dhd->op_mode &= ~DHD_FLAG_P2P_GC_MODE;
++			dhd->op_mode |= DHD_FLAG_P2P_GO_MODE;
+ 			wl_clr_p2p_status(wl, IF_CHANGING);
+ 			wl_clr_p2p_status(wl, IF_CHANGED);
+ 			if (mode == WL_MODE_AP)
+@@ -1503,7 +1501,7 @@ static void wl_scan_prep(struct wl_scan_params *params, struct cfg80211_scan_req
+ 	u32 n_channels;
+ 	u16 channel;
+ 	chanspec_t chanspec;
+-	s32 i = 0, offset;
++	s32 i = 0, j = 0, offset;
+ 	char *ptr;
+ 	wlc_ssid_t ssid;
+ 	struct wl_priv *wl = wlcfg_drv_priv;
+@@ -1549,25 +1547,39 @@ static void wl_scan_prep(struct wl_scan_params *params, struct cfg80211_scan_req
+ 				(IEEE80211_CHAN_RADAR | IEEE80211_CHAN_PASSIVE_SCAN)))
+ 				continue;
+ 
+-			if (request->channels[i]->band == IEEE80211_BAND_2GHZ)
++			if (request->channels[i]->band == IEEE80211_BAND_2GHZ) {
++#ifdef WL_HOST_BAND_MGMT
++				if (wl->curr_band == WLC_BAND_5G) {
++					WL_DBG(("In 5G only mode, omit 2G channel:%d\n", channel));
++					continue;
++				}
++#endif /* WL_HOST_BAND_MGMT */
+ 				chanspec |= WL_CHANSPEC_BAND_2G;
+-			else
++			} else {
++#ifdef WL_HOST_BAND_MGMT
++				if (wl->curr_band == WLC_BAND_2G) {
++					WL_DBG(("In 2G only mode, omit 5G channel:%d\n", channel));
++					continue;
++				}
++#endif /* WL_HOST_BAND_MGMT */
+ 				chanspec |= WL_CHANSPEC_BAND_5G;
++			}
+ 
+ 			chanspec |= WL_CHANSPEC_BW_20;
+ 			chanspec |= WL_CHANSPEC_CTL_SB_NONE;
+ 
+-			params->channel_list[i] = channel;
+-			params->channel_list[i] &= WL_CHANSPEC_CHAN_MASK;
+-			params->channel_list[i] |= chanspec;
++			params->channel_list[j] = channel;
++			params->channel_list[j] &= WL_CHANSPEC_CHAN_MASK;
++			params->channel_list[j] |= chanspec;
+ 			WL_SCAN(("Chan : %d, Channel spec: %x \n",
+-				channel, params->channel_list[i]));
+-			params->channel_list[i] = wl_chspec_host_to_driver(params->channel_list[i]);
++				channel, params->channel_list[j]));
++			params->channel_list[j] = wl_chspec_host_to_driver(params->channel_list[j]);
++			j++;
+ 		}
+ 	} else {
+ 		WL_SCAN(("Scanning all channels\n"));
+ 	}
+-	n_channels = i;
++	n_channels = j;
+ 	/* Copy ssid array if applicable */
+ 	WL_SCAN(("### List of SSIDs to scan ###\n"));
+ 	if (n_ssids > 0) {
+@@ -1780,20 +1792,33 @@ wl_run_escan(struct wl_priv *wl, struct net_device *ndev,
+ 				n_valid_chan = dtoh32(list->count);
+ 				for (i = 0; i < num_chans; i++)
+ 				{
++#ifdef WL_HOST_BAND_MGMT
++					int channel_band = 0;
++#endif /* WL_HOST_BAND_MGMT */
+ 					_freq = request->channels[i]->center_freq;
+ 					channel = ieee80211_frequency_to_channel(_freq);
+-					/* remove DFS channels */
+-					if (!(request->channels[i]->flags &
++#ifdef WL_HOST_BAND_MGMT
++					channel_band = (channel > CH_MAX_2G_CHANNEL) ?
++						WLC_BAND_5G : WLC_BAND_2G;
++					if ((wl->curr_band != WLC_BAND_AUTO) &&
++						(wl->curr_band != channel_band) &&
++						!IS_P2P_SOCIAL_CHANNEL(channel))
++							continue;
++#endif /* WL_HOST_BAND_MGMT */
++
++					/* ignore DFS channels */
++					if (request->channels[i]->flags &
+ 						(IEEE80211_CHAN_RADAR
+-						| IEEE80211_CHAN_PASSIVE_SCAN))) {
+-						for (j = 0; j < n_valid_chan; j++) {
+-							/* allows only supported channel on
+-							*  current reguatory
+-							*/
+-							if (channel == (dtoh32(list->element[j])))
+-								default_chan_list[n_nodfs++] =
+-									channel;
+-						}
++						| IEEE80211_CHAN_PASSIVE_SCAN))
++						continue;
++
++					for (j = 0; j < n_valid_chan; j++) {
++						/* allows only supported channel on
++						*  current reguatory
++						*/
++						if (channel == (dtoh32(list->element[j])))
++							default_chan_list[n_nodfs++] =
++								channel;
+ 					}
+ 
+ 				}
+@@ -3347,6 +3372,7 @@ get_station_err:
+ 	return err;
+ }
+ 
++/* Function to update sta power save mode for Kernel wifi stack */
+ int wl_cfg80211_update_power_mode(struct net_device *dev)
+ {
+ 	int pm = -1;
+@@ -3380,7 +3406,9 @@ wl_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 		return err;
+ 	}
+ 
++	/* android has special hooks to change pm when kernel suspended */
+ 	pm = enabled ? ((dhd->in_suspend) ? PM_MAX : PM_FAST) : PM_OFF;
++
+ 	/* Do not enable the power save after assoc if it is p2p interface */
+ 	if (_net_info->pm_block || wl->vsdb_mode) {
+ 		WL_DBG(("Do not enable the power save\n"));
+@@ -3989,6 +4017,9 @@ wl_cfg80211_send_action_frame(struct wiphy *wiphy, struct net_device *dev,
+ 	u8 category, action;
+ 	s32 tx_retry;
+ 	struct p2p_config_af_params config_af_params;
++#ifdef VSDB
++	ulong off_chan_started_jiffies = 0;
++#endif
+ 
+ 	if (!af_params || !action_frame || !p2p_is_on(wl))
+ 		return false;
+@@ -4000,7 +4031,7 @@ wl_cfg80211_send_action_frame(struct wiphy *wiphy, struct net_device *dev,
+ 
+ 	/* initialize variables */
+ 	tx_retry = 0;
+-	wl->next_af_subtype = -1;
++	wl->next_af_subtype = P2P_PAF_SUBTYPE_INVALID;
+ 	config_af_params.max_tx_retry = WL_AF_TX_MAX_RETRY;
+ 	config_af_params.mpc_onoff = -1;
+ 	config_af_params.search_channel = false;
+@@ -4075,7 +4106,7 @@ wl_cfg80211_send_action_frame(struct wiphy *wiphy, struct net_device *dev,
+ 	}
+ 
+ 	/* set status and destination address before sending af */
+-	if (wl->next_af_subtype != -1) {
++	if (wl->next_af_subtype != P2P_PAF_SUBTYPE_INVALID) {
+ 		/* set this status to cancel the remained dwell time in rx process */
+ 		wl_set_drv_status(wl, WAITING_NEXT_ACT_FRM, dev);
+ 	}
+@@ -4114,13 +4145,24 @@ wl_cfg80211_send_action_frame(struct wiphy *wiphy, struct net_device *dev,
+ 		af_params->channel = wl->afx_hdl->peer_chan;
+ 	}
+ 
++#ifdef VSDB
++	off_chan_started_jiffies = jiffies;
++#endif /* VSDB */
++
+ 	/* Now send a tx action frame */
+ 	ack = wl_cfgp2p_tx_action_frame(wl, dev, af_params, bssidx) ? false : true;
+ 
+ 	/* if failed, retry it. tx_retry_max value is configure by .... */
+ 	while ((ack == false) && (tx_retry++ < config_af_params.max_tx_retry)) {
+-		WL_AF_TX_KEEP_PRI_CONNECTION_VSDB(wl);
+-
++#ifdef VSDB
++		if (af_params->channel) {
++			if (jiffies_to_msecs(jiffies - off_chan_started_jiffies) >
++				OFF_CHAN_TIME_THRESHOLD_MS) {
++				WL_AF_TX_KEEP_PRI_CONNECTION_VSDB(wl);
++				off_chan_started_jiffies = jiffies;
++			}
++		}
++#endif /* VSDB */
+ 		ack = wl_cfgp2p_tx_action_frame(wl, dev, af_params, bssidx) ?
+ 			false : true;
+ 	}
+@@ -5390,11 +5432,6 @@ wl_cfg80211_add_set_beacon(struct wiphy *wiphy, struct net_device *dev,
+ 		goto fail;
+ 	}
+ 
+-	if (wl_cfg80211_bcn_bringup_ap(dev, &ies, dev_role, bssidx) < 0) {
+-		WL_ERR(("Beacon bring up AP/GO failed \n"));
+-		goto fail;
+-	}
+-
+ 	/* Set BI and DTIM period */
+ 	if (info->interval) {
+ 		if ((err = wldev_ioctl(dev, WLC_SET_BCNPRD,
+@@ -5411,6 +5448,11 @@ wl_cfg80211_add_set_beacon(struct wiphy *wiphy, struct net_device *dev,
+ 		}
+ 	}
+ 
++	if (wl_cfg80211_bcn_bringup_ap(dev, &ies, dev_role, bssidx) < 0) {
++		WL_ERR(("Beacon bring up AP/GO failed \n"));
++		goto fail;
++	}
++
+ 	if (wl_get_drv_status(wl, AP_CREATED, dev)) {
+ 		/* Soft AP already running. Update changed params */
+ 		if (wl_cfg80211_hostapd_sec(dev, &ies, bssidx) < 0) {
+@@ -5922,6 +5964,7 @@ wl_notify_connect_status_ap(struct wl_priv *wl, struct net_device *ndev,
+ 	struct station_info sinfo;
+ #endif /* (LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0)) && !WL_CFG80211_STA_EVENT */
+ 
++	WL_DBG(("event %d status %d reason %d\n", event, ntoh32(e->status), reason));
+ 	/* if link down, bsscfg is disabled. */
+ 	if (event == WLC_E_LINK && reason == WLC_E_LINK_BSSCFG_DIS &&
+ 		wl_get_p2p_status(wl, IF_DELETING) && (ndev != wl_to_prmry_ndev(wl))) {
+@@ -6055,6 +6098,27 @@ exit:
+ }
+ 
+ static s32
++wl_get_auth_assoc_status(struct wl_priv *wl, struct net_device *ndev,
++	const wl_event_msg_t *e)
++{
++	u32 reason = ntoh32(e->reason);
++	u32 event = ntoh32(e->event_type);
++	struct wl_security *sec = wl_read_prof(wl, ndev, WL_PROF_SEC);
++	WL_DBG(("event type : %d, reason : %d\n", event, reason));
++	if (sec) {
++		switch (event) {
++		case WLC_E_ASSOC:
++		case WLC_E_AUTH:
++				sec->auth_assoc_res_status = reason;
++		default:
++			break;
++		}
++	} else
++		WL_ERR(("sec is NULL\n"));
++	return 0;
++}
++
++static s32
+ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 	const wl_event_msg_t *e, void *data)
+ {
+@@ -6067,6 +6131,10 @@ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 	} else {
+ 		WL_DBG(("wl_notify_connect_status : event %d status : %d ndev %p\n",
+ 			ntoh32(e->event_type), ntoh32(e->status), ndev));
++		if (event == WLC_E_ASSOC || event == WLC_E_AUTH) {
++			wl_get_auth_assoc_status(wl, ndev, e);
++			return err;
++		}
+ 		if (wl_is_linkup(wl, e, ndev)) {
+ 			wl_link_up(wl);
+ 			act = true;
+@@ -6099,8 +6167,15 @@ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 			if (wl_get_drv_status(wl, CONNECTED, ndev)) {
+ 				scb_val_t scbval;
+ 				u8 *curbssid = wl_read_prof(wl, ndev, WL_PROF_BSSID);
++				s32 reason = 0;
++				if (event == WLC_E_DEAUTH_IND || event == WLC_E_DISASSOC_IND)
++					reason = ntoh32(e->reason);
++				/* WLAN_REASON_UNSPECIFIED is used for hang up event in Android */
++				reason = (reason == WLAN_REASON_UNSPECIFIED)? 0 : reason;
++
+ 				printk("link down if %s may call cfg80211_disconnected. "
+-					"(reason=%d)\n", ndev->name, ntoh32(e->reason));
++					"event : %d, reason=%d\n", ndev->name, event,
++					ntoh32(e->reason));
+ 				if (memcmp(curbssid, &e->addr, ETHER_ADDR_LEN) != 0) {
+ 					WL_ERR(("BSSID of event is not the connected BSSID"
+ 						"(ignore it) cur: " MACDBG " event: " MACDBG"\n",
+@@ -6122,7 +6197,7 @@ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 						WL_ERR(("WLC_DISASSOC error %d\n", err));
+ 						err = 0;
+ 					}
+-					cfg80211_disconnected(ndev, 0, NULL, 0, GFP_KERNEL);
++					cfg80211_disconnected(ndev, reason, NULL, 0, GFP_KERNEL);
+ 					wl_link_down(wl);
+ 					wl_init_prof(wl, ndev);
+ 				}
+@@ -6402,9 +6477,13 @@ wl_bss_connect_done(struct wl_priv *wl, struct net_device *ndev,
+ 	const wl_event_msg_t *e, void *data, bool completed)
+ {
+ 	struct wl_connect_info *conn_info = wl_to_conn(wl);
++	struct wl_security *sec = wl_read_prof(wl, ndev, WL_PROF_SEC);
+ 	s32 err = 0;
+ 	u8 *curbssid = wl_read_prof(wl, ndev, WL_PROF_BSSID);
+-
++	if (!sec) {
++		WL_ERR(("sec is NULL\n"));
++		return -ENODEV;
++	}
+ 	WL_DBG((" enter\n"));
+ #ifdef ESCAN_RESULT_PATCH
+ 	if (wl_get_drv_status(wl, CONNECTED, ndev)) {
+@@ -6441,7 +6520,10 @@ wl_bss_connect_done(struct wl_priv *wl, struct net_device *ndev,
+ 			conn_info->req_ie_len,
+ 			conn_info->resp_ie,
+ 			conn_info->resp_ie_len,
+-			completed ? WLAN_STATUS_SUCCESS : e->reason,
++			completed ? WLAN_STATUS_SUCCESS :
++			(sec->auth_assoc_res_status) ?
++			sec->auth_assoc_res_status :
++			WLAN_STATUS_UNSPECIFIED_FAILURE,
+ 			GFP_KERNEL);
+ 		if (completed)
+ 			WL_INFO(("Report connect result - connection succeeded\n"));
+@@ -6928,6 +7010,8 @@ static void wl_init_event_handler(struct wl_priv *wl)
+ 	memset(wl->evt_handler, 0, sizeof(wl->evt_handler));
+ 
+ 	wl->evt_handler[WLC_E_SCAN_COMPLETE] = wl_notify_scan_status;
++	wl->evt_handler[WLC_E_AUTH] = wl_notify_connect_status;
++	wl->evt_handler[WLC_E_ASSOC] = wl_notify_connect_status;
+ 	wl->evt_handler[WLC_E_LINK] = wl_notify_connect_status;
+ 	wl->evt_handler[WLC_E_DEAUTH_IND] = wl_notify_connect_status;
+ 	wl->evt_handler[WLC_E_DEAUTH] = wl_notify_connect_status;
+@@ -7530,6 +7614,10 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ #else
+ 			if (p2p_is_on(wl) && p2p_scan(wl)) {
+ #endif
++#ifdef WL_HOST_BAND_MGMT
++				s32 channel = 0;
++				s32 channel_band = 0;
++#endif /* WL_HOST_BAND_MGMT */
+ 				/* p2p scan && allow only probe response */
+ 				if (bi->flags & WL_BSS_FLAGS_FROM_BEACON)
+ 					goto exit;
+@@ -7539,6 +7627,20 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 							" response/beacon\n"));
+ 						goto exit;
+ 				}
++#ifdef WL_HOST_BAND_MGMT
++				channel = CHSPEC_CHANNEL(wl_chspec_driver_to_host(bi->chanspec));
++				channel_band = (channel > CH_MAX_2G_CHANNEL) ?
++				WLC_BAND_5G : WLC_BAND_2G;
++
++
++				if ((wl->curr_band == WLC_BAND_5G) &&
++					(channel_band == WLC_BAND_2G)) {
++					/* Avoid sending the GO results in band conflict */
++					if (wl_cfgp2p_retreive_p2pattrib(p2p_ie,
++						P2P_SEID_GROUP_ID) != NULL)
++						goto exit;
++				}
++#endif /* WL_HOST_BAND_MGMT */
+ 			}
+ 			for (i = 0; i < list->count; i++) {
+ 				bss = bss ? (wl_bss_info_t *)((uintptr)bss + dtoh32(bss->length))
+@@ -7697,6 +7799,7 @@ static s32 wl_notifier_change_state(struct wl_priv *wl, struct net_info *_net_in
+ 	u32 prev_chan = 0;
+ 	u32 connected_cnt  = 0;
+ 	struct net_info *iter, *next;
++	struct net_device *primary_dev = wl_to_prmry_ndev(wl);
+ 	if (set) { /* set */
+ 		switch (state) {
+ 		case WL_STATUS_CONNECTED: {
+@@ -7767,6 +7870,12 @@ static s32 wl_notifier_change_state(struct wl_priv *wl, struct net_info *_net_in
+ 					}
+ 				}
+ 			}
++			if (wl_get_mode_by_netdev(wl, _net_info->ndev) == WL_MODE_AP) {
++					if (wl_add_remove_eventmsg(primary_dev,
++						WLC_E_P2P_PROBREQ_MSG, false))
++							WL_ERR((" failed to unset"
++								" WLC_E_P2P_PROPREQ_MSG\n"));
++			}
+ 			break;
+ 		}
+ 		default:
+@@ -7960,7 +8069,11 @@ s32 wl_cfg80211_attach_post(struct net_device *ndev)
+ 		return -ENODEV;
+ 	}
+ 	wl = wlcfg_drv_priv;
+-	if (wl && !wl_get_drv_status(wl, READY, ndev)) {
++	if (unlikely(!wl)) {
++		WL_ERR(("wl is invaild\n"));
++		return -EINVAL;
++	}
++	if (!wl_get_drv_status(wl, READY, ndev)) {
+ 			if (wl->wdev &&
+ 				wl_cfgp2p_supported(wl, ndev)) {
+ #if !defined(WL_ENABLE_P2P_IF)
+@@ -7988,8 +8101,7 @@ s32 wl_cfg80211_attach_post(struct net_device *ndev)
+ 
+ 				wl->p2p_supported = true;
+ 			}
+-	} else
+-		return -ENODEV;
++	}
+ 	wl_set_drv_status(wl, READY, ndev);
+ fail:
+ 	return err;
+@@ -8339,7 +8451,8 @@ s32 wl_add_remove_eventmsg(struct net_device *ndev, u16 event, bool add)
+ 
+ 	s8 eventmask[WL_EVENTING_MASK_LEN];
+ 	s32 err = 0;
+-
++	if (!ndev)
++		return -ENODEV;
+ 	/* Setup event_msgs */
+ 	bcm_mkiovar("event_msgs", NULL, 0, iovbuf,
+ 		sizeof(iovbuf));
+@@ -8619,6 +8732,15 @@ static s32 __wl_cfg80211_up(struct wl_priv *wl)
+ 
+ 	err = dhd_monitor_init(wl->pub);
+ 	err = wl_invoke_iscan(wl);
++
++#ifdef WL_HOST_BAND_MGMT
++	/* By default the curr_band is initialized to BAND_AUTO */
++	if (wl_cfg80211_set_band(ndev, WLC_BAND_AUTO) < 0) {
++		WL_ERR(("roam_band set failed\n"));
++		err = -1;
++	}
++#endif /* WL_HOST_BAND_MGMT */
++
+ 	wl_set_drv_status(wl, READY, ndev);
+ 	return err;
+ }
+@@ -8629,14 +8751,12 @@ static s32 __wl_cfg80211_down(struct wl_priv *wl)
+ 	unsigned long flags;
+ 	struct net_info *iter, *next;
+ 	struct net_device *ndev = wl_to_prmry_ndev(wl);
+-#ifdef WL_ENABLE_P2P_IF
+-	struct wiphy *wiphy = wl_to_prmry_ndev(wl)->ieee80211_ptr->wiphy;
+ 	struct net_device *p2p_net = wl->p2p_net;
+-#endif /* WL_ENABLE_P2P_IF */
+ 	WL_DBG(("In\n"));
+ 	/* Check if cfg80211 interface is already down */
+ 	if (!wl_get_drv_status(wl, READY, ndev))
+ 		return err;	/* it is even not ready */
++
+ 	for_each_ndev(wl, iter, next)
+ 		wl_set_drv_status(wl, SCAN_ABORTING, iter->ndev);
+ 
+@@ -8660,15 +8780,8 @@ static s32 __wl_cfg80211_down(struct wl_priv *wl)
+ 	}
+ 	wl_to_prmry_ndev(wl)->ieee80211_ptr->iftype =
+ 		NL80211_IFTYPE_STATION;
+-#ifdef WL_ENABLE_P2P_IF
+-	wiphy->interface_modes = (wiphy->interface_modes)
+-					& (~(BIT(NL80211_IFTYPE_P2P_CLIENT)|
+-					BIT(NL80211_IFTYPE_P2P_GO)));
+-	if ((p2p_net) && (p2p_net->flags & IFF_UP)) {
+-		/* p2p0 interface is still UP. Bring it down */
+-		p2p_net->flags &= ~IFF_UP;
+-	}
+-#endif /* WL_ENABLE_P2P_IF */
++	if (p2p_net && wl->p2p->dev_open)
++		dev_close(p2p_net);
+ 	DNGL_FUNC(dhd_cfg80211_down, (wl));
+ 	wl_flush_eq(wl);
+ 	wl_link_down(wl);
+@@ -8706,14 +8819,15 @@ s32 wl_cfg80211_up(void *para)
+ 
+ 	mutex_lock(&wl->usr_sync);
+ 	dhd = (dhd_pub_t *)(wl->pub);
+-	if ((dhd->op_mode & HOSTAPD_MASK) != HOSTAPD_MASK) {
+-		wl_cfg80211_attach_post(wl_to_prmry_ndev(wl));
++	if (!(dhd->op_mode & DHD_FLAG_HOSTAP_MODE)) {
++		err = wl_cfg80211_attach_post(wl_to_prmry_ndev(wl));
++		if (unlikely(err))
++			return err;
+ 	}
+ 	err = __wl_cfg80211_up(wl);
+-	if (err)
++	if (unlikely(err))
+ 		WL_ERR(("__wl_cfg80211_up failed\n"));
+ 	mutex_unlock(&wl->usr_sync);
+-
+ 	return err;
+ }
+ 
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.h b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+index fecfb35..3ee1033 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.h
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfg80211.h 355340 2012-09-06 09:34:37Z $
++ * $Id: wl_cfg80211.h 358186 2012-09-21 14:36:14Z $
+  */
+ 
+ #ifndef _wl_cfg80211_h_
+@@ -300,6 +300,7 @@ struct wl_security {
+ 	u32 cipher_pairwise;
+ 	u32 cipher_group;
+ 	u32 wpa_auth;
++	u32 auth_assoc_res_status;
+ };
+ 
+ /* ibss information for currently joined ibss network */
+@@ -548,6 +549,9 @@ struct wl_priv {
+ #ifdef WL_SCHED_SCAN
+ 	struct cfg80211_sched_scan_request *sched_scan_req;	/* scheduled scan req */
+ #endif /* WL_SCHED_SCAN */
++#ifdef WL_HOST_BAND_MGMT
++	u8 curr_band;
++#endif /* WL_HOST_BAND_MGMT */
+ };
+ 
+ 
+@@ -810,5 +814,6 @@ extern s32 wl_cfg80211_if_is_group_owner(void);
+ extern chanspec_t wl_ch_host_to_driver(u16 channel);
+ extern s32 wl_add_remove_eventmsg(struct net_device *ndev, u16 event, bool add);
+ extern void wl_stop_wait_next_action_frame(struct wl_priv *wl, struct net_device *ndev);
++extern s32 wl_cfg80211_set_band(struct net_device *ndev, int band);
+ extern int wl_cfg80211_update_power_mode(struct net_device *dev);
+ #endif				/* _wl_cfg80211_h_ */
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+index 1274e5f..e9bfceb 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfgp2p.c 354837 2012-09-04 06:58:44Z $
++ * $Id: wl_cfgp2p.c 357347 2012-09-17 21:22:01Z $
+  *
+  */
+ #include <typedefs.h>
+@@ -990,7 +990,7 @@ wl_cfgp2p_set_management_ie(struct wl_priv *wl, struct net_device *ndev, s32 bss
+ 	struct parsed_vndr_ies new_vndr_ies;
+ 	s32 i;
+ 	u8 *ptr;
+-	u32 remained_buf_len;
++	s32 remained_buf_len;
+ 
+ #define IE_TYPE(type, bsstype) (wl_to_p2p_bss_saved_ie(wl, bsstype).p2p_ ## type ## _ie)
+ #define IE_TYPE_LEN(type, bsstype) (wl_to_p2p_bss_saved_ie(wl, bsstype).p2p_ ## type ## _ie_len)
+@@ -1153,7 +1153,9 @@ wl_cfgp2p_set_management_ie(struct wl_priv *wl, struct net_device *ndev, s32 bss
+ 					"add");
+ 
+ 				/* verify remained buf size before copy data */
+-				if ((remained_buf_len -= vndrie_info->ie_len) < 0) {
++				if (remained_buf_len >= vndrie_info->ie_len) {
++					remained_buf_len -= vndrie_info->ie_len;
++				} else {
+ 					CFGP2P_ERR(("no space in mgmt_ie_buf: pktflag = %d, "
+ 						"found vndr ies # = %d(cur %d), remained len %d, "
+ 						"cur mgmt_ie_len %d, new ie len = %d\n",
+@@ -1383,6 +1385,8 @@ wl_cfgp2p_listen_complete(struct wl_priv *wl, struct net_device *ndev,
+ {
+ 	s32 ret = BCME_OK;
+ 	struct net_device *netdev;
++	if (!wl || !wl->p2p)
++		return BCME_ERROR;
+ 	if (wl->p2p_net == ndev) {
+ 		netdev = wl_to_prmry_ndev(wl);
+ 	} else {
+@@ -2225,21 +2229,23 @@ static int wl_cfgp2p_do_ioctl(struct net_device *net, struct ifreq *ifr, int cmd
+ 
+ static int wl_cfgp2p_if_open(struct net_device *net)
+ {
++	extern struct wl_priv *wlcfg_drv_priv;
+ 	struct wireless_dev *wdev = net->ieee80211_ptr;
+-
+-	if (!wdev)
++	struct wl_priv *wl = NULL;
++	wl = wlcfg_drv_priv;
++	if (!wdev || !wl || !wl->p2p)
+ 		return -EINVAL;
+-
++	WL_TRACE(("Enter\n"));
+ 	/* If suppose F/W download (ifconfig wlan0 up) hasn't been done by now,
+ 	 * do it here. This will make sure that in concurrent mode, supplicant
+ 	 * is not dependent on a particular order of interface initialization.
+ 	 * i.e you may give wpa_supp -iwlan0 -N -ip2p0 or wpa_supp -ip2p0 -N
+ 	 * -iwlan0.
+ 	 */
+-	wl_cfg80211_do_driver_init(net);
+-
+ 	wdev->wiphy->interface_modes |= (BIT(NL80211_IFTYPE_P2P_CLIENT)
+ 		| BIT(NL80211_IFTYPE_P2P_GO));
++	wl->p2p->dev_open = true;
++	wl_cfg80211_do_driver_init(net);
+ 
+ 	return 0;
+ }
+@@ -2270,6 +2276,6 @@ static int wl_cfgp2p_if_stop(struct net_device *net)
+ 	wdev->wiphy->interface_modes = (wdev->wiphy->interface_modes)
+ 					& (~(BIT(NL80211_IFTYPE_P2P_CLIENT)|
+ 					BIT(NL80211_IFTYPE_P2P_GO)));
+-
++	wl->p2p->dev_open = false;
+ 	return 0;
+ }
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfgp2p.h b/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
+index 51cdf82..2165ea2 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
++++ b/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfgp2p.h 354837 2012-09-04 06:58:44Z $
++ * $Id: wl_cfgp2p.h 358186 2012-09-21 14:36:14Z $
+  */
+ #ifndef _wl_cfgp2p_h_
+ #define _wl_cfgp2p_h_
+@@ -72,6 +72,7 @@ struct p2p_bss {
+ struct p2p_info {
+ 	bool on;    /* p2p on/off switch */
+ 	bool scan;
++	bool dev_open;
+ 	bool vif_created;
+ 	s8 vir_ifname[IFNAMSIZ];
+ 	unsigned long status;
+@@ -299,6 +300,9 @@ wl_cfgp2p_unregister_ndev(struct wl_priv *wl);
+ #define SOCIAL_CHAN_1 1
+ #define SOCIAL_CHAN_2 6
+ #define SOCIAL_CHAN_3 11
++#define IS_P2P_SOCIAL_CHANNEL(channel) ((channel == SOCIAL_CHAN_1) || \
++					(channel == SOCIAL_CHAN_2) || \
++					(channel == SOCIAL_CHAN_3))
+ #define SOCIAL_CHAN_CNT 3
+ #define AF_PEER_SEARCH_CNT 2
+ #define WL_P2P_WILDCARD_SSID "DIRECT-"
+diff --git a/drivers/net/wireless/bcmdhd/wldev_common.c b/drivers/net/wireless/bcmdhd/wldev_common.c
+index c964552..8e0ed4d 100644
+--- a/drivers/net/wireless/bcmdhd/wldev_common.c
++++ b/drivers/net/wireless/bcmdhd/wldev_common.c
+@@ -327,7 +327,7 @@ int wldev_set_band(
+ 	int error = -1;
+ 
+ 	if ((band == WLC_BAND_AUTO) || (band == WLC_BAND_5G) || (band == WLC_BAND_2G)) {
+-		error = wldev_ioctl(dev, WLC_SET_BAND, &band, sizeof(band), 1);
++		error = wldev_ioctl(dev, WLC_SET_BAND, &band, sizeof(band), true);
+ 		if (!error)
+ 			dhd_bus_band_set(dev, band);
+ 	}
+@@ -353,13 +353,12 @@ int wldev_set_country(
+ 	if ((error < 0) ||
+ 	    (strncmp(country_code, smbuf, WLC_CNTRY_BUF_SZ) != 0)) {
+ 		bzero(&scbval, sizeof(scb_val_t));
+-		error = wldev_ioctl(dev, WLC_DISASSOC, &scbval, sizeof(scb_val_t), 1);
++		error = wldev_ioctl(dev, WLC_DISASSOC, &scbval, sizeof(scb_val_t), true);
+ 		if (error < 0) {
+ 			WLDEV_ERROR(("%s: set country failed due to Disassoc error %d\n",
+ 				__FUNCTION__, error));
+ 			return error;
+ 		}
+-
+ 		cspec.rev = -1;
+ 		memcpy(cspec.country_abbrev, country_code, WLC_CNTRY_BUF_SZ);
+ 		memcpy(cspec.ccode, country_code, WLC_CNTRY_BUF_SZ);
+-- 
+1.8.0
+

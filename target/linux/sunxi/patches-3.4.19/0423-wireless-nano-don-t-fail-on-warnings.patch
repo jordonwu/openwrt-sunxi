@@ -1,0 +1,37 @@
+From 0cf3b3cedf36c89c318dbfb007f546e321c9c93a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sat, 12 May 2012 22:52:07 +0200
+Subject: [PATCH 423/944] wireless: nano: don't fail on warnings
+
+---
+ modules/wifi/nano-c047.12/userspace/libnrx/Makefile.am | 2 +-
+ modules/wifi/nano-c047.12/userspace/libpmc/Makefile.am | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/modules/wifi/nano-c047.12/userspace/libnrx/Makefile.am b/modules/wifi/nano-c047.12/userspace/libnrx/Makefile.am
+index e2bbe71..ea28f48 100644
+--- a/modules/wifi/nano-c047.12/userspace/libnrx/Makefile.am
++++ b/modules/wifi/nano-c047.12/userspace/libnrx/Makefile.am
+@@ -1,6 +1,6 @@
+ lib_LIBRARIES = libnrx.a
+ 
+-AM_CFLAGS = -Wall -Werror
++AM_CFLAGS = -Wall
+ 
+ SUBDIRS = . autotest
+ DIST_SUBDIRS = autotest
+diff --git a/modules/wifi/nano-c047.12/userspace/libpmc/Makefile.am b/modules/wifi/nano-c047.12/userspace/libpmc/Makefile.am
+index c391e99..c41db47 100644
+--- a/modules/wifi/nano-c047.12/userspace/libpmc/Makefile.am
++++ b/modules/wifi/nano-c047.12/userspace/libpmc/Makefile.am
+@@ -1,6 +1,6 @@
+ lib_LIBRARIES = libpmc.a
+ 
+-AM_CFLAGS = -Wall -Werror
++AM_CFLAGS = -Wall
+ 
+ SUBDIRS = . autotest
+ DIST_SUBDIRS = autotest
+-- 
+1.8.0
+

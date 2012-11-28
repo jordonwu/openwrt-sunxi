@@ -1,0 +1,193 @@
+From 3f9df6b27d117220f112b5dd077ee5b693e688db Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 24 Oct 2012 13:16:55 +0200
+Subject: [PATCH 884/944] video:sunxi:hdmi: make symbols static
+
+Caught by sparse.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/hdmi/dev_hdmi.c  | 11 +++++++----
+ drivers/video/sunxi/hdmi/drv_hdmi.c  |  6 ++++--
+ drivers/video/sunxi/hdmi/hdmi_core.c |  7 ++++---
+ drivers/video/sunxi/hdmi/hdmi_edid.c | 24 ++++++++++++++++--------
+ 4 files changed, 31 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.c b/drivers/video/sunxi/hdmi/dev_hdmi.c
+index fbccf26..29b88bb 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.c
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.c
+@@ -37,7 +37,7 @@ static struct resource hdmi_resource[1] = {
+ 	       },
+ };
+ 
+-struct platform_device hdmi_device = {
++static struct platform_device hdmi_device = {
+ 	.name = "hdmi",
+ 	.id = -1,
+ 	.num_resources = ARRAY_SIZE(hdmi_resource),
+@@ -68,12 +68,14 @@ static int hdmi_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-int hdmi_suspend(struct platform_device *pdev, pm_message_t state)
++static int
++hdmi_suspend(struct platform_device *pdev, pm_message_t state)
+ {
+ 	return 0;
+ }
+ 
+-int hdmi_resume(struct platform_device *pdev)
++static int
++hdmi_resume(struct platform_device *pdev)
+ {
+ 	return 0;
+ }
+@@ -131,7 +133,8 @@ static const struct file_operations hdmi_fops = {
+ 	.mmap = hdmi_mmap,
+ };
+ 
+-int __init hdmi_module_init(void)
++static int __init
++hdmi_module_init(void)
+ {
+ 	int ret = 0, err;
+ 
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index 5091880..cdbfc0d 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -232,13 +232,15 @@ __s32 Hdmi_get_HPD_status(void)
+ 	return Hdmi_hal_get_HPD();
+ }
+ 
+-__s32 Hdmi_set_pll(__u32 pll, __u32 clk)
++static __s32
++Hdmi_set_pll(__u32 pll, __u32 clk)
+ {
+ 	Hdmi_hal_set_pll(pll, clk);
+ 	return 0;
+ }
+ 
+-int Hdmi_run_thread(void *parg)
++static int
++Hdmi_run_thread(void *parg)
+ {
+ 	while (1) {
+ 		Hdmi_hal_main_task();
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.c b/drivers/video/sunxi/hdmi/hdmi_core.c
+index d8476b2..125c8cf 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.c
++++ b/drivers/video/sunxi/hdmi/hdmi_core.c
+@@ -27,12 +27,12 @@ __s32 video_mode = HDMI720P_50;
+ HDMI_AUDIO_INFO audio_info;
+ __u8 EDID_Buf[1024];
+ __u8 Device_Support_VIC[512];
+-__s32 HPD;
++static __s32 HPD;
+ 
+ __u32 hdmi_pll;	/* 0:video pll 0; 1:video pll 1 */
+ __u32 hdmi_clk = 297000000;
+ 
+-HDMI_VIDE_INFO video_timing[] = {
++static HDMI_VIDE_INFO video_timing[] = {
+ 	/* VIC                 PCLK   AVI_PR INPUTX INPUTY HT  HBP  HFP HPSW  VT  VBP VFP VPSW */
+ 	{HDMI1440_480I,       13500000,  1,   720,  240,  858, 119,  19, 62,  525, 18,  4,  3},
+ 	{HDMI1440_576I,       13500000,  1,   720,  288,  864, 132,  12, 63,  625, 22,  2,  3},
+@@ -62,7 +62,8 @@ __s32 hdmi_core_initial(void)
+ 	return 0;
+ }
+ 
+-__s32 main_Hpd_Check(void)
++static __s32
++main_Hpd_Check(void)
+ {
+ 	__s32 i, times;
+ 	times = 0;
+diff --git a/drivers/video/sunxi/hdmi/hdmi_edid.c b/drivers/video/sunxi/hdmi/hdmi_edid.c
+index 1e6bff0..fa34522 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_edid.c
++++ b/drivers/video/sunxi/hdmi/hdmi_edid.c
+@@ -122,7 +122,8 @@ __s32 DDC_Read(char cmd, char pointer, char offset, int nbyte, char *pbuf)
+ 	return 0;
+ }
+ 
+-void GetEDIDData(__u8 block, __u8 *buf)
++static void
++GetEDIDData(__u8 block, __u8 *buf)
+ {
+ 	__u8 i;
+ 	__u8 *pbuf = buf + 128 * block;
+@@ -159,7 +160,8 @@ void GetEDIDData(__u8 block, __u8 *buf)
+  * ParseEDID()
+  * Check EDID check sum and EDID 1.3 extended segment.
+  */
+-__s32 EDID_CheckSum(__u8 block, __u8 *buf)
++static __s32
++EDID_CheckSum(__u8 block, __u8 *buf)
+ {
+ 	__s32 i = 0, CheckSum = 0;
+ 	__u8 *pbuf = buf + 128 * block;
+@@ -176,7 +178,8 @@ __s32 EDID_CheckSum(__u8 block, __u8 *buf)
+ 	return 0;
+ }
+ 
+-__s32 EDID_Header_Check(__u8 *pbuf)
++static __s32
++EDID_Header_Check(__u8 *pbuf)
+ {
+ 	if (pbuf[0] != 0x00 || pbuf[1] != 0xFF || pbuf[2] != 0xFF ||
+ 	    pbuf[3] != 0xFF || pbuf[4] != 0xFF || pbuf[5] != 0xFF ||
+@@ -187,7 +190,8 @@ __s32 EDID_Header_Check(__u8 *pbuf)
+ 	return 0;
+ }
+ 
+-__s32 EDID_Version_Check(__u8 *pbuf)
++static __s32
++EDID_Version_Check(__u8 *pbuf)
+ {
+ 	__inf("EDID version: %d.%d ", pbuf[0x12], pbuf[0x13]);
+ 	if ((pbuf[0x12] != 0x01) || (pbuf[0x13] != 0x03)) {
+@@ -197,7 +201,8 @@ __s32 EDID_Version_Check(__u8 *pbuf)
+ 	return 0;
+ }
+ 
+-__s32 Parse_DTD_Block(__u8 *pbuf)
++static __s32
++Parse_DTD_Block(__u8 *pbuf)
+ {
+ 	__u32 pclk, sizex, Hblanking, sizey, Vblanking, Hsync_offset,
+ 	    Hsync_plus, Vsync_offset, Vsync_plus, H_image_size, V_image_size,
+@@ -269,7 +274,8 @@ __s32 Parse_DTD_Block(__u8 *pbuf)
+ 	return 0;
+ }
+ 
+-__s32 Parse_VideoData_Block(__u8 *pbuf, __u8 size)
++static __s32
++Parse_VideoData_Block(__u8 *pbuf, __u8 size)
+ {
+ 	int i = 0;
+ 	while (i < size) {
+@@ -285,7 +291,8 @@ __s32 Parse_VideoData_Block(__u8 *pbuf, __u8 size)
+ 	return 0;
+ }
+ 
+-__s32 Parse_AudioData_Block(__u8 *pbuf, __u8 size)
++static __s32
++Parse_AudioData_Block(__u8 *pbuf, __u8 size)
+ {
+ 	__u8 sum = 0;
+ 
+@@ -303,7 +310,8 @@ __s32 Parse_AudioData_Block(__u8 *pbuf, __u8 size)
+ 	return 0;
+ }
+ 
+-__s32 Parse_HDMI_VSDB(__u8 *pbuf, __u8 size)
++static __s32
++Parse_HDMI_VSDB(__u8 *pbuf, __u8 size)
+ {
+ 	__u8 index = 8;
+ 
+-- 
+1.8.0
+

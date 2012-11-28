@@ -1,0 +1,69 @@
+From 4504f83ea534c60ab1e660ec8e656be62f0f84ef Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 1 Feb 2012 14:10:59 -0800
+Subject: [PATCH 121/944] wireless: bcmdhd: fix build for 3.3
+
+ndo_set_multicast_list was replaced with ndo_set_rx_mode.
+
+Add no_cck and dont_wait_for_ack parameters to mgmt_tx.
+
+Change-Id: I56e0a924ee4417c6616336f9a8133425030b4d62
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c    | 4 ++--
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c  | 3 ++-
+ drivers/net/wireless/bcmdhd/wl_linux_mon.c | 2 +-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 233c891..b57af00 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -2542,7 +2542,7 @@ static struct net_device_ops dhd_ops_pri = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ 
+ static struct net_device_ops dhd_ops_virt = {
+@@ -2550,7 +2550,7 @@ static struct net_device_ops dhd_ops_virt = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)) */
+ 
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index 125888d..2242a7a 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -3359,7 +3359,8 @@ wl_cfg80211_mgmt_tx(struct wiphy *wiphy, struct net_device *ndev,
+ 	struct ieee80211_channel *channel, bool offchan,
+ 	enum nl80211_channel_type channel_type,
+ 	bool channel_type_valid, unsigned int wait,
+-	const u8* buf, size_t len, u64 *cookie)
++	const u8* buf, size_t len, bool no_cck,
++	bool dont_wait_for_ack, u64 *cookie)
+ {
+ 	wl_action_frame_t *action_frame;
+ 	wl_af_params_t *af_params;
+diff --git a/drivers/net/wireless/bcmdhd/wl_linux_mon.c b/drivers/net/wireless/bcmdhd/wl_linux_mon.c
+index f44b4b0..243850c 100644
+--- a/drivers/net/wireless/bcmdhd/wl_linux_mon.c
++++ b/drivers/net/wireless/bcmdhd/wl_linux_mon.c
+@@ -82,7 +82,7 @@ static const struct net_device_ops dhd_mon_if_ops = {
+ 	.ndo_open		= dhd_mon_if_open,
+ 	.ndo_stop		= dhd_mon_if_stop,
+ 	.ndo_start_xmit		= dhd_mon_if_subif_start_xmit,
+-	.ndo_set_multicast_list = dhd_mon_if_set_multicast_list,
++	.ndo_set_rx_mode 	= dhd_mon_if_set_multicast_list,
+ 	.ndo_set_mac_address 	= dhd_mon_if_change_mac,
+ };
+ 
+-- 
+1.8.0
+

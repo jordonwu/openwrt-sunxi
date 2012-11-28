@@ -1,0 +1,62 @@
+From 1b643b07c773d12e82e7912488983380e10b5e97 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Thu, 12 Jul 2012 19:05:56 -0700
+Subject: [PATCH 534/944] power: smb347: Add platform data for reg vs. pin
+ control of USB mode
+
+USB5/1/HC or USB9/1.5/HC will be selected by pin if true, else
+selected by register via POWER_SUPPLY_PROP_USB_HC.
+
+Change-Id: Ib2aff319c0fbae36bc3f1bab1b2048a52741a579
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c       | 6 +++++-
+ include/linux/power/smb347-charger.h | 1 +
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 56d2907..7015b68 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -46,6 +46,7 @@
+ #define CFG_STAT_ACTIVE_HIGH			BIT(7)
+ #define CFG_PIN					0x06
+ #define CFG_PIN_EN_CTRL_MASK			0x60
++#define CFG_PIN_USB_MODE_CTRL			BIT(4)
+ #define CFG_PIN_EN_CTRL_ACTIVE_HIGH		0x40
+ #define CFG_PIN_EN_CTRL_ACTIVE_LOW		0x60
+ #define CFG_PIN_EN_APSD_IRQ			BIT(1)
+@@ -732,7 +733,7 @@ static int smb347_hw_init(struct smb347_charger *smb)
+ 	 * command register unless pin control is specified in the platform
+ 	 * data.
+ 	 */
+-	ret &= ~CFG_PIN_EN_CTRL_MASK;
++	ret &= ~(CFG_PIN_EN_CTRL_MASK | CFG_PIN_USB_MODE_CTRL);
+ 
+ 	switch (smb->pdata->enable_control) {
+ 	case SMB347_CHG_ENABLE_SW:
+@@ -746,6 +747,9 @@ static int smb347_hw_init(struct smb347_charger *smb)
+ 		break;
+ 	}
+ 
++	if (smb->pdata->usb_mode_pin_ctrl)
++		ret |= CFG_PIN_USB_MODE_CTRL;
++
+ 	/* Disable Automatic Power Source Detection (APSD) interrupt. */
+ 	ret &= ~CFG_PIN_EN_APSD_IRQ;
+ 
+diff --git a/include/linux/power/smb347-charger.h b/include/linux/power/smb347-charger.h
+index 12c63e3..2bd340b 100644
+--- a/include/linux/power/smb347-charger.h
++++ b/include/linux/power/smb347-charger.h
+@@ -112,6 +112,7 @@ struct smb347_charger_platform_data {
+ 	bool		use_usb_otg;
+ 	int		irq_gpio;
+ 	enum smb347_chg_enable enable_control;
++	bool		usb_mode_pin_ctrl;
+ 	char		**supplied_to;
+ 	size_t		num_supplicants;
+ };
+-- 
+1.8.0
+

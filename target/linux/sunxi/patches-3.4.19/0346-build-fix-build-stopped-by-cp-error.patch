@@ -1,0 +1,26 @@
+From 4946d0c5464304367f7d66cafceebcb3c3b91ce3 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Thu, 17 Nov 2011 17:21:24 +0800
+Subject: [PATCH 346/944] build: fix build stopped by cp error
+
+---
+ scripts/build_sun4i.sh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index fe92fa6..5819b70 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -79,7 +79,8 @@ build_kernel()
+ 	for file in $(find drivers sound crypto block fs security net -name "*.ko"); do
+ 		cp $file ${LICHEE_MOD_DIR}
+ 	done
+-	cp -f Module.symvers modules.* ${LICHEE_MOD_DIR}
++	cp -f Module.symvers ${LICHEE_MOD_DIR}
++	#cp -f modules.* ${LICHEE_MOD_DIR}
+ }
+ 
+ build_modules()
+-- 
+1.8.0
+

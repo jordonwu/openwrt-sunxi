@@ -1,0 +1,114 @@
+From bc7b88a0df0d28a19ba75fce0811dfd6ea500295 Mon Sep 17 00:00:00 2001
+From: JP Abgrall <jpa@google.com>
+Date: Thu, 16 Jun 2011 14:37:03 -0700
+Subject: [PATCH 129/944] netfilter: have ip*t REJECT set the sock err when an
+ icmp is to be sent
+
+Allow the REJECT --reject-with icmp*blabla to also set the matching error
+locally on the socket affected by the reject.
+This allows the process to see an error almost as if it received it
+via ICMP.
+It avoids the local process who's ingress packet is rejected to have to
+wait for a pseudo-eternity until some timeout kicks in.
+
+Ideally, this should be enabled with a new iptables flag similar to
+   --reject-with-sock-err
+For now it is enabled with CONFIG_IP*_NF_TARGET_REJECT_SKERR option.
+
+Change-Id: I649a4fd5940029ec0b3233e5abb205da6984891e
+Signed-off-by: JP Abgrall <jpa@google.com>
+---
+ net/ipv4/netfilter/Kconfig       | 12 ++++++++++++
+ net/ipv4/netfilter/ipt_REJECT.c  |  8 ++++++++
+ net/ipv6/netfilter/Kconfig       | 12 ++++++++++++
+ net/ipv6/netfilter/ip6t_REJECT.c |  9 +++++++++
+ 4 files changed, 41 insertions(+)
+
+diff --git a/net/ipv4/netfilter/Kconfig b/net/ipv4/netfilter/Kconfig
+index fcc543c..a1dce8a 100644
+--- a/net/ipv4/netfilter/Kconfig
++++ b/net/ipv4/netfilter/Kconfig
+@@ -123,6 +123,18 @@ config IP_NF_TARGET_REJECT
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP_NF_TARGET_REJECT_SKERR
++	bool "Force socket error when rejecting with icmp*"
++	depends on IP_NF_TARGET_REJECT
++	default n
++	help
++          This option enables turning a "--reject-with icmp*" into a matching
++          socket error also.
++	  The REJECT target normally allows sending an ICMP message. But it
++          leaves the local socket unaware of any ingress rejects.
++
++	  If unsure, say N.
++
+ config IP_NF_TARGET_ULOG
+ 	tristate "ULOG target support"
+ 	default m if NETFILTER_ADVANCED=n
+diff --git a/net/ipv4/netfilter/ipt_REJECT.c b/net/ipv4/netfilter/ipt_REJECT.c
+index 51f13f8..9dd754c 100644
+--- a/net/ipv4/netfilter/ipt_REJECT.c
++++ b/net/ipv4/netfilter/ipt_REJECT.c
+@@ -128,6 +128,14 @@ static void send_reset(struct sk_buff *oldskb, int hook)
+ static inline void send_unreach(struct sk_buff *skb_in, int code)
+ {
+ 	icmp_send(skb_in, ICMP_DEST_UNREACH, code, 0);
++#ifdef CONFIG_IP_NF_TARGET_REJECT_SKERR
++	if (skb_in->sk) {
++		skb_in->sk->sk_err = icmp_err_convert[code].errno;
++		skb_in->sk->sk_error_report(skb_in->sk);
++		pr_debug("ipt_REJECT: sk_err=%d for skb=%p sk=%p\n",
++			skb_in->sk->sk_err, skb_in, skb_in->sk);
++	}
++#endif
+ }
+ 
+ static unsigned int
+diff --git a/net/ipv6/netfilter/Kconfig b/net/ipv6/netfilter/Kconfig
+index d33cddd..acd7c9e 100644
+--- a/net/ipv6/netfilter/Kconfig
++++ b/net/ipv6/netfilter/Kconfig
+@@ -175,6 +175,18 @@ config IP6_NF_TARGET_REJECT
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP6_NF_TARGET_REJECT_SKERR
++	bool "Force socket error when rejecting with icmp*"
++	depends on IP6_NF_TARGET_REJECT
++	default n
++	help
++          This option enables turning a "--reject-with icmp*" into a matching
++          socket error also.
++	  The REJECT target normally allows sending an ICMP message. But it
++          leaves the local socket unaware of any ingress rejects.
++
++	  If unsure, say N.
++
+ config IP6_NF_MANGLE
+ 	tristate "Packet mangling"
+ 	default m if NETFILTER_ADVANCED=n
+diff --git a/net/ipv6/netfilter/ip6t_REJECT.c b/net/ipv6/netfilter/ip6t_REJECT.c
+index aad2fa4..09155e3 100644
+--- a/net/ipv6/netfilter/ip6t_REJECT.c
++++ b/net/ipv6/netfilter/ip6t_REJECT.c
+@@ -178,6 +178,15 @@ send_unreach(struct net *net, struct sk_buff *skb_in, unsigned char code,
+ 		skb_in->dev = net->loopback_dev;
+ 
+ 	icmpv6_send(skb_in, ICMPV6_DEST_UNREACH, code, 0);
++#ifdef CONFIG_IP6_NF_TARGET_REJECT_SKERR
++	if (skb_in->sk) {
++		icmpv6_err_convert(ICMPV6_DEST_UNREACH, code,
++				   &skb_in->sk->sk_err);
++		skb_in->sk->sk_error_report(skb_in->sk);
++		pr_debug("ip6t_REJECT: sk_err=%d for skb=%p sk=%p\n",
++			skb_in->sk->sk_err, skb_in, skb_in->sk);
++	}
++#endif
+ }
+ 
+ static unsigned int
+-- 
+1.8.0
+

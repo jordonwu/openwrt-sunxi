@@ -1,0 +1,278 @@
+From 1ed2365a315da342ac89a04954f8695322be27ed Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@MServer.allwinnertech.com>
+Date: Wed, 30 Nov 2011 16:38:03 +0800
+Subject: [PATCH 403/944] i2c device: add twi id judge
+
+---
+ drivers/gsensor/bma250.c                 | 19 +++++++++++++++----
+ drivers/gsensor/mxc622x.c                | 22 ++++++++++++++++------
+ drivers/hwmon/mma7660.c                  | 21 ++++++++++++++++-----
+ drivers/input/keyboard/hv2605.c          | 21 +++++++++++++++++----
+ drivers/input/touchscreen/ft5x_ts.c      | 16 +++++++++++-----
+ drivers/input/touchscreen/goodix_touch.c | 13 +++++++++----
+ 6 files changed, 84 insertions(+), 28 deletions(-)
+
+diff --git a/drivers/gsensor/bma250.c b/drivers/gsensor/bma250.c
+index 42b4fb4..26bf91b 100644
+--- a/drivers/gsensor/bma250.c
++++ b/drivers/gsensor/bma250.c
+@@ -234,6 +234,7 @@ static union{
+ 	unsigned short dirty_addr_buf[2];
+ 	const unsigned short normal_i2c[2];
+ }u_i2c_addr = {{0x00},};
++static __u32 twi_id = 0;
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+ static void bma250_early_suspend(struct early_suspend *h);
+@@ -280,6 +281,12 @@ static int gsensor_fetch_sysconfig_para(void)
+ 		printk("%s: after: gsensor_twi_addr is 0x%x, dirty_addr_buf: 0x%hx. dirty_addr_buf[1]: 0x%hx \n", \
+ 			__func__, twi_addr, u_i2c_addr.dirty_addr_buf[0], u_i2c_addr.dirty_addr_buf[1]);
+ 
++		if(SCRIPT_PARSER_OK != script_parser_fetch("gsensor_para", "gsensor_twi_id", &twi_id, 1)){
++			pr_err("%s: script_parser_fetch err. \n", name);
++			goto script_parser_fetch_err;
++		}
++		printk("%s: twi_id is %d. \n", __func__, twi_id);
++		
+ 		ret = 0;
+ 		
+ 	}else{
+@@ -305,11 +312,15 @@ int gsensor_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
++	if(twi_id == adapter->nr){
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ 
+ static int bma250_smbus_read_byte(struct i2c_client *client,
+diff --git a/drivers/gsensor/mxc622x.c b/drivers/gsensor/mxc622x.c
+index 8e1573e..63b9146 100644
+--- a/drivers/gsensor/mxc622x.c
++++ b/drivers/gsensor/mxc622x.c
+@@ -66,7 +66,7 @@ static union{
+ 	unsigned short dirty_addr_buf[2];
+ 	const unsigned short normal_i2c[2];
+ }u_i2c_addr = {{0x00},};
+-
++static __u32 twi_id = 0;
+ 
+ /**
+  * gsensor_fetch_sysconfig_para - get config info from sysconfig.fex file.
+@@ -108,6 +108,12 @@ static int gsensor_fetch_sysconfig_para(void)
+ 		printk("%s: after: gsensor_twi_addr is 0x%x, dirty_addr_buf: 0x%hx. dirty_addr_buf[1]: 0x%hx \n", \
+ 			__func__, twi_addr, u_i2c_addr.dirty_addr_buf[0], u_i2c_addr.dirty_addr_buf[1]);
+ 
++		if(SCRIPT_PARSER_OK != script_parser_fetch("gsensor_para", "gsensor_twi_id", &twi_id, 1)){
++			pr_err("%s: script_parser_fetch err. \n", name);
++			goto script_parser_fetch_err;
++		}
++		printk("%s: tkey_twi_id is %d. \n", __func__, twi_id);
++
+ 		ret = 0;
+ 		
+ 	}else{
+@@ -132,12 +138,16 @@ script_parser_fetch_err:
+ int gsensor_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
++	
++	if(twi_id == adapter->nr){
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
+-
+-	strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+diff --git a/drivers/hwmon/mma7660.c b/drivers/hwmon/mma7660.c
+index c64abae..ad3085f 100644
+--- a/drivers/hwmon/mma7660.c
++++ b/drivers/hwmon/mma7660.c
+@@ -93,6 +93,7 @@ static union{
+ 	unsigned short dirty_addr_buf[2];
+ 	const unsigned short normal_i2c[2];
+ }u_i2c_addr = {{0x00},};
++static __u32 twi_id = 0;
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+ static int mma7660_early_suspend(struct early_suspend *h);
+@@ -140,6 +141,12 @@ static int gsensor_fetch_sysconfig_para(void)
+ 		printk("%s: after: gsensor_twi_addr is 0x%x, dirty_addr_buf: 0x%hx. dirty_addr_buf[1]: 0x%hx \n", \
+ 			__func__, twi_addr, u_i2c_addr.dirty_addr_buf[0], u_i2c_addr.dirty_addr_buf[1]);
+ 
++		if(SCRIPT_PARSER_OK != script_parser_fetch("gsensor_para", "gsensor_twi_id", &twi_id, 1)){
++			pr_err("%s: script_parser_fetch err. \n", name);
++			goto script_parser_fetch_err;
++		}
++		printk("%s: twi_id is %d. \n", __func__, twi_id);
++
+ 		ret = 0;
+ 		
+ 	}else{
+@@ -164,12 +171,16 @@ script_parser_fetch_err:
+ int gsensor_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
++	
++	if(twi_id == adapter->nr){
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, SENSOR_NAME, i2c_adapter_id(adapter), client->addr);
+-
+-	strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, SENSOR_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ 
+ static void mma7660_read_xyz(int idx, s8 *pf)
+diff --git a/drivers/input/keyboard/hv2605.c b/drivers/input/keyboard/hv2605.c
+index f59b89c..fd59726 100644
+--- a/drivers/input/keyboard/hv2605.c
++++ b/drivers/input/keyboard/hv2605.c
+@@ -80,6 +80,7 @@ static union{
+ 	unsigned short dirty_addr_buf[2];
+ 	const unsigned short normal_i2c[2];
+ }u_i2c_addr = {{0x00},};
++static __u32 twi_id = 0;
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+ struct hv2605_keyboard_data {
+@@ -102,6 +103,7 @@ static int tkey_fetch_sysconfig_para(void)
+ 	int ret = -1;
+ 	int device_used = -1;
+ 	__u32 twi_addr = 0;
++
+ 	char name[I2C_NAME_SIZE];
+ 	script_parser_value_type_t type = SCIRPT_PARSER_VALUE_TYPE_STRING;
+ 	
+@@ -132,6 +134,12 @@ static int tkey_fetch_sysconfig_para(void)
+ 		printk("%s: after: tkey_twi_addr is 0x%x, dirty_addr_buf: 0x%hx. dirty_addr_buf[1]: 0x%hx \n", \
+ 		__func__, twi_addr, u_i2c_addr.dirty_addr_buf[0], u_i2c_addr.dirty_addr_buf[1]);
+ 		
++		if(SCRIPT_PARSER_OK != script_parser_fetch("tkey_para", "tkey_twi_id", &twi_id, 1)){
++			pr_err("%s: script_parser_fetch err. \n", name);
++			goto script_parser_fetch_err;
++		}
++		printk("%s: tkey_twi_id is %d. \n", __func__, twi_id);
++		
+ 	}else{
+ 		pr_err("%s: tkey_unused. \n",  __func__);
+ 		ret = -1;
+@@ -155,11 +163,16 @@ int tkey_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, HV_NAME, i2c_adapter_id(adapter), client->addr);
++	if(twi_id == adapter->nr)
++	{
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, HV_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	strlcpy(info->type, HV_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, HV_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+diff --git a/drivers/input/touchscreen/ft5x_ts.c b/drivers/input/touchscreen/ft5x_ts.c
+index a41c884..02ef1ee 100644
+--- a/drivers/input/touchscreen/ft5x_ts.c
++++ b/drivers/input/touchscreen/ft5x_ts.c
+@@ -128,6 +128,7 @@ static union{
+ 	unsigned short dirty_addr_buf[2];
+ 	const unsigned short normal_i2c[2];
+ }u_i2c_addr = {{0x00},};
++static __u32 twi_id = 0;
+ 
+ /*
+  * ctp_get_pendown_state  : get the int_line data state,
+@@ -351,7 +352,7 @@ static int ctp_fetch_sysconfig_para(void)
+ 	int ctp_used = -1;
+ 	char name[I2C_NAME_SIZE];
+ 	__u32 twi_addr = 0;
+-	__u32 twi_id = 0;
++	//__u32 twi_id = 0;
+ 	script_parser_value_type_t type = SCIRPT_PARSER_VALUE_TYPE_STRING;
+ 
+ 	printk("%s. \n", __func__);
+@@ -480,11 +481,16 @@ int ctp_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, CTP_NAME, i2c_adapter_id(adapter), client->addr);
++	if(twi_id == adapter->nr)
++	{
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, CTP_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	strlcpy(info->type, CTP_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, CTP_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ ////////////////////////////////////////////////////////////////
+ 
+diff --git a/drivers/input/touchscreen/goodix_touch.c b/drivers/input/touchscreen/goodix_touch.c
+index 2043c6f..23e034f 100644
+--- a/drivers/input/touchscreen/goodix_touch.c
++++ b/drivers/input/touchscreen/goodix_touch.c
+@@ -487,11 +487,16 @@ int ctp_detect(struct i2c_client *client, struct i2c_board_info *info)
+ {
+ 	struct i2c_adapter *adapter = client->adapter;
+ 
+-	pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
+-		 __func__, CTP_NAME, i2c_adapter_id(adapter), client->addr);
++	if(twi_id == adapter->nr)
++	{
++		pr_info("%s: Detected chip %s at adapter %d, address 0x%02x\n",
++			 __func__, CTP_NAME, i2c_adapter_id(adapter), client->addr);
+ 
+-	strlcpy(info->type, CTP_NAME, I2C_NAME_SIZE);
+-	return 0;
++		strlcpy(info->type, CTP_NAME, I2C_NAME_SIZE);
++		return 0;
++	}else{
++		return -ENODEV;
++	}
+ }
+ ////////////////////////////////////////////////////////////////
+ 
+-- 
+1.8.0
+

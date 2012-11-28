@@ -1,0 +1,34 @@
+From 3b2107dfbe90989e7c904766309d1da9aa7def29 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 26 Sep 2012 14:21:22 -0700
+Subject: [PATCH 743/944] timekeeping: fix 32-bit overflow in
+ get_monotonic_boottime
+
+get_monotonic_boottime adds three nanonsecond values stored
+in longs, followed by an s64.  If the long values are all
+close to 1e9 the first three additions can overflow and
+become negative when added to the s64.  Cast the first
+value to s64 so that all additions are 64 bit.
+
+Change-Id: Ic996d8b6fbef0b72f2d027b0d8ef5259b5c1a540
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ kernel/time/timekeeping.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
+index d42574df..2f7b1b4 100644
+--- a/kernel/time/timekeeping.c
++++ b/kernel/time/timekeeping.c
+@@ -1142,7 +1142,7 @@ void get_monotonic_boottime(struct timespec *ts)
+ 	} while (read_seqretry(&timekeeper.lock, seq));
+ 
+ 	set_normalized_timespec(ts, ts->tv_sec + tomono.tv_sec + sleep.tv_sec,
+-			ts->tv_nsec + tomono.tv_nsec + sleep.tv_nsec + nsecs);
++		(s64)ts->tv_nsec + tomono.tv_nsec + sleep.tv_nsec + nsecs);
+ }
+ EXPORT_SYMBOL_GPL(get_monotonic_boottime);
+ 
+-- 
+1.8.0
+

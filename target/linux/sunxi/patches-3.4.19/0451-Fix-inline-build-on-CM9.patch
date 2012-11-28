@@ -1,0 +1,18 @@
+From 7a7df63f3a05be90fe3cd85ec5ca260c36dfea6f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Sat, 19 May 2012 16:21:30 +0000
+Subject: [PATCH 451/944] Fix inline build on CM9
+
+We need an empty Android.mk so make won't visit Android.mk files
+inside the kernel directory; this is needed as there are some on
+the modules directory and the build system doesn't like them.
+---
+ 0 files changed
+ create mode 100644 Android.mk
+
+diff --git a/Android.mk b/Android.mk
+new file mode 100644
+index 0000000..e69de29
+-- 
+1.8.0
+

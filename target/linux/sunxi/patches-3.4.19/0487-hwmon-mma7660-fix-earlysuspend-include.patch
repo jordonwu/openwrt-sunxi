@@ -1,0 +1,26 @@
+From efb3bd993c2a0e1dfcab44b4aa2ac3425cc7dc4b Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 13:25:40 +0200
+Subject: [PATCH 487/944] hwmon: mma7660: fix earlysuspend include
+
+---
+ drivers/hwmon/mma7660.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/hwmon/mma7660.c b/drivers/hwmon/mma7660.c
+index 45fb44e..c6382ea 100644
+--- a/drivers/hwmon/mma7660.c
++++ b/drivers/hwmon/mma7660.c
+@@ -32,7 +32,9 @@
+ #include <linux/hwmon.h>
+ #include <linux/input-polldev.h>
+ #include <linux/device.h>
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
++#endif
+ 
+ #include <mach/system.h>
+ #include <mach/hardware.h>
+-- 
+1.8.0
+

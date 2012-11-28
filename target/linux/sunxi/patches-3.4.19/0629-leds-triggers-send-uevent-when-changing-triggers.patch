@@ -1,0 +1,49 @@
+From fa66596a82f54b0b2e44146daff44170b4a3a5cb Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Mon, 23 Jul 2012 18:08:15 -0700
+Subject: [PATCH 629/944] leds: triggers: send uevent when changing triggers
+
+Some triggers create sysfs files when they are enabled.  Send a uevent
+"change" notification whenever the trigger is changed to allow userspace
+processes such as udev to modify permissions on the new files.
+
+Change-Id: I31410cbc0f5c146f31c61326f8006e98b3b7201e
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/leds/led-triggers.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/drivers/leds/led-triggers.c b/drivers/leds/led-triggers.c
+index 46b4c76..a85ce09 100644
+--- a/drivers/leds/led-triggers.c
++++ b/drivers/leds/led-triggers.c
+@@ -102,6 +102,12 @@ EXPORT_SYMBOL_GPL(led_trigger_show);
+ void led_trigger_set(struct led_classdev *led_cdev, struct led_trigger *trigger)
+ {
+ 	unsigned long flags;
++	char *event = NULL;
++	char *envp[2];
++	const char *name;
++
++	name = trigger ? trigger->name : "none";
++	event = kasprintf(GFP_KERNEL, "TRIGGER=%s", name);
+ 
+ 	/* Remove any existing trigger */
+ 	if (led_cdev->trigger) {
+@@ -122,6 +128,13 @@ void led_trigger_set(struct led_classdev *led_cdev, struct led_trigger *trigger)
+ 		if (trigger->activate)
+ 			trigger->activate(led_cdev);
+ 	}
++
++	if (event) {
++		envp[0] = event;
++		envp[1] = NULL;
++		kobject_uevent_env(&led_cdev->dev->kobj, KOBJ_CHANGE, envp);
++		kfree(event);
++	}
+ }
+ EXPORT_SYMBOL_GPL(led_trigger_set);
+ 
+-- 
+1.8.0
+

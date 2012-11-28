@@ -1,0 +1,74 @@
+From 64f17a63605f2a690fa698bf820db883614ffc07 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Thu, 19 Jul 2012 00:31:40 -0700
+Subject: [PATCH 605/944] power: smb347: manage EN pin if given in pdata
+
+Change-Id: Ie6c6828dc382aaacdd8cb1d3f5d19e9c8bb7d843
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c       | 22 ++++++++++++++++++++--
+ include/linux/power/smb347-charger.h |  1 +
+ 2 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 09cc839..5f4cb9f 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -142,6 +142,7 @@ struct smb347_charger {
+ 	unsigned int		mains_current_limit;
+ 	bool			usb_hc_mode;
+ 	bool			usb_otg_enabled;
++	int			en_gpio;
+ 	struct dentry		*dentry;
+ 	const struct smb347_charger_platform_data *pdata;
+ };
+@@ -324,8 +325,12 @@ static int smb347_charging_set(struct smb347_charger *smb, bool enable)
+ 
+ 	if (smb->pdata->enable_control != SMB347_CHG_ENABLE_SW) {
+ 		smb->charging_enabled = enable;
+-		dev_dbg(&smb->client->dev,
+-			"charging enable/disable in SW disabled\n");
++
++		if (smb->en_gpio)
++			gpio_set_value(
++				smb->en_gpio,
++				(smb->pdata->enable_control ==
++				 SMB347_CHG_ENABLE_PIN_ACTIVE_LOW) ^ enable);
+ 		return 0;
+ 	}
+ 
+@@ -1359,6 +1364,19 @@ static int smb347_probe(struct i2c_client *client,
+ 
+ 	smb->mains_current_limit = smb->pdata->mains_current_limit;
+ 
++	if (pdata->en_gpio) {
++		ret = gpio_request_one(
++			pdata->en_gpio,
++			smb->pdata->enable_control ==
++			SMB347_CHG_ENABLE_PIN_ACTIVE_LOW ?
++			GPIOF_OUT_INIT_HIGH : GPIOF_OUT_INIT_LOW,
++			smb->client->name);
++		if (ret < 0)
++			dev_warn(dev, "failed to claim EN GPIO: %d\n", ret);
++		else
++			smb->en_gpio = pdata->en_gpio;
++	}
++
+ 	ret = smb347_hw_init(smb);
+ 	if (ret < 0)
+ 		return ret;
+diff --git a/include/linux/power/smb347-charger.h b/include/linux/power/smb347-charger.h
+index 2bd340b..f944dfc 100644
+--- a/include/linux/power/smb347-charger.h
++++ b/include/linux/power/smb347-charger.h
+@@ -115,6 +115,7 @@ struct smb347_charger_platform_data {
+ 	bool		usb_mode_pin_ctrl;
+ 	char		**supplied_to;
+ 	size_t		num_supplicants;
++	int		en_gpio;
+ };
+ 
+ #endif /* SMB347_CHARGER_H */
+-- 
+1.8.0
+

@@ -1,0 +1,242 @@
+From 92f3a9fe5768e6a7f88426f20d32fa63f9a737b8 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 19 Nov 2012 21:38:20 +0200
+Subject: [PATCH 943/944] video: sunxi: disp: remove duplicate bpp calculation
+
+---
+ drivers/video/sunxi/disp/de_layer.c    | 23 ++++++++++++---
+ drivers/video/sunxi/disp/disp_layer.c  | 53 ++--------------------------------
+ drivers/video/sunxi/disp/disp_layer.h  |  1 -
+ drivers/video/sunxi/disp/disp_scaler.c |  6 ++--
+ drivers/video/sunxi/disp/disp_sprite.c |  6 ++--
+ drivers/video/sunxi/disp/ebios_de.h    |  2 +-
+ 6 files changed, 29 insertions(+), 62 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_layer.c b/drivers/video/sunxi/disp/de_layer.c
+index 4ad9357..3fd803e 100644
+--- a/drivers/video/sunxi/disp/de_layer.c
++++ b/drivers/video/sunxi/disp/de_layer.c
+@@ -19,7 +19,7 @@
+ 
+ #include "de_be.h"
+ 
+-__s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format)
++__s32 DE_BE_Format_To_Bpp(__disp_pixel_fmt_t format)
+ {
+ 	__u8 bpp = 0;
+ 
+@@ -48,7 +48,9 @@ __s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format)
+ 	case DISP_FORMAT_ARGB4444:
+ 		bpp = 16;
+ 		break;
+-
++	case DISP_FORMAT_RGB888:
++		bpp = 24;
++		break;
+ 	case DISP_FORMAT_ARGB888:
+ 		bpp = 32;
+ 		break;
+@@ -57,10 +59,23 @@ __s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format)
+ 		bpp = 32;
+ 		break;
+ 
+-	case DISP_FORMAT_RGB888:
++	case DISP_FORMAT_YUV444:
+ 		bpp = 24;
+ 		break;
+ 
++	case DISP_FORMAT_YUV422:
++		bpp = 16;
++		break;
++
++	case DISP_FORMAT_YUV420:
++	case DISP_FORMAT_YUV411:
++		bpp = 12;
++		break;
++
++	case DISP_FORMAT_CSIRGB:
++		bpp = 32; /* ? */
++		break;
++
+ 	default:
+ 		bpp = 0;
+ 		break;
+@@ -152,7 +167,7 @@ __s32 DE_BE_Layer_Set_Framebuffer(__u32 sel, __u8 layidx,
+ 	__s32 bpp;
+ 	__u32 addr;
+ 
+-	bpp = DE_BE_Format_To_Bpp(sel, layer_fb->format);
++	bpp = DE_BE_Format_To_Bpp(layer_fb->format);
+ 	if (bpp <= 0)
+ 		return -1;
+ 
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 33f1904..f18bac6 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -172,53 +172,6 @@ __s32 img_sw_para_to_reg(__u8 type, __u8 mode, __u8 value)
+ 	return 0;
+ }
+ 
+-__s32 de_format_to_bpp(__disp_pixel_fmt_t fmt)
+-{
+-	switch (fmt) {
+-	case DISP_FORMAT_1BPP:
+-		return 1;
+-
+-	case DISP_FORMAT_2BPP:
+-		return 2;
+-
+-	case DISP_FORMAT_4BPP:
+-		return 4;
+-
+-	case DISP_FORMAT_8BPP:
+-		return 8;
+-
+-	case DISP_FORMAT_RGB655:
+-	case DISP_FORMAT_RGB565:
+-	case DISP_FORMAT_RGB556:
+-	case DISP_FORMAT_ARGB1555:
+-	case DISP_FORMAT_RGBA5551:
+-	case DISP_FORMAT_ARGB4444:
+-		return 16;
+-
+-	case DISP_FORMAT_RGB888:
+-		return 24;
+-
+-	case DISP_FORMAT_ARGB8888:
+-		return 32;
+-
+-	case DISP_FORMAT_YUV444:
+-		return 24;
+-
+-	case DISP_FORMAT_YUV422:
+-		return 16;
+-
+-	case DISP_FORMAT_YUV420:
+-	case DISP_FORMAT_YUV411:
+-		return 12;
+-
+-	case DISP_FORMAT_CSIRGB:
+-		return 32; /* ? */
+-
+-	default:
+-		return 0;
+-	}
+-}
+-
+ static __s32 Yuv_Channel_Request(__u32 sel, __u8 hid)
+ {
+ 	if (!(gdisp.screen[sel].status & YUV_CH_USED)) {
+@@ -485,7 +438,7 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t *pfb)
+ 
+ 			size = (pfb->size.width *
+ 				layer_man->para.src_win.height *
+-				de_format_to_bpp(pfb->format) + 7) / 8;
++				DE_BE_Format_To_Bpp(pfb->format) + 7) / 8;
+ 
+ 			if (layer_man->para.mode ==
+ 			    DISP_LAYER_WORK_MODE_SCALER) {
+@@ -871,7 +824,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 				layer_fb.offset_x = player->src_win.x;
+ 				layer_fb.offset_y = player->src_win.y;
+ 
+-				bpp = DE_BE_Format_To_Bpp(sel, layer_fb.format);
++				bpp = DE_BE_Format_To_Bpp(layer_fb.format);
+ 				size = (player->fb.size.width *
+ 					player->scn_win.height * bpp + 7) / 8;
+ 
+@@ -897,7 +850,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 		}
+ 
+ 		size = (player->fb.size.width * player->src_win.height *
+-			de_format_to_bpp(player->fb.format) + 7) / 8;
++				DE_BE_Format_To_Bpp(player->fb.format) + 7) / 8;
+ 
+ 		if (layer_man->para.mode == DISP_LAYER_WORK_MODE_SCALER) {
+ 			gdisp.scaler[layer_man->scaler_index].b_reg_change =
+diff --git a/drivers/video/sunxi/disp/disp_layer.h b/drivers/video/sunxi/disp/disp_layer.h
+index aa6ef3f..cf81d6e 100644
+--- a/drivers/video/sunxi/disp/disp_layer.h
++++ b/drivers/video/sunxi/disp/disp_layer.h
+@@ -55,7 +55,6 @@ typedef enum {
+ 
+ __u32 Layer_Get_Prio(__u32 sel, __u32 hid);
+ __disp_pixel_type_t get_fb_type(__disp_pixel_fmt_t format);
+-__s32 de_format_to_bpp(__disp_pixel_fmt_t fmt);
+ __s32 img_sw_para_to_reg(__u8 type, __u8 mode, __u8 value);
+ __s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t *pfb, __u32 xoffset,
+ 				  __u32 yoffset);
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 88925c1..c2d4b08 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -966,10 +966,10 @@ __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t *para)
+ 	out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+ 	size = (para->input_fb.size.width * para->input_fb.size.height *
+-		de_format_to_bpp(para->input_fb.format) + 7) / 8;
++		DE_BE_Format_To_Bpp(para->input_fb.format) + 7) / 8;
+ 
+ 	size = (para->output_fb.size.width * para->output_fb.size.height *
+-		de_format_to_bpp(para->output_fb.format) + 7) / 8;
++		DE_BE_Format_To_Bpp(para->output_fb.format) + 7) / 8;
+ 
+ 	if (para->input_fb.b_trd_src) {
+ 		__scal_3d_inmode_t inmode;
+@@ -1203,7 +1203,7 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t *para)
+ 	out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+ 	size = (para->output_fb.size.width * para->output_fb.size.height *
+-		de_format_to_bpp(para->output_fb.format) + 7) / 8;
++		DE_BE_Format_To_Bpp(para->output_fb.format) + 7) / 8;
+ 
+ 	if (BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE) {
+ 		DE_SCAL_Input_Select(scaler_idx, 6 + sel);
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 0b5496e..a81fe92 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -286,7 +286,7 @@ static __s32 sprite_set_sprite_block_para(__u32 sel, __u32 id, __u32 next_id,
+ {
+ 	__u32 bpp, addr;
+ 
+-	bpp = de_format_to_bpp(gsprite[sel].format);
++	bpp = DE_BE_Format_To_Bpp(gsprite[sel].format);
+ 
+ 	addr = DE_BE_Offset_To_Addr((__u32) para->fb.addr[0],
+ 				    para->fb.size.width,
+@@ -766,7 +766,7 @@ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid,
+ 	if (gsprite[sel].block_status[id] & SPRITE_BLOCK_USED) {
+ 		node = List_Find_Sprite_Block(sel, id);
+ 
+-		bpp = de_format_to_bpp(gsprite[sel].format);
++		bpp = DE_BE_Format_To_Bpp(gsprite[sel].format);
+ 		addr =
+ 		    DE_BE_Offset_To_Addr(node->data->address,
+ 					 node->data->size.width, src_win->x,
+@@ -819,7 +819,7 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid,
+ 	if (gsprite[sel].block_status[id] & SPRITE_BLOCK_USED) {
+ 		node = List_Find_Sprite_Block(sel, id);
+ 
+-		bpp = de_format_to_bpp(gsprite[sel].format);
++		bpp = DE_BE_Format_To_Bpp(gsprite[sel].format);
+ 
+ 		addr = DE_BE_Offset_To_Addr(fb->addr[0], fb->size.width,
+ 					    node->data->src_win.x,
+diff --git a/drivers/video/sunxi/disp/ebios_de.h b/drivers/video/sunxi/disp/ebios_de.h
+index 461145e..2525f8a 100644
+--- a/drivers/video/sunxi/disp/ebios_de.h
++++ b/drivers/video/sunxi/disp/ebios_de.h
+@@ -386,7 +386,7 @@ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_output_csc_enable(__u32 sel, __bool enable);
+ #endif
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable);
+-__s32 DE_BE_Format_To_Bpp(__u32 sel, __disp_pixel_fmt_t format);
++__s32 DE_BE_Format_To_Bpp(__disp_pixel_fmt_t format);
+ __u32 DE_BE_Offset_To_Addr(__u32 src_addr, __u32 width, __u32 x, __u32 y,
+ 			   __u32 bpp);
+ __u32 DE_BE_Addr_To_Offset(__u32 src_addr, __u32 off_addr, __u32 width,
+-- 
+1.8.0
+

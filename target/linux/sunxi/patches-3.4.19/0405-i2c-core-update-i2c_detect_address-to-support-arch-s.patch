@@ -1,0 +1,29 @@
+From 85f6f0c0d5bb9a7d5116f3668cd2e838db15dfd6 Mon Sep 17 00:00:00 2001
+From: pannan <pannan@allwinnertech.com>
+Date: Wed, 30 Nov 2011 17:21:01 +0800
+Subject: [PATCH 405/944] i2c-core: update i2c_detect_address() to support
+ arch sun4i
+
+---
+ drivers/i2c/i2c-core.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/i2c/i2c-core.c b/drivers/i2c/i2c-core.c
+index feb7dc3..319ffb9 100644
+--- a/drivers/i2c/i2c-core.c
++++ b/drivers/i2c/i2c-core.c
+@@ -1490,9 +1490,11 @@ static int i2c_detect_address(struct i2c_client *temp_client,
+ 	if (i2c_check_addr_busy(adapter, addr))
+ 		return 0;
+ 
++#ifndef CONFIG_ARCH_SUN4I
+ 	/* Make sure there is something at this address */
+ 	if (!i2c_default_probe(adapter, addr))
+ 		return 0;
++#endif
+ 
+ 	/* Finally call the custom detection function */
+ 	memset(&info, 0, sizeof(struct i2c_board_info));
+-- 
+1.8.0
+

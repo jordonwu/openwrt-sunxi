@@ -1,0 +1,79 @@
+From 5b47d67a11e90769b90b30f4e699901ee0196547 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 12 Jul 2012 21:34:38 +0200
+Subject: [PATCH 587/944] ARM: sun4i: honor memory information passed by the
+ bootloader
+
+unless CONFIG_SUNXI_IGNORE_ATAG_MEM is set
+---
+ arch/arm/mach-sun4i/Kconfig |  3 +++
+ arch/arm/mach-sun4i/core.c  | 21 +++++++++++++++------
+ 2 files changed, 18 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/Kconfig b/arch/arm/mach-sun4i/Kconfig
+index ff12138..27fb5b5 100644
+--- a/arch/arm/mach-sun4i/Kconfig
++++ b/arch/arm/mach-sun4i/Kconfig
+@@ -10,4 +10,7 @@ config SW_DEBUG_UART
+ 	  Choose the UART on which kernel low-level debug messages should be
+ 	  output.
+ 
++config SUNXI_IGNORE_ATAG_MEM
++	bool "Use AllWinner's hack to assume memory size"
++	default n
+ endif
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index 0f2a240..4b02c42 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -77,6 +77,7 @@ void __init sw_core_map_io(void)
+ 	iotable_init(sw_io_desc, ARRAY_SIZE(sw_io_desc));
+ }
+ 
++#ifdef CONFIG_SUNXI_IGNORE_ATAG_MEM
+ static u32 DRAMC_get_dram_size(void)
+ {
+ 	u32 reg_val;
+@@ -107,16 +108,17 @@ static u32 DRAMC_get_dram_size(void)
+ 
+ 	return dram_size;
+ }
++#endif
+ 
+-static void __init sw_core_fixup(struct tag *tags, char **cmdline,
++static void __init sw_core_fixup(struct tag *t, char **cmdline,
+ 				 struct meminfo *mi)
+ {
+-	u32 size;
++	u32 size = 0;
++	int banks = 0;
+ 
++#ifdef CONFIG_SUNXI_IGNORE_ATAG_MEM
+ 	size = DRAMC_get_dram_size();
+ 
+-	early_printk("DRAM: %d", size);
+-
+ 	if (size <= 512) {
+ 		mi->nr_banks = 1;
+ 		mi->bank[0].start = 0x40000000;
+@@ -128,8 +130,15 @@ static void __init sw_core_fixup(struct tag *tags, char **cmdline,
+ 		mi->bank[1].start = 0x60000000;
+ 		mi->bank[1].size = SZ_1M * (size - 512);
+ 	}
+-
+-	pr_info("Total Detected Memory: %uMB with %d banks\n", size, mi->nr_banks);
++	banks = mi->nr_banks;
++#else
++	for (; t->hdr.size; t = tag_next(t)) if (t->hdr.tag == ATAG_MEM) {
++		size += t->u.mem.size / SZ_1M;
++		if (banks++ == 0)
++			t->u.mem.size -= 64 * SZ_1M;
++	}
++#endif
++	pr_info("Total Detected Memory: %uMB with %d banks\n", size, banks);
+ }
+ 
+ /* Only reserve certain important memory blocks if there are actually
+-- 
+1.8.0
+

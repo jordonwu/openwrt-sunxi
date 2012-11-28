@@ -1,0 +1,28 @@
+From a4e7d9ec2d46ac516ccfaf76da2c9e1dd266ec42 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 7 Sep 2012 11:22:54 -0700
+Subject: [PATCH 712/944] net: wireless: bcmdhd: Report proper mcs rate mask
+
+Setting proper mcs rate mask allows to connect in 802.11n-only mode
+
+Change-Id: Iffd47a60c92a74d29e42d81d79fa64463f5895c5
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index 51c0534..d3b89fd 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -8556,6 +8556,7 @@ s32 wl_update_wiphybands(struct wl_priv *wl)
+ 			wiphy->bands[index]->ht_cap.ht_supported = TRUE;
+ 			wiphy->bands[index]->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 			wiphy->bands[index]->ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16;
++			wiphy->bands[index]->ht_cap.mcs.rx_mask[0] = 0xff;
+ 		}
+ 
+ 	}
+-- 
+1.8.0
+

@@ -1,0 +1,26 @@
+From 06b7315e60ae1b962328e8a034311976bf9b6cb0 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Thu, 7 Jun 2012 00:30:55 +0200
+Subject: [PATCH 577/944] Hide MALI DRM driver if MALI is not enabled. Does
+ not actually seem to depend on MALI drivers but is
+ useless without them.
+
+---
+ drivers/gpu/drm/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/gpu/drm/Kconfig b/drivers/gpu/drm/Kconfig
+index 10e1797..e5cfd95 100644
+--- a/drivers/gpu/drm/Kconfig
++++ b/drivers/gpu/drm/Kconfig
+@@ -175,6 +175,7 @@ config DRM_VIA
+ config DRM_MALI
+ 	tristate "Mali DRM supprt"
+ 	depends on DRM
++	depends on MALI
+ 	help
+ 	  Choose this option if you have a Mali 200 or Mali 400 gpu
+ 	  If M is selected the module will be called mali_drm.
+-- 
+1.8.0
+

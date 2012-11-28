@@ -1,0 +1,36 @@
+From c8ffd5b3852c164f41b89a40b3f3ffd65299b93a Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Mon, 24 Jan 2011 14:36:39 -0800
+Subject: [PATCH 012/944] PM: Print pending wakeup IRQ preventing suspend to
+ dmesg
+
+Prints the name of the first action for a pending wakeup IRQ.
+
+Change-Id: I36f90735c75fb7c7ab1084775ec0d0ab02336e6e
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ kernel/irq/pm.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/irq/pm.c b/kernel/irq/pm.c
+index 15e53b1..fe4b09c 100644
+--- a/kernel/irq/pm.c
++++ b/kernel/irq/pm.c
+@@ -104,8 +104,13 @@ int check_wakeup_irqs(void)
+ 
+ 	for_each_irq_desc(irq, desc) {
+ 		if (irqd_is_wakeup_set(&desc->irq_data)) {
+-			if (desc->istate & IRQS_PENDING)
++			if (desc->istate & IRQS_PENDING) {
++				pr_info("Wakeup IRQ %d %s pending, suspend aborted\n",
++					irq,
++					desc->action && desc->action->name ?
++					desc->action->name : "");
+ 				return -EBUSY;
++			}
+ 			continue;
+ 		}
+ 		/*
+-- 
+1.8.0
+

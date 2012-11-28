@@ -1,0 +1,72 @@
+From 6f9e56945d4ee3a2621968caa72b135cb07e49c4 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Tue, 31 Jan 2012 09:40:30 -0800
+Subject: [PATCH 255/944] ion: Add reserve function to ion
+
+Rather than requiring each platform call memblock_remove or reserve
+from the board file, add this to ion
+
+Change-Id: Ie418a692c13e9e0cfe93ecc83d253d3ce860fc83
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c | 17 +++++++++++++++++
+ include/linux/ion.h   | 11 +++++++++++
+ 2 files changed, 28 insertions(+)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 239a3d5..afd6ffc 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -20,6 +20,7 @@
+ #include <linux/anon_inodes.h>
+ #include <linux/ion.h>
+ #include <linux/list.h>
++#include <linux/memblock.h>
+ #include <linux/miscdevice.h>
+ #include <linux/export.h>
+ #include <linux/mm.h>
+@@ -1185,3 +1186,19 @@ void ion_device_destroy(struct ion_device *dev)
+ 	/* XXX need to free the heaps and clients ? */
+ 	kfree(dev);
+ }
++
++void __init ion_reserve(struct ion_platform_data *data)
++{
++	int i, ret;
++
++	for (i = 0; i < data->nr; i++) {
++		if (data->heaps[i].size == 0)
++			continue;
++		ret = memblock_reserve(data->heaps[i].base,
++				       data->heaps[i].size);
++		if (ret)
++			pr_err("memblock reserve of %x@%lx failed\n",
++			       data->heaps[i].size,
++			       data->heaps[i].base);
++	}
++}
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+index 9d196e2..860b160 100644
+--- a/include/linux/ion.h
++++ b/include/linux/ion.h
+@@ -87,6 +87,17 @@ struct ion_platform_data {
+ };
+ 
+ /**
++ * ion_reserve() - reserve memory for ion heaps if applicable
++ * @data:	platform data specifying starting physical address and
++ *		size
++ *
++ * Calls memblock reserve to set aside memory for heaps that are
++ * located at specific memory addresses or of specfic sizes not
++ * managed by the kernel
++ */
++void ion_reserve(struct ion_platform_data *data);
++
++/**
+  * ion_client_create() -  allocate a client and returns it
+  * @dev:	the global ion device
+  * @heap_mask:	mask of heaps this client can allocate from
+-- 
+1.8.0
+

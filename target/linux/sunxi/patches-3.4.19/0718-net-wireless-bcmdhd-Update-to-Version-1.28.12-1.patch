@@ -1,0 +1,1385 @@
+From 7639fb3b77fd8300ae0ae58f84ed3f604cda770d Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Thu, 13 Sep 2012 13:08:07 -0700
+Subject: [PATCH 718/944] net: wireless: bcmdhd: Update to Version 1.28.12-1
+
+- Add sync up with PROP_TXSTATUS setting as
+  dhd->pub.wlfc_enabled = TRUE for proper P2P&VSDB funationality
+- Add ROAM setting per platform from Makefle
+- Change debug level of WL message at run time
+- Fix ARP offloading doesn't work for virtual IF
+- Check return error of wldev_ioctl in wl_cfg80211.c
+
+Change-Id: I2287652a27b72f2bb787ccad4228fe4df415064c
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/Makefile               |   2 +
+ drivers/net/wireless/bcmdhd/bcmsdh_sdmmc_linux.c   |   6 +-
+ drivers/net/wireless/bcmdhd/dhd.h                  |  22 +-
+ drivers/net/wireless/bcmdhd/dhd_cdc.c              |  37 +++-
+ drivers/net/wireless/bcmdhd/dhd_cfg80211.c         |  10 +-
+ drivers/net/wireless/bcmdhd/dhd_common.c           |  12 +-
+ drivers/net/wireless/bcmdhd/dhd_linux.c            |  70 ++++---
+ drivers/net/wireless/bcmdhd/dhd_sdio.c             |  13 +-
+ drivers/net/wireless/bcmdhd/include/bcmsdh_sdmmc.h |   4 +-
+ drivers/net/wireless/bcmdhd/include/bcmutils.h     |   8 +-
+ drivers/net/wireless/bcmdhd/include/dhdioctl.h     |   3 +-
+ drivers/net/wireless/bcmdhd/include/epivers.h      |  16 +-
+ drivers/net/wireless/bcmdhd/include/linuxver.h     |  15 +-
+ drivers/net/wireless/bcmdhd/include/wlioctl.h      |   5 +-
+ drivers/net/wireless/bcmdhd/linux_osl.c            |  12 +-
+ drivers/net/wireless/bcmdhd/wl_android.c           |  12 +-
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c          | 224 ++++++++++++---------
+ drivers/net/wireless/bcmdhd/wl_cfg80211.h          |  10 +-
+ drivers/net/wireless/bcmdhd/wl_cfgp2p.c            |  27 +--
+ drivers/net/wireless/bcmdhd/wl_cfgp2p.h            |   4 +-
+ 20 files changed, 297 insertions(+), 215 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/Makefile b/drivers/net/wireless/bcmdhd/Makefile
+index 754769b..b3ea084 100644
+--- a/drivers/net/wireless/bcmdhd/Makefile
++++ b/drivers/net/wireless/bcmdhd/Makefile
+@@ -35,6 +35,8 @@ endif
+ ifneq ($(CONFIG_CFG80211),)
+ bcmdhd-objs += wl_cfg80211.o wl_cfgp2p.o wl_linux_mon.o dhd_cfg80211.o
+ DHDCFLAGS += -DWL_CFG80211 -DWL_CFG80211_STA_EVENT -DWL_ENABLE_P2P_IF
++DHDCFLAGS += -DCUSTOM_ROAM_TRIGGER_SETTING=-70
++DHDCFLAGS += -DCUSTOM_ROAM_DELTA_SETTING=15
+ endif
+ ifneq ($(CONFIG_DHD_USE_SCHED_SCAN),)
+ DHDCFLAGS += -DWL_SCHED_SCAN
+diff --git a/drivers/net/wireless/bcmdhd/bcmsdh_sdmmc_linux.c b/drivers/net/wireless/bcmdhd/bcmsdh_sdmmc_linux.c
+index 5d5df41..a3e8ca9 100644
+--- a/drivers/net/wireless/bcmdhd/bcmsdh_sdmmc_linux.c
++++ b/drivers/net/wireless/bcmdhd/bcmsdh_sdmmc_linux.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmsdh_sdmmc_linux.c 353908 2012-08-29 08:09:02Z $
++ * $Id: bcmsdh_sdmmc_linux.c 355594 2012-09-07 10:22:02Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -192,7 +192,7 @@ static int bcmsdh_sdmmc_suspend(struct device *pdev)
+ 	if (func->num != 2)
+ 		return 0;
+ 
+-	sd_trace(("%s Enter\n", __FUNCTION__));
++	sd_trace_hw4(("%s Enter\n", __FUNCTION__));
+ 
+ 	if (dhd_os_check_wakelock(bcmsdh_get_drvdata()))
+ 		return -EBUSY;
+@@ -225,7 +225,7 @@ static int bcmsdh_sdmmc_resume(struct device *pdev)
+ #if defined(OOB_INTR_ONLY)
+ 	struct sdio_func *func = dev_to_sdio_func(pdev);
+ #endif /* defined(OOB_INTR_ONLY) */
+-	sd_trace(("%s Enter\n", __FUNCTION__));
++	sd_trace_hw4(("%s Enter\n", __FUNCTION__));
+ 
+ 	dhd_mmc_suspend = FALSE;
+ #if defined(OOB_INTR_ONLY)
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 9b1341e..d79f2c5 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd.h 354236 2012-08-30 13:00:58Z $
++ * $Id: dhd.h 356056 2012-09-11 01:08:09Z $
+  */
+ 
+ /****************
+@@ -89,6 +89,10 @@ enum dhd_bus_state {
+ #define MAX_CNTL_TIMEOUT  2
+ #endif
+ 
++#define DHD_SCAN_ASSOC_ACTIVE_TIME	40 /* ms: Embedded default Active setting from DHD */
++#define DHD_SCAN_UNASSOC_ACTIVE_TIME	40 /* ms: Embedded def. Unassoc Active setting from DHD */
++#define DHD_SCAN_PASSIVE_TIME		130 /* ms: Embedded default Passive setting from DHD */
++
+ #ifndef POWERUP_MAX_RETRY
+ #define POWERUP_MAX_RETRY	3 /* how many times we retry to power up the chip */
+ #endif
+@@ -638,6 +642,21 @@ extern uint dhd_force_tx_queueing;
+ #define CUSTOM_GLOM_SETTING 	DEFAULT_GLOM_VALUE
+ #endif
+ 
++/* hooks for custom Roaming Trigger  setting via Makefile */
++#define DEFAULT_ROAM_TRIGGER_VALUE -75 /* dBm default roam trigger all band */
++#define DEFAULT_ROAM_TRIGGER_SETTING 	-1
++#ifndef CUSTOM_ROAM_TRIGGER_SETTING
++#define CUSTOM_ROAM_TRIGGER_SETTING 	DEFAULT_ROAM_TRIGGER_VALUE
++#endif
++
++/* hooks for custom Roaming Romaing  setting via Makefile */
++#define DEFAULT_ROAM_DELTA_VALUE  10 /* dBm default roam delta all band */
++#define DEFAULT_ROAM_DELTA_SETTING 	-1
++#ifndef CUSTOM_ROAM_DELTA_SETTING
++#define CUSTOM_ROAM_DELTA_SETTING 	DEFAULT_ROAM_DELTA_VALUE
++#endif
++
++
+ /* hooks for custom dhd_dpc_prio setting option via Makefile */
+ #define DEFAULT_DHP_DPC_PRIO  1
+ #ifndef CUSTOM_DPC_PRIO_SETTING
+@@ -670,7 +689,6 @@ extern char fw_path2[MOD_PARAM_PATHLEN];
+ extern uint dhd_download_fw_on_driverload;
+ 
+ 
+-
+ /* For supporting multiple interfaces */
+ #define DHD_MAX_IFS	16
+ #define DHD_DEL_IF	-0xe
+diff --git a/drivers/net/wireless/bcmdhd/dhd_cdc.c b/drivers/net/wireless/bcmdhd/dhd_cdc.c
+index 26e673f..3b6a34d 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_cdc.c
++++ b/drivers/net/wireless/bcmdhd/dhd_cdc.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_cdc.c 353370 2012-08-27 09:10:22Z $
++ * $Id: dhd_cdc.c 355825 2012-09-10 03:22:40Z $
+  *
+  * BDC is like CDC, except it includes a header for data packets to convey
+  * packet priority over the bus, and flags (e.g. to indicate checksum status
+@@ -854,6 +854,12 @@ _dhd_wlfc_pullheader(athost_wl_status_info_t* ctx, void* pktbuf)
+ 
+ 	/* pull BDC header */
+ 	PKTPULL(ctx->osh, pktbuf, BDC_HEADER_LEN);
++
++	if (PKTLEN(ctx->osh, pktbuf) < (h->dataOffset << 2)) {
++		WLFC_DBGMESG(("%s: rx data too short (%d < %d)\n", __FUNCTION__,
++		           PKTLEN(ctx->osh, pktbuf), (h->dataOffset << 2)));
++		return BCME_ERROR;
++	}
+ 	/* pull wl-header */
+ 	PKTPULL(ctx->osh, pktbuf, (h->dataOffset << 2));
+ 	return BCME_OK;
+@@ -916,7 +922,15 @@ _dhd_wlfc_rollback_packet_toq(athost_wl_status_info_t* ctx,
+ 		}
+ 		else {
+ 			/* remove header first */
+-			_dhd_wlfc_pullheader(ctx, p);
++			rc = _dhd_wlfc_pullheader(ctx, p);
++			if (rc != BCME_OK)          {
++				WLFC_DBGMESG(("Error: %s():%d\n", __FUNCTION__, __LINE__));
++				/* free the hanger slot */
++				dhd_wlfc_hanger_poppkt(ctx->hanger, hslot, &pktout, 1);
++				PKTFREE(ctx->osh, p, TRUE);
++				rc = BCME_ERROR;
++				return rc;
++			}
+ 
+ 			if (pkt_type == eWLFC_PKTTYPE_DELAYED) {
+ 				/* delay-q packets are going to delay-q */
+@@ -1166,16 +1180,17 @@ _dhd_wlfc_pretx_pktprocess(athost_wl_status_info_t* ctx,
+ 		int gen;
+ 
+ 		/* remove old header */
+-		_dhd_wlfc_pullheader(ctx, p);
+-
+-		hslot = WLFC_PKTID_HSLOT_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
+-		dhd_wlfc_hanger_get_genbit(ctx->hanger, p, hslot, &gen);
++		rc = _dhd_wlfc_pullheader(ctx, p);
++		if (rc == BCME_OK) {
++			hslot = WLFC_PKTID_HSLOT_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
++			dhd_wlfc_hanger_get_genbit(ctx->hanger, p, hslot, &gen);
+ 
+-		WLFC_PKTFLAG_SET_GENERATION(htod, gen);
+-		free_ctr = WLFC_PKTID_FREERUNCTR_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
+-		/* push new header */
+-		_dhd_wlfc_pushheader(ctx, p, send_tim_update,
+-			entry->traffic_lastreported_bmp, entry->mac_handle, htod);
++			WLFC_PKTFLAG_SET_GENERATION(htod, gen);
++			free_ctr = WLFC_PKTID_FREERUNCTR_GET(DHD_PKTTAG_H2DTAG(PKTTAG(p)));
++			/* push new header */
++			_dhd_wlfc_pushheader(ctx, p, send_tim_update,
++				entry->traffic_lastreported_bmp, entry->mac_handle, htod);
++		}
+ 	}
+ 	*slot = hslot;
+ 	return rc;
+diff --git a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+index 0f37613..b2e4417 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/dhd_cfg80211.c
+@@ -81,14 +81,10 @@ s32 dhd_cfg80211_set_p2p_info(struct wl_priv *wl, int val)
+ 	dhd_pub_t *dhd =  (dhd_pub_t *)(wl->pub);
+ 	dhd->op_mode |= val;
+ 	WL_ERR(("Set : op_mode=%d\n", dhd->op_mode));
+-
+ #ifdef ARP_OFFLOAD_SUPPORT
+-	if ((dhd->op_mode & CONCURRENT_MULTI_CHAN) !=
+-	 CONCURRENT_MULTI_CHAN) {
+-		/* IF P2P is enabled, disable arpoe */
+-		dhd_arp_offload_set(dhd, 0);
+-		dhd_arp_offload_enable(dhd, false);
+-	}
++	/* IF P2P is enabled, disable arpoe */
++	dhd_arp_offload_set(dhd, 0);
++	dhd_arp_offload_enable(dhd, false);
+ #endif /* ARP_OFFLOAD_SUPPORT */
+ 
+ 	return 0;
+diff --git a/drivers/net/wireless/bcmdhd/dhd_common.c b/drivers/net/wireless/bcmdhd/dhd_common.c
+index 9a61156..17d8361 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_common.c
++++ b/drivers/net/wireless/bcmdhd/dhd_common.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_common.c 354527 2012-08-31 12:37:03Z $
++ * $Id: dhd_common.c 355340 2012-09-06 09:34:37Z $
+  */
+ #include <typedefs.h>
+ #include <osl.h>
+@@ -316,10 +316,12 @@ dhd_doiovar(dhd_pub_t *dhd_pub, const bcm_iovar_t *vi, uint32 actionid, const ch
+ 	case IOV_SVAL(IOV_MSGLEVEL):
+ #ifdef WL_CFG80211
+ 		/* Enable DHD and WL logs in oneshot */
+-		if (int_val & DHD_WL_VAL)
+-			wl_cfg80211_enable_trace(int_val & (~DHD_WL_VAL));
+-		else
+-#endif
++		if (int_val & DHD_WL_VAL2)
++			wl_cfg80211_enable_trace(TRUE, int_val & (~DHD_WL_VAL2));
++		else if (int_val & DHD_WL_VAL)
++			wl_cfg80211_enable_trace(FALSE, WL_DBG_DBG);
++		if (!(int_val & DHD_WL_VAL2))
++#endif /* WL_CFG80211 */
+ 		dhd_msg_level = int_val;
+ 		break;
+ 	case IOV_GVAL(IOV_BCMERRORSTR):
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 7c47f45..012f692 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -22,7 +22,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_linux.c 354288 2012-08-30 18:14:56Z $
++ * $Id: dhd_linux.c 356141 2012-09-11 09:43:16Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -1525,11 +1525,11 @@ dhd_txflowcontrol(dhd_pub_t *dhdp, int ifidx, bool state)
+ 
+ 	DHD_TRACE(("%s: Enter\n", __FUNCTION__));
+ 
+-	dhdp->txoff = state;
+ 	ASSERT(dhd);
+ 
+ 	if (ifidx == ALL_INTERFACES) {
+ 		/* Flow control on all active interfaces */
++		dhdp->txoff = state;
+ 		for (i = 0; i < DHD_MAX_IFS; i++) {
+ 			if (dhd->iflist[i]) {
+ 				net = dhd->iflist[i]->net;
+@@ -1620,11 +1620,11 @@ dhd_rx_frame(dhd_pub_t *dhdp, int ifidx, void *pktbuf, int numpkt, uint8 chan)
+ 		}
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+ 		/* Dropping packets before registering net device to avoid kernel panic */
+-#ifdef BCMDHDUSB
++#ifndef PROP_TXSTATUS_VSDB
+ 		if (!ifp->net || ifp->net->reg_state != NETREG_REGISTERED) {
+ #else
+ 		if (!ifp->net || ifp->net->reg_state != NETREG_REGISTERED || !dhd->pub.up) {
+-#endif /* BCMDHDUSB */
++#endif /* PROP_TXSTATUS_VSDB */
+ 			DHD_ERROR(("%s: net device is NOT registered yet. drop packet\n",
+ 			__FUNCTION__));
+ 			PKTFREE(dhdp->osh, pktbuf, TRUE);
+@@ -1701,12 +1701,8 @@ dhd_rx_frame(dhd_pub_t *dhdp, int ifidx, void *pktbuf, int numpkt, uint8 chan)
+ 						__FUNCTION__, dump_data[0x15]));
+ 				}
+ 			} else if (dump_data[0] & 1) {
+-				DHD_ERROR(("%s: MULTICAST: "
+-					"%02X:%02X:%02X:%02X:%02X:%02X\n",
+-					__FUNCTION__, dump_data[0],
+-					dump_data[1], dump_data[2],
+-					dump_data[3], dump_data[4],
+-					dump_data[5]));
++				DHD_ERROR(("%s: MULTICAST: " MACDBG "\n",
++					__FUNCTION__, MAC2STRDBG(dump_data)));
+ 			}
+ 
+ 			if (protocol == ETHER_TYPE_802_1X) {
+@@ -2948,6 +2944,11 @@ dhd_attach(osl_t *osh, struct dhd_bus *bus, uint bus_hdrlen)
+ 
+ #ifdef PROP_TXSTATUS
+ 	spin_lock_init(&dhd->wlfc_spinlock);
++#ifdef PROP_TXSTATUS_VSDB
++	dhd->pub.wlfc_enabled = FALSE;
++#else
++	dhd->pub.wlfc_enabled = TRUE;
++#endif /* PROP_TXSTATUS_VSDB */
+ #endif /* PROP_TXSTATUS */
+ 
+ 	/* Initialize other structure content */
+@@ -3294,17 +3295,17 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ #if defined(ARP_OFFLOAD_SUPPORT)
+ 	int arpoe = 1;
+ #endif
+-	int scan_assoc_time = DHD_SCAN_ACTIVE_TIME;
+-	int scan_unassoc_time = 80;
++	int scan_assoc_time = DHD_SCAN_ASSOC_ACTIVE_TIME;
++	int scan_unassoc_time = DHD_SCAN_UNASSOC_ACTIVE_TIME;
+ 	int scan_passive_time = DHD_SCAN_PASSIVE_TIME;
+ 	char buf[WLC_IOCTL_SMLEN];
+ 	char *ptr;
+ 	uint32 listen_interval = LISTEN_INTERVAL; /* Default Listen Interval in Beacons */
+ #ifdef ROAM_ENABLE
+ 	uint roamvar = 0;
+-	int roam_trigger[2] = {-75, WLC_BAND_ALL};
++	int roam_trigger[2] = {CUSTOM_ROAM_TRIGGER_SETTING, WLC_BAND_ALL};
+ 	int roam_scan_period[2] = {10, WLC_BAND_ALL};
+-	int roam_delta[2] = {10, WLC_BAND_ALL};
++	int roam_delta[2] = {CUSTOM_ROAM_DELTA_SETTING, WLC_BAND_ALL};
+ #ifdef FULL_ROAMING_SCAN_PERIOD_60_SEC
+ 	int roam_fullscan_period = 60;
+ #else /* FULL_ROAMING_SCAN_PERIOD_60_SEC */
+@@ -3334,8 +3335,12 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	uint32 hostreorder = 1;
+ #endif
+ #ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 	dhd->wlfc_enabled = FALSE;
+ 	/* enable WLFC only if the firmware is VSDB */
++#else
++	dhd->wlfc_enabled = TRUE;
++#endif /* PROP_TXSTATUS_VSDB */
+ #endif /* PROP_TXSTATUS */
+ 	DHD_TRACE(("Enter %s\n", __FUNCTION__));
+ 	dhd->op_mode = 0;
+@@ -3452,10 +3457,9 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	}
+ 
+ 	DHD_ERROR(("Firmware up: op_mode=%d, "
+-		"Broadcom Dongle Host Driver mac=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++		"Broadcom Dongle Host Driver mac="MACDBG"\n",
+ 		dhd->op_mode,
+-		dhd->mac.octet[0], dhd->mac.octet[1], dhd->mac.octet[2],
+-		dhd->mac.octet[3], dhd->mac.octet[4], dhd->mac.octet[5]));
++		MAC2STRDBG(dhd->mac.octet)));
+ 	/* Set Country code  */
+ 	if (dhd->dhd_cspec.ccode[0] != 0) {
+ 		bcm_mkiovar("country", (char *)&dhd->dhd_cspec,
+@@ -3475,12 +3479,18 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
+ #endif /* ROAM_ENABLE || DISABLE_BUILTIN_ROAM */
+ #ifdef ROAM_ENABLE
+-	dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_TRIGGER, roam_trigger, sizeof(roam_trigger), TRUE, 0);
+-	dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_SCAN_PERIOD, roam_scan_period,
+-		sizeof(roam_scan_period), TRUE, 0);
+-	dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_DELTA, roam_delta, sizeof(roam_delta), TRUE, 0);
++	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_TRIGGER, roam_trigger,
++		sizeof(roam_trigger), TRUE, 0)) < 0)
++		DHD_ERROR(("%s: roam trigger set failed %d\n", __FUNCTION__, ret));
++	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_SCAN_PERIOD, roam_scan_period,
++		sizeof(roam_scan_period), TRUE, 0)) < 0)
++		DHD_ERROR(("%s: roam scan period set failed %d\n", __FUNCTION__, ret));
++	if ((dhd_wl_ioctl_cmd(dhd, WLC_SET_ROAM_DELTA, roam_delta,
++		sizeof(roam_delta), TRUE, 0)) < 0)
++		DHD_ERROR(("%s: roam delta set failed %d\n", __FUNCTION__, ret));
+ 	bcm_mkiovar("fullroamperiod", (char *)&roam_fullscan_period, 4, iovbuf, sizeof(iovbuf));
+-	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
++	if ((ret = dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0)) < 0)
++		DHD_ERROR(("%s: roam fullscan period set failed %d\n", __FUNCTION__, ret));
+ #endif /* ROAM_ENABLE */
+ 
+ 	/* Set PowerSave mode */
+@@ -3490,9 +3500,11 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 	bcm_mkiovar("bus:txglomalign", (char *)&dongle_align, 4, iovbuf, sizeof(iovbuf));
+ 	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
+ 
+-	DHD_INFO(("%s set glom=0x%X\n", __FUNCTION__, glom));
+-	bcm_mkiovar("bus:txglom", (char *)&glom, 4, iovbuf, sizeof(iovbuf));
+-	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
++	if (glom != DEFAULT_GLOM_VALUE) {
++		DHD_INFO(("%s set glom=0x%X\n", __FUNCTION__, glom));
++		bcm_mkiovar("bus:txglom", (char *)&glom, 4, iovbuf, sizeof(iovbuf));
++		dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
++	}
+ 
+ 	/* Setup timeout if Beacons are lost and roam is off to report link down */
+ 	bcm_mkiovar("bcn_timeout", (char *)&bcn_timeout, 4, iovbuf, sizeof(iovbuf));
+@@ -3630,7 +3642,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ #ifdef AMPDU_HOSTREORDER
+ 	bcm_mkiovar("ampdu_hostreorder", (char *)&hostreorder, 4, buf, sizeof(buf));
+ 	dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, buf, sizeof(buf), TRUE, 0);
+-#endif 
++#endif /* AMPDU_HOSTREORDER */
+ 
+ #if !defined(WL_CFG80211)
+ 	/* Force STA UP */
+@@ -3938,10 +3950,10 @@ dhd_net_attach(dhd_pub_t *dhdp, int ifidx)
+ 		goto fail;
+ 	}
+ 	printf("Broadcom Dongle Host Driver: register interface [%s]"
+-		" MAC: %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
++		" MAC: "MACDBG"\n",
+ 		net->name,
+-		net->dev_addr[0], net->dev_addr[1], net->dev_addr[2],
+-		net->dev_addr[3], net->dev_addr[4], net->dev_addr[5]);
++		MAC2STRDBG(net->dev_addr));
++
+ #if defined(SOFTAP) && defined(CONFIG_WIRELESS_EXT) && !defined(WL_CFG80211)
+ 		wl_iw_iscan_set_scan_broadcast_prep(net, 1);
+ #endif
+diff --git a/drivers/net/wireless/bcmdhd/dhd_sdio.c b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+index 5d5b536..32c75f5 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhd_sdio.c 354488 2012-08-31 07:18:10Z $
++ * $Id: dhd_sdio.c 355144 2012-09-05 14:04:28Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -4666,18 +4666,12 @@ dhdsdio_rxglom(dhd_bus_t *bus, uint8 rxseq)
+ 
+ 			if (PKTLEN(osh, pfirst) == 0) {
+ 				PKTFREE(bus->dhd->osh, pfirst, FALSE);
+-				if (plast) {
+-					PKTSETNEXT(osh, plast, pnext);
+-				}
+ 				continue;
+ 			} else if (dhd_prot_hdrpull(bus->dhd, &ifidx, pfirst, reorder_info_buf,
+ 				&reorder_info_len) != 0) {
+ 				DHD_ERROR(("%s: rx protocol error\n", __FUNCTION__));
+ 				bus->dhd->rx_errors++;
+ 				PKTFREE(osh, pfirst, FALSE);
+-				if (plast) {
+-					PKTSETNEXT(osh, plast, pnext);
+-				}
+ 				continue;
+ 			}
+ 			if (reorder_info_len) {
+@@ -4690,9 +4684,6 @@ dhdsdio_rxglom(dhd_bus_t *bus, uint8 rxseq)
+ 					reorder_info_len, &ppfirst, &free_buf_count);
+ 
+ 				if (free_buf_count == 0) {
+-					if (plast) {
+-						PKTSETNEXT(osh, plast, pnext);
+-					}
+ 					continue;
+ 				}
+ 				else {
+@@ -4712,14 +4703,12 @@ dhdsdio_rxglom(dhd_bus_t *bus, uint8 rxseq)
+ 						PKTSETNEXT(osh, list_tail[ifidx], ppfirst);
+ 						list_tail[ifidx] = pfirst;
+ 					}
+-					plast = pfirst;
+ 				}
+ 
+ 				num += (uint8)free_buf_count;
+ 			}
+ 			else {
+ 				/* this packet will go up, link back into chain and count it */
+-				plast = pfirst;
+ 
+ 				if (list_tail[ifidx] == NULL) {
+ 					list_head[ifidx] = list_tail[ifidx] = pfirst;
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmsdh_sdmmc.h b/drivers/net/wireless/bcmdhd/include/bcmsdh_sdmmc.h
+index 80f3900..0e11b11 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmsdh_sdmmc.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmsdh_sdmmc.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: bcmsdh_sdmmc.h 313732 2012-02-08 19:49:00Z $
++ * $Id: bcmsdh_sdmmc.h 355594 2012-09-07 10:22:02Z $
+  */
+ 
+ #ifndef __BCMSDH_SDMMC_H__
+@@ -34,6 +34,8 @@
+ #define sd_data(x)
+ #define sd_ctrl(x)
+ 
++#define sd_trace_hw4	sd_trace
++
+ #define sd_sync_dma(sd, read, nbytes)
+ #define sd_init_dma(sd)
+ #define sd_ack_intr(sd)
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmutils.h b/drivers/net/wireless/bcmdhd/include/bcmutils.h
+index ba80701..6db5e93 100644
+--- a/drivers/net/wireless/bcmdhd/include/bcmutils.h
++++ b/drivers/net/wireless/bcmdhd/include/bcmutils.h
+@@ -649,7 +649,13 @@ extern void *_bcmutils_dummy_fn;
+ 							(ea).octet[3], \
+ 							(ea).octet[4], \
+ 							(ea).octet[5]
+-
++#if !defined(SIMPLE_MAC_PRINT)
++#define MACDBG "%02x:%02x:%02x:%02x:%02x:%02x"
++#define MAC2STRDBG(ea) (ea)[0], (ea)[1], (ea)[2], (ea)[3], (ea)[4], (ea)[5]
++#else
++#define MACDBG				"%02x:%02x:%02x"
++#define MAC2STRDBG(ea) (ea)[0], (ea)[4], (ea)[5]
++#endif /* SIMPLE_MAC_PRINT */
+ 
+ typedef struct bcm_bit_desc {
+ 	uint32	bit;
+diff --git a/drivers/net/wireless/bcmdhd/include/dhdioctl.h b/drivers/net/wireless/bcmdhd/include/dhdioctl.h
+index f2fc244..11fff55 100644
+--- a/drivers/net/wireless/bcmdhd/include/dhdioctl.h
++++ b/drivers/net/wireless/bcmdhd/include/dhdioctl.h
+@@ -25,7 +25,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: dhdioctl.h 353180 2012-08-24 22:37:10Z $
++ * $Id: dhdioctl.h 354894 2012-09-04 12:34:07Z $
+  */
+ 
+ #ifndef _dhdioctl_h_
+@@ -93,6 +93,7 @@ enum {
+ #define DHD_ARPOE_VAL	0x4000
+ #define DHD_REORDER_VAL	0x8000
+ #define DHD_WL_VAL		0x10000
++#define DHD_WL_VAL2		0x20000
+ 
+ #ifdef SDTEST
+ /* For pktgen iovar */
+diff --git a/drivers/net/wireless/bcmdhd/include/epivers.h b/drivers/net/wireless/bcmdhd/include/epivers.h
+index b4becbb..1f362ce 100644
+--- a/drivers/net/wireless/bcmdhd/include/epivers.h
++++ b/drivers/net/wireless/bcmdhd/include/epivers.h
+@@ -30,26 +30,26 @@
+ 
+ #define	EPI_MINOR_VERSION	28
+ 
+-#define	EPI_RC_NUMBER		11
++#define	EPI_RC_NUMBER		12
+ 
+-#define	EPI_INCREMENTAL_NUMBER	2
++#define	EPI_INCREMENTAL_NUMBER	1
+ 
+ #define	EPI_BUILD_NUMBER	0
+ 
+-#define	EPI_VERSION		1, 28, 11, 2
++#define	EPI_VERSION		1, 28, 12, 1
+ 
+-#define	EPI_VERSION_NUM		0x011c0b02
++#define	EPI_VERSION_NUM		0x011c0c01
+ 
+-#define EPI_VERSION_DEV		1.28.11
++#define EPI_VERSION_DEV		1.28.12
+ 
+ /* Driver Version String, ASCII, 32 chars max */
+ #ifdef BCMINTERNAL
+-#define	EPI_VERSION_STR		"1.28.11.2 (r BCMINT)"
++#define	EPI_VERSION_STR		"1.28.12.1 (r BCMINT)"
+ #else
+ #ifdef WLTEST
+-#define	EPI_VERSION_STR		"1.28.11.2 (r WLTEST)"
++#define	EPI_VERSION_STR		"1.28.12.1 (r WLTEST)"
+ #else
+-#define	EPI_VERSION_STR		"1.28.11.2 (r)"
++#define	EPI_VERSION_STR		"1.28.12.1 (r)"
+ #endif
+ #endif /* BCMINTERNAL */
+ 
+diff --git a/drivers/net/wireless/bcmdhd/include/linuxver.h b/drivers/net/wireless/bcmdhd/include/linuxver.h
+index 55144d9..f242aad 100644
+--- a/drivers/net/wireless/bcmdhd/include/linuxver.h
++++ b/drivers/net/wireless/bcmdhd/include/linuxver.h
+@@ -22,7 +22,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: linuxver.h 342829 2012-07-04 06:46:58Z $
++ * $Id: linuxver.h 353905 2012-08-29 07:33:08Z $
+  */
+ 
+ #ifndef _linuxver_h_
+@@ -520,6 +520,19 @@ typedef struct {
+ 	DBG_THR(("%s thr:%lx started\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
+ }
+ 
++#ifdef USE_KTHREAD_API
++#define PROC_START2(thread_func, owner, tsk_ctl, flags, name) \
++{ \
++	sema_init(&((tsk_ctl)->sema), 0); \
++	init_completion(&((tsk_ctl)->completed)); \
++	(tsk_ctl)->parent = owner; \
++	(tsk_ctl)->terminated = FALSE; \
++	(tsk_ctl)->p_task  = kthread_run(thread_func, tsk_ctl, (char*)name); \
++	(tsk_ctl)->thr_pid = (tsk_ctl)->p_task->pid; \
++	DBG_THR(("%s thr:%lx created\n", __FUNCTION__, (tsk_ctl)->thr_pid)); \
++}
++#endif
++
+ #define PROC_STOP(tsk_ctl) \
+ { \
+ 	(tsk_ctl)->terminated = TRUE; \
+diff --git a/drivers/net/wireless/bcmdhd/include/wlioctl.h b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+index decadf4..4149db4 100644
+--- a/drivers/net/wireless/bcmdhd/include/wlioctl.h
++++ b/drivers/net/wireless/bcmdhd/include/wlioctl.h
+@@ -24,7 +24,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wlioctl.h 354037 2012-08-29 21:19:25Z $
++ * $Id: wlioctl.h 354686 2012-09-01 12:17:25Z $
+  */
+ 
+ #ifndef _wlioctl_h_
+@@ -1886,9 +1886,6 @@ typedef struct wl_po {
+ /* when sgi_tx==WLC_SGI_ALL, bypass rate selection, enable sgi for all mcs */
+ #define WLC_SGI_ALL				0x02
+ 
+-#define DHD_SCAN_ACTIVE_TIME	 40 /* ms : Embedded default Active setting from DHD Driver */
+-#define DHD_SCAN_PASSIVE_TIME	130 /* ms: Embedded default Passive setting from DHD Driver */
+-
+ #define LISTEN_INTERVAL			10
+ /* interference mitigation options */
+ #define	INTERFERE_OVRRIDE_OFF	-1	/* interference override off */
+diff --git a/drivers/net/wireless/bcmdhd/linux_osl.c b/drivers/net/wireless/bcmdhd/linux_osl.c
+index ddb8372..d03a095 100644
+--- a/drivers/net/wireless/bcmdhd/linux_osl.c
++++ b/drivers/net/wireless/bcmdhd/linux_osl.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: linux_osl.c 350283 2012-08-12 07:47:25Z $
++ * $Id: linux_osl.c 355147 2012-09-05 15:03:49Z $
+  */
+ 
+ #define LINUX_PORT
+@@ -191,7 +191,7 @@ osl_attach(void *pdev, uint bustype, bool pkttag)
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25))
+ 	gfp_t flags;
+ 
+-	flags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
++	flags = (in_atomic() || in_interrupt()) ? GFP_ATOMIC : GFP_KERNEL;
+ 	osh = kmalloc(sizeof(osl_t), flags);
+ #else
+ 	osh = kmalloc(sizeof(osl_t), GFP_ATOMIC);
+@@ -288,7 +288,7 @@ osl_detach(osl_t *osh)
+ static struct sk_buff *osl_alloc_skb(unsigned int len)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+-	gfp_t flags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
++	gfp_t flags = (in_atomic() || in_interrupt()) ? GFP_ATOMIC : GFP_KERNEL;
+ 
+ 	return __dev_alloc_skb(len, flags);
+ #else
+@@ -373,7 +373,7 @@ osl_ctfpool_init(osl_t *osh, uint numobj, uint size)
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25))
+ 	gfp_t flags;
+ 
+-	flags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
++	flags = (in_atomic() || in_interrupt()) ? GFP_ATOMIC : GFP_KERNEL;
+ 	osh->ctfpool = kmalloc(sizeof(ctfpool_t), flags);
+ #else
+ 	osh->ctfpool = kmalloc(sizeof(ctfpool_t), GFP_ATOMIC);
+@@ -896,7 +896,7 @@ original:
+ #endif 
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25))
+-	flags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
++	flags = (in_atomic() || in_interrupt()) ? GFP_ATOMIC : GFP_KERNEL;
+ 	if ((addr = kmalloc(size, flags)) == NULL) {
+ #else
+ 	if ((addr = kmalloc(size, GFP_ATOMIC)) == NULL) {
+@@ -1058,7 +1058,7 @@ osl_pktdup(osl_t *osh, void *skb)
+ 	PKTCTFMAP(osh, skb);
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25))
+-	flags = (in_atomic()) ? GFP_ATOMIC : GFP_KERNEL;
++	flags = (in_atomic() || in_interrupt()) ? GFP_ATOMIC : GFP_KERNEL;
+ 	if ((p = skb_clone((struct sk_buff *)skb, flags)) == NULL)
+ #else
+ 	if ((p = skb_clone((struct sk_buff*)skb, GFP_ATOMIC)) == NULL)
+diff --git a/drivers/net/wireless/bcmdhd/wl_android.c b/drivers/net/wireless/bcmdhd/wl_android.c
+index c849a81..964c1d8 100644
+--- a/drivers/net/wireless/bcmdhd/wl_android.c
++++ b/drivers/net/wireless/bcmdhd/wl_android.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_android.c 354527 2012-08-31 12:37:03Z $
++ * $Id: wl_android.c 355613 2012-09-07 13:03:47Z $
+  */
+ 
+ #include <linux/module.h>
+@@ -131,6 +131,10 @@ int wl_cfg80211_set_p2p_ps(struct net_device *net, char* buf, int len)
+ #endif /* WL_CFG80211 */
+ extern int dhd_os_check_if_up(void *dhdp);
+ extern void *bcmsdh_get_drvdata(void);
++#if defined(PROP_TXSTATUS) && !defined(PROP_TXSTATUS_VSDB)
++extern int dhd_wlfc_init(dhd_pub_t *dhd);
++extern void dhd_wlfc_deinit(dhd_pub_t *dhd);
++#endif
+ 
+ extern bool ap_fw_loaded;
+ #if defined(CUSTOMER_HW2)
+@@ -407,6 +411,9 @@ int wl_android_wifi_on(struct net_device *dev)
+ 			if (dhd_dev_init_ioctl(dev) < 0)
+ 				ret = -EFAULT;
+ 		}
++#if defined(PROP_TXSTATUS) && !defined(PROP_TXSTATUS_VSDB)
++		dhd_wlfc_init(bcmsdh_get_drvdata());
++#endif
+ 		g_wifi_on = TRUE;
+ 	}
+ 
+@@ -428,6 +435,9 @@ int wl_android_wifi_off(struct net_device *dev)
+ 
+ 	dhd_net_if_lock(dev);
+ 	if (g_wifi_on) {
++#if defined(PROP_TXSTATUS) && !defined(PROP_TXSTATUS_VSDB)
++		dhd_wlfc_deinit(bcmsdh_get_drvdata());
++#endif
+ 		ret = dhd_dev_reset(dev, TRUE);
+ 		sdioh_stop(NULL);
+ 		dhd_customer_gpio_wlan_ctrl(WLAN_RESET_OFF);
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index d3b89fd..a46a4e6 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfg80211.c 354527 2012-08-31 12:37:03Z $
++ * $Id: wl_cfg80211.c 356173 2012-09-11 13:55:32Z $
+  */
+ 
+ #include <typedefs.h>
+@@ -63,14 +63,10 @@
+ 
+ #define IW_WSEC_ENABLED(wsec)   ((wsec) & (WEP_ENABLED | TKIP_ENABLED | AES_ENABLED))
+ 
+-
+ static struct device *cfg80211_parent_dev = NULL;
+ struct wl_priv *wlcfg_drv_priv = NULL;
+-
+ u32 wl_dbg_level = WL_DBG_ERR;
+ 
+-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+ #define MAX_WAIT_TIME 1500
+ 
+ #ifdef VSDB
+@@ -212,6 +208,10 @@ static s32 wl_cfg80211_get_key(struct wiphy *wiphy, struct net_device *dev,
+ static s32 wl_cfg80211_config_default_mgmt_key(struct wiphy *wiphy,
+ 	struct net_device *dev,	u8 key_idx);
+ static s32 wl_cfg80211_resume(struct wiphy *wiphy);
++static s32 wl_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
++	struct net_device *dev, u64 cookie);
++static s32 wl_cfg80211_del_station(struct wiphy *wiphy,
++	struct net_device *ndev, u8* mac_addr);
+ #if LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 39)
+ static s32 wl_cfg80211_suspend(struct wiphy *wiphy, struct cfg80211_wowlan *wow);
+ #else
+@@ -427,11 +427,11 @@ do {									\
+ 
+ 
+ extern int dhd_wait_pend8021x(struct net_device *dev);
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ extern int disable_proptx;
+ extern int dhd_wlfc_init(dhd_pub_t *dhd);
+ extern void dhd_wlfc_deinit(dhd_pub_t *dhd);
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 
+ #if (WL_DBG_LEVEL > 0)
+ #define WL_DBG_ESTR_MAX	50
+@@ -937,17 +937,17 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 	struct ether_addr primary_mac;
+ 	int (*net_attach)(void *dhdp, int ifidx);
+ 	bool rollback_lock = false;
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 	s32 up = 1;
+ 	dhd_pub_t *dhd;
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 
+ 	if (!wl)
+ 		return ERR_PTR(-EINVAL);
+ 
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 	dhd = (dhd_pub_t *)(wl->pub);
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 
+ 
+ 	/* Use primary I/F for sending cmds down to firmware */
+@@ -1018,10 +1018,10 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 				return ERR_PTR(-ENOMEM);
+ 		}
+ 
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 		if (!dhd)
+ 			return ERR_PTR(-ENODEV);
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 		if (!wl->p2p || !wl->p2p->vir_ifname)
+ 			return ERR_PTR(-ENODEV);
+ 
+@@ -1038,7 +1038,7 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 		strncpy(wl->p2p->vir_ifname, name, IFNAMSIZ - 1);
+ 
+ 		wl_notify_escan_complete(wl, _ndev, true, true);
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 		if (!wl->wlfc_on && !disable_proptx) {
+ 			dhd->wlfc_enabled = true;
+ 			dhd_wlfc_init(dhd);
+@@ -1047,7 +1047,7 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 				WL_ERR(("WLC_UP return err:%d\n", err));
+ 			wl->wlfc_on = true;
+ 		}
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 
+ 		/* In concurrency case, STA may be already associated in a particular channel.
+ 		 * so retrieve the current channel of primary interface and then start the virtual
+@@ -1127,13 +1127,13 @@ wl_cfg80211_add_virtual_iface(struct wiphy *wiphy, char *name,
+ 			WL_ERR((" virtual interface(%s) is not created \n", wl->p2p->vir_ifname));
+ 			memset(wl->p2p->vir_ifname, '\0', IFNAMSIZ);
+ 			wl->p2p->vif_created = false;
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 		if (dhd->wlfc_enabled && wl->wlfc_on) {
+ 			dhd->wlfc_enabled = false;
+ 			dhd_wlfc_deinit(dhd);
+ 			wl->wlfc_on = false;
+ 		}
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 		}
+ 	}
+ fail:
+@@ -1361,9 +1361,9 @@ wl_cfg80211_ifdel_ops(struct net_device *ndev)
+ 	struct wl_priv *wl = wlcfg_drv_priv;
+ 	bool rollback_lock = false;
+ 	s32 index = 0;
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 	dhd_pub_t *dhd =  (dhd_pub_t *)(wl->pub);
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 	if (!ndev || (strlen(ndev->name) == 0)) {
+ 		WL_ERR(("net is NULL\n"));
+ 		return 0;
+@@ -1395,13 +1395,13 @@ wl_cfg80211_ifdel_ops(struct net_device *ndev)
+ 		wl_cfgp2p_clear_management_ie(wl,
+ 			index);
+ 		WL_DBG(("index : %d\n", index));
+-#ifdef PROP_TXSTATUS
++#ifdef PROP_TXSTATUS_VSDB
+ 		if (dhd->wlfc_enabled && wl->wlfc_on) {
+ 			dhd->wlfc_enabled = false;
+ 			dhd_wlfc_deinit(dhd);
+ 			wl->wlfc_on = false;
+ 		}
+-#endif /* PROP_TXSTATUS */
++#endif /* PROP_TXSTATUS_VSDB */
+ 		wl_clr_drv_status(wl, CONNECTED, ndev);
+ 	}
+ 	/* Wake up any waiting thread */
+@@ -1512,8 +1512,8 @@ static void wl_scan_prep(struct wl_scan_params *params, struct cfg80211_scan_req
+ 	params->bss_type = DOT11_BSSTYPE_ANY;
+ 	params->scan_type = 0;
+ 	params->nprobes = -1;
+-	params->active_time = DHD_SCAN_ACTIVE_TIME;
+-	params->passive_time = DHD_SCAN_PASSIVE_TIME;
++	params->active_time = -1;
++	params->passive_time = -1;
+ 	params->home_time = -1;
+ 	params->channel_num = 0;
+ 	memset(&params->ssid, 0, sizeof(wlc_ssid_t));
+@@ -2086,8 +2086,8 @@ scan_out:
+ 			bzero(&bssid, sizeof(bssid));
+ 			if ((ret = wldev_ioctl(ndev, WLC_GET_BSSID,
+ 				&bssid, ETHER_ADDR_LEN, false)) == 0)
+-				WL_ERR(("FW is connected with " MACSTR "/n",
+-				MAC2STR(bssid.octet)));
++				WL_ERR(("FW is connected with " MACDBG "/n",
++				MAC2STRDBG(bssid.octet)));
+ 			else
+ 				WL_ERR(("GET BSSID failed with %d\n", ret));
+ 
+@@ -2625,8 +2625,8 @@ wl_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
+ 			memcpy(&scbval.ea, &bssid, ETHER_ADDR_LEN);
+ 			scbval.val = htod32(scbval.val);
+ 
+-			WL_DBG(("drv status CONNECTED is not set, but connected in FW!" MACSTR "/n",
+-				MAC2STR(bssid.octet)));
++			WL_DBG(("drv status CONNECTED is not set, but connected in FW!" MACDBG "/n",
++				MAC2STRDBG(bssid.octet)));
+ 			err = wldev_ioctl(dev, WLC_DISASSOC, &scbval,
+ 				sizeof(scb_val_t), true);
+ 			if (unlikely(err)) {
+@@ -2736,8 +2736,8 @@ wl_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev,
+ 	/* increate dwell time to receive probe response or detect Beacon
+ 	* from target AP at a noisy air only during connect command
+ 	*/
+-	ext_join_params->scan.active_time = DHD_SCAN_ACTIVE_TIME*8;
+-	ext_join_params->scan.passive_time = DHD_SCAN_PASSIVE_TIME*3;
++	ext_join_params->scan.active_time = WL_SCAN_JOIN_ACTIVE_DWELL_TIME_MS;
++	ext_join_params->scan.passive_time = WL_SCAN_JOIN_PASSIVE_DWELL_TIME_MS;
+ 	/* Set up join scan parameters */
+ 	ext_join_params->scan.scan_type = -1;
+ 	ext_join_params->scan.nprobes
+@@ -3295,8 +3295,8 @@ wl_cfg80211_get_station(struct wiphy *wiphy, struct net_device *dev,
+ 			return err;
+ 		}
+ 		if (memcmp(mac, curmacp, ETHER_ADDR_LEN)) {
+-			WL_ERR(("Wrong Mac address: "MACSTR" != "MACSTR"\n",
+-				MAC2STR(mac), MAC2STR(curmacp)));
++			WL_ERR(("Wrong Mac address: "MACDBG" != "MACDBG"\n",
++				MAC2STRDBG(mac), MAC2STRDBG(curmacp)));
+ 		}
+ 
+ 		/* Report the current tx rate */
+@@ -4228,8 +4228,10 @@ wl_cfg80211_mgmt_tx(struct wiphy *wiphy, struct net_device *ndev,
+ 			ieee80211_is_deauth(mgmt->frame_control)) {
+ 			memcpy(scb_val.ea.octet, mgmt->da, ETH_ALEN);
+ 			scb_val.val = mgmt->u.disassoc.reason_code;
+-			wldev_ioctl(dev, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val,
++			err = wldev_ioctl(dev, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val,
+ 				sizeof(scb_val_t), true);
++			if (err < 0)
++				WL_ERR(("WLC_SCB_DEAUTHENTICATE_FOR_REASON error %d\n", err));
+ 			WL_DBG(("Disconnect STA : %s scb_val.val %d\n",
+ 				bcm_ether_ntoa((const struct ether_addr *)mgmt->da, eabuf),
+ 				scb_val.val));
+@@ -5076,6 +5078,51 @@ static s32 wl_cfg80211_hostapd_sec(
+ 	return 0;
+ }
+ 
++static s32
++wl_cfg80211_del_station(
++	struct wiphy *wiphy,
++	struct net_device *ndev,
++	u8* mac_addr)
++{
++	struct net_device *dev;
++	struct wl_priv *wl = wiphy_priv(wiphy);
++	scb_val_t scb_val;
++	s8 eabuf[ETHER_ADDR_STR_LEN];
++
++	WL_DBG(("Entry\n"));
++	if (mac_addr == NULL) {
++		WL_DBG(("mac_addr is NULL ignore it\n"));
++		return 0;
++	}
++
++	if (ndev == wl->p2p_net) {
++		dev = wl_to_prmry_ndev(wl);
++	} else {
++		dev = ndev;
++	}
++
++	if (p2p_is_on(wl)) {
++		/* Suspend P2P discovery search-listen to prevent it from changing the
++		 * channel.
++		 */
++		if ((wl_cfgp2p_discover_enable_search(wl, false)) < 0) {
++			WL_ERR(("Can not disable discovery mode\n"));
++			return -EFAULT;
++		}
++	}
++
++	memcpy(scb_val.ea.octet, mac_addr, ETHER_ADDR_LEN);
++	scb_val.val = DOT11_RC_DEAUTH_LEAVING;
++	if (wldev_ioctl(dev, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val,
++		sizeof(scb_val_t), true))
++		WL_ERR(("WLC_SCB_DEAUTHENTICATE_FOR_REASON failed\n"));
++	WL_DBG(("Disconnect STA : %s scb_val.val %d\n",
++		bcm_ether_ntoa((const struct ether_addr *)mac_addr, eabuf),
++		scb_val.val));
++	wl_delay(400);
++	return 0;
++}
++
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+ static s32
+ wl_cfg80211_start_ap(
+@@ -5207,50 +5254,6 @@ exit:
+ }
+ 
+ static s32
+-wl_cfg80211_del_station(
+-	struct wiphy *wiphy,
+-	struct net_device *ndev,
+-	u8* mac_addr)
+-{
+-	struct net_device *dev;
+-	struct wl_priv *wl = wiphy_priv(wiphy);
+-	scb_val_t scb_val;
+-	s8 eabuf[ETHER_ADDR_STR_LEN];
+-
+-	WL_DBG(("Entry\n"));
+-	if (mac_addr == NULL) {
+-		WL_DBG(("mac_addr is NULL ignore it\n"));
+-		return 0;
+-	}
+-
+-	if (ndev == wl->p2p_net) {
+-		dev = wl_to_prmry_ndev(wl);
+-	} else {
+-		dev = ndev;
+-	}
+-
+-	if (p2p_is_on(wl)) {
+-		/* Suspend P2P discovery search-listen to prevent it from changing the
+-		 * channel.
+-		 */
+-		if ((wl_cfgp2p_discover_enable_search(wl, false)) < 0) {
+-			WL_ERR(("Can not disable discovery mode\n"));
+-			return -EFAULT;
+-		}
+-	}
+-
+-	memcpy(scb_val.ea.octet, mac_addr, ETHER_ADDR_LEN);
+-	scb_val.val = DOT11_RC_DEAUTH_LEAVING;
+-	wldev_ioctl(dev, WLC_SCB_DEAUTHENTICATE_FOR_REASON, &scb_val,
+-		sizeof(scb_val_t), true);
+-	WL_DBG(("Disconnect STA : %s scb_val.val %d\n",
+-		bcm_ether_ntoa((const struct ether_addr *)mac_addr, eabuf),
+-		scb_val.val));
+-	wl_delay(400);
+-	return 0;
+-}
+-
+-static s32
+ wl_cfg80211_change_beacon(
+ 	struct wiphy *wiphy,
+ 	struct net_device *dev,
+@@ -5555,12 +5558,13 @@ static struct cfg80211_ops wl_cfg80211_ops = {
+ 	.change_beacon = wl_cfg80211_change_beacon,
+ 	.start_ap = wl_cfg80211_start_ap,
+ 	.stop_ap = wl_cfg80211_stop_ap,
+-	.del_station = wl_cfg80211_del_station,
+ #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3, 4, 0) */
+ #ifdef WL_SCHED_SCAN
+ 	.sched_scan_start = wl_cfg80211_sched_scan_start,
+ 	.sched_scan_stop = wl_cfg80211_sched_scan_stop,
+ #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
++	.del_station = wl_cfg80211_del_station,
++	.mgmt_tx_cancel_wait = wl_cfg80211_mgmt_tx_cancel_wait,
+ };
+ 
+ s32 wl_mode_to_nl80211_iftype(s32 mode)
+@@ -6081,8 +6085,8 @@ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 					"(reason=%d)\n", ndev->name, ntoh32(e->reason));
+ 				if (memcmp(curbssid, &e->addr, ETHER_ADDR_LEN) != 0) {
+ 					WL_ERR(("BSSID of event is not the connected BSSID"
+-						"(ignore it) cur: " MACSTR " event: " MACSTR"\n",
+-						MAC2STR(curbssid), MAC2STR((u8*)(&e->addr))));
++						"(ignore it) cur: " MACDBG " event: " MACDBG"\n",
++						MAC2STRDBG(curbssid), MAC2STRDBG((u8*)(&e->addr))));
+ 					return 0;
+ 				}
+ 				wl_clr_drv_status(wl, CONNECTED, ndev);
+@@ -6094,8 +6098,12 @@ wl_notify_connect_status(struct wl_priv *wl, struct net_device *ndev,
+ 
+ 					memcpy(&scbval.ea, curbssid, ETHER_ADDR_LEN);
+ 					scbval.val = htod32(scbval.val);
+-					wldev_ioctl(ndev, WLC_DISASSOC, &scbval,
++					err = wldev_ioctl(ndev, WLC_DISASSOC, &scbval,
+ 						sizeof(scb_val_t), true);
++					if (err < 0) {
++						WL_ERR(("WLC_DISASSOC error %d\n", err));
++						err = 0;
++					}
+ 					cfg80211_disconnected(ndev, 0, NULL, 0, GFP_KERNEL);
+ 					wl_link_down(wl);
+ 					wl_init_prof(wl, ndev);
+@@ -6463,7 +6471,6 @@ wl_notify_pfn_status(struct wl_priv *wl, struct net_device *ndev,
+ 	 */
+ 	wl_notify_sched_scan_results(wl, ndev, e, data);
+ #endif /* WL_SCHED_SCAN */
+-
+ 	return 0;
+ }
+ #endif /* PNO_SUPPORT */
+@@ -6646,7 +6653,9 @@ wl_notify_rx_mgmt_frame(struct wl_priv *wl, struct net_device *ndev,
+ 		wldev_iovar_getbuf_bsscfg(dev, "cur_etheraddr",
+ 			NULL, 0, wl->ioctl_buf, WLC_IOCTL_SMLEN, bsscfgidx, &wl->ioctl_buf_sync);
+ 
+-		wldev_ioctl(dev, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN, false);
++		err = wldev_ioctl(dev, WLC_GET_BSSID, &bssid, ETHER_ADDR_LEN, false);
++		if (err < 0)
++			 WL_ERR(("WLC_GET_BSSID error %d\n", err));
+ 		memcpy(da.octet, wl->ioctl_buf, ETHER_ADDR_LEN);
+ 		err = wl_frame_get_mgmt(FC_ACTION, &da, &e->addr, &bssid,
+ 			&mgmt_frame, &mgmt_frame_len,
+@@ -7486,8 +7495,8 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 				wl->afx_hdl->tx_dst_addr.octet, ETHER_ADDR_LEN)) {
+ 				s32 channel = CHSPEC_CHANNEL(
+ 					wl_chspec_driver_to_host(bi->chanspec));
+-				WL_DBG(("ACTION FRAME SCAN : Peer " MACSTR " found, channel : %d\n",
+-					MAC2STR(wl->afx_hdl->tx_dst_addr.octet), channel));
++				WL_DBG(("ACTION FRAME SCAN : Peer " MACDBG " found, channel : %d\n",
++					MAC2STRDBG(wl->afx_hdl->tx_dst_addr.octet), channel));
+ 				wl_clr_p2p_status(wl, SCANNING);
+ 				wl->afx_hdl->peer_chan = channel;
+ 				complete(&wl->act_frm_scan);
+@@ -7530,9 +7539,9 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 						(bi->flags & WL_BSS_FLAGS_FROM_BEACON))
+ 						goto exit;
+ 
+-					WL_DBG(("%s("MACSTR"), i=%d prev: RSSI %d"
++					WL_DBG(("%s("MACDBG"), i=%d prev: RSSI %d"
+ 						" flags 0x%x, new: RSSI %d flags 0x%x\n",
+-						bss->SSID, MAC2STR(bi->BSSID.octet), i,
++						bss->SSID, MAC2STRDBG(bi->BSSID.octet), i,
+ 						bss->RSSI, bss->flags, bi->RSSI, bi->flags));
+ 
+ 					if ((bss->flags & WL_BSS_FLAGS_RSSI_ONCHANNEL) ==
+@@ -7540,9 +7549,9 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 						/* preserve max RSSI if the measurements are
+ 						* both on-channel or both off-channel
+ 						*/
+-						WL_SCAN(("%s("MACSTR"), same onchan"
++						WL_SCAN(("%s("MACDBG"), same onchan"
+ 						", RSSI: prev %d new %d\n",
+-						bss->SSID, MAC2STR(bi->BSSID.octet),
++						bss->SSID, MAC2STRDBG(bi->BSSID.octet),
+ 						bss->RSSI, bi->RSSI));
+ 						bi->RSSI = MAX(bss->RSSI, bi->RSSI);
+ 					} else if ((bss->flags & WL_BSS_FLAGS_RSSI_ONCHANNEL) &&
+@@ -7550,9 +7559,9 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 						/* preserve the on-channel rssi measurement
+ 						* if the new measurement is off channel
+ 						*/
+-						WL_SCAN(("%s("MACSTR"), prev onchan"
++						WL_SCAN(("%s("MACDBG"), prev onchan"
+ 						", RSSI: prev %d new %d\n",
+-						bss->SSID, MAC2STR(bi->BSSID.octet),
++						bss->SSID, MAC2STRDBG(bi->BSSID.octet),
+ 						bss->RSSI, bi->RSSI));
+ 						bi->RSSI = bss->RSSI;
+ 						bi->flags |= WL_BSS_FLAGS_RSSI_ONCHANNEL;
+@@ -7563,8 +7572,8 @@ static s32 wl_escan_handler(struct wl_priv *wl,
+ 						WL_SCAN(("bss info replacement"
+ 							" is occured(bcast:%d->probresp%d)\n",
+ 							bss->ie_length, bi->ie_length));
+-						WL_DBG(("%s("MACSTR"), replacement!(%d -> %d)\n",
+-						bss->SSID, MAC2STR(bi->BSSID.octet),
++						WL_DBG(("%s("MACDBG"), replacement!(%d -> %d)\n",
++						bss->SSID, MAC2STRDBG(bi->BSSID.octet),
+ 						prev_len, bi_length));
+ 
+ 						if (list->buflen - prev_len + bi_length
+@@ -7949,8 +7958,9 @@ s32 wl_cfg80211_attach_post(struct net_device *ndev)
+ 					/* Update MAC addr for p2p0 interface here. */
+ 					memcpy(wl->p2p_net->dev_addr, ndev->dev_addr, ETH_ALEN);
+ 					wl->p2p_net->dev_addr[0] |= 0x02;
+-					WL_ERR(("%s: p2p_dev_addr="MACSTR "\n",
+-						wl->p2p_net->name, MAC2STR(wl->p2p_net->dev_addr)));
++					WL_ERR(("%s: p2p_dev_addr="MACDBG "\n",
++						wl->p2p_net->name,
++						MAC2STRDBG(wl->p2p_net->dev_addr)));
+ 				} else {
+ 					WL_ERR(("p2p_net not yet populated."
+ 					" Couldn't update the MAC Address for p2p0 \n"));
+@@ -8401,8 +8411,7 @@ static int wl_construct_reginfo(struct wl_priv *wl, s32 bw_cap)
+ 			ht40_allowed = (bw_cap  == WLC_N_BW_20ALL)? false : true;
+ 		} else {
+ 			WL_ERR(("Invalid channel Sepc. 0x%x.\n", c));
+-			kfree(pbuf);
+-			return BCME_ERROR;
++			continue;
+ 		}
+ 		for (j = 0; (j < *n_cnt && (*n_cnt < array_size)); j++) {
+ 			if (band_chan_arr[j].hw_value == channel) {
+@@ -8556,6 +8565,7 @@ s32 wl_update_wiphybands(struct wl_priv *wl)
+ 			wiphy->bands[index]->ht_cap.ht_supported = TRUE;
+ 			wiphy->bands[index]->ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 			wiphy->bands[index]->ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_16;
++			/* An HT shall support all EQM rates for one spatial stream */
+ 			wiphy->bands[index]->ht_cap.mcs.rx_mask[0] = 0xff;
+ 		}
+ 
+@@ -8604,7 +8614,7 @@ static s32 __wl_cfg80211_down(struct wl_priv *wl)
+ #ifdef WL_ENABLE_P2P_IF
+ 	struct wiphy *wiphy = wl_to_prmry_ndev(wl)->ieee80211_ptr->wiphy;
+ 	struct net_device *p2p_net = wl->p2p_net;
+-#endif
++#endif /* WL_ENABLE_P2P_IF */
+ 	WL_DBG(("In\n"));
+ 	/* Check if cfg80211 interface is already down */
+ 	if (!wl_get_drv_status(wl, READY, ndev))
+@@ -9119,7 +9129,23 @@ int wl_cfg80211_do_driver_init(struct net_device *net)
+ 	return 0;
+ }
+ 
+-void wl_cfg80211_enable_trace(int level)
++void wl_cfg80211_enable_trace(bool set, u32 level)
++{
++	if (set)
++		wl_dbg_level = level & WL_DBG_LEVEL;
++	else
++		wl_dbg_level |= (WL_DBG_LEVEL & level);
++}
++
++static s32
++wl_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
++	struct net_device *dev, u64 cookie)
+ {
+-	wl_dbg_level = (u32)level;
++	/* CFG80211 checks for tx_cancel_wait callback when ATTR_DURATION
++	 * is passed with CMD_FRAME. This callback is supposed to cancel
++	 * the OFFCHANNEL Wait. Since we are already taking care of that
++	 *  with the tx_mgmt logic, do nothing here.
++	 */
++
++	return 0;
+ }
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.h b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+index b727d6d..b53c67e 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.h
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfg80211.h 354527 2012-08-31 12:37:03Z $
++ * $Id: wl_cfg80211.h 355340 2012-09-06 09:34:37Z $
+  */
+ 
+ #ifndef _wl_cfg80211_h_
+@@ -147,8 +147,10 @@ do {									\
+ #define WL_MIN_DWELL_TIME	100
+ #define WL_LONG_DWELL_TIME 	1000
+ #define IFACE_MAX_CNT 		2
+-#define WL_SCAN_CONNECT_DWELL_TIME_MS 200
+-#define WL_SCAN_JOIN_PROBE_INTERVAL_MS 20
++#define WL_SCAN_CONNECT_DWELL_TIME_MS 		200
++#define WL_SCAN_JOIN_PROBE_INTERVAL_MS 		20
++#define WL_SCAN_JOIN_ACTIVE_DWELL_TIME_MS 	320
++#define WL_SCAN_JOIN_PASSIVE_DWELL_TIME_MS 	400
+ #define WL_AF_TX_MAX_RETRY 	5
+ 
+ #define WL_SCAN_TIMER_INTERVAL_MS	8000 /* Scan timeout */
+@@ -802,7 +804,7 @@ extern s32 wl_cfg80211_set_p2p_ps(struct net_device *net, char* buf, int len);
+ extern int wl_cfg80211_hang(struct net_device *dev, u16 reason);
+ extern s32 wl_mode_to_nl80211_iftype(s32 mode);
+ int wl_cfg80211_do_driver_init(struct net_device *net);
+-void wl_cfg80211_enable_trace(int level);
++void wl_cfg80211_enable_trace(bool set, u32 level);
+ extern s32 wl_update_wiphybands(struct wl_priv *wl);
+ extern s32 wl_cfg80211_if_is_group_owner(void);
+ extern chanspec_t wl_ch_host_to_driver(u16 channel);
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+index 643d436..3ad3440 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfgp2p.c 353899 2012-08-29 06:41:22Z $
++ * $Id: wl_cfgp2p.c 354837 2012-09-04 06:58:44Z $
+  *
+  */
+ #include <typedefs.h>
+@@ -352,9 +352,8 @@ wl_cfgp2p_ifadd(struct wl_priv *wl, struct ether_addr *mac, u8 if_type,
+ 	ifreq.chspec = chspec;
+ 	memcpy(ifreq.addr.octet, mac->octet, sizeof(ifreq.addr.octet));
+ 
+-	CFGP2P_DBG(("---wl p2p_ifadd %02x:%02x:%02x:%02x:%02x:%02x %s %u\n",
+-	    ifreq.addr.octet[0], ifreq.addr.octet[1], ifreq.addr.octet[2],
+-		ifreq.addr.octet[3], ifreq.addr.octet[4], ifreq.addr.octet[5],
++	CFGP2P_DBG(("---wl p2p_ifadd "MACDBG" %s %u\n",
++		MAC2STRDBG(ifreq.addr.octet),
+ 		(if_type == WL_P2P_IF_GO) ? "go" : "client",
+ 	        (chspec & WL_CHANSPEC_CHAN_MASK) >> WL_CHANSPEC_CHAN_SHIFT));
+ 
+@@ -382,9 +381,8 @@ wl_cfgp2p_ifdisable(struct wl_priv *wl, struct ether_addr *mac)
+ 	s32 ret;
+ 	struct net_device *netdev = wl_to_prmry_ndev(wl);
+ 
+-	CFGP2P_INFO(("------primary idx %d : wl p2p_ifdis %02x:%02x:%02x:%02x:%02x:%02x\n",
+-	    netdev->ifindex, mac->octet[0], mac->octet[1], mac->octet[2],
+-	    mac->octet[3], mac->octet[4], mac->octet[5]));
++	CFGP2P_INFO(("------primary idx %d : wl p2p_ifdis "MACDBG"\n",
++		netdev->ifindex, MAC2STRDBG(mac->octet)));
+ 	ret = wldev_iovar_setbuf(netdev, "p2p_ifdis", mac, sizeof(*mac),
+ 		wl->ioctl_buf, WLC_IOCTL_MAXLEN, &wl->ioctl_buf_sync);
+ 	if (unlikely(ret < 0)) {
+@@ -404,9 +402,8 @@ wl_cfgp2p_ifdel(struct wl_priv *wl, struct ether_addr *mac)
+ 	s32 ret;
+ 	struct net_device *netdev = wl_to_prmry_ndev(wl);
+ 
+-	CFGP2P_INFO(("------primary idx %d : wl p2p_ifdel %02x:%02x:%02x:%02x:%02x:%02x\n",
+-	    netdev->ifindex, mac->octet[0], mac->octet[1], mac->octet[2],
+-	    mac->octet[3], mac->octet[4], mac->octet[5]));
++	CFGP2P_INFO(("------primary idx %d : wl p2p_ifdel "MACDBG"\n",
++	    netdev->ifindex, MAC2STRDBG(mac->octet)));
+ 	ret = wldev_iovar_setbuf(netdev, "p2p_ifdel", mac, sizeof(*mac),
+ 		wl->ioctl_buf, WLC_IOCTL_MAXLEN, &wl->ioctl_buf_sync);
+ 	if (unlikely(ret < 0)) {
+@@ -434,10 +431,8 @@ wl_cfgp2p_ifchange(struct wl_priv *wl, struct ether_addr *mac, u8 if_type,
+ 	ifreq.chspec = chspec;
+ 	memcpy(ifreq.addr.octet, mac->octet, sizeof(ifreq.addr.octet));
+ 
+-	CFGP2P_INFO(("---wl p2p_ifchange %02x:%02x:%02x:%02x:%02x:%02x %s %u"
+-		" chanspec 0x%04x\n",
+-		ifreq.addr.octet[0], ifreq.addr.octet[1], ifreq.addr.octet[2],
+-		ifreq.addr.octet[3], ifreq.addr.octet[4], ifreq.addr.octet[5],
++	CFGP2P_INFO(("---wl p2p_ifchange "MACDBG" %s %u"
++		" chanspec 0x%04x\n", MAC2STRDBG(ifreq.addr.octet),
+ 		(if_type == WL_P2P_IF_GO) ? "go" : "client",
+ 		(chspec & WL_CHANSPEC_CHAN_MASK) >> WL_CHANSPEC_CHAN_SHIFT,
+ 		ifreq.chspec));
+@@ -469,9 +464,7 @@ wl_cfgp2p_ifidx(struct wl_priv *wl, struct ether_addr *mac, s32 *index)
+ 	u8 getbuf[64];
+ 	struct net_device *dev = wl_to_prmry_ndev(wl);
+ 
+-	CFGP2P_INFO(("---wl p2p_if %02x:%02x:%02x:%02x:%02x:%02x\n",
+-	    mac->octet[0], mac->octet[1], mac->octet[2],
+-	    mac->octet[3], mac->octet[4], mac->octet[5]));
++	CFGP2P_INFO(("---wl p2p_if "MACDBG"\n", MAC2STRDBG(mac->octet)));
+ 
+ 	ret = wldev_iovar_getbuf_bsscfg(dev, "p2p_if", mac, sizeof(*mac), getbuf,
+ 		sizeof(getbuf), wl_to_p2p_bss_bssidx(wl, P2PAPI_BSSCFG_PRIMARY), NULL);
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfgp2p.h b/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
+index a3d30a6..51cdf82 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
++++ b/drivers/net/wireless/bcmdhd/wl_cfgp2p.h
+@@ -21,7 +21,7 @@
+  * software in any way with any other Broadcom software provided under a license
+  * other than the GPL, without Broadcom's express prior written consent.
+  *
+- * $Id: wl_cfgp2p.h 353885 2012-08-29 05:21:34Z $
++ * $Id: wl_cfgp2p.h 354837 2012-09-04 06:58:44Z $
+  */
+ #ifndef _wl_cfgp2p_h_
+ #define _wl_cfgp2p_h_
+@@ -133,8 +133,6 @@ enum wl_cfgp2p_status {
+ 
+ /* dword align allocation */
+ #define WLC_IOCTL_MAXLEN 8192
+-#define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
+-#define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
+ 
+ #define CFGP2P_ERR(args)									\
+ 	do {										\
+-- 
+1.8.0
+

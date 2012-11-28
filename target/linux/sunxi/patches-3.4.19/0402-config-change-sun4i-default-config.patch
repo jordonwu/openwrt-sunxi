@@ -1,0 +1,28 @@
+From 0735ba1a89938ddb5c01c8d3a580d3e94656ff4a Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Wed, 30 Nov 2011 16:29:26 +0800
+Subject: [PATCH 402/944] config: change sun4i default config
+
+Command line is passed by the bootloader
+---
+ arch/arm/configs/sun4i_defconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index ff3eaa6..3b9ab60 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -365,8 +365,8 @@ CONFIG_ALIGNMENT_TRAP=y
+ CONFIG_ZBOOT_ROM_TEXT=0
+ CONFIG_ZBOOT_ROM_BSS=0
+ CONFIG_CMDLINE="mem=448M@0x40000000 console=ttyS0,115200"
+-# CONFIG_CMDLINE_FROM_BOOTLOADER is not set
+-CONFIG_CMDLINE_EXTEND=y
++CONFIG_CMDLINE_FROM_BOOTLOADER=y
++# CONFIG_CMDLINE_EXTEND is not set
+ # CONFIG_CMDLINE_FORCE is not set
+ # CONFIG_XIP_KERNEL is not set
+ # CONFIG_AUTO_ZRELADDR is not set
+-- 
+1.8.0
+

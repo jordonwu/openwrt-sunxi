@@ -1,0 +1,35 @@
+From 0f01bb1747566cc7b314f0a7ab9c94c2e28ce525 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Thu, 3 Jun 2010 16:33:07 -0700
+Subject: [PATCH 099/944] Allow CONFIG_STACKTRACE to be enabled by itself.
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This allows us to get a kernel stacktrace for a thread though /proc.
+Also enable it by default.
+
+Change-Id: If8c21cd02feaf9863f4841ace524fa30c7328d49
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+---
+ lib/Kconfig.debug | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
+index 6777153..097d70f 100644
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -676,8 +676,9 @@ config DEBUG_LOCKING_API_SELFTESTS
+ 	  mutexes and rwsems.
+ 
+ config STACKTRACE
+-	bool
++	bool "Stacktrace"
+ 	depends on STACKTRACE_SUPPORT
++	default y
+ 
+ config DEBUG_STACK_USAGE
+ 	bool "Stack utilization instrumentation"
+-- 
+1.8.0
+

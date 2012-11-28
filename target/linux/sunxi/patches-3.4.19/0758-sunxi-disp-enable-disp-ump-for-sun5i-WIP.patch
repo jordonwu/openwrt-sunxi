@@ -1,0 +1,39 @@
+From 7d2b184b30edd085fe533a1b4b035a7e38921d3a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sat, 15 Sep 2012 21:25:10 +0200
+Subject: [PATCH 758/944] sunxi-disp: enable disp-ump for sun5i [WIP]
+
+---
+ drivers/video/Kconfig             | 2 +-
+ include/linux/drv_display_sun5i.h | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index f770195..2bab4c1 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -295,7 +295,7 @@ config FB_SUNXI
+ 
+ config FB_SUNXI_UMP
+ 	bool "Enable FB/UMP Integration"
+-	depends on MALI && FB_SUNXI=m
++	depends on MALI && FB_SUNXI
+ 	default y
+ 
+ config FB_SUNXI_LCD
+diff --git a/include/linux/drv_display_sun5i.h b/include/linux/drv_display_sun5i.h
+index 32b497d..8906d2d 100644
+--- a/include/linux/drv_display_sun5i.h
++++ b/include/linux/drv_display_sun5i.h
+@@ -787,6 +787,8 @@ typedef enum tag_DISP_CMD
+     DISP_CMD_PWM_GET_PARA = 0x301,
+ }__disp_cmd_t;
+ 
++#define GET_UMP_SECURE_ID _IOWR('m', 310, unsigned int)
++
+ #define FBIOGET_LAYER_HDL_0 0x4700
+ #define FBIOGET_LAYER_HDL_1 0x4701
+ 
+-- 
+1.8.0
+

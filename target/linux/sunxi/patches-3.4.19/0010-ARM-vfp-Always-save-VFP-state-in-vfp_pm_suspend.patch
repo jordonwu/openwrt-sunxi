@@ -1,0 +1,45 @@
+From 6fb6e046190ae76725a62937d6334c7cdfa46c91 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Tue, 16 Aug 2011 16:36:29 -0700
+Subject: [PATCH 010/944] ARM: vfp: Always save VFP state in vfp_pm_suspend
+
+vfp_pm_suspend should save the VFP state in suspend after
+any lazy context switch.  If it only saves when the VFP is enabled,
+the state can get lost when, on a UP system:
+  Thread 1 uses the VFP
+  Context switch occurs to thread 2, VFP is disabled but the
+     VFP context is not saved
+  Thread 2 initiates suspend
+  vfp_pm_suspend is called with the VFP disabled, and the unsaved
+     VFP context of Thread 1 in the registers
+
+Modify vfp_pm_suspend to save the VFP context whenever
+vfp_current_hw_state is not NULL.
+
+Change-Id: I91f29722d256a3afc1cc04df8b227541434ccffb
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Barry Song <bs14@csr.com>
+Cc: Catalin Marinas <catalin.marinas@arm.com>
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/vfp/vfpmodule.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/vfp/vfpmodule.c b/arch/arm/vfp/vfpmodule.c
+index 858748e..d600ff3 100644
+--- a/arch/arm/vfp/vfpmodule.c
++++ b/arch/arm/vfp/vfpmodule.c
+@@ -451,6 +451,10 @@ static int vfp_pm_suspend(void)
+ 
+ 		/* disable, just in case */
+ 		fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_EN);
++	} else if (vfp_current_hw_state[ti->cpu]) {
++		fmxr(FPEXC, fpexc | FPEXC_EN);
++		vfp_save_state(vfp_current_hw_state[ti->cpu], fpexc);
++		fmxr(FPEXC, fpexc);
+ 	}
+ 
+ 	/* clear any information we had about last context state */
+-- 
+1.8.0
+

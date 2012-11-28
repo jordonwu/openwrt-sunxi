@@ -1,0 +1,26 @@
+From a52fd84786a6ee62c51929fd81d836e460c603fd Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 24 Oct 2012 14:14:27 +0200
+Subject: [PATCH 886/944] video:sunxi:hdmi: set pointers to NULL
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/hdmi/drv_hdmi.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index 2d00fef..245a734 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -296,7 +296,7 @@ __s32 Hdmi_exit(void)
+ 
+ 	if (HDMI_task) {
+ 		kthread_stop(HDMI_task);
+-		HDMI_task = 0;
++		HDMI_task = NULL;
+ 	}
+ 
+ 	return 0;
+-- 
+1.8.0
+

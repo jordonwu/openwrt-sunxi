@@ -1,0 +1,2277 @@
+From a2b884ff63a744ce62f2c9d94be22df68eb3493a Mon Sep 17 00:00:00 2001
+From: kevin <kevin@allwinnertech.com>
+Date: Fri, 18 Nov 2011 17:27:33 +0800
+Subject: [PATCH 358/944] support cpu frequency
+
+---
+ arch/arm/Kconfig                              |   2 +
+ arch/arm/mach-sun4i/Makefile                  |   2 +-
+ arch/arm/mach-sun4i/cpu-freq/Makefile         |   4 +
+ arch/arm/mach-sun4i/cpu-freq/cpu-freq-table.c |  82 +++
+ arch/arm/mach-sun4i/cpu-freq/cpu-freq.c       | 774 ++++++++++++++++++++++++++
+ arch/arm/mach-sun4i/cpu-freq/cpu-freq.h       |  66 +++
+ arch/arm/mach-sun4i/pm/pm.c                   | 124 -----
+ arch/arm/mach-sun4i/pm/test/Makefile          |  29 -
+ arch/arm/mach-sun4i/pm/test/pm_test.c         |  71 ---
+ drivers/cpufreq/Kconfig                       |  43 ++
+ drivers/cpufreq/Makefile                      |   1 +
+ drivers/cpufreq/cpufreq.c                     |  33 ++
+ drivers/cpufreq/cpufreq_fantasy.c             | 717 ++++++++++++++++++++++++
+ drivers/input/input.c                         |  54 ++
+ include/linux/cpufreq.h                       |  11 +-
+ 15 files changed, 1787 insertions(+), 226 deletions(-)
+ create mode 100644 arch/arm/mach-sun4i/cpu-freq/Makefile
+ create mode 100644 arch/arm/mach-sun4i/cpu-freq/cpu-freq-table.c
+ create mode 100644 arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
+ create mode 100644 arch/arm/mach-sun4i/cpu-freq/cpu-freq.h
+ delete mode 100644 arch/arm/mach-sun4i/pm/test/Makefile
+ delete mode 100644 arch/arm/mach-sun4i/pm/test/pm_test.c
+ create mode 100644 drivers/cpufreq/cpufreq_fantasy.c
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 96bb4a0..5d3d95d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -711,6 +711,8 @@ config ARCH_SUN4I
+ 	select CLKDEV_LOOKUP
+ 	select CLKSRC_MMIO
+ 	select GENERIC_CLOCKEVENTS
++	select ARCH_HAS_CPUFREQ
++	select ARM_L1_CACHE_SHIFT_6
+ 	help
+ 	  This enables support for Allwinner Technology Co., Ltd A1x SoC based systems
+ 
+diff --git a/arch/arm/mach-sun4i/Makefile b/arch/arm/mach-sun4i/Makefile
+index 88b116c..cd49c0e 100644
+--- a/arch/arm/mach-sun4i/Makefile
++++ b/arch/arm/mach-sun4i/Makefile
+@@ -2,4 +2,4 @@ obj-y += clock/
+ obj-y += dma/
+ obj-y += core.o  devices.o sys_config.o
+ obj-$(CONFIG_PM) += pm/
+-
++obj-$(CONFIG_CPU_FREQ) += cpu-freq/
+diff --git a/arch/arm/mach-sun4i/cpu-freq/Makefile b/arch/arm/mach-sun4i/cpu-freq/Makefile
+new file mode 100644
+index 0000000..4f2e238
+--- /dev/null
++++ b/arch/arm/mach-sun4i/cpu-freq/Makefile
+@@ -0,0 +1,4 @@
++
++obj-$(CONFIG_CPU_FREQ)  += cpu-freq.o
++obj-$(CONFIG_CPU_FREQ_TABLE)  += cpu-freq-table.o
++
+diff --git a/arch/arm/mach-sun4i/cpu-freq/cpu-freq-table.c b/arch/arm/mach-sun4i/cpu-freq/cpu-freq-table.c
+new file mode 100644
+index 0000000..c65f4d6
+--- /dev/null
++++ b/arch/arm/mach-sun4i/cpu-freq/cpu-freq-table.c
+@@ -0,0 +1,82 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2007-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : cpu-freq-table.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-6-19 9:34
++* Descript: sun4i cpu frequency table
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#include <linux/types.h>
++#include <linux/clk.h>
++#include <linux/cpufreq.h>
++#include "cpu-freq.h"
++
++struct cpufreq_frequency_table sun4i_freq_tbl[] = {
++
++    { .frequency = 30000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 48000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 60000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 72000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 84000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 96000,   .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 108000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 120000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 132000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 144000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 156000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 168000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 180000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 192000,  .index = SUN4I_CLK_DIV(1, 1, 1, 2), },
++    { .frequency = 204000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 216000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 240000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 264000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 288000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 300000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 336000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 360000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 384000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 408000,  .index = SUN4I_CLK_DIV(1, 1, 2, 2), },
++    { .frequency = 432000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 480000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 528000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 576000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 600000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 648000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 672000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 696000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 720000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 744000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 768000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 816000,  .index = SUN4I_CLK_DIV(1, 2, 2, 2), },
++    { .frequency = 864000,  .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 912000,  .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 960000,  .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 1008000, .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    #if(1)
++    { .frequency = 1056000, .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 1104000, .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 1152000, .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 1200000, .index = SUN4I_CLK_DIV(1, 3, 2, 2), },
++    { .frequency = 1248000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    { .frequency = 1296000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    { .frequency = 1344000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    { .frequency = 1392000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    { .frequency = 1440000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    { .frequency = 1488000, .index = SUN4I_CLK_DIV(1, 4, 2, 2), },
++    #endif
++
++    /* table end */
++    { .frequency = CPUFREQ_TABLE_END,  .index = 0,              },
++};
++
+diff --git a/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
+new file mode 100644
+index 0000000..a1d3401
+--- /dev/null
++++ b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.c
+@@ -0,0 +1,774 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : cpu-freq.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-6-18 18:13
++* Descript: cpufreq driver on allwinner chips;
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/cpufreq.h>
++#include <linux/cpu.h>
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/regulator/consumer.h>
++#include "cpu-freq.h"
++
++
++static struct sun4i_cpu_freq_t  cpu_cur;    /* current cpu frequency configuration  */
++static unsigned int last_target = ~0;       /* backup last target frequency         */
++
++static struct clk *clk_pll; /* pll clock handler */
++static struct clk *clk_cpu; /* cpu clock handler */
++static struct clk *clk_axi; /* axi clock handler */
++static struct clk *clk_ahb; /* ahb clock handler */
++static struct clk *clk_apb; /* apb clock handler */
++
++
++#ifdef CONFIG_CPU_FREQ_DVFS
++struct cpufreq_dvfs {
++    unsigned int    freq;   /* cpu frequency    */
++    unsigned int    volt;   /* voltage for the frequency    */
++};
++static struct cpufreq_dvfs dvfs_table[] = {
++    {.freq = 1056000000, .volt = 1500}, /* core vdd is 1.50v if cpu frequency is (1008Mhz, xxxxMhz] */
++    {.freq = 1008000000, .volt = 1400}, /* core vdd is 1.40v if cpu frequency is (960Mhz, 1008Mhz]  */
++    {.freq = 960000000,  .volt = 1400}, /* core vdd is 1.40v if cpu frequency is (912Mhz, 960Mhz]   */
++    {.freq = 912000000,  .volt = 1350}, /* core vdd is 1.35v if cpu frequency is (864Mhz, 912Mhz]   */
++    {.freq = 864000000,  .volt = 1300}, /* core vdd is 1.30v if cpu frequency is (624Mhz, 864Mhz]   */
++    {.freq = 624000000,  .volt = 1250}, /* core vdd is 1.25v if cpu frequency is (432Mhz, 624Mhz]   */
++    {.freq = 432000000,  .volt = 1250}, /* core vdd is 1.25v if cpu frequency is (0, 432Mhz]        */
++    {.freq = 0,          .volt = 1000}, /* end of cpu dvfs table                                    */
++};
++static struct regulator *corevdd;
++static unsigned int last_vdd    = 1400;     /* backup last target voltage, default is 1.4v  */
++#endif
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_verify
++*
++*Description: check if the cpu frequency policy is valid;
++*
++*Arguments  : policy    cpu frequency policy;
++*
++*Return     : result, return if verify ok, else return -EINVAL;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_verify(struct cpufreq_policy *policy)
++{
++	if (policy->cpu != 0)
++		return -EINVAL;
++
++	return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_show
++*
++*Description: show cpu frequency information;
++*
++*Arguments  : pfx   name;
++*
++*
++*Return     :
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void sun4i_cpufreq_show(const char *pfx, struct sun4i_cpu_freq_t *cfg)
++{
++	CPUFREQ_DBG("%s: pll=%u, cpudiv=%u, axidiv=%u, ahbdiv=%u, apb=%u\n",
++        pfx, cfg->pll, cfg->div.cpu_div, cfg->div.axi_div, cfg->div.ahb_div, cfg->div.apb_div);
++}
++
++
++#ifdef CONFIG_CPU_FREQ_DVFS
++/*
++*********************************************************************************************************
++*                           __get_vdd_value
++*
++*Description: get vdd with cpu frequency.
++*
++*Arguments  : freq  cpu frequency;
++*
++*Return     : vdd value;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline unsigned int __get_vdd_value(unsigned int freq)
++{
++    struct cpufreq_dvfs *dvfs_inf = &dvfs_table[0];
++    while((dvfs_inf+1)->freq >= freq) dvfs_inf++;
++
++    return dvfs_inf->volt;
++}
++#endif
++
++
++/*
++*********************************************************************************************************
++*                           __set_cpufreq_hw
++*
++*Description: set cpu frequency configuration to hardware.
++*
++*Arguments  : freq  frequency configuration;
++*
++*Return     : result
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline int __set_cpufreq_hw(struct sun4i_cpu_freq_t *freq)
++{
++    int             ret;
++    unsigned int    frequency;
++
++    /* try to adjust pll frequency */
++    ret = clk_set_rate(clk_pll, freq->pll);
++    /* try to adjust cpu frequency */
++    frequency = freq->pll / freq->div.cpu_div;
++    ret |= clk_set_rate(clk_cpu, frequency);
++    /* try to adjuxt axi frequency */
++    frequency /= freq->div.axi_div;
++    ret |= clk_set_rate(clk_axi, frequency);
++    /* try to adjust ahb frequency */
++    frequency /= freq->div.ahb_div;
++    ret |= clk_set_rate(clk_ahb, frequency);
++    /* try to adjust apb frequency */
++    frequency /= freq->div.apb_div;
++    ret |= clk_set_rate(clk_apb, frequency);
++
++    return ret;
++}
++
++
++/*
++*********************************************************************************************************
++*                           __set_cpufreq_target
++*
++*Description: set target frequency, the frequency limitation of axi is 450Mhz, the frequency
++*             limitation of ahb is 250Mhz, and the limitation of apb is 150Mhz. for usb connecting,
++*             the frequency of ahb must not lower than 60Mhz.
++*
++*Arguments  : old   cpu/axi/ahb/apb frequency old configuration.
++*             new   cpu/axi/ahb/apb frequency new configuration.
++*
++*Return     : result, 0 - set frequency successed, !0 - set frequency failed;
++*
++*Notes      : we check two frequency point: 204Mhz, 408Mhz, 816Mhz and 1200Mhz.
++*             if increase cpu frequency, the flow should be:
++*               low(1:1:1:2) -> 204Mhz(1:1:1:2) -> 204Mhz(1:1:2:2) -> 408Mhz(1:1:2:2)
++*               -> 408Mhz(1:2:2:2) -> 816Mhz(1:2:2:2) -> 816Mhz(1:3:2:2) -> 1200Mhz(1:3:2:2)
++*               -> 1200Mhz(1:4:2:2) -> target(1:4:2:2) -> target(x:x:x:x)
++*             if decrease cpu frequency, the flow should be:
++*               high(x:x:x:x) -> target(1:4:2:2) -> 1200Mhz(1:4:2:2) -> 1200Mhz(1:3:2:2)
++*               -> 816Mhz(1:3:2:2) -> 816Mhz(1:2:2:2) -> 408Mhz(1:2:2:2) -> 408Mhz(1:1:2:2)
++*               -> 204Mhz(1:1:2:2) -> 204Mhz(1:1:1:2) -> target(1:1:1:2)
++*********************************************************************************************************
++*/
++static int __set_cpufreq_target(struct sun4i_cpu_freq_t *old, struct sun4i_cpu_freq_t *new)
++{
++    int     ret = 0;
++    struct sun4i_cpu_freq_t old_freq, new_freq;
++
++    if(!old || !new) {
++        return -EINVAL;
++    }
++
++    old_freq = *old;
++    new_freq = *new;
++
++    CPUFREQ_INF("cpu: %dMhz->%dMhz\n", old_freq.pll/1000000, new_freq.pll/1000000);
++
++    if(new_freq.pll > old_freq.pll) {
++        if((old_freq.pll <= 204000000) && (new_freq.pll >= 204000000)) {
++            /* set to 204Mhz (1:1:1:2) */
++            old_freq.pll = 204000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 1;
++            old_freq.div.ahb_div = 1;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 204Mhz (1:1:2:2) */
++            old_freq.div.ahb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll <= 408000000) && (new_freq.pll >= 408000000)) {
++            /* set to 408Mhz (1:1:2:2) */
++            old_freq.pll = 408000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 1;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 408Mhz (1:2:2:2) */
++            old_freq.div.axi_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll <= 816000000) && (new_freq.pll >= 816000000)) {
++            /* set to 816Mhz (1:2:2:2) */
++            old_freq.pll = 816000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 2;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 816Mhz (1:3:2:2) */
++            old_freq.div.axi_div = 3;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll <= 1200000000) && (new_freq.pll >= 1200000000)) {
++            /* set to 1200Mhz (1:3:2:2) */
++            old_freq.pll = 1200000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 3;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 1200Mhz (1:4:2:2) */
++            old_freq.div.axi_div = 4;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++
++        /* adjust to target frequency */
++        ret |= __set_cpufreq_hw(&new_freq);
++    }
++    else if(new_freq.pll < old_freq.pll) {
++        if((old_freq.pll > 1200000000) && (new_freq.pll <= 1200000000)) {
++            /* set to 1200Mhz (1:3:2:2) */
++            old_freq.pll = 1200000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 3;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll > 816000000) && (new_freq.pll <= 816000000)) {
++            /* set to 816Mhz (1:3:2:2) */
++            old_freq.pll = 816000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 3;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 816Mhz (1:2:2:2) */
++            old_freq.div.axi_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll > 408000000) && (new_freq.pll <= 408000000)) {
++            /* set to 408Mhz (1:2:2:2) */
++            old_freq.pll = 408000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 2;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 816Mhz (1:1:2:2) */
++            old_freq.div.axi_div = 1;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++        if((old_freq.pll > 204000000) && (new_freq.pll <= 204000000)) {
++            /* set to 204Mhz (1:1:2:2) */
++            old_freq.pll = 204000000;
++            old_freq.div.cpu_div = 1;
++            old_freq.div.axi_div = 1;
++            old_freq.div.ahb_div = 2;
++            old_freq.div.apb_div = 2;
++            ret |= __set_cpufreq_hw(&old_freq);
++            /* set to 204Mhz (1:1:1:2) */
++            old_freq.div.ahb_div = 1;
++            ret |= __set_cpufreq_hw(&old_freq);
++        }
++
++        /* adjust to target frequency */
++        ret |= __set_cpufreq_hw(&new_freq);
++    }
++
++    if(ret) {
++        unsigned int    frequency;
++
++        CPUFREQ_ERR("try to set target frequency failed!\n");
++
++        /* try to restore frequency configuration */
++        frequency = clk_get_rate(clk_cpu);
++        frequency /= 4;
++        clk_set_rate(clk_axi, frequency);
++        frequency /= 2;
++        clk_set_rate(clk_ahb, frequency);
++        frequency /= 2;
++        clk_set_rate(clk_apb, frequency);
++
++        clk_set_rate(clk_pll, old->pll);
++        frequency = old->pll / old->div.cpu_div;
++        clk_set_rate(clk_cpu, frequency);
++        frequency /= old->div.axi_div;
++        clk_set_rate(clk_axi, frequency);
++        frequency /= old->div.ahb_div;
++        clk_set_rate(clk_ahb, frequency);
++        frequency /= old->div.apb_div;
++        clk_set_rate(clk_apb, frequency);
++
++        CPUFREQ_ERR(KERN_ERR "no compatible settings cpu freq for %d\n", new_freq.pll);
++        return -1;
++    }
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_settarget
++*
++*Description: adjust cpu frequency;
++*
++*Arguments  : policy    cpu frequency policy, to mark if need notify;
++*             cpu_freq  new cpu frequency configuration;
++*
++*Return     : return 0 if set successed, otherwise, return -EINVAL
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_settarget(struct cpufreq_policy *policy, struct sun4i_cpu_freq_t *cpu_freq)
++{
++    struct cpufreq_freqs    freqs;
++    struct sun4i_cpu_freq_t cpu_new;
++
++    #ifdef CONFIG_CPU_FREQ_DVFS
++    unsigned int    new_vdd;
++    #endif
++
++    /* show current cpu frequency configuration, just for debug */
++	sun4i_cpufreq_show("cur", &cpu_cur);
++
++    /* get new cpu frequency configuration */
++	cpu_new = *cpu_freq;
++	sun4i_cpufreq_show("new", &cpu_new);
++
++    /* notify that cpu clock will be adjust if needed */
++	if (policy) {
++	    freqs.cpu = 0;
++	    freqs.old = cpu_cur.pll / 1000;
++	    freqs.new = cpu_new.pll / 1000;
++		cpufreq_notify_transition(&freqs, CPUFREQ_PRECHANGE);
++	}
++
++    #ifdef CONFIG_CPU_FREQ_DVFS
++    /* get vdd value for new frequency */
++    new_vdd = __get_vdd_value(cpu_new.pll);
++
++    if(corevdd && (new_vdd > last_vdd)) {
++        CPUFREQ_INF("set core vdd to %d\n", new_vdd);
++        if(regulator_set_voltage(corevdd, new_vdd*1000, new_vdd*1000)) {
++            CPUFREQ_INF("try to set voltage failed!\n");
++
++            /* notify everyone that clock transition finish */
++    	    if (policy) {
++	            freqs.cpu = 0;
++	            freqs.old = freqs.new;
++	            freqs.new = cpu_cur.pll / 1000;
++		        cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
++	        }
++            return -EINVAL;
++        }
++    }
++    #endif
++
++    if(__set_cpufreq_target(&cpu_cur, &cpu_new)){
++
++        /* try to set cpu frequency failed */
++
++        #ifdef CONFIG_CPU_FREQ_DVFS
++        if(corevdd && (new_vdd > last_vdd)) {
++            CPUFREQ_INF("set core vdd to %d\n", last_vdd);
++            if(regulator_set_voltage(corevdd, last_vdd*1000, last_vdd*1000)){
++                CPUFREQ_INF("try to set voltage failed!\n");
++                last_vdd = new_vdd;
++            }
++        }
++        #endif
++
++        /* notify everyone that clock transition finish */
++    	if (policy) {
++	        freqs.cpu = 0;
++	        freqs.old = freqs.new;
++	        freqs.new = cpu_cur.pll / 1000;
++		    cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
++	    }
++
++        return -EINVAL;
++    }
++
++    #ifdef CONFIG_CPU_FREQ_DVFS
++    if(corevdd && (new_vdd < last_vdd)) {
++        CPUFREQ_INF("set core vdd to %d\n", new_vdd);
++        if(regulator_set_voltage(corevdd, new_vdd*1000, new_vdd*1000)) {
++            CPUFREQ_INF("try to set voltage failed!\n");
++            new_vdd = last_vdd;
++        }
++    }
++    last_vdd = new_vdd;
++    #endif
++
++	/* update our current settings */
++	cpu_cur = cpu_new;
++
++	/* notify everyone we've done this */
++	if (policy) {
++		cpufreq_notify_transition(&freqs, CPUFREQ_POSTCHANGE);
++	}
++
++	CPUFREQ_DBG("%s: finished\n", __func__);
++	return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_target
++*
++*Description: adjust the frequency that cpu is currently running;
++*
++*Arguments  : policy    cpu frequency policy;
++*             freq      target frequency to be set, based on khz;
++*             relation  method for selecting the target requency;
++*
++*Return     : result, return 0 if set target frequency successed,
++*                     else, return -EINVAL;
++*
++*Notes      : this function is called by the cpufreq core;
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_target(struct cpufreq_policy *policy, __u32 freq, __u32 relation)
++{
++    int                     ret;
++    unsigned int            index;
++    struct sun4i_cpu_freq_t freq_cfg;
++
++	/* avoid repeated calls which cause a needless amout of duplicated
++	 * logging output (and CPU time as the calculation process is
++	 * done) */
++	if (freq == last_target) {
++		return 0;
++	}
++
++    /* try to look for a valid frequency value from cpu frequency table */
++    if (cpufreq_frequency_table_target(policy, sun4i_freq_tbl, freq, relation, &index)) {
++        CPUFREQ_ERR("%s: try to look for a valid frequency for %u failed!\n", __func__, freq);
++		return -EINVAL;
++	}
++
++	if (sun4i_freq_tbl[index].frequency == last_target) {
++        /* frequency is same as the value last set, need not adjust */
++		return 0;
++	}
++	freq = sun4i_freq_tbl[index].frequency;
++
++    /* update the target frequency */
++    freq_cfg.pll = sun4i_freq_tbl[index].frequency * 1000;
++    freq_cfg.div = *(struct sun4i_clk_div_t *)&sun4i_freq_tbl[index].index;
++    CPUFREQ_DBG("%s: target frequency find is %u, entry %u\n", __func__, freq_cfg.pll, index);
++
++    /* try to set target frequency */
++    ret = sun4i_cpufreq_settarget(policy, &freq_cfg);
++    if(!ret) {
++        last_target = freq;
++    }
++
++    return ret;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_get
++*
++*Description: get the frequency that cpu currently is running;
++*
++*Arguments  : cpu   cpu number;
++*
++*Return     : cpu frequency, based on khz;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static unsigned int sun4i_cpufreq_get(unsigned int cpu)
++{
++	return clk_get_rate(clk_cpu) / 1000;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_init
++*
++*Description: cpu frequency initialise a policy;
++*
++*Arguments  : policy    cpu frequency policy;
++*
++*Return     : result, return 0 if init ok, else, return -EINVAL;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_init(struct cpufreq_policy *policy)
++{
++	CPUFREQ_DBG(KERN_INFO "%s: initialising policy %p\n", __func__, policy);
++
++	if (policy->cpu != 0)
++		return -EINVAL;
++
++	policy->cur = sun4i_cpufreq_get(0);
++	policy->min = policy->cpuinfo.min_freq = SUN4I_CPUFREQ_MIN / 1000;
++	policy->max = policy->cpuinfo.max_freq = SUN4I_CPUFREQ_MAX / 1000;
++	policy->governor = CPUFREQ_DEFAULT_GOVERNOR;
++
++	/* feed the latency information from the cpu driver */
++	policy->cpuinfo.transition_latency = SUN4I_FREQTRANS_LATENCY;
++
++	return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_getcur
++*
++*Description: get current cpu frequency configuration;
++*
++*Arguments  : cfg   cpu frequency cofniguration;
++*
++*Return     : result;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_getcur(struct sun4i_cpu_freq_t *cfg)
++{
++    unsigned int    freq, freq0;
++
++    if(!cfg) {
++        return -EINVAL;
++    }
++
++	cfg->pll = clk_get_rate(clk_pll);
++    freq = clk_get_rate(clk_cpu);
++    cfg->div.cpu_div = cfg->pll / freq;
++    freq0 = clk_get_rate(clk_axi);
++    cfg->div.axi_div = freq / freq0;
++    freq = clk_get_rate(clk_ahb);
++    cfg->div.ahb_div = freq0 / freq;
++    freq0 = clk_get_rate(clk_apb);
++    cfg->div.apb_div = freq /freq0;
++
++	return 0;
++}
++
++
++
++#ifdef CONFIG_PM
++
++/* variable for backup cpu frequency configuration */
++static struct sun4i_cpu_freq_t suspend_freq;
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_suspend
++*
++*Description: back up cpu frequency configuration for suspend;
++*
++*Arguments  : policy    cpu frequency policy;
++*             pmsg      power management message;
++*
++*Return     : return 0,
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_suspend(struct cpufreq_policy *policy)
++{
++    struct sun4i_cpu_freq_t suspend;
++
++    CPUFREQ_DBG("%s, set cpu frequency to 60Mhz to prepare enter standby\n", __func__);
++
++    sun4i_cpufreq_getcur(&suspend_freq);
++
++    /* set cpu frequency to 60M hz for standby */
++    suspend.pll = 60000000;
++    suspend.div.cpu_div = 1;
++    suspend.div.axi_div = 1;
++    suspend.div.ahb_div = 1;
++    suspend.div.apb_div = 2;
++    __set_cpufreq_target(&suspend_freq, &suspend);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_resume
++*
++*Description: cpu frequency configuration resume;
++*
++*Arguments  : policy    cpu frequency policy;
++*
++*Return     : result;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int sun4i_cpufreq_resume(struct cpufreq_policy *policy)
++{
++    struct sun4i_cpu_freq_t suspend;
++
++    /* invalidate last_target setting */
++	last_target = ~0;
++
++	CPUFREQ_DBG("%s: resuming with policy %p\n", __func__, policy);
++    sun4i_cpufreq_getcur(&suspend);
++
++    /* restore cpu frequency configuration */
++    __set_cpufreq_target(&suspend, &suspend_freq);
++
++	CPUFREQ_DBG("%s: resuming done\n", __func__);
++	return 0;
++}
++
++
++#else   /* #ifdef CONFIG_PM */
++
++#define sun4i_cpufreq_suspend   NULL
++#define sun4i_cpufreq_resume    NULL
++
++#endif  /* #ifdef CONFIG_PM */
++
++
++static struct cpufreq_driver sun4i_cpufreq_driver = {
++	.flags		= CPUFREQ_STICKY,
++	.verify		= sun4i_cpufreq_verify,
++	.target		= sun4i_cpufreq_target,
++	.get		= sun4i_cpufreq_get,
++	.init		= sun4i_cpufreq_init,
++	.suspend	= sun4i_cpufreq_suspend,
++	.resume		= sun4i_cpufreq_resume,
++	.name		= "sun4i",
++};
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_initclks
++*
++*Description: init cpu frequency clock resource;
++*
++*Arguments  : none
++*
++*Return     : result;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static __init int sun4i_cpufreq_initclks(void)
++{
++    clk_pll = clk_get(NULL, "core_pll");
++    clk_cpu = clk_get(NULL, "cpu");
++    clk_axi = clk_get(NULL, "axi");
++    clk_ahb = clk_get(NULL, "ahb");
++    clk_apb = clk_get(NULL, "apb");
++
++	if (IS_ERR(clk_pll) || IS_ERR(clk_cpu) || IS_ERR(clk_axi) ||
++	    IS_ERR(clk_ahb) || IS_ERR(clk_apb)) {
++		CPUFREQ_INF(KERN_ERR "%s: could not get clock(s)\n", __func__);
++		return -ENOENT;
++	}
++
++	CPUFREQ_INF("%s: clocks pll=%lu,cpu=%lu,axi=%lu,ahp=%lu,apb=%lu\n", __func__,
++	       clk_get_rate(clk_pll), clk_get_rate(clk_cpu), clk_get_rate(clk_axi),
++	       clk_get_rate(clk_ahb), clk_get_rate(clk_apb));
++
++    #ifdef CONFIG_CPU_FREQ_DVFS
++    corevdd = regulator_get(NULL, "axp20_core");
++    if(!corevdd) {
++        CPUFREQ_INF("try to get regulator failed, core vdd will not changed!\n");
++    }
++    else {
++        CPUFREQ_INF("try to get regulator(0x%x) successed.\n", (__u32)corevdd);
++        last_vdd = regulator_get_voltage(corevdd) / 1000;
++    }
++    #endif
++
++	return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           sun4i_cpufreq_initcall
++*
++*Description: cpu frequency driver initcall
++*
++*Arguments  : none
++*
++*Return     : result
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int __init sun4i_cpufreq_initcall(void)
++{
++	int ret = 0;
++
++    /* initialise some clock resource */
++    ret = sun4i_cpufreq_initclks();
++    if(ret) {
++        return ret;
++    }
++
++    /* initialise current frequency configuration */
++	sun4i_cpufreq_getcur(&cpu_cur);
++	sun4i_cpufreq_show("cur", &cpu_cur);
++
++    /* register cpu frequency driver */
++    ret = cpufreq_register_driver(&sun4i_cpufreq_driver);
++    /* register cpu frequency table to cpufreq core */
++    cpufreq_frequency_table_get_attr(sun4i_freq_tbl, 0);
++    /* update policy for boot cpu */
++    cpufreq_update_policy(0);
++
++	return ret;
++}
++late_initcall(sun4i_cpufreq_initcall);
++
+diff --git a/arch/arm/mach-sun4i/cpu-freq/cpu-freq.h b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.h
+new file mode 100644
+index 0000000..e6966a9
+--- /dev/null
++++ b/arch/arm/mach-sun4i/cpu-freq/cpu-freq.h
+@@ -0,0 +1,66 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : cpu-freq.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-6-19 13:16
++* Descript: cpu frequency for sun4i;
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#ifndef __SUN4I_CPU_FREQ_H__
++#define __SUN4I_CPU_FREQ_H__
++
++#include <linux/types.h>
++#include <linux/cpufreq.h>
++
++#undef CPUFREQ_DBG
++#undef CPUFREQ_ERR
++#if (0)
++    #define CPUFREQ_DBG(format,args...)   printk("[cpu_freq] DBG:"format,##args)
++    #define CPUFREQ_ERR(format,args...)   printk("[cpu_freq] ERR:"format,##args)
++    #define CPUFREQ_INF(format,args...)   printk("[cpu_freq] INF:"format,##args)
++#else
++    #define CPUFREQ_DBG(format,args...)   do{}while(0)
++    #define CPUFREQ_ERR(format,args...)   do{}while(0)
++    #define CPUFREQ_INF(format,args...)   do{}while(0)
++#endif
++
++
++#define SUN4I_CPUFREQ_MAX       (1008000000)    /* config the maximum frequency of sun4i core */
++#define SUN4I_CPUFREQ_MIN       (60000000)      /* config the minimum frequency of sun4i core */
++#define SUN4I_FREQTRANS_LATENCY (2000000)       /* config the transition latency, based on ns */
++
++struct sun4i_clk_div_t {
++    __u32   cpu_div:4;      /* division of cpu clock, divide core_pll */
++    __u32   axi_div:4;      /* division of axi clock, divide cpu clock*/
++    __u32   ahb_div:4;      /* division of ahb clock, divide axi clock*/
++    __u32   apb_div:4;      /* division of apb clock, divide ahb clock*/
++    __u32   reserved:16;
++};
++
++
++struct sun4i_cpu_freq_t {
++    __u32                   pll;    /* core pll frequency value */
++    struct sun4i_clk_div_t  div;    /* division configuration   */
++};
++
++
++#define SUN4I_CLK_DIV(cpu_div, axi_div, ahb_div, apb_div)       \
++                ((cpu_div<<0)|(axi_div<<4)|(ahb_div<<8)|(apb_div<<12))
++
++
++
++extern struct cpufreq_frequency_table sun4i_freq_tbl[];
++
++#endif  /* #ifndef __SUN4I_CPU_FREQ_H__ */
++
++
+diff --git a/arch/arm/mach-sun4i/pm/pm.c b/arch/arm/mach-sun4i/pm/pm.c
+index 1a9857f..7bc2743 100644
+--- a/arch/arm/mach-sun4i/pm/pm.c
++++ b/arch/arm/mach-sun4i/pm/pm.c
+@@ -54,11 +54,6 @@ static struct aw_pm_info standby_info = {
+         .dev_addr = 10,
+     },
+ };
+-static struct cdev *pmu_cdev=NULL;
+-static struct device *pmu_device=NULL;
+-static dev_t  pmu_dev;
+-static struct class *pm_class;
+-
+ 
+ 
+ /*
+@@ -291,79 +286,6 @@ static struct platform_suspend_ops aw_pm_ops = {
+ 
+ /*
+ *********************************************************************************************************
+-*                           aw_set_pmu
+-*
+-*Description: set parameters for pmu device.
+-*
+-*Arguments  : arg   pm information from user;
+-*
+-*Return     : result,
+-*
+-*Notes      : pmu is a virtual char device for user access.
+-*
+-*********************************************************************************************************
+-*/
+-static int aw_set_pmu(struct aw_pm_info *arg)
+-{
+-    struct aw_pm_info   tmp_arg;
+-
+-    copy_from_user((void *)&tmp_arg, (void *)arg, sizeof(struct aw_pm_info));
+-
+-    /* check if parameter is valid */
+-    if((tmp_arg.pmu_arg.twi_port < 0) || (tmp_arg.pmu_arg.twi_port > 2))
+-    {
+-        printk("pmu paraeter invlalid(standby_para.twi_port:%d\n)!\n", arg->pmu_arg.twi_port);
+-        return -1;
+-    }
+-
+-    memcpy((void *)&standby_info, (void *)arg, sizeof(struct aw_pm_info));
+-
+-    return 0;
+-}
+-
+-
+-/*
+-*********************************************************************************************************
+-*                           aw_pmu_ioctl
+-*
+-*Description: function for user control pmu virtual device.
+-*
+-*Arguments  : pfile pmu device handle;
+-*             cmd   command for pmu device operation;
+-*             arg   arguments for pmu device operation;
+-*
+-*Return     : result;
+-*
+-*Notes      :
+-*
+-*********************************************************************************************************
+-*/
+-static long aw_pmu_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg)
+-{
+-    int ret = -EINVAL;
+-
+-    PM_DBG("aw_pmu_ioctl\n");
+-
+-    switch(cmd){
+-    case AW_PMU_SET:
+-        ret = aw_set_pmu((struct aw_pm_info *)arg);
+-        break;
+-    default:
+-        break;
+-    }
+-
+-    return ret;
+-}
+-
+-
+-static struct file_operations pmudev_fops= {
+-    .owner  = THIS_MODULE,
+-    .unlocked_ioctl = aw_pmu_ioctl,
+-};
+-
+-
+-/*
+-*********************************************************************************************************
+ *                           aw_pm_init
+ *
+ *Description: initial pm sub-system for platform;
+@@ -378,45 +300,10 @@ static struct file_operations pmudev_fops= {
+ */
+ static int __init aw_pm_init(void)
+ {
+-    int     result;
+-
+     PM_DBG("aw_pm_init!\n");
+-
+-    pmu_dev = MKDEV(AW_PMU_MAJOR,0);
+-    result = register_chrdev_region(pmu_dev,PMU_MAX_DEVS,"aw_pmu");
+-    if(result){
+-        printk(KERN_ERR "alloc_chrdev_region() failed for pmu\n");
+-        return -EIO;
+-    }
+-
+-    pmu_cdev = kzalloc(sizeof(struct cdev),GFP_KERNEL);
+-    if(!pmu_cdev){
+-        printk(KERN_ERR "malloc memory  fails for pmu device\n");
+-        unregister_chrdev_region(pmu_dev,PMU_MAX_DEVS);
+-        return -ENOMEM;
+-    }
+-
+-    cdev_init(pmu_cdev, &pmudev_fops);
+-    if(cdev_add(pmu_cdev, pmu_dev, 1))
+-        goto out_err;
+-
+-    pm_class = class_create(THIS_MODULE, "pm_class");
+-    if (IS_ERR(pm_class)){
+-        printk(KERN_ERR"create class error\n");
+-        return -EPERM;
+-    }
+-
+-    pmu_device = device_create(pm_class, NULL, pmu_dev, NULL, "pm");
+-
+     suspend_set_ops(&aw_pm_ops);
+ 
+     return 0;
+-
+-out_err:
+-    printk(KERN_ERR "register failed  for pmu device\n");
+-    kfree(pmu_cdev);
+-    unregister_chrdev_region(pmu_dev, PMU_MAX_DEVS);
+-    return -ENODEV;
+ }
+ 
+ 
+@@ -437,17 +324,6 @@ out_err:
+ static void __exit aw_pm_exit(void)
+ {
+     PM_DBG("aw_pm_exit!\n");
+-
+-    device_destroy(pm_class, pmu_dev);
+-    class_destroy(pm_class);
+-
+-    if(pmu_cdev)
+-    {
+-        cdev_del(pmu_cdev);
+-        kfree(pmu_cdev);
+-    }
+-    unregister_chrdev_region(pmu_dev,PMU_MAX_DEVS);
+-
+     suspend_set_ops(NULL);
+ }
+ 
+diff --git a/arch/arm/mach-sun4i/pm/test/Makefile b/arch/arm/mach-sun4i/pm/test/Makefile
+deleted file mode 100644
+index 1e0f5c7..0000000
+--- a/arch/arm/mach-sun4i/pm/test/Makefile
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#makefile for standby test
+-LINUX_ROOT = ./../../../../..
+-LINUX_INC = $(LINUX_ROOT)/include/linux
+-ARCH_INC = $(LINUX_ROOT)/arch/arm/mach-sun4i/include
+-SRCDIR = .
+-
+-INCLUDE   = -I$(SRCDIR)\
+-		-I$(LINUX_INC)/power\
+-		-I$(ARCH_INC)
+-
+-INPUTFILE = pm_test.c
+-OBJ = pm_test.o
+-OUPUTFILE = pm_test
+-
+-CROSS_COMPILE = arm-none-linux-gnueabi-
+-#LD_FILE = standby.xn
+-CFLAGS = -Os   -g  -fno-unwind-tables -fno-asynchronous-unwind-tables -mlittle-endian  -static
+-
+-all:$(INPUTFILE)
+-	$(CROSS_COMPILE)gcc $(INCLUDE) $(CFLAGS) pm_test.c  -o $(OUPUTFILE).app
+-
+-#	$(CROSS_COMPILE)objdump -D $(OUPUTFILE).app > $(OUPUTFILE).lst
+-#	$(CROSS_COMPILE)objcopy -O binary $(OUPUTFILE).app $(OUPUTFILE).bin
+-
+-	@echo ----------------------------------------
+-	@echo well done!
+-clean:
+-	-rm *.o *.exe *.app *.map *.lst
+-
+diff --git a/arch/arm/mach-sun4i/pm/test/pm_test.c b/arch/arm/mach-sun4i/pm/test/pm_test.c
+deleted file mode 100644
+index 546991b..0000000
+--- a/arch/arm/mach-sun4i/pm/test/pm_test.c
++++ /dev/null
+@@ -1,71 +0,0 @@
+-#include <stdlib.h>
+-#include <stdio.h>
+-#include <string.h>
+-#include <fcntl.h>
+-#include <errno.h>
+-#include <aw_pm.h>
+-#include <sys/stat.h>
+-
+-
+-#define SYS_PM_STAT_PATH	"/sys/power/state"
+-#define PMU_DEV_PATH		"/dev/pm"
+-
+-
+-
+-int main(void)
+-{
+-	int pm_dev, pm_state, bin_file, ret, i;
+-	char test_buf[128];
+-	struct stat fbuf;
+-	char *func_buf;
+-    struct aw_pm_info  pm_info;
+-
+-    printf("---------------------------------------------------\n");
+-    printf(" start to test pm:\n");
+-    printf("---------------------------------------------------\n");
+-
+-    /* config pmu */
+-	pm_dev = open(PMU_DEV_PATH, O_RDWR);
+-	if(pm_dev==-1){
+-		printf("cant open pmu device!\n");
+-		exit(-19);
+-	}
+-    /* set standby information to pm device */
+-    pm_info.standby_para.event =  SUSPEND_WAKEUP_SRC_USB    \
+-                                | SUSPEND_WAKEUP_SRC_KEY    \
+-                                | SUSPEND_WAKEUP_SRC_IR     \
+-                                | SUSPEND_WAKEUP_SRC_TIMEOFF;
+-    pm_info.standby_para.time_off = 120;
+-
+-    pm_info.pmu_arg.twi_port = 0;
+-    pm_info.pmu_arg.dev_addr = 0x28;
+-	ioctl(pm_dev, AW_PMU_SET, &pm_info);
+-	close(pm_dev);
+-
+-	/*****************************************
+-	enter standby
+-	*******************************************/
+-	pm_state = open(SYS_PM_STAT_PATH, O_RDWR);
+-	if(pm_state==-1){
+-		printf("cant open power state\n");
+-		exit(-19);
+-	}
+-	/*read status*/
+-	ret = read(pm_state, test_buf, 128);
+-	if(ret>0){
+-		test_buf[ret] = '\0';
+-		printf("power state:%s\n", test_buf);
+-		memcpy(test_buf, "mem", 3);
+-		write(pm_state, test_buf, 3);
+-	}else{
+-		printf("read failed :%d\n", ret);
+-	}
+-	close(pm_state);
+-
+-    printf("---------------------------------------------------\n");
+-    printf(" test pm end!\n");
+-    printf("---------------------------------------------------\n");
+-
+-	exit(0);
+-}
+-
+diff --git a/drivers/cpufreq/Kconfig b/drivers/cpufreq/Kconfig
+index 57f96eb..f5d560b 100644
+--- a/drivers/cpufreq/Kconfig
++++ b/drivers/cpufreq/Kconfig
+@@ -109,6 +109,15 @@ config CPU_FREQ_DEFAULT_GOV_INTERACTIVE
+ 	  loading your cpufreq low-level hardware driver, using the
+ 	  'interactive' governor for latency-sensitive workloads.
+ 
++config CPU_FREQ_DEFAULT_GOV_FANTASY
++	bool "fantasy"
++	select CPU_FREQ_GOV_FANTASY
++	help
++	  Use the CPUFreq governor 'fantasy' as default. This allows
++	  you to get a full dynamic cpu frequency capable system by simply
++	  loading your cpufreq low-level hardware driver, using the
++	  'fantasy' governor for latency-sensitive workloads.
++
+ endchoice
+ 
+ config CPU_FREQ_GOV_PERFORMANCE
+@@ -206,6 +215,40 @@ config CPU_FREQ_GOV_CONSERVATIVE
+ 
+ 	  If in doubt, say N.
+ 
++config CPU_FREQ_GOV_FANTASY
++	tristate "'fantasy' cpufreq policy governor"
++	select CPU_FREQ_TABLE
++	help
++	  'fantasy' - This driver adds a dynamic cpufreq policy governor.
++	  The governor does a periodic polling and
++	  changes frequency based on the CPU utilization.
++	  The support for this governor depends on CPU capability to
++	  do fast frequency switching (i.e, very low latency frequency
++	  transitions).
++
++	  To compile this driver as a module, choose M here: the
++	  module will be called cpufreq_fantasy.
++
++	  For details, take a look at linux/Documentation/cpu-freq.
++
++	  If in doubt, say N.
++
++config CPU_FREQ_USR_EVNT_NOTIFY
++	bool "CPU frequency user event notify"
++	help
++	  This will allow input sub-system notify cpu-freq that some user event has happend,
++	  need up cpu frequency to response it.
++
++	  If in doubt, say N.
++
++config CPU_FREQ_DVFS
++	bool "CPU work voltage change with frequency"
++	depends on AW_AXP
++	help
++	  This will allow cpu work voltage dynamic changed when the frequency is changed.
++
++	  If in doubt, say N.
++
+ menu "x86 CPU frequency scaling drivers"
+ depends on X86
+ source "drivers/cpufreq/Kconfig.x86"
+diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
+index 35835b7..8033046 100644
+--- a/drivers/cpufreq/Makefile
++++ b/drivers/cpufreq/Makefile
+@@ -10,6 +10,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_USERSPACE)	+= cpufreq_userspace.o
+ obj-$(CONFIG_CPU_FREQ_GOV_ONDEMAND)	+= cpufreq_ondemand.o
+ obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)	+= cpufreq_conservative.o
+ obj-$(CONFIG_CPU_FREQ_GOV_INTERACTIVE)	+= cpufreq_interactive.o
++obj-$(CONFIG_CPU_FREQ_GOV_FANTASY)      += cpufreq_fantasy.o
+ 
+ # CPUfreq cross-arch helpers
+ obj-$(CONFIG_CPU_FREQ_TABLE)		+= freq_table.o
+diff --git a/drivers/cpufreq/cpufreq.c b/drivers/cpufreq/cpufreq.c
+index 7f2f149..42c8355 100644
+--- a/drivers/cpufreq/cpufreq.c
++++ b/drivers/cpufreq/cpufreq.c
+@@ -535,6 +535,19 @@ static ssize_t show_affected_cpus(struct cpufreq_policy *policy, char *buf)
+ 	return show_cpus(policy->cpus, buf);
+ }
+ 
++
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++/**
++ * show_user_event_notify - user event notify
++ */
++static ssize_t show_user_event_notify(struct cpufreq_policy *policy, char *buf)
++{
++	cpufreq_user_event_notify();
++	return sprintf(buf, "uevent");;
++}
++#endif
++
++
+ static ssize_t store_scaling_setspeed(struct cpufreq_policy *policy,
+ 					const char *buf, size_t count)
+ {
+@@ -590,6 +603,9 @@ cpufreq_freq_attr_rw(scaling_min_freq);
+ cpufreq_freq_attr_rw(scaling_max_freq);
+ cpufreq_freq_attr_rw(scaling_governor);
+ cpufreq_freq_attr_rw(scaling_setspeed);
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++cpufreq_freq_attr_ro(user_event_notify);
++#endif
+ 
+ static struct attribute *default_attrs[] = {
+ 	&cpuinfo_min_freq.attr,
+@@ -603,6 +619,9 @@ static struct attribute *default_attrs[] = {
+ 	&scaling_driver.attr,
+ 	&scaling_available_governors.attr,
+ 	&scaling_setspeed.attr,
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++	&user_event_notify.attr,
++#endif
+ 	NULL
+ };
+ 
+@@ -1918,6 +1937,20 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
+ }
+ EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
+ 
++
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++/* user event notification */
++void cpufreq_user_event_notify(void)
++{
++	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
++	if(policy && policy->governor) {
++        policy->governor->governor(policy, CPUFREQ_GOV_USRENET);
++    }
++}
++EXPORT_SYMBOL_GPL(cpufreq_user_event_notify);
++#endif
++
++
+ static int __init cpufreq_core_init(void)
+ {
+ 	int cpu;
+diff --git a/drivers/cpufreq/cpufreq_fantasy.c b/drivers/cpufreq/cpufreq_fantasy.c
+new file mode 100644
+index 0000000..d66fa83
+--- /dev/null
++++ b/drivers/cpufreq/cpufreq_fantasy.c
+@@ -0,0 +1,717 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : cpufreq_fantasy.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-7-9 11:07
++* Descript: a policy of cpu dynamic frequency.
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/cpufreq.h>
++#include <linux/cpu.h>
++#include <linux/jiffies.h>
++#include <linux/kernel_stat.h>
++#include <linux/mutex.h>
++#include <linux/hrtimer.h>
++#include <linux/tick.h>
++#include <linux/ktime.h>
++#include <linux/sched.h>
++
++/* idle rate coarse adjust for cpu frequency down */
++#define FANTASY_CPUFREQ_IDLE_MAX_RATE(freq)         \
++    (freq<100000? 65 : (freq<200000? 60 : (freq<600000? 55 : (freq<900000? 35 : 20))))
++
++/*
++ * minimum rate for idle task, if idle rate is less than this
++ * value, cpu frequency should be adjusted to the mauximum value
++*/
++#define FANTASY_CPUFREQ_IDLE_MIN_RATE(freq)         \
++    (freq<100000? 35 : (freq<200000? 30 : (freq<600000? 20 : (freq<900000? 15 : 5))))
++
++#define LATENCY_MULTIPLIER          (1000)                      /* latency multiplier */
++#define TRANSITION_LATENCY_LIMIT    (1 * 1000 * 1000 * 1000)    /* latency limitation, should be larger than 1 second */
++#define IOWAIT_IS_BUSY              (1)                         /* io wait time should be counted in idle time */
++
++#define DECRASE_FREQ_STEP_LIMIT1    (300000)   /* decrase frequency limited to 300Mhz when frequency is [900Mhz, 1008Mhz] */
++#define DECRASE_FREQ_STEP_LIMIT2    (200000)   /* decrase frequency limited to 200Mhz when frequency is [600Mhz,  900Mhz) */
++#define DECRASE_FREQ_STEP_LIMIT3    (100000)   /* decrase frequency limited to 100Mhz when frequency is [200Mhz,  600Mhz) */
++#define DECRASE_FREQ_STEP_LIMIT4    (20000)    /* decrase frequency limited to  20Mhz when frequency is [60Mhz,   200Mhz) */
++#define IOWAIT_FREQ_STEP_LIMIT1     (300000)   /* frequency limited to  300Mhz when iowait is [10, 20)  */
++#define IOWAIT_FREQ_STEP_LIMIT2     (600000)   /* frequency limited to  600Mhz when iowait is [20, 30)  */
++#define IOWAIT_FREQ_STEP_LIMIT3     (816000)   /* frequency limited to  816Mhz when iowait is [30, 40)  */
++#define IOWAIT_FREQ_STEP_LIMIT4     (1008000)  /* frequency limited to 1008Mhz when iowait is [40, 100) */
++
++
++enum cpufreq_fantasy_step {
++    CPUFREQ_FANTASY_STEP1,      /* step1 for fantasy policy, adjust cpu frequency to the maximum value      */
++    CPUFREQ_FANTASY_STEP2,      /* step2 for fantasy policy, adjust cpu frequency to the 2nd maximum value  */
++    CPUFREQ_FANTASY_STEP3,      /* step3 for fantasy policy, adjust cpu frequency to the value which keep
++                                   CPU idle rate upto FANTASY_CPUFREQ_IDLE_MAX_RATE  */
++    CPUFREQ_FANTASY_STEP4,      /* step4 for fantasy policy, adjust cpu frequency down, step by step, the
++                                   idle rate will be closed to FANTASY_CPUFREQ_IDLE_MIN_RATE    */
++};
++/*
++state machine for the 4 step is following:
++    step1 -----> step2 -----> step3 -----> step4 ---------------------|
++      ^            |            |            ^                        |
++      |            |            |            | close to min idle rate |
++      -------------|            |            -------------------------|
++      |                         |                                     |
++      --------------------------|                                     |
++      |             user event or cpu load heavy                      |
++      ----------------------------------------------------------------|
++*/
++
++
++static void do_dbs_timer(struct work_struct *work);
++static int cpufreq_governor_dbs(struct cpufreq_policy *policy, unsigned int event);
++
++#ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_FANTASY
++static
++#endif
++struct cpufreq_governor cpufreq_gov_fantasy = {
++       .name                   = "fantasy",
++       .governor               = cpufreq_governor_dbs,
++       .max_transition_latency = TRANSITION_LATENCY_LIMIT,
++       .owner                  = THIS_MODULE,
++};
++
++
++static struct cpu_dbs_info_s {
++    cputime64_t prev_cpu_idle;                  /* cpu idle time accumulative total */
++    cputime64_t prev_cpu_iowait;                /* io wait time accumulative total  */
++    cputime64_t prev_cpu_wall;                  /* cpu run time accumulative total  */
++    struct cpufreq_policy *cur_policy;          /* current policy                   */
++    struct cpufreq_frequency_table *freq_table; /* cpu frequency table              */
++    struct mutex timer_mutex;                   /* mutex for timer operation        */
++    enum cpufreq_fantasy_step step;             /* policy state machine             */
++    struct delayed_work work;                   /* timer proc for workqueue         */
++} fantasy_dbs_info;
++
++
++static struct dbs_tuners {
++    unsigned int sampling_rate; /* cpu loading statistic frequency                                  */
++    unsigned int io_is_busy;    /* flag to mark that if io wait time should be count in idle time   */
++} dbs_tuners_ins = {
++    .sampling_rate = TRANSITION_LATENCY_LIMIT,      /* default sample rate is                       */
++};
++
++static struct workqueue_struct    *kfantasy_wq;     /* work queue for process cpu dynamic frequency */
++
++static DEFINE_MUTEX(dbs_mutex); /* mutex for protect dbs start/stop                                 */
++
++#undef FANTASY_DBG
++#undef FANTASY_ERR
++#if (0)
++    #define FANTASY_DBG(format,args...)   printk("[fantasy]"format,##args)
++    #define FANTASY_ERR(format,args...)   printk("[fantasy]"format,##args)
++#else
++    #define FANTASY_DBG(format,args...)   do{}while(0)
++    #define FANTASY_ERR(format,args...)   do{}while(0)
++#endif
++
++
++#undef FANTASY_INF
++#if (0)
++    #define FANTASY_INF(format,args...)   printk(format,##args)
++#else
++    #define FANTASY_INF(format,args...)   do{}while(0)
++#endif
++
++
++/*
++*********************************************************************************************************
++*                           __ulldiv
++*
++*Description: unsigned long long int division.
++*
++*Arguments  : dividend  64bits dividend;
++*             divisior  64bits divisior;
++*
++*Return     : 64bits quotient;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline __u64 __ulldiv(__u64 dividend, __u64 divisior)
++{
++    __u64   tmpDiv = divisior;
++    __u64   tmpQuot = 0;
++    __s32   shift = 0;
++
++    if(!divisior)
++    {
++        /* divide 0 error abort */
++        return 0;
++    }
++
++    while(!(tmpDiv & ((__u64)1<<63)))
++    {
++        tmpDiv <<= 1;
++        shift ++;
++    }
++
++    do
++    {
++        if(dividend >= tmpDiv)
++        {
++            dividend -= tmpDiv;
++            tmpQuot = (tmpQuot << 1) | 1;
++        }
++        else
++        {
++            tmpQuot = (tmpQuot << 1) | 0;
++        }
++        tmpDiv >>= 1;
++        shift --;
++    } while(shift >= 0);
++
++    return tmpQuot;
++}
++
++
++
++/*
++*********************************************************************************************************
++*                           get_cpu_idle_time_jiffy
++*
++*Description: get cpu idle time by jiffies, update cpu run total time;
++*
++*Arguments  : wall  pointer for store total run-time;
++*
++*Return     : cpu idle time, based on us.
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu, cputime64_t *wall)
++{
++    cputime64_t idle_time;
++    cputime64_t cur_wall_time;
++    cputime64_t busy_time;
++
++    cur_wall_time = jiffies64_to_cputime64(get_jiffies_64());
++
++    busy_time = cputime64_add(kstat_cpu(cpu).cpustat.user,
++            kstat_cpu(cpu).cpustat.system);
++
++    busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.irq);
++    busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.softirq);
++    busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.steal);
++    busy_time = cputime64_add(busy_time, kstat_cpu(cpu).cpustat.nice);
++
++    idle_time = cputime64_sub(cur_wall_time, busy_time);
++    if (wall)
++        *wall = (cputime64_t)jiffies_to_usecs(cur_wall_time);
++
++    return (cputime64_t)jiffies_to_usecs(idle_time);
++}
++
++
++/*
++*********************************************************************************************************
++*                           get_cpu_idle_time
++*
++*Description: get cpu idle time, try to get cpu idle time with clock source first, if clock source
++*             is invlalid, try to get idle time with jiffies again.
++*
++*Arguments  : wall  pointer for store cpu run total time.
++*
++*Return     : idle time;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline cputime64_t get_cpu_idle_time(cputime64_t *wall)
++{
++    u64 idle_time = get_cpu_idle_time_us(fantasy_dbs_info.cur_policy->cpu, wall);
++
++    if (idle_time == -1ULL)
++        return get_cpu_idle_time_jiffy(fantasy_dbs_info.cur_policy->cpu, wall);
++
++    return idle_time;
++}
++
++
++/*
++*********************************************************************************************************
++*                           get_cpu_iowait_time_jiffy
++*
++*Description: get cpu iowait time by jiffies;
++*
++*Arguments  : cpu  cpu number;
++*
++*Return     : cpu iowait time, based on us.
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline cputime64_t get_cpu_iowait_time_jiffy(unsigned int cpu)
++{
++    cputime64_t iowait_time;
++    iowait_time = kstat_cpu(cpu).cpustat.iowait;
++
++    return (cputime64_t)jiffies_to_usecs(iowait_time);
++}
++
++
++/*
++*********************************************************************************************************
++*                           get_cpu_iowait_time
++*
++*Description: get io wait time.
++*
++*Arguments  : wall  pointer for store cpu run total time.
++*
++*Return     : io wait time.
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static inline cputime64_t get_cpu_iowait_time(cputime64_t *wall)
++{
++    u64 iowait_time = get_cpu_iowait_time_us(fantasy_dbs_info.cur_policy->cpu, wall);
++
++    if (iowait_time == -1ULL)
++        return get_cpu_iowait_time_jiffy(fantasy_dbs_info.cur_policy->cpu);
++
++    return iowait_time;
++}
++
++
++/*
++*********************************************************************************************************
++*                           do_dbs_timer
++*
++*Description: cpu frequency timer process handler.
++*
++*Arguments  :
++*
++*Return     :
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void do_dbs_timer(struct work_struct *work)
++{
++    /* We want all CPUs to do sampling nearly on same jiffy */
++    int delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate);
++    unsigned int freq_cur;
++
++    mutex_lock(&fantasy_dbs_info.timer_mutex);
++
++    /* get current frequency */
++    freq_cur = cpufreq_quick_get(fantasy_dbs_info.cur_policy->cpu);
++    FANTASY_DBG("current cpu frequency is:%d\n", freq_cur);
++
++    switch (fantasy_dbs_info.step) {
++
++        case CPUFREQ_FANTASY_STEP1: {
++            FANTASY_DBG("step1 : set cpu frequency to max value (%d)\n", fantasy_dbs_info.cur_policy->max);
++            if(freq_cur != fantasy_dbs_info.cur_policy->max) {
++                /* adjust cpu frequncy to the maximum value */
++                __cpufreq_driver_target(fantasy_dbs_info.cur_policy, fantasy_dbs_info.cur_policy->max, CPUFREQ_RELATION_H);
++            }
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP2;
++            break;
++        }
++
++        case CPUFREQ_FANTASY_STEP2: {
++            /* adjust cpu frequncy to the maximum value */
++            FANTASY_DBG("step2 : set cpu frequency to second max value\n");
++            __cpufreq_driver_target(fantasy_dbs_info.cur_policy, freq_cur-1000, CPUFREQ_RELATION_L);
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP3;
++            break;
++        }
++
++        case CPUFREQ_FANTASY_STEP3: {
++            cputime64_t cur_wall_time, cur_idle_time, cur_iowait_time;
++            unsigned int idle_time, wall_time, iowait_time;
++            unsigned int freq_target;
++            unsigned int idle_rate, iowait_rate;
++
++            FANTASY_DBG("step3 : set cpu frequency\n");
++
++            /* get idle time, io-wait time, and cpu run total time */
++            cur_idle_time = get_cpu_idle_time(&cur_wall_time);
++            cur_iowait_time = get_cpu_iowait_time(&cur_wall_time);
++
++            /* calculate idle/io-wait/total run time in last statistic cycle */
++            wall_time = (unsigned int) cputime64_sub(cur_wall_time, fantasy_dbs_info.prev_cpu_wall);
++            idle_time = (unsigned int) cputime64_sub(cur_idle_time, fantasy_dbs_info.prev_cpu_idle);
++            iowait_time = (unsigned int) cputime64_sub(cur_iowait_time, fantasy_dbs_info.prev_cpu_iowait);
++
++            if(dbs_tuners_ins.io_is_busy) {
++                idle_time -= iowait_time;
++                if(idle_time < 0) {
++                    idle_time = 0;
++                }
++            }
++
++            /* update parameters */
++            fantasy_dbs_info.prev_cpu_wall = cur_wall_time;
++            fantasy_dbs_info.prev_cpu_idle = cur_idle_time;
++            fantasy_dbs_info.prev_cpu_iowait = cur_iowait_time;
++
++            idle_rate = idle_time*100/wall_time;
++            iowait_rate = iowait_time*100/wall_time;
++
++            FANTASY_INF("%d,", freq_cur/1000);  /*cpu current frequency*/
++            FANTASY_INF("%d,", idle_rate);      /*cpu idle rate*/
++            FANTASY_INF("%d\n", iowait_rate);   /*cpu iowait rate*/
++
++            /* check idle rate */
++            if(idle_rate > FANTASY_CPUFREQ_IDLE_MAX_RATE(freq_cur)) {
++                /* idle rate is higher than the max idle rate, so, try to decrase the cpu frequency */
++              	freq_target = __ulldiv((u64)freq_cur*(wall_time-idle_time)*100, wall_time);
++			   	freq_target = freq_target / ((100-FANTASY_CPUFREQ_IDLE_MAX_RATE(freq_target)));
++
++			   	FANTASY_DBG("current max idle rate is:%d\n", FANTASY_CPUFREQ_IDLE_MAX_RATE(freq_cur));
++
++                if(freq_cur >= 900000){
++                    if(freq_cur - freq_target > DECRASE_FREQ_STEP_LIMIT1){
++                        freq_target = freq_cur - DECRASE_FREQ_STEP_LIMIT1;
++                    }
++                }
++                else if(freq_cur >= 600000){
++                    if(freq_cur - freq_target > DECRASE_FREQ_STEP_LIMIT2){
++                            freq_target = freq_cur - DECRASE_FREQ_STEP_LIMIT2;
++                    }
++                }
++                else if(freq_cur >= 200000){
++                    if(freq_cur - freq_target > DECRASE_FREQ_STEP_LIMIT3){
++                        freq_target = freq_cur - DECRASE_FREQ_STEP_LIMIT3;
++                    }
++                }
++                else if(freq_cur >= 60000){
++                    if(freq_cur - freq_target > DECRASE_FREQ_STEP_LIMIT4){
++                        freq_target = freq_cur - DECRASE_FREQ_STEP_LIMIT4;
++                    }
++                }
++
++                if(iowait_rate >= 40){
++                    if(freq_target < IOWAIT_FREQ_STEP_LIMIT4){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT4;
++                    }
++                }
++                else if(iowait_rate >= 30){
++                    if(freq_target < IOWAIT_FREQ_STEP_LIMIT3){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT3;
++                    }
++                }
++                else if(iowait_rate >= 20){
++                    if(freq_target < IOWAIT_FREQ_STEP_LIMIT2){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT2;
++                    }
++                }
++                else if(iowait_rate >= 10){
++                    if(freq_target < IOWAIT_FREQ_STEP_LIMIT1){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT1;
++                    }
++                }
++
++                if (fantasy_dbs_info.cur_policy->cur == fantasy_dbs_info.cur_policy->min){
++                    fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP3;
++                    break;
++                }
++
++                /* set target frequency */
++                __cpufreq_driver_target(fantasy_dbs_info.cur_policy, freq_target, CPUFREQ_RELATION_L);
++                FANTASY_DBG("set cpu frequency to %d\n", freq_target);
++            }
++            else if(idle_rate < FANTASY_CPUFREQ_IDLE_MIN_RATE(freq_cur)) {
++			   	FANTASY_DBG("min idle rate is:%d\n", FANTASY_CPUFREQ_IDLE_MIN_RATE(freq_cur));
++
++                /* adjust cpu frequncy to the maximum value */
++                __cpufreq_driver_target(fantasy_dbs_info.cur_policy, fantasy_dbs_info.cur_policy->max, CPUFREQ_RELATION_H);
++                FANTASY_DBG("set cpu frequency to %d\n", fantasy_dbs_info.cur_policy->max);
++                fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP2;
++                break;
++            }
++            else {
++                if(iowait_rate >= 40){
++                    if(freq_cur < IOWAIT_FREQ_STEP_LIMIT4){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT4;
++                    }
++                    else {
++                        break;
++                    }
++                }
++                else if(iowait_rate >= 30){
++                    if(freq_cur < IOWAIT_FREQ_STEP_LIMIT3){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT3;
++                    }
++                    else {
++                        break;
++                    }
++                }
++                else if(iowait_rate >= 20){
++                    if(freq_cur < IOWAIT_FREQ_STEP_LIMIT2){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT2;
++                    }
++                    else {
++                        break;
++                    }
++                }
++                else if(iowait_rate >= 10){
++                    if(freq_cur < IOWAIT_FREQ_STEP_LIMIT1){
++                        freq_target = IOWAIT_FREQ_STEP_LIMIT1;
++                    }
++                    else {
++                        break;
++                    }
++                }else {
++                    /* cpu frequency is in the valid threshold, do nothing */
++                    FANTASY_DBG("do nothing for cpu frequency change\n");
++                    break;
++                }
++
++                /* set target frequency */
++                __cpufreq_driver_target(fantasy_dbs_info.cur_policy, freq_target, CPUFREQ_RELATION_L);
++                FANTASY_DBG("set cpu frequency to %d\n", freq_target);
++            }
++
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP3;
++            break;
++        }
++
++        case CPUFREQ_FANTASY_STEP4: {
++            /* don't process cpu frequency nice ajust now */
++            break;
++        }
++    }
++
++    queue_delayed_work(kfantasy_wq, &fantasy_dbs_info.work, delay);
++    mutex_unlock(&fantasy_dbs_info.timer_mutex);
++}
++
++
++/*
++*********************************************************************************************************
++*                           dbs_timer_init
++*
++*Description: initialise timer for process cpu frquency.
++*
++*Arguments  : dbs_info  cpu frequency policy informatioin.
++*
++*Return     : none
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
++{
++    /* calcualte timer cycle time by sampling rate */
++    int delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate);
++    /* init workqueue for process cpu frequency */
++    INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
++    queue_delayed_work(kfantasy_wq, &dbs_info->work, delay);
++}
++
++
++/*
++*********************************************************************************************************
++*                           dbs_timer_exit
++*
++*Description:
++*
++*Arguments  :
++*
++*Return     :
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void dbs_timer_exit(struct cpu_dbs_info_s *dbs_info)
++{
++    cancel_delayed_work_sync(&dbs_info->work);
++}
++
++
++/*
++*********************************************************************************************************
++*                           cpufreq_governor_dbs
++*
++*Description: cpu frequency governor process handle, call-back by cpu-freq core.
++*
++*Arguments  : policy    cpu frequency policy crrent using.
++*             event     command from cpu-freq core.
++*
++*Return     : result,
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int cpufreq_governor_dbs(struct cpufreq_policy *policy, unsigned int event)
++{
++    unsigned int    cpu = policy->cpu;
++    struct cpu_dbs_info_s *this_dbs_info = &fantasy_dbs_info;
++    unsigned int    latency;
++
++    switch (event){
++        case CPUFREQ_GOV_START: {
++            mutex_lock(&dbs_mutex);
++
++            /* set cpu policy */
++            this_dbs_info->cur_policy = policy;
++
++            /* initialise cpu idle time */
++            this_dbs_info->prev_cpu_idle = get_cpu_idle_time(&this_dbs_info->prev_cpu_wall);
++
++            /* initialise cpu iowait time */
++            this_dbs_info->prev_cpu_iowait = get_cpu_iowait_time(&this_dbs_info->prev_cpu_wall);
++
++            /* initialise cpu frequency table */
++            this_dbs_info->freq_table = cpufreq_frequency_get_table(cpu);
++
++            /* policy latency is in nS. Convert it to uS first */
++            latency = policy->cpuinfo.transition_latency / 1000;
++            latency = latency ? latency : 1;
++            dbs_tuners_ins.sampling_rate = latency * LATENCY_MULTIPLIER;
++
++            /* set if io wait should be counted in cpu idle */
++            dbs_tuners_ins.io_is_busy = IOWAIT_IS_BUSY;
++            mutex_unlock(&dbs_mutex);
++
++            /* init mutex for protecting timer process */
++            mutex_init(&this_dbs_info->timer_mutex);
++
++            /* init tuners state machine */
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP1;
++
++            /* init timer for prccess cpu-frequencyh */
++            dbs_timer_init(this_dbs_info);
++            break;
++        }
++
++        case CPUFREQ_GOV_STOP: {
++            /* delete timer */
++            dbs_timer_exit(this_dbs_info);
++            mutex_lock(&dbs_mutex);
++            /* destroy timer mutex */
++            mutex_destroy(&this_dbs_info->timer_mutex);
++            mutex_unlock(&dbs_mutex);
++            break;
++        }
++
++        case CPUFREQ_GOV_LIMITS: {
++            /* cpu frequency limitation has changed, adjust current frequency */
++            mutex_lock(&this_dbs_info->timer_mutex);
++            /* set cpu frequency to the max value, and reset state machine */
++            __cpufreq_driver_target(fantasy_dbs_info.cur_policy, fantasy_dbs_info.cur_policy->max, CPUFREQ_RELATION_H);
++            /* reset tuners state machine */
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP1;
++            mutex_unlock(&this_dbs_info->timer_mutex);
++            break;
++        }
++
++        #if CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++        case CPUFREQ_GOV_USRENET: {
++            /* cpu frequency limitation has changed, adjust current frequency */
++            if(!mutex_trylock(&this_dbs_info->timer_mutex)) {
++                FANTASY_DBG("CPUFREQ_GOV_USRENET try to lock mutex failed!\n");
++                /* reset tuners state machine */
++                fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP1;
++                break;
++            }
++            /* set cpu frequenc to the max value, and reset state machine */
++            __cpufreq_driver_target(fantasy_dbs_info.cur_policy, fantasy_dbs_info.cur_policy->max, CPUFREQ_RELATION_H);
++            /* reset tuners state machine */
++            fantasy_dbs_info.step = CPUFREQ_FANTASY_STEP1;
++            mutex_unlock(&this_dbs_info->timer_mutex);
++            break;
++        }
++        #endif
++    }
++   return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           cpufreq_gov_dbs_init
++*
++*Description: fantasy cpu-freq governor initialise.
++*
++*Arguments  : none
++*
++*Return     : result
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int __init cpufreq_gov_dbs_init(void)
++{
++    int     err;
++
++    /* create work queue for process cpu frequency policy */
++    kfantasy_wq = create_workqueue("kfantasy");
++    if (!kfantasy_wq) {
++        printk(KERN_ERR "Creation of kfantasy failed\n");
++        return -EFAULT;
++    }
++    /* register cpu frequency governor into cpu-freq core */
++    err = cpufreq_register_governor(&cpufreq_gov_fantasy);
++    if (err) {
++        destroy_workqueue(kfantasy_wq);
++    }
++
++    return err;
++}
++
++
++/*
++*********************************************************************************************************
++*                           cpufreq_gov_dbs_exit
++*
++*Description: fantasy cpu-freq governor exit.
++*
++*Arguments  : none
++*
++*Return     : none
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void __exit cpufreq_gov_dbs_exit(void)
++{
++    /* unregister cpu frequency governor */
++    cpufreq_unregister_governor(&cpufreq_gov_fantasy);
++    /* destroy work queue */
++    destroy_workqueue(kfantasy_wq);
++}
++
++
++
++MODULE_AUTHOR("kevin.z.m <kevin@allwinnertech.com>");
++MODULE_DESCRIPTION("'cpufreq_fantasy' - A good cpu frequency policy");
++MODULE_LICENSE("GPL");
++
++#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_FANTASY
++fs_initcall(cpufreq_gov_dbs_init);
++#else
++module_init(cpufreq_gov_dbs_init);
++#endif
++module_exit(cpufreq_gov_dbs_exit);
+diff --git a/drivers/input/input.c b/drivers/input/input.c
+index 8921c61..108cc82 100644
+--- a/drivers/input/input.c
++++ b/drivers/input/input.c
+@@ -26,6 +26,11 @@
+ #include <linux/device.h>
+ #include <linux/mutex.h>
+ #include <linux/rcupdate.h>
++
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++#include <linux/cpufreq.h>
++#endif
++
+ #include "input-compat.h"
+ 
+ MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
+@@ -45,6 +50,17 @@ static LIST_HEAD(input_handler_list);
+  */
+ static DEFINE_MUTEX(input_mutex);
+ 
++
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++static struct workqueue_struct	*cpufreq_usrevent;
++static void cpufreq_notify(struct work_struct *work)
++{
++    cpufreq_user_event_notify();
++}
++static DECLARE_WORK(request_cpufreq_notify, cpufreq_notify);
++#endif
++
++
+ static struct input_handler *input_table[8];
+ 
+ static inline int is_event_supported(unsigned int code,
+@@ -69,6 +85,13 @@ static int input_defuzz_abs_event(int value, int old_val, int fuzz)
+ 	return value;
+ }
+ 
++static const char *gsensor_name_list[] = {
++	"mma7660",
++	"bma250",
++	"ecompass_data",
++	NULL
++};
++
+ /*
+  * Pass event first through all filters and then, if event has not been
+  * filtered out, through all open handles. This function is called with
+@@ -79,6 +102,21 @@ static void input_pass_event(struct input_dev *dev,
+ {
+ 	struct input_handler *handler;
+ 	struct input_handle *handle;
++	int i;
++	bool not_gsensor = true;
++
++    #ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++	for(i = 0; i < ARRAY_SIZE(gsensor_name_list) - 1; i++) {
++		if(!strcmp(gsensor_name_list[i], dev->name)) {
++			not_gsensor = false;
++			break;
++		}
++	}
++    /* notify cpu-freq sub-system that some user event happend */
++	if(not_gsensor) {
++		queue_work(cpufreq_usrevent, &request_cpufreq_notify);
++	}
++    #endif
+ 
+ 	rcu_read_lock();
+ 
+@@ -2156,8 +2194,20 @@ static int __init input_init(void)
+ 		goto fail2;
+ 	}
+ 
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++	cpufreq_usrevent = create_workqueue("cpufreq_uevent");
++	if (!cpufreq_usrevent) {
++		printk(KERN_ERR "Creation of cpufreq_usrevent failed\n");
++		goto fail3;
++	}
++#endif
++
+ 	return 0;
+ 
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++ fail3: unregister_chrdev(INPUT_MAJOR, "input");
++#endif
++
+  fail2:	input_proc_exit();
+  fail1:	class_unregister(&input_class);
+ 	return err;
+@@ -2165,6 +2215,10 @@ static int __init input_init(void)
+ 
+ static void __exit input_exit(void)
+ {
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++    destroy_workqueue(cpufreq_usrevent);
++#endif
++
+ 	input_proc_exit();
+ 	unregister_chrdev(INPUT_MAJOR, "input");
+ 	class_unregister(&input_class);
+diff --git a/include/linux/cpufreq.h b/include/linux/cpufreq.h
+index d1c3bb0..d17c450 100644
+--- a/include/linux/cpufreq.h
++++ b/include/linux/cpufreq.h
+@@ -167,6 +167,9 @@ static inline unsigned long cpufreq_scale(unsigned long old, u_int div, u_int mu
+ #define CPUFREQ_GOV_START  1
+ #define CPUFREQ_GOV_STOP   2
+ #define CPUFREQ_GOV_LIMITS 3
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++#define CPUFREQ_GOV_USRENET 4
++#endif
+ 
+ struct cpufreq_governor {
+ 	char	name[CPUFREQ_NAME_LEN];
+@@ -254,7 +257,10 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver_data);
+ 
+ 
+ void cpufreq_notify_transition(struct cpufreq_freqs *freqs, unsigned int state);
+-
++#ifdef CONFIG_CPU_FREQ_USR_EVNT_NOTIFY
++/* user event notification */
++void cpufreq_user_event_notify(void);
++#endif
+ 
+ static inline void cpufreq_verify_within_limits(struct cpufreq_policy *policy, unsigned int min, unsigned int max)
+ {
+@@ -367,6 +373,9 @@ extern struct cpufreq_governor cpufreq_gov_conservative;
+ #elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE)
+ extern struct cpufreq_governor cpufreq_gov_interactive;
+ #define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_interactive)
++#elif defined(CONFIG_CPU_FREQ_DEFAULT_GOV_FANTASY)
++extern struct cpufreq_governor cpufreq_gov_fantasy;
++#define CPUFREQ_DEFAULT_GOVERNOR	(&cpufreq_gov_fantasy)
+ #endif
+ 
+ 
+-- 
+1.8.0
+

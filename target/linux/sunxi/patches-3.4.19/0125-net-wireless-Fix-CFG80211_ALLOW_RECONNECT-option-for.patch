@@ -1,0 +1,29 @@
+From e7c926ff4dd84044a83c918cf8af4f848221f37f Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Tue, 18 Oct 2011 12:30:02 -0700
+Subject: [PATCH 125/944] net: wireless: Fix CFG80211_ALLOW_RECONNECT option
+ for disconnect
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/wireless/sme.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/net/wireless/sme.c b/net/wireless/sme.c
+index 7eef5b4..60998fd 100644
+--- a/net/wireless/sme.c
++++ b/net/wireless/sme.c
+@@ -689,8 +689,10 @@ void __cfg80211_disconnected(struct net_device *dev, const u8 *ie,
+ 		    wdev->iftype != NL80211_IFTYPE_P2P_CLIENT))
+ 		return;
+ 
++#ifndef CONFIG_CFG80211_ALLOW_RECONNECT
+ 	if (wdev->sme_state != CFG80211_SME_CONNECTED)
+ 		return;
++#endif
+ 
+ 	if (wdev->current_bss) {
+ 		cfg80211_unhold_bss(wdev->current_bss);
+-- 
+1.8.0
+

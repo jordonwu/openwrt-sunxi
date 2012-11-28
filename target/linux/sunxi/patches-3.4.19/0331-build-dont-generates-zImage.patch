@@ -1,0 +1,40 @@
+From 5bce7fbef72a1e0fa6f511b929cbb5c550f766ef Mon Sep 17 00:00:00 2001
+From: Benn Huang <benn@allwinnertech.com>
+Date: Wed, 16 Nov 2011 16:53:29 +0800
+Subject: [PATCH 331/944] build: dont generates zImage
+
+---
+ scripts/build_sun4i-lite.sh | 2 +-
+ scripts/build_sun4i.sh      | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 86e98cc..9d9a35f 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -62,8 +62,8 @@ build_kernel()
+ 	fi
+ 
+ 	build_standby
++	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage
+ 
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8
+ 	update_kern_ver
+ 
+ 	if [ -d output ]; then
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 45c140c..9d9a35f 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -62,7 +62,7 @@ build_kernel()
+ 	fi
+ 
+ 	build_standby
+-	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage zImage
++	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage
+ 
+ 	update_kern_ver
+ 
+-- 
+1.8.0
+

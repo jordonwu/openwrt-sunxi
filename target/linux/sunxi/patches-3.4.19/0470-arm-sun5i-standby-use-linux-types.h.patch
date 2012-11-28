@@ -1,0 +1,33 @@
+From 3728418ea9ec05d5d6254093019d523fc4b3066a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 24 May 2012 11:11:17 +0200
+Subject: [PATCH 470/944] arm: sun5i: standby: use linux/types.h
+
+---
+ arch/arm/mach-sun5i/pm/standby/common.h | 10 +---------
+ 1 file changed, 1 insertion(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-sun5i/pm/standby/common.h b/arch/arm/mach-sun5i/pm/standby/common.h
+index ede1e28..86f6353 100644
+--- a/arch/arm/mach-sun5i/pm/standby/common.h
++++ b/arch/arm/mach-sun5i/pm/standby/common.h
+@@ -18,15 +18,7 @@
+ #ifndef __COMMON_H__
+ #define __COMMON_H__
+ 
+-typedef signed char         __s8;
+-typedef unsigned char       __u8;
+-typedef signed short        __s16;
+-typedef unsigned short      __u16;
+-typedef signed int          __s32;
+-typedef unsigned int        __u32;
+-typedef signed long long    __s64;
+-typedef unsigned long long  __u64;
+-
++#include <linux/types.h>
+ 
+ static inline __u64 standby_uldiv(__u64 dividend, __u32 divisior)
+ {
+-- 
+1.8.0
+

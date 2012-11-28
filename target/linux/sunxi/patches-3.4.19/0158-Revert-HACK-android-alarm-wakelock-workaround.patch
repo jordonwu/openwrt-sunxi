@@ -1,0 +1,50 @@
+From 19b72c9a4632f50ad9cc523ae343b291c58b957c Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 1 Feb 2012 20:29:49 -0800
+Subject: [PATCH 158/944] Revert "HACK: android-alarm: wakelock workaround"
+
+This reverts commit 1f1a4544e5196a8e30cec7a21724e190bb51a2df.
+
+Conflicts:
+
+	drivers/staging/android/alarm-dev.c
+	drivers/staging/android/alarm.c
+
+Change-Id: I5717b7736b10de3a288613c8a7e4e5281c78fcaf
+---
+ drivers/staging/android/alarm-dev.c | 13 +------------
+ 1 file changed, 1 insertion(+), 12 deletions(-)
+
+diff --git a/drivers/staging/android/alarm-dev.c b/drivers/staging/android/alarm-dev.c
+index 7739029..e001fe5 100644
+--- a/drivers/staging/android/alarm-dev.c
++++ b/drivers/staging/android/alarm-dev.c
+@@ -23,24 +23,13 @@
+ #include <linux/spinlock.h>
+ #include <linux/uaccess.h>
+ #include <linux/alarmtimer.h>
++#include <linux/wakelock.h>
+ #include "android_alarm.h"
+ 
+-/* XXX - Hack out wakelocks, while they are out of tree */
+-struct wake_lock {
+-	int i;
+-};
+-#define wake_lock(x)
+-#define wake_lock_timeout(x, y)
+-#define wake_unlock(x)
+-#define WAKE_LOCK_SUSPEND 0
+-#define wake_lock_init(x, y, z) ((x)->i = 1)
+-#define wake_lock_destroy(x)
+-
+ #define ANDROID_ALARM_PRINT_INFO (1U << 0)
+ #define ANDROID_ALARM_PRINT_IO (1U << 1)
+ #define ANDROID_ALARM_PRINT_INT (1U << 2)
+ 
+-
+ static int debug_mask = ANDROID_ALARM_PRINT_INFO;
+ module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
+ 
+-- 
+1.8.0
+

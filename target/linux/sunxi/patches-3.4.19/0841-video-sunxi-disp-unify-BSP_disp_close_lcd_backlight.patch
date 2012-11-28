@@ -1,0 +1,159 @@
+From 4a6abd72a422268335dcf0f5190d17feb7d06c3a Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 26 Oct 2012 22:29:00 +0200
+Subject: [PATCH 841/944] video:sunxi:disp: unify BSP_disp_close_lcd_backlight
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ .../video/sunxi/disp/de_bsp_sun4i/bsp_display.h    |  3 ++
+ .../sunxi/disp/de_bsp_sun4i/de/disp_display.c      |  4 ++
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c    | 52 ++++++++++++++++++++++
+ .../video/sunxi/disp/de_bsp_sun5i/bsp_display.h    |  2 +
+ .../sunxi/disp/de_bsp_sun5i/de/disp_display.c      |  2 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c    |  3 ++
+ 6 files changed, 66 insertions(+)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+index 02c21da..b069bce 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+@@ -253,6 +253,9 @@ extern __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 BSP_disp_get_timming(__u32 sel, __disp_tcon_timing_t * tt);
+ extern __u32 BSP_disp_get_cur_line(__u32 sel);
++#ifdef CONFIG_ARCH_SUN5I
++extern __s32 BSP_disp_close_lcd_backlight(__u32 sel);
++#endif
+ 
+ extern __s32 BSP_disp_tv_open(__u32 sel);
+ extern __s32 BSP_disp_tv_close(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+index d2e94b7..bf67bf2 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+@@ -80,6 +80,10 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     DE_IEP_Set_Reg_Base(0, para->base_iep);
+ #endif
+ 
++#ifdef CONFIG_ARCH_SUN5I
++    BSP_disp_close_lcd_backlight(0);
++#endif
++
+ 	disp_pll_init();
+ 
+     Scaler_Init(0);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+index 814f984..15a3b2a 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+@@ -1936,6 +1936,58 @@ __u32 BSP_disp_get_cur_line(__u32 sel)
+     return line;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN5I
++__s32 BSP_disp_close_lcd_backlight(__u32 sel)
++{
++    user_gpio_set_t  gpio_info[1];
++    __hdle hdl;
++    int value,ret;
++    char primary_key[20];
++    sprintf(primary_key, "lcd%d_para", sel);
++    value = 1;
++    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_bl_en_used", &value, 1);
++    if(value == 0)
++    {
++        DE_INF("%s.lcd_bl_en is not used\n", primary_key);
++    }
++    else
++    {
++        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        if(ret < 0)
++        {
++            DE_INF("%s.lcd_bl_en not exist\n", primary_key);
++        }
++        else
++        {
++            gpio_info->data = (gpio_info->data==0)?1:0;
++            hdl = OSAL_GPIO_Request(gpio_info, 1);
++            OSAL_GPIO_Release(hdl, 2);
++        }
++    }
++    value = 1;
++    ret = OSAL_Script_FetchParser_Data(primary_key, "lcd_pwm_used", &value, 1);
++    if(value == 0)
++    {
++        DE_INF("%s.lcd_pwm is not used\n", primary_key);
++    }
++    else
++    {
++        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
++        if(ret < 0)
++        {
++            DE_INF("%s.lcd_pwm not exist\n", primary_key);
++        }
++        else
++        {
++            gpio_info->mul_sel = 0;
++            hdl = OSAL_GPIO_Request(gpio_info, 1);
++            OSAL_GPIO_Release(hdl, 2);
++        }
++    }
++    return 0;
++}
++#endif /* CONFIG_ARCH_SUN5I */
++
+ #ifdef __LINUX_OSAL__
+ EXPORT_SYMBOL(LCD_OPEN_FUNC);
+ EXPORT_SYMBOL(LCD_CLOSE_FUNC);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+index f6105ed..b069bce 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+@@ -253,7 +253,9 @@ extern __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 BSP_disp_get_timming(__u32 sel, __disp_tcon_timing_t * tt);
+ extern __u32 BSP_disp_get_cur_line(__u32 sel);
++#ifdef CONFIG_ARCH_SUN5I
+ extern __s32 BSP_disp_close_lcd_backlight(__u32 sel);
++#endif
+ 
+ extern __s32 BSP_disp_tv_open(__u32 sel);
+ extern __s32 BSP_disp_tv_close(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+index bb88a2e..e51a778 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+@@ -80,7 +80,9 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     DE_IEP_Set_Reg_Base(0, para->base_iep);
+ #endif
+ 
++#ifdef CONFIG_ARCH_SUN5I
+     BSP_disp_close_lcd_backlight(0);
++#endif
+ 
+ 	disp_pll_init();
+ 
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+index 93fda3f..49c75a2 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+@@ -1931,6 +1931,7 @@ __u32 BSP_disp_get_cur_line(__u32 sel)
+     return line;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+ {
+     user_gpio_set_t  gpio_info[1];
+@@ -1980,6 +1981,8 @@ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+     }
+     return 0;
+ }
++#endif /* CONFIG_ARCH_SUN5I */
++
+ #ifdef __LINUX_OSAL__
+ EXPORT_SYMBOL(LCD_OPEN_FUNC);
+ EXPORT_SYMBOL(LCD_CLOSE_FUNC);
+-- 
+1.8.0
+

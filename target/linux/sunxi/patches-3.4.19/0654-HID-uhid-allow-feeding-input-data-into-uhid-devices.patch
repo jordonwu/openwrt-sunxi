@@ -1,0 +1,87 @@
+From 05e9c16e38a56b9878e94cbb5b3bb3c4686f81bf Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:19 +0200
+Subject: [PATCH 654/944] HID: uhid: allow feeding input data into uhid
+ devices
+
+This adds a new event type UHID_INPUT which allows user-space to feed raw
+HID reports into the HID subsystem. We copy the data into kernel memory
+and directly feed it into the HID core.
+
+There is no error handling of the events couldn't be parsed so user-space
+should consider all events successfull unless read() returns an error.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c   | 14 ++++++++++++++
+ include/linux/uhid.h |  9 +++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index 61ee7cc..3d1ebda 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -210,6 +210,17 @@ static int uhid_dev_destroy(struct uhid_device *uhid)
+ 	return 0;
+ }
+ 
++static int uhid_dev_input(struct uhid_device *uhid, struct uhid_event *ev)
++{
++	if (!uhid->running)
++		return -EINVAL;
++
++	hid_input_report(uhid->hid, HID_INPUT_REPORT, ev->u.input.data,
++			 min_t(size_t, ev->u.input.size, UHID_DATA_MAX), 0);
++
++	return 0;
++}
++
+ static int uhid_char_open(struct inode *inode, struct file *file)
+ {
+ 	struct uhid_device *uhid;
+@@ -321,6 +332,9 @@ static ssize_t uhid_char_write(struct file *file, const char __user *buffer,
+ 	case UHID_DESTROY:
+ 		ret = uhid_dev_destroy(uhid);
+ 		break;
++	case UHID_INPUT:
++		ret = uhid_dev_input(uhid, &uhid->input_buf);
++		break;
+ 	default:
+ 		ret = -EOPNOTSUPP;
+ 	}
+diff --git a/include/linux/uhid.h b/include/linux/uhid.h
+index 8a493e6..6eb42be 100644
+--- a/include/linux/uhid.h
++++ b/include/linux/uhid.h
+@@ -25,6 +25,7 @@
+ enum uhid_event_type {
+ 	UHID_CREATE,
+ 	UHID_DESTROY,
++	UHID_INPUT,
+ };
+ 
+ struct uhid_create_req {
+@@ -41,11 +42,19 @@ struct uhid_create_req {
+ 	__u32 country;
+ } __attribute__((__packed__));
+ 
++#define UHID_DATA_MAX 4096
++
++struct uhid_input_req {
++	__u8 data[UHID_DATA_MAX];
++	__u16 size;
++} __attribute__((__packed__));
++
+ struct uhid_event {
+ 	__u32 type;
+ 
+ 	union {
+ 		struct uhid_create_req create;
++		struct uhid_input_req input;
+ 	} u;
+ } __attribute__((__packed__));
+ 
+-- 
+1.8.0
+

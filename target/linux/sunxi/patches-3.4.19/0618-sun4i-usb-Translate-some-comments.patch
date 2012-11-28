@@ -1,0 +1,39 @@
+From f7ece79e3ab6eeca135e6eaf0685d22adf43f241 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Wed, 25 Jul 2012 00:34:00 +0200
+Subject: [PATCH 618/944] sun4i usb: Translate some comments
+
+---
+ drivers/usb/sun4i_usb/hcd/include/sw_hcd_core.h | 2 +-
+ drivers/usb/sun4i_usb/usbc/usbc.c               | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/usb/sun4i_usb/hcd/include/sw_hcd_core.h b/drivers/usb/sun4i_usb/hcd/include/sw_hcd_core.h
+index 13dd093..648acf1 100644
+--- a/drivers/usb/sun4i_usb/hcd/include/sw_hcd_core.h
++++ b/drivers/usb/sun4i_usb/hcd/include/sw_hcd_core.h
+@@ -266,7 +266,7 @@ static inline void sw_hcd_set_vbus(struct sw_hcd *sw_hcd, int is_on)
+ 	}
+ }
+ 
+-/* 读取 fifo 的大小 */
++/* Read the size of the fifo */
+ static inline int sw_hcd_read_fifosize(struct sw_hcd *sw_hcd, struct sw_hcd_hw_ep *hw_ep, u8 epnum)
+ {
+ 	void *xbase = sw_hcd->mregs;
+diff --git a/drivers/usb/sun4i_usb/usbc/usbc.c b/drivers/usb/sun4i_usb/usbc/usbc.c
+index b9ffd65..a565e37 100644
+--- a/drivers/usb/sun4i_usb/usbc/usbc.c
++++ b/drivers/usb/sun4i_usb/usbc/usbc.c
+@@ -414,7 +414,7 @@ static void __USBC_ConfigFifo_TxEp_Default(__u32 usbc_base_addr)
+ *
+ * Arguments:
+ *    hUSB           :  input.  USBC_open_otg获得的句柄, 记录了USBC所需要的一些关键数据
+-*    is_double_fifo :  input.  是否使用硬件双fifo
++*    is_double_fifo :  input.  Whether to use hardware dual fifo
+ *    fifo_size      :  input.  fifo大小 = 2的fifo_size次方
+ *    fifo_addr      :  input.  fifo的起始地址 = fifo_addr * 8
+ *
+-- 
+1.8.0
+

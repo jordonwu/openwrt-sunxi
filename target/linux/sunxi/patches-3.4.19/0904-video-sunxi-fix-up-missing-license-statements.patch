@@ -1,0 +1,1242 @@
+From 4a576b4adb19483a22854f53fe75cf1a9e8f41d7 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Tue, 30 Oct 2012 15:42:22 +0100
+Subject: [PATCH 904/944] video:sunxi: fix up missing license statements
+
+And while we are at it, beautify the copyright statements.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/OSAL_Clock.c              |  3 +-
+ drivers/video/sunxi/disp/OSAL_Clock.h              |  3 +-
+ drivers/video/sunxi/disp/OSAL_Pin.c                |  3 +-
+ drivers/video/sunxi/disp/OSAL_Pin.h                |  3 +-
+ drivers/video/sunxi/disp/bsp_display.h             |  5 ++--
+ drivers/video/sunxi/disp/de_be.c                   |  5 ++--
+ drivers/video/sunxi/disp/de_be.h                   |  5 ++--
+ drivers/video/sunxi/disp/de_fe.c                   |  5 ++--
+ drivers/video/sunxi/disp/de_fe.h                   |  5 ++--
+ drivers/video/sunxi/disp/de_hwc.c                  |  5 ++--
+ drivers/video/sunxi/disp/de_iep.c                  | 20 +++++++++++++
+ drivers/video/sunxi/disp/de_iep.h                  | 35 +++++++++++++++-------
+ drivers/video/sunxi/disp/de_iep_tab.h              | 20 +++++++++++++
+ drivers/video/sunxi/disp/de_layer.c                |  5 ++--
+ drivers/video/sunxi/disp/de_lcdc.c                 |  5 ++--
+ drivers/video/sunxi/disp/de_lcdc_i.h               |  5 ++--
+ drivers/video/sunxi/disp/de_tvec.c                 |  5 ++--
+ drivers/video/sunxi/disp/de_tvec_i.h               |  5 ++--
+ drivers/video/sunxi/disp/dev_disp.c                |  5 ++--
+ drivers/video/sunxi/disp/dev_disp.h                |  5 ++--
+ drivers/video/sunxi/disp/dev_fb.c                  |  5 ++--
+ drivers/video/sunxi/disp/dev_fb.h                  |  5 ++--
+ drivers/video/sunxi/disp/disp_clk.c                |  5 ++--
+ drivers/video/sunxi/disp/disp_clk.h                |  5 ++--
+ drivers/video/sunxi/disp/disp_combined.c           |  5 ++--
+ drivers/video/sunxi/disp/disp_de.c                 |  5 ++--
+ drivers/video/sunxi/disp/disp_de.h                 |  5 ++--
+ drivers/video/sunxi/disp/disp_display.c            |  5 ++--
+ drivers/video/sunxi/disp/disp_display.h            |  5 ++--
+ drivers/video/sunxi/disp/disp_display_i.h          |  5 ++--
+ drivers/video/sunxi/disp/disp_event.c              |  5 ++--
+ drivers/video/sunxi/disp/disp_event.h              |  5 ++--
+ drivers/video/sunxi/disp/disp_hdmi.c               |  5 ++--
+ drivers/video/sunxi/disp/disp_hdmi.h               |  5 ++--
+ drivers/video/sunxi/disp/disp_hwc.c                |  5 ++--
+ drivers/video/sunxi/disp/disp_iep.c                | 20 +++++++++++++
+ drivers/video/sunxi/disp/disp_iep.h                | 20 +++++++++++++
+ drivers/video/sunxi/disp/disp_layer.c              |  5 ++--
+ drivers/video/sunxi/disp/disp_layer.h              |  5 ++--
+ drivers/video/sunxi/disp/disp_lcd.c                |  5 ++--
+ drivers/video/sunxi/disp/disp_lcd.h                |  5 ++--
+ drivers/video/sunxi/disp/disp_scaler.c             |  5 ++--
+ drivers/video/sunxi/disp/disp_scaler.h             |  5 ++--
+ drivers/video/sunxi/disp/disp_sprite.c             |  5 ++--
+ drivers/video/sunxi/disp/disp_sprite.h             |  5 ++--
+ drivers/video/sunxi/disp/disp_tv.c                 |  5 ++--
+ drivers/video/sunxi/disp/disp_tv.h                 |  5 ++--
+ drivers/video/sunxi/disp/disp_ump.c                |  3 +-
+ drivers/video/sunxi/disp/disp_vga.c                |  5 ++--
+ drivers/video/sunxi/disp/disp_video.c              |  5 ++--
+ drivers/video/sunxi/disp/disp_video.h              |  5 ++--
+ drivers/video/sunxi/disp/drv_disp_i.h              |  5 ++--
+ drivers/video/sunxi/disp/ebios_de.h                |  5 ++--
+ drivers/video/sunxi/disp/ebios_lcdc_tve.h          |  5 ++--
+ drivers/video/sunxi/drv_display.h                  |  3 +-
+ drivers/video/sunxi/hdmi/dev_hdmi.c                |  5 ++--
+ drivers/video/sunxi/hdmi/dev_hdmi.h                |  5 ++--
+ drivers/video/sunxi/hdmi/drv_hdmi.c                |  5 ++--
+ drivers/video/sunxi/hdmi/drv_hdmi_i.h              |  5 ++--
+ drivers/video/sunxi/hdmi/hdmi_core.c               |  5 ++--
+ drivers/video/sunxi/hdmi/hdmi_core.h               |  5 ++--
+ drivers/video/sunxi/hdmi/hdmi_edid.c               |  5 ++--
+ drivers/video/sunxi/hdmi/hdmi_hal.c                |  5 ++--
+ drivers/video/sunxi/hdmi/hdmi_hal.h                |  5 ++--
+ drivers/video/sunxi/lcd/dev_lcd.c                  |  5 ++--
+ drivers/video/sunxi/lcd/dev_lcd.h                  |  5 ++--
+ drivers/video/sunxi/lcd/lcd0_panel_cfg.c           |  5 ++--
+ drivers/video/sunxi/lcd/lcd1_panel_cfg.c           |  5 ++--
+ .../video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c  |  5 ++--
+ drivers/video/sunxi/lcd/lcd_bak/TC102.c            |  5 ++--
+ .../video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c |  5 ++--
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c       |  5 ++--
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c |  5 ++--
+ .../sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c   |  5 ++--
+ drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c        |  5 ++--
+ drivers/video/sunxi/lcd/lcd_panel_cfg.h            |  5 ++--
+ drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c    |  5 ++--
+ 77 files changed, 243 insertions(+), 220 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL_Clock.c
+index 49dc9dc..267559c 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL_Clock.c
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.h b/drivers/video/sunxi/disp/OSAL_Clock.h
+index 447e447..0339cc1 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.h
++++ b/drivers/video/sunxi/disp/OSAL_Clock.h
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/OSAL_Pin.c b/drivers/video/sunxi/disp/OSAL_Pin.c
+index 28e4b46..72c6bb0 100644
+--- a/drivers/video/sunxi/disp/OSAL_Pin.c
++++ b/drivers/video/sunxi/disp/OSAL_Pin.c
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/OSAL_Pin.h b/drivers/video/sunxi/disp/OSAL_Pin.h
+index 50bdaef..7cb440c 100644
+--- a/drivers/video/sunxi/disp/OSAL_Pin.h
++++ b/drivers/video/sunxi/disp/OSAL_Pin.h
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index be45227..f936a69 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_be.c b/drivers/video/sunxi/disp/de_be.c
+index 2f47066..653a2e4 100644
+--- a/drivers/video/sunxi/disp/de_be.c
++++ b/drivers/video/sunxi/disp/de_be.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_be.h b/drivers/video/sunxi/disp/de_be.h
+index ec81bd6..6eb61af 100644
+--- a/drivers/video/sunxi/disp/de_be.h
++++ b/drivers/video/sunxi/disp/de_be.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_fe.c b/drivers/video/sunxi/disp/de_fe.c
+index 9cd724d..16ddb7b 100644
+--- a/drivers/video/sunxi/disp/de_fe.c
++++ b/drivers/video/sunxi/disp/de_fe.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_fe.h b/drivers/video/sunxi/disp/de_fe.h
+index 7290837..4d7688b 100644
+--- a/drivers/video/sunxi/disp/de_fe.h
++++ b/drivers/video/sunxi/disp/de_fe.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_hwc.c b/drivers/video/sunxi/disp/de_hwc.c
+index 1673be1..0cc5ac9 100644
+--- a/drivers/video/sunxi/disp/de_hwc.c
++++ b/drivers/video/sunxi/disp/de_hwc.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_iep.c b/drivers/video/sunxi/disp/de_iep.c
+index ef48dd4..3e3617e 100644
+--- a/drivers/video/sunxi/disp/de_iep.c
++++ b/drivers/video/sunxi/disp/de_iep.c
+@@ -1,3 +1,23 @@
++/*
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "de_iep.h"
+ 
+ #ifndef CONFIG_ARCH_SUN5I
+diff --git a/drivers/video/sunxi/disp/de_iep.h b/drivers/video/sunxi/disp/de_iep.h
+index 61206d2..9d69d77 100644
+--- a/drivers/video/sunxi/disp/de_iep.h
++++ b/drivers/video/sunxi/disp/de_iep.h
+@@ -1,13 +1,28 @@
+-//*****************************************************************************
+-//  All Winner Micro, All Right Reserved. 2006-2011 Copyright (c)
+-//
+-//  File name   :        de_iep.h
+-//
+-//  Description :  display engine Image Enhancement Processor registers and interface functions define
+-//                 for aw1625
+-//  History     :
+-//                2011/09/01      vito       v0.1    Initial version
+-//******************************************************************************
++/*
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++ *  Display engine Image Enhancement Processor registers and interface
++ * functions define for aw1625
++ */
++
+ #ifndef __DE_IEP_H__
+ #define __DE_IEP_H__
+ 
+diff --git a/drivers/video/sunxi/disp/de_iep_tab.h b/drivers/video/sunxi/disp/de_iep_tab.h
+index b5f9c04..6548d08 100644
+--- a/drivers/video/sunxi/disp/de_iep_tab.h
++++ b/drivers/video/sunxi/disp/de_iep_tab.h
+@@ -1,3 +1,23 @@
++/*
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef CONFIG_ARCH_SUN5I
+ #error IEP should only be used on sun5i
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_layer.c b/drivers/video/sunxi/disp/de_layer.c
+index 530d951..ddc53b8 100644
+--- a/drivers/video/sunxi/disp/de_layer.c
++++ b/drivers/video/sunxi/disp/de_layer.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_lcdc.c b/drivers/video/sunxi/disp/de_lcdc.c
+index 7355a3c..7782263 100644
+--- a/drivers/video/sunxi/disp/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_lcdc.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_lcdc_i.h b/drivers/video/sunxi/disp/de_lcdc_i.h
+index a86efd3..ea335ad 100644
+--- a/drivers/video/sunxi/disp/de_lcdc_i.h
++++ b/drivers/video/sunxi/disp/de_lcdc_i.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_tvec.c b/drivers/video/sunxi/disp/de_tvec.c
+index 900f8e6..6865af5 100644
+--- a/drivers/video/sunxi/disp/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_tvec.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/de_tvec_i.h b/drivers/video/sunxi/disp/de_tvec_i.h
+index ceaf04f..38b9e97 100644
+--- a/drivers/video/sunxi/disp/de_tvec_i.h
++++ b/drivers/video/sunxi/disp/de_tvec_i.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 90dcf0a..b0f8b7a 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index f2b111c..cbac6f3 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index e4cdc96..0f3ec47 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/dev_fb.h b/drivers/video/sunxi/disp/dev_fb.h
+index c390db1..42b8723 100644
+--- a/drivers/video/sunxi/disp/dev_fb.h
++++ b/drivers/video/sunxi/disp/dev_fb.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index 378549b..915879a 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_clk.h b/drivers/video/sunxi/disp/disp_clk.h
+index 230fd5e..6a01a4a 100644
+--- a/drivers/video/sunxi/disp/disp_clk.h
++++ b/drivers/video/sunxi/disp/disp_clk.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_combined.c b/drivers/video/sunxi/disp/disp_combined.c
+index b58cb9d..6f445bf 100644
+--- a/drivers/video/sunxi/disp/disp_combined.c
++++ b/drivers/video/sunxi/disp/disp_combined.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_de.c b/drivers/video/sunxi/disp/disp_de.c
+index a94a88b..26c138d 100644
+--- a/drivers/video/sunxi/disp/disp_de.c
++++ b/drivers/video/sunxi/disp/disp_de.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_de.h b/drivers/video/sunxi/disp/disp_de.h
+index dcedc03..b63d3cb 100644
+--- a/drivers/video/sunxi/disp/disp_de.h
++++ b/drivers/video/sunxi/disp/disp_de.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index 262eb7e..6259aba 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_display.h b/drivers/video/sunxi/disp/disp_display.h
+index 59dcf58..74dbb1d 100644
+--- a/drivers/video/sunxi/disp/disp_display.h
++++ b/drivers/video/sunxi/disp/disp_display.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_display_i.h b/drivers/video/sunxi/disp/disp_display_i.h
+index 985b644..c254ec5 100644
+--- a/drivers/video/sunxi/disp/disp_display_i.h
++++ b/drivers/video/sunxi/disp/disp_display_i.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_event.c b/drivers/video/sunxi/disp/disp_event.c
+index bffecb0..62b074d 100644
+--- a/drivers/video/sunxi/disp/disp_event.c
++++ b/drivers/video/sunxi/disp/disp_event.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_event.h b/drivers/video/sunxi/disp/disp_event.h
+index 8375523..462a275 100644
+--- a/drivers/video/sunxi/disp/disp_event.h
++++ b/drivers/video/sunxi/disp/disp_event.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index 9855d96..8d07992 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.h b/drivers/video/sunxi/disp/disp_hdmi.h
+index 2fb0bed..c135911 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.h
++++ b/drivers/video/sunxi/disp/disp_hdmi.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_hwc.c b/drivers/video/sunxi/disp/disp_hwc.c
+index dfb3958..37ee3b4 100644
+--- a/drivers/video/sunxi/disp/disp_hwc.c
++++ b/drivers/video/sunxi/disp/disp_hwc.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_iep.c b/drivers/video/sunxi/disp/disp_iep.c
+index f295256..e51a6e6 100644
+--- a/drivers/video/sunxi/disp/disp_iep.c
++++ b/drivers/video/sunxi/disp/disp_iep.c
+@@ -1,3 +1,23 @@
++/*
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_iep.h"
+ #include "de_iep.h"
+ #include "de_iep_tab.h"
+diff --git a/drivers/video/sunxi/disp/disp_iep.h b/drivers/video/sunxi/disp/disp_iep.h
+index b179015..1a23ba1 100644
+--- a/drivers/video/sunxi/disp/disp_iep.h
++++ b/drivers/video/sunxi/disp/disp_iep.h
+@@ -1,3 +1,23 @@
++/*
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_IEP_H__
+ #define __DISP_IEP_H__
+ 
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 92162b2..9b572d9 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_layer.h b/drivers/video/sunxi/disp/disp_layer.h
+index fa1e5d9..ffb2fb7 100644
+--- a/drivers/video/sunxi/disp/disp_layer.h
++++ b/drivers/video/sunxi/disp/disp_layer.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index e5f1514..bb6a0bb 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_lcd.h b/drivers/video/sunxi/disp/disp_lcd.h
+index f4b6e27..0f3f555 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.h
++++ b/drivers/video/sunxi/disp/disp_lcd.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 4f04f0d..a1dd072 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_scaler.h b/drivers/video/sunxi/disp/disp_scaler.h
+index 3a07401..5192d48 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.h
++++ b/drivers/video/sunxi/disp/disp_scaler.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 47f76f0..0a40f3d 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_sprite.h b/drivers/video/sunxi/disp/disp_sprite.h
+index 6a8b3eb..d58f031 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.h
++++ b/drivers/video/sunxi/disp/disp_sprite.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index ff4cbe7..9391a8f 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_tv.h b/drivers/video/sunxi/disp/disp_tv.h
+index 04cfe75..813c538 100644
+--- a/drivers/video/sunxi/disp/disp_tv.h
++++ b/drivers/video/sunxi/disp/disp_tv.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+index 3402e80..301674a 100644
+--- a/drivers/video/sunxi/disp/disp_ump.c
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2012
+- * Henrik Nordstrom <henrik@henriknordstrom.net>
++ * copyright (c) 2012 Henrik Nordstrom <henrik@henriknordstrom.net>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index 950a2fe..5b6972b 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_video.c b/drivers/video/sunxi/disp/disp_video.c
+index 3dd3f18..2cdea4c 100644
+--- a/drivers/video/sunxi/disp/disp_video.c
++++ b/drivers/video/sunxi/disp/disp_video.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/disp_video.h b/drivers/video/sunxi/disp/disp_video.h
+index ed019ed..5b823a0 100644
+--- a/drivers/video/sunxi/disp/disp_video.h
++++ b/drivers/video/sunxi/disp/disp_video.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/drv_disp_i.h b/drivers/video/sunxi/disp/drv_disp_i.h
+index 1abe1e8..090aea6 100644
+--- a/drivers/video/sunxi/disp/drv_disp_i.h
++++ b/drivers/video/sunxi/disp/drv_disp_i.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/ebios_de.h b/drivers/video/sunxi/disp/ebios_de.h
+index 6acace3..3ccabb3 100644
+--- a/drivers/video/sunxi/disp/ebios_de.h
++++ b/drivers/video/sunxi/disp/ebios_de.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/disp/ebios_lcdc_tve.h b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+index 4f53f95..dd9382b 100644
+--- a/drivers/video/sunxi/disp/ebios_lcdc_tve.h
++++ b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/drv_display.h b/drivers/video/sunxi/drv_display.h
+index c1e6fbd..e12ed01 100644
+--- a/drivers/video/sunxi/drv_display.h
++++ b/drivers/video/sunxi/drv_display.h
+@@ -1,6 +1,5 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.c b/drivers/video/sunxi/hdmi/dev_hdmi.c
+index 7813424..da58f82 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.c
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.h b/drivers/video/sunxi/hdmi/dev_hdmi.h
+index 7715763..d97e10c 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.h
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index 245a734..f154d8a 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi_i.h b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+index 58f97b2..4189074 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.c b/drivers/video/sunxi/hdmi/hdmi_core.c
+index 125c8cf..a77c7f9 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.c
++++ b/drivers/video/sunxi/hdmi/hdmi_core.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.h b/drivers/video/sunxi/hdmi/hdmi_core.h
+index 7ed1945..210ef19 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.h
++++ b/drivers/video/sunxi/hdmi/hdmi_core.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/hdmi_edid.c b/drivers/video/sunxi/hdmi/hdmi_edid.c
+index fa34522..a5ae067 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_edid.c
++++ b/drivers/video/sunxi/hdmi/hdmi_edid.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.c b/drivers/video/sunxi/hdmi/hdmi_hal.c
+index cabf809..1416e4e 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.c
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.h b/drivers/video/sunxi/hdmi/hdmi_hal.h
+index 317a16b..fcd1459 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.h
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.c b/drivers/video/sunxi/lcd/dev_lcd.c
+index f9f7c37..bc7e8e8 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.c
++++ b/drivers/video/sunxi/lcd/dev_lcd.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index a7d5630..3324a8d 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+index 48e21ce..e189116 100644
+--- a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+index 9fac367..d250479 100644
+--- a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index 6a3b1d5..4f5d5f5 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC102.c b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+index c5f36fb..fd5e6cd 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index 093331d..83da189 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+index d2d7406..6c3a860 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+index fb10b8a..6a7066f 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 79a4f59..da0f8f2 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+index ccbe385..ef9473d 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg.h b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+index c347df9..99c7ab4 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+index 4dd477d..25c7c93 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+@@ -1,7 +1,6 @@
+ /*
+- * (C) Copyright 2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Danling <danliang@allwinnertech.com>
++ * copyright (c) 2007-2012 Allwinner Technology Co., Ltd.
++ * copyright (c) 2007-2012 Danling <danliang@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+-- 
+1.8.0
+

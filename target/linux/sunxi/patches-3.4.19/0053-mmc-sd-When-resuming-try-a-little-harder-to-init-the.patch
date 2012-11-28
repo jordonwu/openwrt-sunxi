@@ -1,0 +1,50 @@
+From 05063bf0ed0871f2ed968a2bda4c59a9f1d66066 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@android.com>
+Date: Mon, 1 Dec 2008 08:52:34 -0800
+Subject: [PATCH 053/944] mmc: sd: When resuming, try a little harder to init
+ the card
+
+Signed-off-by: San Mehat <san@android.com>
+---
+ drivers/mmc/core/sd.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
+index ad9272c..582654f 100644
+--- a/drivers/mmc/core/sd.c
++++ b/drivers/mmc/core/sd.c
+@@ -1118,12 +1118,31 @@ static int mmc_sd_suspend(struct mmc_host *host)
+ static int mmc_sd_resume(struct mmc_host *host)
+ {
+ 	int err;
++#ifdef CONFIG_MMC_PARANOID_SD_INIT
++	int retries;
++#endif
+ 
+ 	BUG_ON(!host);
+ 	BUG_ON(!host->card);
+ 
+ 	mmc_claim_host(host);
++#ifdef CONFIG_MMC_PARANOID_SD_INIT
++	retries = 5;
++	while (retries) {
++		err = mmc_sd_init_card(host, host->ocr, host->card);
++
++		if (err) {
++			printk(KERN_ERR "%s: Re-init card rc = %d (retries = %d)\n",
++			       mmc_hostname(host), err, retries);
++			mdelay(5);
++			retries--;
++			continue;
++		}
++		break;
++	}
++#else
+ 	err = mmc_sd_init_card(host, host->ocr, host->card);
++#endif
+ 	mmc_release_host(host);
+ 
+ 	return err;
+-- 
+1.8.0
+

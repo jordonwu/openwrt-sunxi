@@ -1,0 +1,27 @@
+From 1dd2d69ca040ba6685c0f78b11f6aaa0f223d6cc Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Thu, 17 May 2012 16:13:20 -0700
+Subject: [PATCH 247/944] net: wireless: bcmdhd: Fix division by 0 if
+ dhd_watchdog_ms is 0
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_sdio.c b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+index fff5296..0ec95d2 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+@@ -5373,7 +5373,7 @@ dhdsdio_pktgen_init(dhd_bus_t *bus)
+ 
+ 	/* Default to per-watchdog burst with 10s print time */
+ 	bus->pktgen_freq = 1;
+-	bus->pktgen_print = 10000 / dhd_watchdog_ms;
++	bus->pktgen_print = dhd_watchdog_ms ? 10000 / dhd_watchdog_ms : 0;
+ 	bus->pktgen_count = (dhd_pktgen * dhd_watchdog_ms + 999) / 1000;
+ 
+ 	/* Default to echo mode */
+-- 
+1.8.0
+

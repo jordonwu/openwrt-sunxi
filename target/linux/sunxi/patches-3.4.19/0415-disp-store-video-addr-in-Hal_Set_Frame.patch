@@ -1,0 +1,83 @@
+From c3ba0e536e04b2a832769b61783eb0dd80f817b0 Mon Sep 17 00:00:00 2001
+From: danling <danling@allwinnertech.com>
+Date: Fri, 2 Dec 2011 16:01:14 +0800
+Subject: [PATCH 415/944] disp: store video addr in Hal_Set_Frame
+
+---
+ drivers/video/sun4i/disp/de_bsp/de/disp_video.c |  8 +++--
+ drivers/video/sun4i/lcd/config_lcd.bat          | 41 -------------------------
+ 2 files changed, 6 insertions(+), 43 deletions(-)
+ delete mode 100644 drivers/video/sun4i/lcd/config_lcd.bat
+
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_video.c b/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
+index 2c05fa1..f6f07d8 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
+@@ -208,11 +208,15 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+             layer_fb.format = fb.format;
+             DE_BE_Layer_Set_Framebuffer(sel, id,&layer_fb);
+         }
+-        memcpy(&layer_man->para.fb,&fb,sizeof(__disp_fb_t));
+     }
+ 
+     g_video[sel][id].display_cnt++;
+-
++    gdisp.screen[sel].layer_manage[id].para.fb.addr[0] = g_video[sel][id].video_cur.addr[0];
++    gdisp.screen[sel].layer_manage[id].para.fb.addr[1] = g_video[sel][id].video_cur.addr[1];
++    gdisp.screen[sel].layer_manage[id].para.fb.addr[2] = g_video[sel][id].video_cur.addr[2];
++    gdisp.screen[sel].layer_manage[id].para.fb.trd_right_addr[0] = g_video[sel][id].video_cur.addr_right[0];
++    gdisp.screen[sel].layer_manage[id].para.fb.trd_right_addr[1] = g_video[sel][id].video_cur.addr_right[1];
++    gdisp.screen[sel].layer_manage[id].para.fb.trd_right_addr[2] = g_video[sel][id].video_cur.addr_right[2];
+ 	return DIS_SUCCESS;
+ }
+ 
+diff --git a/drivers/video/sun4i/lcd/config_lcd.bat b/drivers/video/sun4i/lcd/config_lcd.bat
+deleted file mode 100644
+index f78b8ab..0000000
+--- a/drivers/video/sun4i/lcd/config_lcd.bat
++++ /dev/null
+@@ -1,41 +0,0 @@
+-@echo off
+-	goto START
+-
+-:START
+-    @echo *********************************************
+-    @echo *   select board                            *
+-    @echo *********************************************
+-    @echo  0: hv_800x480
+-    @echo  1: lvds_1080
+-    @echo  2: TC101+tl080wx800-v0
+-    @echo *********************************************
+-
+-    set /p SEL=Please Select:
+-    if %SEL%==0     goto LCD0
+-    if %SEL%==1     goto LCD1
+-    if %SEL%==2     goto LCD2
+-    goto ERROR
+-
+-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+-:LCD0
+-	copy lcd_bak\hv_800x480.c lcd0_panel_cfg.c
+-    goto conti
+-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+-:LCD1
+-	copy lcd_bak\lvds_1080.c lcd0_panel_cfg.c
+-    goto conti
+-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+-:LCD2
+-	copy lcd_bak\tl080wx800.c lcd0_panel_cfg.c
+-    goto conti
+-::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+-
+-:ERROR
+-	@echo error selection
+-	goto conti
+-
+-:conti
+-		del lcd0_panel_cfg.o
+-    @echo *********************************************
+-    pause
+-
+-- 
+1.8.0
+

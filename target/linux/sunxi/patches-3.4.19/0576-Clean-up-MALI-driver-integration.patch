@@ -1,0 +1,131 @@
+From b3d3bbc2fb7f40aff476cac176a0664bb3503855 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Thu, 7 Jun 2012 00:23:34 +0200
+Subject: [PATCH 576/944] Clean up MALI driver integration
+
+- Can only be built as module
+- Enabled via defconfig, not hardwired in the target architecture
+- Rename CONFIG_GPU_MALI to CONFIG_MALI
+---
+ arch/arm/Kconfig                       | 1 -
+ arch/arm/configs/sun4i_crane_defconfig | 1 +
+ arch/arm/configs/sun4i_defconfig       | 1 +
+ arch/arm/configs/sun5i_defconfig       | 1 +
+ drivers/Kconfig                        | 2 --
+ drivers/gpu/Kconfig                    | 5 -----
+ drivers/gpu/mali/Kconfig               | 6 +++---
+ drivers/gpu/mali/Makefile              | 2 +-
+ drivers/video/Kconfig                  | 2 ++
+ 9 files changed, 9 insertions(+), 12 deletions(-)
+ delete mode 100644 drivers/gpu/Kconfig
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 0f4dc51..69a68ae 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -722,7 +722,6 @@ config ARCH_SUN4I
+ 	select GENERIC_CLOCKEVENTS
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARM_L1_CACHE_SHIFT_6
+-	select GPU_MALI
+ 	help
+ 	  This enables support for Allwinner Technology Co., Ltd A10 SoC based systems
+ 
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index 0268a6c..0403cdb 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -1492,6 +1492,7 @@ CONFIG_PA_CONFIG=y
+ #
+ # CONFIG_DRM is not set
+ # CONFIG_ION is not set
++CONFIG_MALI=m
+ # CONFIG_VGASTATE is not set
+ # CONFIG_VIDEO_OUTPUT_CONTROL is not set
+ CONFIG_FB=y
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 4068514..9a87383 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -1148,6 +1148,7 @@ CONFIG_PA_CONFIG=y
+ #
+ # CONFIG_DRM is not set
+ # CONFIG_ION is not set
++CONFIG_MALI=m
+ # CONFIG_VGASTATE is not set
+ # CONFIG_VIDEO_OUTPUT_CONTROL is not set
+ CONFIG_FB=y
+diff --git a/arch/arm/configs/sun5i_defconfig b/arch/arm/configs/sun5i_defconfig
+index c7ae9cc..91f7208 100644
+--- a/arch/arm/configs/sun5i_defconfig
++++ b/arch/arm/configs/sun5i_defconfig
+@@ -996,6 +996,7 @@ CONFIG_PA_CONFIG=y
+ #
+ # CONFIG_DRM is not set
+ # CONFIG_ION is not set
++CONFIG_MALI=m
+ # CONFIG_VGASTATE is not set
+ # CONFIG_VIDEO_OUTPUT_CONTROL is not set
+ CONFIG_FB=y
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 6ccb2b0..715f0ba 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -143,6 +143,4 @@ source "drivers/virt/Kconfig"
+ 
+ source "drivers/devfreq/Kconfig"
+ 
+-source "drivers/gpu/Kconfig"
+-
+ endmenu
+diff --git a/drivers/gpu/Kconfig b/drivers/gpu/Kconfig
+deleted file mode 100644
+index 882b9aa..0000000
+--- a/drivers/gpu/Kconfig
++++ /dev/null
+@@ -1,5 +0,0 @@
+-menu "GPU drivers"
+-
+-source "drivers/gpu/mali/Kconfig"
+-
+-endmenu
+diff --git a/drivers/gpu/mali/Kconfig b/drivers/gpu/mali/Kconfig
+index 0616f34..01dd278 100644
+--- a/drivers/gpu/mali/Kconfig
++++ b/drivers/gpu/mali/Kconfig
+@@ -1,6 +1,6 @@
+-config GPU_MALI
+-	boolean "ARM Mali GPU modules"
+-	depends on ARM
++config MALI
++	tristate "ARM Mali GPU modules"
++	depends on ARM && m
+ 	default n
+ 	help
+ 	  This enables the generation of mali.ko and ump.ko.
+diff --git a/drivers/gpu/mali/Makefile b/drivers/gpu/mali/Makefile
+index c4322d9..8e90fe7 100644
+--- a/drivers/gpu/mali/Makefile
++++ b/drivers/gpu/mali/Makefile
+@@ -7,4 +7,4 @@ BUILD:=release
+ TARGET_PLATFORM:=mali400-pmu
+ export CONFIG USING_MMU USING_UMP USING_PMM BUILD TARGET_PLATFORM
+ 
+-obj-$(CONFIG_GPU_MALI) += ump/ mali/
++obj-$(CONFIG_MALI) += ump/ mali/
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index 38915d0..b7b65a1 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -25,6 +25,8 @@ source "drivers/gpu/stub/Kconfig"
+ 
+ source "drivers/gpu/ion/Kconfig"
+ 
++source "drivers/gpu/mali/Kconfig"
++
+ config VGASTATE
+        tristate
+        default n
+-- 
+1.8.0
+

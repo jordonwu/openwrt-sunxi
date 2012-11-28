@@ -1,0 +1,61 @@
+From 2eec7c9f3f20cf720ac8a97e23a2954132c025c9 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 16 May 2012 17:22:23 -0700
+Subject: [PATCH 250/944] sched/rt: fix SCHED_RR across cgroups
+
+task_tick_rt has an optimization to only reschedule SCHED_RR tasks
+if they were the only element on their rq.  However, with cgroups
+a SCHED_RR task could be the only element on its per-cgroup rq but
+still be competing with other SCHED_RR tasks in its parent's
+cgroup.  In this case, the SCHED_RR task in the child cgroup would
+never yield at the end of its timeslice.  If the child cgroup
+rt_runtime_us was the same as the parent cgroup rt_runtime_us,
+the task in the parent cgroup would starve completely.
+
+Modify task_tick_rt to check that the task is the only task on its
+rq, and that the each of the scheduling entities of its ancestors
+is also the only entity on its rq.
+
+Change-Id: I4f5b118517f85db3570923eb2f5e4c933ece9247
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ kernel/sched/rt.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
+index 44af55e..8f32475 100644
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -1983,6 +1983,8 @@ static void watchdog(struct rq *rq, struct task_struct *p)
+ 
+ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
+ {
++	struct sched_rt_entity *rt_se = &p->rt;
++
+ 	update_curr_rt(rq);
+ 
+ 	watchdog(rq, p);
+@@ -2000,12 +2002,15 @@ static void task_tick_rt(struct rq *rq, struct task_struct *p, int queued)
+ 	p->rt.time_slice = RR_TIMESLICE;
+ 
+ 	/*
+-	 * Requeue to the end of queue if we are not the only element
+-	 * on the queue:
++	 * Requeue to the end of queue if we (and all of our ancestors) are the
++	 * only element on the queue
+ 	 */
+-	if (p->rt.run_list.prev != p->rt.run_list.next) {
+-		requeue_task_rt(rq, p, 0);
+-		set_tsk_need_resched(p);
++	for_each_sched_rt_entity(rt_se) {
++		if (rt_se->run_list.prev != rt_se->run_list.next) {
++			requeue_task_rt(rq, p, 0);
++			set_tsk_need_resched(p);
++			return;
++		}
+ 	}
+ }
+ 
+-- 
+1.8.0
+

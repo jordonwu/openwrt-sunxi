@@ -1,0 +1,31 @@
+From 674bad0c49ad1c5cf2b8aec470acd0a6dd21dd9b Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Thu, 7 Jun 2012 16:59:59 -0700
+Subject: [PATCH 282/944] gpu: ion: ion_system_heap: Change allocations to
+ GFP_HIGHUSER
+
+Previously the ion_system_heap was using GFP_KERNEL, forcing all allocations
+to be in lowmem.  This quickly causes us to run out of lowmem.
+
+Change-Id: I6d502a5f1c20c8a8e44fb5903fcb228f8435a564
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion_system_heap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index 116e923..e1f2e71 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -40,7 +40,7 @@ static int ion_system_heap_allocate(struct ion_heap *heap,
+ 		goto err0;
+ 	for_each_sg(table->sgl, sg, table->nents, i) {
+ 		struct page *page;
+-		page = alloc_page(GFP_KERNEL);
++		page = alloc_page(GFP_HIGHUSER | __GFP_ZERO);
+ 		if (!page)
+ 			goto err1;
+ 		sg_set_page(sg, page, PAGE_SIZE, 0);
+-- 
+1.8.0
+

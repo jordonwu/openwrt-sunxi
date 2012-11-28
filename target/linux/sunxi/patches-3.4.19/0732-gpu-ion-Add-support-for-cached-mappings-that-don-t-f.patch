@@ -1,0 +1,104 @@
+From 71545d66cc5afa4c930523810e62ba8ce391f621 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Wed, 19 Sep 2012 23:31:05 -0700
+Subject: [PATCH 732/944] gpu: ion: Add support for cached mappings that don't
+ fault
+
+We have found that faulting in the mappings for cached
+allocations has a significant performance impact and is
+only a benefit if only a small part of the buffer is
+touched by the cpu (an uncommon case for software rendering).
+This patch introduces a ION_FLAG_CACHED_NEEDS_SYNC
+which determines whether a mapping should be created by
+faulting or at mmap time.  If this flag is set,
+userspace must manage the caches explictly using the SYNC ioctl.
+
+Change-Id: I227561f49e0f382a481728fb55ac5c930fc26025
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c | 28 ++++++++++++++++++----------
+ include/linux/ion.h   |  3 +++
+ 2 files changed, 21 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 929962f..e2456be 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -164,7 +164,8 @@ static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
+ 		return ERR_PTR(PTR_ERR(table));
+ 	}
+ 	buffer->sg_table = table;
+-	if (buffer->flags & ION_FLAG_CACHED) {
++	if (buffer->flags & ION_FLAG_CACHED &&
++	    !(buffer->flags & ION_FLAG_CACHED_NEEDS_SYNC)) {
+ 		for_each_sg(buffer->sg_table->sgl, sg, buffer->sg_table->nents,
+ 			    i) {
+ 			if (sg_dma_len(sg) == PAGE_SIZE)
+@@ -763,7 +764,8 @@ static void ion_buffer_sync_for_device(struct ion_buffer *buffer,
+ 	pr_debug("%s: syncing for device %s\n", __func__,
+ 		 dev ? dev_name(dev) : "null");
+ 
+-	if (!(buffer->flags & ION_FLAG_CACHED))
++	if (!(buffer->flags & ION_FLAG_CACHED) ||
++	    (buffer->flags & ION_FLAG_CACHED_NEEDS_SYNC))
+ 		return;
+ 
+ 	mutex_lock(&buffer->lock);
+@@ -853,18 +855,22 @@ static int ion_mmap(struct dma_buf *dmabuf, struct vm_area_struct *vma)
+ 		return -EINVAL;
+ 	}
+ 
+-	if (buffer->flags & ION_FLAG_CACHED) {
++	if (buffer->flags & ION_FLAG_CACHED &&
++	    !(buffer->flags & ION_FLAG_CACHED_NEEDS_SYNC)) {
+ 		vma->vm_private_data = buffer;
+ 		vma->vm_ops = &ion_vma_ops;
+ 		ion_vm_open(vma);
+-	} else {
+-		vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+-		mutex_lock(&buffer->lock);
+-		/* now map it to userspace */
+-		ret = buffer->heap->ops->map_user(buffer->heap, buffer, vma);
+-		mutex_unlock(&buffer->lock);
++		return 0;
+ 	}
+ 
++	if (!(buffer->flags & ION_FLAG_CACHED))
++		vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
++
++	mutex_lock(&buffer->lock);
++	/* now map it to userspace */
++	ret = buffer->heap->ops->map_user(buffer->heap, buffer, vma);
++	mutex_unlock(&buffer->lock);
++
+ 	if (ret)
+ 		pr_err("%s: failure mapping buffer to userspace\n",
+ 		       __func__);
+@@ -1021,7 +1027,9 @@ static int ion_sync_for_device(struct ion_client *client, int fd)
+ 		return -EINVAL;
+ 	}
+ 	buffer = dmabuf->priv;
+-	ion_buffer_sync_for_device(buffer, NULL, DMA_BIDIRECTIONAL);
++
++	dma_sync_sg_for_device(NULL, buffer->sg_table->sgl,
++			       buffer->sg_table->nents, DMA_BIDIRECTIONAL);
+ 	dma_buf_put(dmabuf);
+ 	return 0;
+ }
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+index e72c09e..a7d399c 100644
+--- a/include/linux/ion.h
++++ b/include/linux/ion.h
+@@ -52,6 +52,9 @@ enum ion_heap_type {
+ 					   cached, ion will do cache
+ 					   maintenance when the buffer is
+ 					   mapped for dma */
++#define ION_FLAG_CACHED_NEEDS_SYNC 2	/* mappings of this buffer will created
++					   at mmap time, if this is set
++					   caches must be managed manually */
+ 
+ #ifdef __KERNEL__
+ struct ion_device;
+-- 
+1.8.0
+

@@ -1,0 +1,155 @@
+From b87bdb6931235e546c1d20f3c5babad3ea2a2fb8 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 15 Oct 2012 22:03:12 +0300
+Subject: [PATCH 810/944] video: sunxi-hdmi: fix green screen effect
+
+Fix green screen effect.
+Added enumeration to explain csc.
+Added documentation to HDMI AVI header.
+---
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c      |  5 +++--
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h |  2 +-
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c  |  8 ++++----
+ .../video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h   |  7 ++++++-
+ drivers/video/sunxi/hdmi/aw/hdmi_core.c                 | 17 +++++++++--------
+ 5 files changed, 23 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+index 258fab4..3e46aaa 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+@@ -157,7 +157,7 @@ __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
+ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+ {
+     __disp_color_range_t out_color_range = DISP_COLOR_RANGE_0_255;
+-    __u32 out_csc = 0;
++	__csc_t out_csc = DE_RGB;
+     __u32 enhance_en, bright, contrast, saturation, hue;
+ 
+     enhance_en = gdisp.screen[sel].enhance_en;
+@@ -172,6 +172,7 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+         __s32 value = 0;
+ 
+         out_color_range = DISP_COLOR_RANGE_16_255;
++		out_csc = DE_YUV_HDMI;
+ 
+         ret = OSAL_Script_FetchParser_Data("disp_init", "screen0_out_color_range", &value, 1);
+         if(ret < 0)
+@@ -186,7 +187,7 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+     }
+     else if(type == DISP_OUTPUT_TYPE_TV)
+     {
+-        out_csc = 1;
++		out_csc = DE_YUV_TV;
+     }
+ 
+     else if(type == DISP_OUTPUT_TYPE_LCD)
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+index 7bb8bc1..281b24f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+@@ -127,7 +127,7 @@ typedef struct
+ 
+ 	__u32                   lcd_bright;
+ 	__disp_color_range_t    out_color_range;
+-	__u32                   out_csc;
++	__csc_t                out_csc;
+ 
+ 	__disp_lcd_cfg_t        lcd_cfg;
+     __hdle                  gpio_hdl[4];
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+index 70ace1e..82ae24c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+@@ -795,7 +795,7 @@ __s32 DE_BE_Sprite_Set_Palette_Table(__u32 sel, __u32 address, __u32 offset, __u
+ 
+ //out_csc: 0:rgb, 1:yuv for tv, 2:yuv for hdmi
+ //out_color_range:  0:16~255, 1:0~255, 2:16~235
+-__s32 DE_BE_Set_Enhance_ex(__u8 sel, __u32 out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue)
++__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue)
+ {
+ 	__s32 i_bright;
+ 	__s32 i_contrast;
+@@ -839,7 +839,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __u32 out_csc, __u32 out_color_range, __u32
+ 	matrixEn.x32 = 0;
+ 	matrixEn.x33 = 1024;
+ 
+-	if(out_csc == 0) {	//RGB output
++	if (out_csc == DE_RGB) { /* RGB output */
+ 		if(enhance_en == 1) {
+ 			for (i=0; i<16; i++) {
+ 				*((__s64 *)(&tmpcoeff.x00) + i) = ((__s64)*(image_enhance_tab + 0x20 + i) <<32 ) >>32;	//bt709 rgb2yuv coeff
+@@ -919,7 +919,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __u32 out_csc, __u32 out_color_range, __u32
+ 		matrixresult.x12 = matrixresult.x12;	matrixresult.x13 = matrixresult.x13 + 8;
+ 		matrixresult.x20 = matrixresult.x20;	matrixresult.x21 = matrixresult.x21;
+ 		matrixresult.x22 = matrixresult.x22;	matrixresult.x23 = matrixresult.x23 + 8;
+-	} else if (out_csc == 1) { //YUV for tv(range 16-235)
++	} else if (out_csc == DE_YUV_TV) { /* YUV for tv(range 16-235) */
+ 		for (i=0; i<16; i++) {
+ 			*((__s64 *)(&tmpcoeff.x00) + i)  = ((__s64)*(image_enhance_tab + i) <<32)>>32;  //bt601 rgb2yuv coeff
+ 		}
+@@ -945,7 +945,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __u32 out_csc, __u32 out_color_range, __u32
+ 			matrixresult.x20 = tmpcoeff.x20/4;  matrixresult.x21 = tmpcoeff.x21/4;
+ 			matrixresult.x22 = tmpcoeff.x22/4;  matrixresult.x23 = tmpcoeff.x23/256 + 8;
+ 		}
+-	} else { //if(out_csc == 2)//YUV for HDMI(range 16-235)
++	} else { /* if(out_csc == DE_YUV_HDMI) */ /* YUV for HDMI(range 16-235) */
+ 		for(i=0; i<16; i++) {
+ 			*((__s64 *)(&tmpcoeff.x00) + i)  = ((__s64)*(image_enhance_tab + i) <<32)>>32;	//bt601 rgb2yuv coeff
+ 		}
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+index 2eff39a..686bf6c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+@@ -75,6 +75,11 @@ typedef enum
+    DE_N64PIXELS
+ }de_pixels_num_t;
+ 
++typedef enum {
++	DE_RGB,
++	DE_YUV_TV,
++	DE_YUV_HDMI
++}__csc_t;
+ 
+ typedef enum __SCAL_PS
+ {
+@@ -354,7 +359,7 @@ __s32 DE_BE_Sprite_Block_Set_Size(__u32 sel, __u8 blk_idx,__u32 xsize,__u32 ysiz
+ __s32 DE_BE_Sprite_Block_Set_fb(__u32 sel, __u8 blk_idx,__u32 addr, __u32 line_width);
+ __s32 DE_BE_Sprite_Block_Set_Next_Id(__u32 sel, __u8 blk_idx,__u8 next_blk_id);
+ __s32 DE_BE_Sprite_Set_Palette_Table(__u32 sel, __u32 address, __u32 offset, __u32 size);
+-__s32 DE_BE_Set_Enhance_ex(__u8 sel, __u32 out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue);
++__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue);
+ __s32 DE_BE_enhance_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_set_display_size(__u32 sel, __u32 width, __u32 height);
+ __s32 DE_BE_get_display_width(__u32 sel);
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_core.c b/drivers/video/sunxi/hdmi/aw/hdmi_core.c
+index 131893e..eac34b6 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_core.c
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_core.c
+@@ -334,14 +334,15 @@ __s32 video_config(__s32 vic)
+     HDMI_WUINT8 (0x081,0x02);
+     HDMI_WUINT8 (0x082,0x0d);
+     HDMI_WUINT8 (0x083,0x00);
+-    HDMI_WUINT8 (0x084,0x50);
+-    if( video_timing[vic_tab].PCLK < 74250000)				//SD format
+-    {
+-    	HDMI_WUINT8 (0x085,0x58);							//4:3 601
+-    }else													//HD format
+-    {
+-    	HDMI_WUINT8 (0x085,0xa8);							//16:9 709
+-    }
++	/* 4:4:4 YCbCr */
++	HDMI_WUINT8 (0x084,0x50);  /* Data Byte 1 */
++	if( video_timing[vic_tab].PCLK < 74250000) {
++		/* 4:3 601 */
++		HDMI_WUINT8 (0x085,0x58); /* Data Byte 2 */
++	} else  {
++		/* 16:9 709 */
++		HDMI_WUINT8 (0x085,0xa8); /* Data Byte 2 */
++	}
+     HDMI_WUINT8 (0x086,0x00);
+     HDMI_WUINT8 (0x087,video_timing[vic_tab].VIC	 );
+     HDMI_WUINT8 (0x088,video_timing[vic_tab].AVI_PR);
+-- 
+1.8.0
+

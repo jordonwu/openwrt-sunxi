@@ -1,0 +1,719 @@
+From 2a198cba41795ae1f8bfc40a84723a04d346ef2d Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 26 Oct 2012 13:20:21 +0200
+Subject: [PATCH 845/944] video:sunxi:disp: unify scaler code
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c   |  29 +++++
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c | 102 ++++++++++++---
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c |  29 ++++-
+ .../video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c |  33 ++++-
+ .../sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h    |   3 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c   |  47 +++----
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c | 139 ++++++++++++---------
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c |  51 ++++----
+ .../video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c |  10 +-
+ .../sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h    |   2 +
+ 10 files changed, 317 insertions(+), 128 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+index 74b75c4..7eba71a 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+@@ -67,6 +67,23 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+     	DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+     	DE_BE_Output_Select(sel, sel);
+ 
++#ifdef CONFIG_ARCH_SUN5I
++	DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
++	{
++		int scaler_index;
++
++		for (scaler_index = 0; scaler_index < 2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel)) {
++				/* interlace output */
++				if (Disp_get_screen_scan_mode(tv_mod) == 1)
++					Scaler_Set_Outitl(scaler_index, TRUE);
++				else
++					Scaler_Set_Outitl(scaler_index, FALSE);
++			}
++        }
++#endif /* CONFIG_ARCH_SUN5I */
++
+     	TCON1_set_hdmi_mode(sel,tv_mod);
+     	TCON1_open(sel);
+     	if(gdisp.init_para.Hdmi_open)
+@@ -114,6 +131,18 @@ __s32 BSP_disp_hdmi_close(__u32 sel)
+     	lcdc_clk_off(sel);
+     	hdmi_clk_off();
+ 
++#ifdef CONFIG_ARCH_SUN5I
++	DE_BE_Set_Outitl_enable(sel, FALSE);
++	{
++		int scaler_index;
++
++		for (scaler_index=0; scaler_index<2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel))
++				Scaler_Set_Outitl(scaler_index, FALSE);
++        }
++#endif /* CONFIG_ARCH_SUN5I */
++
+         gdisp.screen[sel].b_out_interlace = 0;
+         gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
+     	gdisp.screen[sel].status &= HDMI_OFF;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+index e4d6f37..b8b33cb3 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+@@ -277,7 +277,7 @@ __s32 Scaler_event_proc(void *parg)
+     DE_SCAL_ClearINT(sel,fe_intflags);
+     DE_BE_ClearINT(sel,be_intflags);
+ 
+-	/*DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);*/
++    DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);
+ 
+     if(be_intflags & DE_IMG_REG_LOAD_FINISH)
+     {
+@@ -964,6 +964,10 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 	__u32 size = 0;
+ 	__u32 sel = 0;
+ 	__s32 ret = 0;
++#ifdef CONFIG_ARCH_SUN5I
++	__u32 i = 0;
++	__u32 ch_num = 0;
++#endif
+ 
+ 	if(para==NULL)
+ 	{
+@@ -1070,7 +1074,10 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     DE_SCAL_Set_Scaling_Coef(sel, &in_scan, &in_size, &in_type, &out_scan, &out_size, &out_type, DISP_VIDEO_NATUAL);
+     DE_SCAL_Set_Out_Format(sel, &out_type);
+     DE_SCAL_Set_Out_Size(sel, &out_scan,&out_type, &out_size);
++
++#ifdef CONFIG_ARCH_SUN4I
+     DE_SCAL_Set_Writeback_Addr(sel,&out_addr);
++
+     DE_SCAL_Output_Select(sel, 3);
+     DE_SCAL_EnableINT(sel,DE_WB_END_IE);
+     DE_SCAL_Start(sel);
+@@ -1078,31 +1085,88 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 
+ #ifndef __LINUX_OSAL__
+     DE_SCAL_Writeback_Enable(sel);
+-    while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE) )
+-    {
+-    }
++    while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
++	    ;
+ #else
+     {
+-        long timeout = (100 * HZ)/1000;//100ms
+-
+-        init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
+-        gdisp.scaler[sel].b_scaler_finished = 1;
+-        DE_SCAL_Writeback_Enable(sel);
+-
+-        timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue, gdisp.scaler[sel].b_scaler_finished == 2, timeout);
+-        gdisp.scaler[sel].b_scaler_finished = 0;
+-        if(timeout == 0)
+-        {
+-            __wrn("wait scaler %d finished timeout\n", sel);
+-            return -1;
+-        }
++	    long timeout = (100 * HZ)/1000;//100ms
++
++	    init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
++	    gdisp.scaler[sel].b_scaler_finished = 1;
++	    DE_SCAL_Writeback_Enable(sel);
++
++	    timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue,
++						       gdisp.scaler[sel].b_scaler_finished == 2, timeout);
++	    gdisp.scaler[sel].b_scaler_finished = 0;
++	    if(timeout == 0) {
++		    __wrn("wait scaler %d finished timeout\n", sel);
++		    return -1;
++	    }
+     }
+-#endif
++#endif /* __LINUX_OSAL__ */
+     DE_SCAL_Reset(sel);
+     DE_SCAL_Writeback_Disable(sel);
++#else
++        if (para->output_fb.mode == DISP_MOD_INTERLEAVED)
++        ch_num = 1;
++    else if (para->output_fb.mode == DISP_MOD_MB_UV_COMBINED ||
++	     para->output_fb.mode == DISP_MOD_NON_MB_UV_COMBINED)
++        ch_num = 2;
++    else if (para->output_fb.mode == DISP_MOD_MB_PLANAR ||
++	     para->output_fb.mode == DISP_MOD_NON_MB_PLANAR)
++        ch_num = 3;
++
++	for (i = 0; i < ch_num; i++) {
++		__scal_buf_addr_t addr;
++		ret = 0;
++
++		addr.ch0_addr = out_addr.ch0_addr;
++		if (i == 1)
++			addr.ch0_addr = out_addr.ch1_addr;
++		else if(i == 2)
++			addr.ch0_addr = out_addr.ch2_addr;
++		DE_SCAL_Enable(sel);
++
++		DE_SCAL_Set_Writeback_Addr(sel,&addr);
++		DE_SCAL_Set_Writeback_Chnl(sel, i);
++
++		DE_SCAL_Output_Select(sel, 3);
++		DE_SCAL_EnableINT(sel,DE_WB_END_IE);
++		DE_SCAL_Start(sel);
++		DE_SCAL_Set_Reg_Rdy(sel);
+ 
+-    return ret;
++#ifndef __LINUX_OSAL__
++		DE_SCAL_Writeback_Enable(sel);
++		while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
++			;
++#else
++		{
++			long timeout = (100 * HZ)/1000;//100ms
++
++			init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
++			gdisp.scaler[sel].b_scaler_finished = 1;
++			DE_SCAL_Writeback_Enable(sel);
++
++			timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue,
++								   gdisp.scaler[sel].b_scaler_finished == 2, timeout);
++			gdisp.scaler[sel].b_scaler_finished = 0;
++
++			if (timeout == 0) {
++				__wrn("wait scaler %d finished timeout\n", sel);
++				DE_SCAL_Writeback_Disable(sel);
++				DE_SCAL_Reset(sel);
++				DE_SCAL_Disable(sel);
++				return -1;
++			}
++		}
++#endif /* __LINUX_OSAL__ */
++		DE_SCAL_Writeback_Disable(sel);
++		DE_SCAL_Reset(sel);
++		DE_SCAL_Disable(sel);
++	}
++#endif /* CONFIG_ARCH_SUN4I */
+ 
++    return ret;
+ }
+ 
+ 
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+index e562931..8436594 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+@@ -227,6 +227,23 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+         DE_BE_Output_Select(sel, sel);
+ 
++#ifdef CONFIG_ARCH_SUN5I
++	DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
++	{
++		int scaler_index;
++
++		for (scaler_index = 0; scaler_index < 2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel)) {
++				/* interlace output */
++				if (Disp_get_screen_scan_mode(tv_mod) == 1)
++					Scaler_Set_Outitl(scaler_index, TRUE);
++				else
++					Scaler_Set_Outitl(scaler_index, FALSE);
++			}
++        }
++#endif /* CONFIG_ARCH_SUN5I */
++
+         TCON1_set_tv_mode(sel,tv_mod);
+         TVE_set_tv_mode(sel, tv_mod);
+         Disp_TVEC_DacCfg(sel, tv_mod);
+@@ -292,9 +309,19 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         tve_clk_off(sel);
+         image_clk_off(sel);
+         lcdc_clk_off(sel);
++
+ #ifdef CONFIG_ARCH_SUN5I
+ 	Disp_de_flicker_enable(sel, 2);	//must close immediately, because vbi may not come
+-#endif
++	DE_BE_Set_Outitl_enable(sel, FALSE);
++	{
++		int scaler_index;
++
++		for(scaler_index=0; scaler_index<2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel))
++				Scaler_Set_Outitl(scaler_index, FALSE);
++        }
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+ #ifdef __LINUX_OSAL__
+         {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+index e84e0a3..710c2ee 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+@@ -1165,13 +1165,44 @@ __s32 DE_SCAL_Disable(__u8 sel)
+ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr)
+ {
+     scal_dev[sel]->wb_addr0.dwval = addr->ch0_addr;
++#ifdef CONFIG_ARCH_SUN4I
+     scal_dev[sel]->wb_addr1.dwval = addr->ch1_addr;
+     scal_dev[sel]->wb_addr2.dwval = addr->ch2_addr;
+-
++#endif
+ 
+     return 0;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN5I
++//**********************************************************************************
++// function         : DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
++// description      : scaler write back channel selection
++// parameters       :
++//						sel <scaler select>
++//                 		channel <channel for wb>
++//						|		0/1	:	Y/G channel
++//						|		2	:	U/R channel
++//						|		3	:	V/B channel
++// return           : success
++//***********************************************************************************
++__s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
++{
++    if(channel == 0)
++    {
++        scal_dev[sel]->output_fmt.bits.wb_chsel = 0;
++    }
++    else if(channel == 1)
++    {
++        scal_dev[sel]->output_fmt.bits.wb_chsel = 2;
++    }
++    else if(channel == 2)
++    {
++        scal_dev[sel]->output_fmt.bits.wb_chsel = 3;
++    }
++
++    return 0;
++}
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+ //*********************************************************************************
+ // function         : DE_SCAL_Get_Input_Format(__u8 sel)
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+index 1322a95..c7bbddc 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+@@ -279,6 +279,9 @@ __s32 DE_SCAL_Output_Select(__u8 sel, __u8 out);
+ __s32 DE_SCAL_Writeback_Enable(__u8 sel);
+ __s32 DE_SCAL_Writeback_Disable(__u8 sel);
+ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr);
++#ifdef CONFIG_ARCH_SUN5I
++__s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel);
++#endif
+ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode, __u8 incs, __u8 outcs,
+                                                    __s32  bright, __s32 contrast, __s32 saturaion, __s32 hue,
+                                                    __u32  in_br_swap, __u32 out_br_swap);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+index 8921b96..2298d1c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+@@ -50,7 +50,6 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+     if(!(gdisp.screen[sel].status & HDMI_ON))
+     {
+     	__disp_tv_mode_t     tv_mod;
+-        __u32 scaler_index;
+ 
+     	tv_mod = gdisp.screen[sel].hdmi_mode;
+ 
+@@ -67,21 +66,23 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+ #endif
+     	DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+     	DE_BE_Output_Select(sel, sel);
++
++#ifdef CONFIG_ARCH_SUN5I
+     	DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
+-        for(scaler_index=0; scaler_index<2; scaler_index++)
+-        {
+-            if((gdisp.scaler[scaler_index].status & SCALER_USED) && (gdisp.scaler[scaler_index].screen_index == sel))
+-            {
+-                if(Disp_get_screen_scan_mode(tv_mod) == 1)//interlace output
+-                {
+-                    Scaler_Set_Outitl(scaler_index, TRUE);
+-                }
+-                else
+-                {
+-                    Scaler_Set_Outitl(scaler_index, FALSE);
+-                }
+-            }
++	{
++		int scaler_index;
++
++		for (scaler_index = 0; scaler_index < 2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel)) {
++				/* interlace output */
++				if (Disp_get_screen_scan_mode(tv_mod) == 1)
++					Scaler_Set_Outitl(scaler_index, TRUE);
++				else
++					Scaler_Set_Outitl(scaler_index, FALSE);
++			}
+         }
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+     	TCON1_set_hdmi_mode(sel,tv_mod);
+     	TCON1_open(sel);
+@@ -114,8 +115,6 @@ __s32 BSP_disp_hdmi_close(__u32 sel)
+ {
+     if(gdisp.screen[sel].status & HDMI_ON)
+     {
+-        __u32 scaler_index;
+-
+     	if(gdisp.init_para.Hdmi_close)
+     	{
+     	    gdisp.init_para.Hdmi_close();
+@@ -131,14 +130,18 @@ __s32 BSP_disp_hdmi_close(__u32 sel)
+     	image_clk_off(sel);
+     	lcdc_clk_off(sel);
+     	hdmi_clk_off();
++
++#ifdef CONFIG_ARCH_SUN5I
+     	DE_BE_Set_Outitl_enable(sel, FALSE);
+-        for(scaler_index=0; scaler_index<2; scaler_index++)
+-        {
+-            if((gdisp.scaler[scaler_index].status & SCALER_USED) && (gdisp.scaler[scaler_index].screen_index == sel))
+-            {
+-                Scaler_Set_Outitl(scaler_index, FALSE);
+-            }
++	{
++		int scaler_index;
++
++		for (scaler_index=0; scaler_index<2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel))
++				Scaler_Set_Outitl(scaler_index, FALSE);
+         }
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+         gdisp.screen[sel].b_out_interlace = 0;
+         gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+index f28674b..9816699 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+@@ -283,6 +283,7 @@ __s32 Scaler_event_proc(void *parg)
+     {
+         LCD_line_event_proc(sel);
+     }
++
+     if(fe_intflags & DE_WB_END_IE)
+     {
+         DE_SCAL_DisableINT(sel,DE_FE_INTEN_ALL);
+@@ -965,8 +966,10 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 	__u32 size = 0;
+ 	__u32 sel = 0;
+ 	__s32 ret = 0;
++#ifdef CONFIG_ARCH_SUN5I
+ 	__u32 i = 0;
+ 	__u32 ch_num = 0;
++#endif
+ 
+ 	if(para==NULL)
+ 	{
+@@ -1074,74 +1077,98 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     DE_SCAL_Set_Out_Format(sel, &out_type);
+     DE_SCAL_Set_Out_Size(sel, &out_scan,&out_type, &out_size);
+ 
+-    if(para->output_fb.mode == DISP_MOD_INTERLEAVED)
++#ifdef CONFIG_ARCH_SUN4I
++    DE_SCAL_Set_Writeback_Addr(sel,&out_addr);
++
++    DE_SCAL_Output_Select(sel, 3);
++    DE_SCAL_EnableINT(sel,DE_WB_END_IE);
++    DE_SCAL_Start(sel);
++    DE_SCAL_Set_Reg_Rdy(sel);
++
++#ifndef __LINUX_OSAL__
++    DE_SCAL_Writeback_Enable(sel);
++    while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
++	    ;
++#else
+     {
+-        ch_num = 1;
++	    long timeout = (100 * HZ)/1000;//100ms
++
++	    init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
++	    gdisp.scaler[sel].b_scaler_finished = 1;
++	    DE_SCAL_Writeback_Enable(sel);
++
++	    timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue,
++						       gdisp.scaler[sel].b_scaler_finished == 2, timeout);
++	    gdisp.scaler[sel].b_scaler_finished = 0;
++	    if(timeout == 0) {
++		    __wrn("wait scaler %d finished timeout\n", sel);
++		    return -1;
++	    }
+     }
+-    else if(para->output_fb.mode == DISP_MOD_MB_UV_COMBINED || para->output_fb.mode == DISP_MOD_NON_MB_UV_COMBINED)
+-    {
++#endif /* __LINUX_OSAL__ */
++    DE_SCAL_Reset(sel);
++    DE_SCAL_Writeback_Disable(sel);
++#else
++    if (para->output_fb.mode == DISP_MOD_INTERLEAVED)
++        ch_num = 1;
++    else if (para->output_fb.mode == DISP_MOD_MB_UV_COMBINED ||
++	     para->output_fb.mode == DISP_MOD_NON_MB_UV_COMBINED)
+         ch_num = 2;
+-    }
+-    else if(para->output_fb.mode == DISP_MOD_MB_PLANAR|| para->output_fb.mode == DISP_MOD_NON_MB_PLANAR)
+-    {
++    else if (para->output_fb.mode == DISP_MOD_MB_PLANAR ||
++	     para->output_fb.mode == DISP_MOD_NON_MB_PLANAR)
+         ch_num = 3;
+-    }
+ 
+-	for(i=0; i<ch_num; i++)
+-	{
+-	    __scal_buf_addr_t addr;
+-	    ret = 0;
++	for (i = 0; i < ch_num; i++) {
++		__scal_buf_addr_t addr;
++		ret = 0;
+ 
+-	    addr.ch0_addr = out_addr.ch0_addr;
+-	    if(i == 1)
+-	    {
+-	        addr.ch0_addr = out_addr.ch1_addr;
+-	    }
+-	    else if(i == 2)
+-	    {
+-	        addr.ch0_addr = out_addr.ch2_addr;
+-	    }
+-        DE_SCAL_Enable(sel);
++		addr.ch0_addr = out_addr.ch0_addr;
++		if (i == 1)
++			addr.ch0_addr = out_addr.ch1_addr;
++		else if(i == 2)
++			addr.ch0_addr = out_addr.ch2_addr;
++		DE_SCAL_Enable(sel);
++
++		DE_SCAL_Set_Writeback_Addr(sel,&addr);
++		DE_SCAL_Set_Writeback_Chnl(sel, i);
+ 
+-    	DE_SCAL_Set_Writeback_Addr(sel,&addr);
+-    	DE_SCAL_Set_Writeback_Chnl(sel, i);
+-        DE_SCAL_Output_Select(sel, 3);
+-    	DE_SCAL_EnableINT(sel,DE_WB_END_IE);
+-    	DE_SCAL_Start(sel);
+-    	DE_SCAL_Set_Reg_Rdy(sel);
++		DE_SCAL_Output_Select(sel, 3);
++		DE_SCAL_EnableINT(sel,DE_WB_END_IE);
++		DE_SCAL_Start(sel);
++		DE_SCAL_Set_Reg_Rdy(sel);
+ 
+ #ifndef __LINUX_OSAL__
+-        DE_SCAL_Writeback_Enable(sel);
+-        while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE) )
+-        {
+-        }
++		DE_SCAL_Writeback_Enable(sel);
++		while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
++			;
+ #else
+-        {
+-            long timeout = (100 * HZ)/1000;//100ms
+-
+-            init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
+-            gdisp.scaler[sel].b_scaler_finished = 1;
+-            DE_SCAL_Writeback_Enable(sel);
+-
+-            timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue, gdisp.scaler[sel].b_scaler_finished == 2, timeout);
+-            gdisp.scaler[sel].b_scaler_finished = 0;
+-            if(timeout == 0)
+-            {
+-                __wrn("wait scaler %d finished timeout\n", sel);
+-                DE_SCAL_Writeback_Disable(sel);
+-                DE_SCAL_Reset(sel);
+-                DE_SCAL_Disable(sel);
+-
+-                return -1;
+-            }
+-        }
+-#endif
+-        DE_SCAL_Writeback_Disable(sel);
+-        DE_SCAL_Reset(sel);
+-        DE_SCAL_Disable(sel);
++		{
++			long timeout = (100 * HZ)/1000;//100ms
++
++			init_waitqueue_head(&(gdisp.scaler[sel].scaler_queue));
++			gdisp.scaler[sel].b_scaler_finished = 1;
++			DE_SCAL_Writeback_Enable(sel);
++
++			timeout = wait_event_interruptible_timeout(gdisp.scaler[sel].scaler_queue,
++								   gdisp.scaler[sel].b_scaler_finished == 2, timeout);
++			gdisp.scaler[sel].b_scaler_finished = 0;
++
++			if (timeout == 0) {
++				__wrn("wait scaler %d finished timeout\n", sel);
++				DE_SCAL_Writeback_Disable(sel);
++				DE_SCAL_Reset(sel);
++				DE_SCAL_Disable(sel);
++				return -1;
++			}
++		}
++#endif /* __LINUX_OSAL__ */
++		DE_SCAL_Writeback_Disable(sel);
++		DE_SCAL_Reset(sel);
++		DE_SCAL_Disable(sel);
+ 	}
++#endif /* CONFIG_ARCH_SUN4I */
+ 
+-    return ret;
++	return ret;
+ }
+ 
+ 
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+index 88b0122..55f9787 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+@@ -209,7 +209,6 @@ __s32 BSP_disp_tv_open(__u32 sel)
+     if(!(gdisp.screen[sel].status & TV_ON))
+     {
+         __disp_tv_mode_t     tv_mod;
+-        __u32 scaler_index = 0;
+ 
+         tv_mod = gdisp.screen[sel].tv_mode;
+ 
+@@ -227,22 +226,23 @@ __s32 BSP_disp_tv_open(__u32 sel)
+ #endif
+         DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+         DE_BE_Output_Select(sel, sel);
+-		DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
+ 
+-        for(scaler_index=0; scaler_index<2; scaler_index++)
+-        {
+-            if((gdisp.scaler[scaler_index].status & SCALER_USED) && (gdisp.scaler[scaler_index].screen_index == sel))
+-            {
+-                if(Disp_get_screen_scan_mode(tv_mod) == 1)//interlace output
+-                {
+-                    Scaler_Set_Outitl(scaler_index, TRUE);
+-                }
+-                else
+-                {
+-                    Scaler_Set_Outitl(scaler_index, FALSE);
+-                }
+-            }
++#ifdef CONFIG_ARCH_SUN5I
++	DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
++	{
++		int scaler_index;
++
++		for (scaler_index = 0; scaler_index < 2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel)) {
++				/* interlace output */
++				if (Disp_get_screen_scan_mode(tv_mod) == 1)
++					Scaler_Set_Outitl(scaler_index, TRUE);
++				else
++					Scaler_Set_Outitl(scaler_index, FALSE);
++			}
+         }
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+         TCON1_set_tv_mode(sel,tv_mod);
+         TVE_set_tv_mode(sel, tv_mod);
+@@ -302,8 +302,6 @@ __s32 BSP_disp_tv_close(__u32 sel)
+ {
+     if(gdisp.screen[sel].status & TV_ON)
+     {
+-        __u32 scaler_index = 0;
+-
+         Image_close(sel);
+         TCON1_close(sel);
+         Disp_TVEC_Close(sel);
+@@ -311,17 +309,20 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         tve_clk_off(sel);
+         image_clk_off(sel);
+         lcdc_clk_off(sel);
++
+ #ifdef CONFIG_ARCH_SUN5I
+         Disp_de_flicker_enable(sel, 2);	//must close immediately, because vbi may not come
+-#endif
+-		DE_BE_Set_Outitl_enable(sel, FALSE);
+-        for(scaler_index=0; scaler_index<2; scaler_index++)
+-        {
+-            if((gdisp.scaler[scaler_index].status & SCALER_USED) && (gdisp.scaler[scaler_index].screen_index == sel))
+-            {
+-                Scaler_Set_Outitl(scaler_index, FALSE);
+-            }
++	DE_BE_Set_Outitl_enable(sel, FALSE);
++	{
++		int scaler_index;
++
++		for(scaler_index=0; scaler_index<2; scaler_index++)
++			if ((gdisp.scaler[scaler_index].status & SCALER_USED) &&
++			    (gdisp.scaler[scaler_index].screen_index == sel))
++				Scaler_Set_Outitl(scaler_index, FALSE);
+         }
++#endif /* CONFIG_ARCH_SUN5I */
++
+ #ifdef __LINUX_OSAL__
+         {
+             user_gpio_set_t  gpio_info[1];
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+index 6766365..68b8a02 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+@@ -1165,13 +1165,15 @@ __s32 DE_SCAL_Disable(__u8 sel)
+ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr)
+ {
+     scal_dev[sel]->wb_addr0.dwval = addr->ch0_addr;
+-    //scal_dev[sel]->wb_addr1.dwval = addr->ch1_addr;
+-    //scal_dev[sel]->wb_addr2.dwval = addr->ch2_addr;
+-
++#ifdef CONFIG_ARCH_SUN4I
++    scal_dev[sel]->wb_addr1.dwval = addr->ch1_addr;
++    scal_dev[sel]->wb_addr2.dwval = addr->ch2_addr;
++#endif
+ 
+     return 0;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ //**********************************************************************************
+ // function         : DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
+ // description      : scaler write back channel selection
+@@ -1200,7 +1202,7 @@ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
+ 
+     return 0;
+ }
+-
++#endif /* CONFIG_ARCH_SUN5I */
+ 
+ //*********************************************************************************
+ // function         : DE_SCAL_Get_Input_Format(__u8 sel)
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+index a9b4e30..dab282d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+@@ -279,7 +279,9 @@ __s32 DE_SCAL_Output_Select(__u8 sel, __u8 out);
+ __s32 DE_SCAL_Writeback_Enable(__u8 sel);
+ __s32 DE_SCAL_Writeback_Disable(__u8 sel);
+ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr);
++#ifdef CONFIG_ARCH_SUN5I
+ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel);
++#endif
+ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode, __u8 incs, __u8 outcs,
+                                                    __s32  bright, __s32 contrast, __s32 saturaion, __s32 hue,
+                                                    __u32  in_br_swap, __u32 out_br_swap);
+-- 
+1.8.0
+

@@ -1,0 +1,58 @@
+From 4fcce15b4eb4d9ba4ba2a38a62e672eb1b10c1e9 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 19:19:17 +0200
+Subject: [PATCH 876/944] video:sunxi:disp: remove __disp_lcd_bright_t
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/bsp_display.h |  2 +-
+ include/linux/drv_display_sunxi.h      | 20 --------------------
+ 2 files changed, 1 insertion(+), 21 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index d5b9a82..5bc7d1b 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -236,7 +236,7 @@ extern __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode);
+ extern __s32 BSP_disp_set_gamma_table(__u32 sel, __u32 * gamtbl_addr,
+ 				      __u32 gamtbl_size);
+ #ifdef CONFIG_ARCH_SUN4I
+-extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __disp_lcd_bright_t bright);
++extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright);
+ #else
+ extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright, __u32 from_iep);
+ #endif
+diff --git a/include/linux/drv_display_sunxi.h b/include/linux/drv_display_sunxi.h
+index 7254cd6..8f48472 100644
+--- a/include/linux/drv_display_sunxi.h
++++ b/include/linux/drv_display_sunxi.h
+@@ -234,26 +234,6 @@ typedef enum
+ 
+ typedef enum
+ {
+-    DISP_LCD_BRIGHT_LEVEL0  = 0,
+-    DISP_LCD_BRIGHT_LEVEL1  = 1,
+-    DISP_LCD_BRIGHT_LEVEL2  = 2,
+-    DISP_LCD_BRIGHT_LEVEL3  = 3,
+-    DISP_LCD_BRIGHT_LEVEL4  = 4,
+-    DISP_LCD_BRIGHT_LEVEL5  = 5,
+-    DISP_LCD_BRIGHT_LEVEL6  = 6,
+-    DISP_LCD_BRIGHT_LEVEL7  = 7,
+-    DISP_LCD_BRIGHT_LEVEL8  = 8,
+-    DISP_LCD_BRIGHT_LEVEL9  = 9,
+-    DISP_LCD_BRIGHT_LEVEL10 = 0xa,
+-    DISP_LCD_BRIGHT_LEVEL11 = 0xb,
+-    DISP_LCD_BRIGHT_LEVEL12 = 0xc,
+-    DISP_LCD_BRIGHT_LEVEL13 = 0xd,
+-    DISP_LCD_BRIGHT_LEVEL14 = 0xe,
+-    DISP_LCD_BRIGHT_LEVEL15 = 0xf,
+-}__disp_lcd_bright_t;
+-
+-typedef enum
+-{
+     DISP_LAYER_WORK_MODE_NORMAL     = 0,    //normal work mode
+     DISP_LAYER_WORK_MODE_PALETTE    = 1,    //palette work mode
+     DISP_LAYER_WORK_MODE_INTER_BUF  = 2,    //internal frame buffer work mode
+-- 
+1.8.0
+

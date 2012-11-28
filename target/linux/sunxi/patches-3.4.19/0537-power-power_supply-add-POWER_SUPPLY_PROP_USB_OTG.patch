@@ -1,0 +1,39 @@
+From 746428fc4cdc130f2e0ede90d25f421f20af502a Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Fri, 13 Jul 2012 13:30:04 -0700
+Subject: [PATCH 537/944] power: power_supply: add POWER_SUPPLY_PROP_USB_OTG
+
+Change-Id: Idfc6ef2e37d62aad6f26cc8eafa53db642cd352b
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/power_supply_sysfs.c | 1 +
+ include/linux/power_supply.h       | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/power/power_supply_sysfs.c b/drivers/power/power_supply_sysfs.c
+index 7ad38ab..a5ef8c3 100644
+--- a/drivers/power/power_supply_sysfs.c
++++ b/drivers/power/power_supply_sysfs.c
+@@ -176,6 +176,7 @@ static struct device_attribute power_supply_attrs[] = {
+ 	POWER_SUPPLY_ATTR(scope),
+ 	/* Local extensions */
+ 	POWER_SUPPLY_ATTR(usb_hc),
++	POWER_SUPPLY_ATTR(usb_otg),
+ 	/* Properties of type `const char *' */
+ 	POWER_SUPPLY_ATTR(model_name),
+ 	POWER_SUPPLY_ATTR(manufacturer),
+diff --git a/include/linux/power_supply.h b/include/linux/power_supply.h
+index ad5e3bd..00378a2 100644
+--- a/include/linux/power_supply.h
++++ b/include/linux/power_supply.h
+@@ -126,6 +126,7 @@ enum power_supply_property {
+ 	POWER_SUPPLY_PROP_SCOPE,
+ 	/* Local extensions */
+ 	POWER_SUPPLY_PROP_USB_HC,
++	POWER_SUPPLY_PROP_USB_OTG,
+ 	/* Properties of type `const char *' */
+ 	POWER_SUPPLY_PROP_MODEL_NAME,
+ 	POWER_SUPPLY_PROP_MANUFACTURER,
+-- 
+1.8.0
+

@@ -1,0 +1,96 @@
+From be08f7f47c9a009ed8b797fdfede985e8b8f6ae2 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Thu, 6 Sep 2012 14:07:37 -0400
+Subject: [PATCH 717/944] wakeup: Use irqsave/irqrestore for events_lock
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Jon Medhurst (Tixy) recently noticed a problem with the
+events_lock usage. One of the Android patches that uses
+wakeup_sources calls wakeup_source_add() with irqs disabled.
+However, the event_lock usage in wakeup_source_add() uses
+spin_lock_irq()/spin_unlock_irq(), which reenables interrupts.
+This results in lockdep warnings.
+
+The fix is to use spin_lock_irqsave()/spin_lock_irqrestore()
+instead for the events_lock.
+
+Full bug report here:
+https://bugs.launchpad.net/linaro-landing-team-arm/+bug/1037565
+
+Cc: Rafael J. Wysocki <rjw@sisk.pl>
+Cc: Android Team <kernel-team@android.com>
+Cc: Arve Hjønnevåg <arve@android.com>
+Cc: Jon Medhurst (Tixy) <tixy@linaro.org>
+Reported-and-debugged-by: Jon Medhurst (Tixy) <tixy@linaro.org>
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+Change-Id: Id455188931229f04e353969af389e49b069cb34c
+---
+ drivers/base/power/wakeup.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/base/power/wakeup.c b/drivers/base/power/wakeup.c
+index 8a0a9ca..e6ee5e8 100644
+--- a/drivers/base/power/wakeup.c
++++ b/drivers/base/power/wakeup.c
+@@ -127,6 +127,8 @@ EXPORT_SYMBOL_GPL(wakeup_source_destroy);
+  */
+ void wakeup_source_add(struct wakeup_source *ws)
+ {
++	unsigned long flags;
++
+ 	if (WARN_ON(!ws))
+ 		return;
+ 
+@@ -135,9 +137,9 @@ void wakeup_source_add(struct wakeup_source *ws)
+ 	ws->active = false;
+ 	ws->last_time = ktime_get();
+ 
+-	spin_lock_irq(&events_lock);
++	spin_lock_irqsave(&events_lock, flags);
+ 	list_add_rcu(&ws->entry, &wakeup_sources);
+-	spin_unlock_irq(&events_lock);
++	spin_unlock_irqrestore(&events_lock, flags);
+ }
+ EXPORT_SYMBOL_GPL(wakeup_source_add);
+ 
+@@ -147,12 +149,14 @@ EXPORT_SYMBOL_GPL(wakeup_source_add);
+  */
+ void wakeup_source_remove(struct wakeup_source *ws)
+ {
++	unsigned long flags;
++
+ 	if (WARN_ON(!ws))
+ 		return;
+ 
+-	spin_lock_irq(&events_lock);
++	spin_lock_irqsave(&events_lock, flags);
+ 	list_del_rcu(&ws->entry);
+-	spin_unlock_irq(&events_lock);
++	spin_unlock_irqrestore(&events_lock, flags);
+ 	synchronize_rcu();
+ }
+ EXPORT_SYMBOL_GPL(wakeup_source_remove);
+@@ -752,15 +756,16 @@ bool pm_get_wakeup_count(unsigned int *count, bool block)
+ bool pm_save_wakeup_count(unsigned int count)
+ {
+ 	unsigned int cnt, inpr;
++	unsigned long flags;
+ 
+ 	events_check_enabled = false;
+-	spin_lock_irq(&events_lock);
++	spin_lock_irqsave(&events_lock, flags);
+ 	split_counters(&cnt, &inpr);
+ 	if (cnt == count && inpr == 0) {
+ 		saved_count = count;
+ 		events_check_enabled = true;
+ 	}
+-	spin_unlock_irq(&events_lock);
++	spin_unlock_irqrestore(&events_lock, flags);
+ 	return events_check_enabled;
+ }
+ 
+-- 
+1.8.0
+

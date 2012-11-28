@@ -1,0 +1,43 @@
+From 72e1a9917b13e3d587cfd7627166c172bb479ada Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:23 +0100
+Subject: [PATCH 915/944] video:sunxi:disp: add disp_device_release
+
+This stops a WARN_ON in the device code.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/dev_disp.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index d515bee..bd21b4d 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -1873,6 +1873,12 @@ long disp_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 	return ret;
+ }
+ 
++void
++disp_device_release(struct device *dev)
++{
++	/* FILL ME! */
++}
++
+ static const struct file_operations disp_fops = {
+ 	.owner = THIS_MODULE,
+ 	.open = disp_open,
+@@ -1900,7 +1906,9 @@ static struct platform_device disp_device = {
+ 	.id = -1,
+ 	.num_resources = ARRAY_SIZE(disp_resource),
+ 	.resource = disp_resource,
+-	.dev = {}
++	.dev = {
++		.release = disp_device_release,
++	}
+ };
+ 
+ static int __init disp_module_init(void)
+-- 
+1.8.0
+

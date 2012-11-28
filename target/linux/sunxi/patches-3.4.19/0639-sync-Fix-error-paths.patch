@@ -1,0 +1,40 @@
+From 75574205e8c02e4bf561ae3a1d542befaeb8bcc4 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Wed, 8 Aug 2012 13:46:22 -0700
+Subject: [PATCH 639/944] sync: Fix error paths
+
+Check the return value of get_unused_fd to make sure a valid
+file descriptor is returned.
+
+Make sure to call put_unused_fd even if an error occurs before
+the fd can be used.
+
+Change-Id: I0fe8f78d9e30ecfc4d271c5d875424543dae2d0f
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/base/sync.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index ad3fee0..eee2e56 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -650,8 +650,13 @@ static long sync_fence_ioctl_merge(struct sync_fence *fence, unsigned long arg)
+ 	struct sync_fence *fence2, *fence3;
+ 	struct sync_merge_data data;
+ 
+-	if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
+-		return -EFAULT;
++	if (fd < 0)
++		return fd;
++
++	if (copy_from_user(&data, (void __user *)arg, sizeof(data))) {
++		err = -EFAULT;
++		goto err_put_fd;
++	}
+ 
+ 	fence2 = sync_fence_fdget(data.fd2);
+ 	if (fence2 == NULL) {
+-- 
+1.8.0
+

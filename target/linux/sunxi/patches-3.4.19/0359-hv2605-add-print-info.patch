@@ -1,0 +1,26 @@
+From f96882d6aa6dd933901c314544a2e792f71c0aec Mon Sep 17 00:00:00 2001
+From: yanggq <yanggq@LServer.(none)>
+Date: Fri, 18 Nov 2011 18:52:29 +0800
+Subject: [PATCH 359/944] hv2605: add print info
+
+---
+ drivers/input/keyboard/hv2605.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/input/keyboard/hv2605.c b/drivers/input/keyboard/hv2605.c
+index fc85793..81e0c05 100644
+--- a/drivers/input/keyboard/hv2605.c
++++ b/drivers/input/keyboard/hv2605.c
+@@ -132,6 +132,9 @@ static int tkey_fetch_sysconfig_para(void)
+ 		printk("%s: after: tkey_twi_addr is 0x%x, dirty_addr_buf: 0x%hx. dirty_addr_buf[1]: 0x%hx \n", \
+ 		__func__, twi_addr, u_i2c_addr.dirty_addr_buf[0], u_i2c_addr.dirty_addr_buf[1]);
+ 		
++	}else{
++		pr_err("%s: tkey_unused. \n",  __func__);
++		ret = -1;
+ 	}
+ 
+ 	return 0;
+-- 
+1.8.0
+

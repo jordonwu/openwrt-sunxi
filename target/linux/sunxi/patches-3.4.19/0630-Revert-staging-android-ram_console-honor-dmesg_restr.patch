@@ -1,0 +1,28 @@
+From 10e93b6abb83beea55b56e390ef072e597e23f24 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Thu, 2 Aug 2012 14:57:57 -0700
+Subject: [PATCH 630/944] Revert "staging: android: ram_console: honor
+ dmesg_restrict"
+
+This reverts commit dd09979346813357200adf71b07003fc0a778089.
+---
+ drivers/staging/android/ram_console.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/staging/android/ram_console.c b/drivers/staging/android/ram_console.c
+index 8e4038b..cf0f8fb 100644
+--- a/drivers/staging/android/ram_console.c
++++ b/drivers/staging/android/ram_console.c
+@@ -101,9 +101,6 @@ static ssize_t ram_console_read_old(struct file *file, char __user *buf,
+ 	char *str;
+ 	int ret;
+ 
+-	if (dmesg_restrict && !capable(CAP_SYSLOG))
+-		return -EPERM;
+-
+ 	/* Main last_kmsg log */
+ 	if (pos < old_log_size) {
+ 		count = min(len, (size_t)(old_log_size - pos));
+-- 
+1.8.0
+

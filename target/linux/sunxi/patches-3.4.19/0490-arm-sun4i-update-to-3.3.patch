@@ -1,0 +1,123 @@
+From d6e850327c4df98d25f36b574f1ac58c21492915 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 14:26:57 +0200
+Subject: [PATCH 490/944] arm: sun4i: update to 3.3
+
+---
+ arch/arm/mach-sun4i/core.c             | 12 +++++++-----
+ arch/arm/mach-sun4i/dma/dma.c          |  2 +-
+ arch/arm/mach-sun4i/dma/dma_15.c       |  3 ++-
+ arch/arm/mach-sun4i/include/mach/dma.h |  4 ++--
+ 4 files changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index 03d10fb..f24a80b 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -17,7 +17,7 @@
+ #include <linux/device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/amba/bus.h>
+ #include <linux/amba/clcd.h>
+@@ -29,6 +29,7 @@
+ #include <linux/clockchips.h>
+ #include <linux/memblock.h>
+ #include <linux/bootmem.h>
++#include <linux/export.h>
+ 
+ #include <asm/clkdev.h>
+ #include <asm/system.h>
+@@ -39,12 +40,14 @@
+ #include <asm/hardware/vic.h>
+ #include <asm/mach-types.h>
+ #include <asm/setup.h>
++#include <asm/memory.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+ #include <asm/mach/irq.h>
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
++#include <mach/memory.h>
+ #include <mach/system.h>
+ #include <mach/timex.h>
+ #include <mach/sys_config.h>
+@@ -96,9 +99,8 @@ static u32 DRAMC_get_dram_size(void)
+ 	return dram_size;
+ }
+ 
+-static void __init sw_core_fixup(struct machine_desc *desc,
+-                  struct tag *tags, char **cmdline,
+-                  struct meminfo *mi)
++static void __init sw_core_fixup(struct tag *tags, char **cmdline,
++				 struct meminfo *mi)
+ {
+ 	u32 size;
+ 
+@@ -430,7 +432,7 @@ EXPORT_SYMBOL(sw_get_ic_ver);
+ 
+ 
+ MACHINE_START(SUN4I, "sun4i")
+-	.boot_params    = PLAT_PHYS_OFFSET + 0x100,
++	.atag_offset	= 0x100,
+ 	.timer          = &sw_sys_timer,
+ 	.fixup          = sw_core_fixup,
+ 	.map_io         = sw_core_map_io,
+diff --git a/arch/arm/mach-sun4i/dma/dma.c b/arch/arm/mach-sun4i/dma/dma.c
+index 45b957a..93c4c64 100644
+--- a/arch/arm/mach-sun4i/dma/dma.c
++++ b/arch/arm/mach-sun4i/dma/dma.c
+@@ -19,7 +19,7 @@
+ #include <linux/sched.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/slab.h>
+ #include <linux/errno.h>
+ #include <linux/io.h>
+diff --git a/arch/arm/mach-sun4i/dma/dma_15.c b/arch/arm/mach-sun4i/dma/dma_15.c
+index 3ce9119..398ee5b 100644
+--- a/arch/arm/mach-sun4i/dma/dma_15.c
++++ b/arch/arm/mach-sun4i/dma/dma_15.c
+@@ -12,9 +12,10 @@
+  * the License, or (at your option) any later version.
+  *
+  */
++#include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
+diff --git a/arch/arm/mach-sun4i/include/mach/dma.h b/arch/arm/mach-sun4i/include/mach/dma.h
+index 66bb96b..0fc8e78 100644
+--- a/arch/arm/mach-sun4i/include/mach/dma.h
++++ b/arch/arm/mach-sun4i/include/mach/dma.h
+@@ -15,7 +15,7 @@
+ #ifndef __ASM_ARCH_DMA_H
+ #define __ASM_ARCH_DMA_H __FILE__
+ 
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <mach/hardware.h>
+ 
+ 
+@@ -534,7 +534,7 @@ struct sw_dma_chan {
+ 	struct sw_dma_buf	*end;		/* end of queue */
+ 
+ 	/* system device */
+-	struct sys_device	dev;
++	struct device	dev;
+ 	void * dev_id;
+ };
+ 
+-- 
+1.8.0
+

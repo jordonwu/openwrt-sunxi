@@ -1,0 +1,36 @@
+From 040e5bf65e1ee66266bc314c5965518a7c21ff36 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Fri, 4 May 2012 00:14:21 +0200
+Subject: [PATCH 221/944] PM / Sleep: Fix a mistake in a conditional in
+ autosleep_store()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The condition check in autosleep_store() is incorrect and prevents
+/sys/power/autosleep from working as advertised.  Fix that.
+
+[rjw: Added the changelog.]
+
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ kernel/power/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/power/main.c b/kernel/power/main.c
+index 54ec071..428f8a0 100644
+--- a/kernel/power/main.c
++++ b/kernel/power/main.c
+@@ -422,7 +422,7 @@ static ssize_t autosleep_store(struct kobject *kobj,
+ 	int error;
+ 
+ 	if (state == PM_SUSPEND_ON
+-	    && !(strncmp(buf, "off", 3) && strncmp(buf, "off\n", 4)))
++	    && strcmp(buf, "off") && strcmp(buf, "off\n"))
+ 		return -EINVAL;
+ 
+ 	error = pm_autosleep_set_state(state);
+-- 
+1.8.0
+

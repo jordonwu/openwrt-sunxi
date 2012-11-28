@@ -1,0 +1,300 @@
+From 2365d054980471b7fcb6d862169ddcec1eb52f4d Mon Sep 17 00:00:00 2001
+From: Robert Love <rlove@google.com>
+Date: Mon, 12 May 2008 17:08:29 -0400
+Subject: [PATCH 038/944] net: socket ioctl to reset connections matching
+ local address
+
+Introduce a new socket ioctl, SIOCKILLADDR, that nukes all sockets
+bound to the same local address. This is useful in situations with
+dynamic IPs, to kill stuck connections.
+
+Signed-off-by: Brian Swetland <swetland@google.com>
+
+net: fix tcp_v4_nuke_addr
+
+Signed-off-by: Dima Zavin <dima@android.com>
+
+net: ipv4: Fix a spinlock recursion bug in tcp_v4_nuke.
+
+We can't hold the lock while calling to tcp_done(), so we drop
+it before calling. We then have to start at the top of the chain again.
+
+Signed-off-by: Dima Zavin <dima@android.com>
+
+net: ipv4: Fix race in tcp_v4_nuke_addr().
+
+To fix a recursive deadlock in 2.6.29, we stopped holding the hash table lock
+across tcp_done() calls. This fixed the deadlock, but introduced a race where
+the socket could die or change state.
+
+Fix: Before unlocking the hash table, we grab a reference to the socket. We
+can then unlock the hash table without risk of the socket going away. We then
+lock the socket, which is safe because it is pinned. We can then call
+tcp_done() without recursive deadlock and without race. Upon return, we unlock
+the socket and then unpin it, killing it.
+
+Change-Id: Idcdae072b48238b01bdbc8823b60310f1976e045
+Signed-off-by: Robert Love <rlove@google.com>
+Acked-by: Dima Zavin <dima@android.com>
+
+ipv4: disable bottom halves around call to tcp_done().
+
+Signed-off-by: Robert Love <rlove@google.com>
+Signed-off-by: Colin Cross <ccross@android.com>
+
+ipv4: Move sk_error_report inside bh_lock_sock in tcp_v4_nuke_addr
+
+When sk_error_report is called, it wakes up the user-space thread, which then
+calls tcp_close.  When the tcp_close is interrupted by the tcp_v4_nuke_addr
+ioctl thread running tcp_done, it leaks 392 bytes and triggers a WARN_ON.
+
+This patch moves the call to sk_error_report inside the bh_lock_sock, which
+matches the locking used in tcp_v4_err.
+
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ include/linux/sockios.h |   1 +
+ include/net/tcp.h       |   2 +
+ net/ipv4/af_inet.c      |   1 +
+ net/ipv4/devinet.c      |   8 +++-
+ net/ipv4/tcp.c          | 107 ++++++++++++++++++++++++++++++++++++++++++++++++
+ net/ipv6/af_inet6.c     |  17 ++++++++
+ 6 files changed, 135 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/sockios.h b/include/linux/sockios.h
+index 7997a50..f7ffe36 100644
+--- a/include/linux/sockios.h
++++ b/include/linux/sockios.h
+@@ -65,6 +65,7 @@
+ #define SIOCDIFADDR	0x8936		/* delete PA address		*/
+ #define	SIOCSIFHWBROADCAST	0x8937	/* set hardware broadcast addr	*/
+ #define SIOCGIFCOUNT	0x8938		/* get number of devices */
++#define SIOCKILLADDR	0x8939		/* kill sockets with this local addr */
+ 
+ #define SIOCGIFBR	0x8940		/* Bridging support		*/
+ #define SIOCSIFBR	0x8941		/* Set bridging options 	*/
+diff --git a/include/net/tcp.h b/include/net/tcp.h
+index f75a04d..50660b3 100644
+--- a/include/net/tcp.h
++++ b/include/net/tcp.h
+@@ -1455,6 +1455,8 @@ extern struct sk_buff **tcp4_gro_receive(struct sk_buff **head,
+ extern int tcp_gro_complete(struct sk_buff *skb);
+ extern int tcp4_gro_complete(struct sk_buff *skb);
+ 
++extern int tcp_nuke_addr(struct net *net, struct sockaddr *addr);
++
+ #ifdef CONFIG_PROC_FS
+ extern int tcp4_proc_init(void);
+ extern void tcp4_proc_exit(void);
+diff --git a/net/ipv4/af_inet.c b/net/ipv4/af_inet.c
+index 5ec46eb..73a3845 100644
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
+@@ -910,6 +910,7 @@ int inet_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ 	case SIOCSIFPFLAGS:
+ 	case SIOCGIFPFLAGS:
+ 	case SIOCSIFFLAGS:
++	case SIOCKILLADDR:
+ 		err = devinet_ioctl(net, cmd, (void __user *)arg);
+ 		break;
+ 	default:
+diff --git a/net/ipv4/devinet.c b/net/ipv4/devinet.c
+index 6e447ff..8a9aab3 100644
+--- a/net/ipv4/devinet.c
++++ b/net/ipv4/devinet.c
+@@ -58,6 +58,7 @@
+ 
+ #include <net/arp.h>
+ #include <net/ip.h>
++#include <net/tcp.h>
+ #include <net/route.h>
+ #include <net/ip_fib.h>
+ #include <net/rtnetlink.h>
+@@ -734,6 +735,7 @@ int devinet_ioctl(struct net *net, unsigned int cmd, void __user *arg)
+ 	case SIOCSIFBRDADDR:	/* Set the broadcast address */
+ 	case SIOCSIFDSTADDR:	/* Set the destination address */
+ 	case SIOCSIFNETMASK: 	/* Set the netmask for the interface */
++	case SIOCKILLADDR:	/* Nuke all sockets on this address */
+ 		ret = -EACCES;
+ 		if (!capable(CAP_NET_ADMIN))
+ 			goto out;
+@@ -785,7 +787,8 @@ int devinet_ioctl(struct net *net, unsigned int cmd, void __user *arg)
+ 	}
+ 
+ 	ret = -EADDRNOTAVAIL;
+-	if (!ifa && cmd != SIOCSIFADDR && cmd != SIOCSIFFLAGS)
++	if (!ifa && cmd != SIOCSIFADDR && cmd != SIOCSIFFLAGS
++	    && cmd != SIOCKILLADDR)
+ 		goto done;
+ 
+ 	switch (cmd) {
+@@ -911,6 +914,9 @@ int devinet_ioctl(struct net *net, unsigned int cmd, void __user *arg)
+ 			inet_insert_ifa(ifa);
+ 		}
+ 		break;
++	case SIOCKILLADDR:	/* Nuke all connections on this address */
++		ret = tcp_nuke_addr(net, (struct sockaddr *) sin);
++		break;
+ 	}
+ done:
+ 	rtnl_unlock();
+diff --git a/net/ipv4/tcp.c b/net/ipv4/tcp.c
+index 5d54ed3..0c14a6d 100644
+--- a/net/ipv4/tcp.c
++++ b/net/ipv4/tcp.c
+@@ -273,6 +273,9 @@
+ #include <net/tcp.h>
+ #include <net/xfrm.h>
+ #include <net/ip.h>
++#include <net/ip6_route.h>
++#include <net/ipv6.h>
++#include <net/transp_v6.h>
+ #include <net/netdma.h>
+ #include <net/sock.h>
+ 
+@@ -3328,3 +3331,107 @@ void __init tcp_init(void)
+ 	tcp_secret_retiring = &tcp_secret_two;
+ 	tcp_secret_secondary = &tcp_secret_two;
+ }
++
++static int tcp_is_local(struct net *net, __be32 addr) {
++	struct rtable *rt;
++	struct flowi4 fl4 = { .daddr = addr };
++	rt = ip_route_output_key(net, &fl4);
++	if (IS_ERR_OR_NULL(rt))
++		return 0;
++	return rt->dst.dev && (rt->dst.dev->flags & IFF_LOOPBACK);
++}
++
++#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
++static int tcp_is_local6(struct net *net, struct in6_addr *addr) {
++	struct rt6_info *rt6 = rt6_lookup(net, addr, addr, 0, 0);
++	return rt6 && rt6->dst.dev && (rt6->dst.dev->flags & IFF_LOOPBACK);
++}
++#endif
++
++/*
++ * tcp_nuke_addr - destroy all sockets on the given local address
++ * if local address is the unspecified address (0.0.0.0 or ::), destroy all
++ * sockets with local addresses that are not configured.
++ */
++int tcp_nuke_addr(struct net *net, struct sockaddr *addr)
++{
++	int family = addr->sa_family;
++	unsigned int bucket;
++
++	struct in_addr *in;
++#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
++	struct in6_addr *in6;
++#endif
++	if (family == AF_INET) {
++		in = &((struct sockaddr_in *)addr)->sin_addr;
++#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
++	} else if (family == AF_INET6) {
++		in6 = &((struct sockaddr_in6 *)addr)->sin6_addr;
++#endif
++	} else {
++		return -EAFNOSUPPORT;
++	}
++
++	for (bucket = 0; bucket < tcp_hashinfo.ehash_mask; bucket++) {
++		struct hlist_nulls_node *node;
++		struct sock *sk;
++		spinlock_t *lock = inet_ehash_lockp(&tcp_hashinfo, bucket);
++
++restart:
++		spin_lock_bh(lock);
++		sk_nulls_for_each(sk, node, &tcp_hashinfo.ehash[bucket].chain) {
++			struct inet_sock *inet = inet_sk(sk);
++
++			if (sysctl_ip_dynaddr && sk->sk_state == TCP_SYN_SENT)
++				continue;
++			if (sock_flag(sk, SOCK_DEAD))
++				continue;
++
++			if (family == AF_INET) {
++				__be32 s4 = inet->inet_rcv_saddr;
++				if (s4 == LOOPBACK4_IPV6)
++					continue;
++
++				if (in->s_addr != s4 &&
++				    !(in->s_addr == INADDR_ANY &&
++				      !tcp_is_local(net, s4)))
++					continue;
++			}
++
++#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
++			if (family == AF_INET6) {
++				struct in6_addr *s6;
++				if (!inet->pinet6)
++					continue;
++
++				s6 = &inet->pinet6->rcv_saddr;
++				if (ipv6_addr_type(s6) == IPV6_ADDR_MAPPED)
++					continue;
++
++				if (!ipv6_addr_equal(in6, s6) &&
++				    !(ipv6_addr_equal(in6, &in6addr_any) &&
++				      !tcp_is_local6(net, s6)))
++				continue;
++			}
++#endif
++
++			sock_hold(sk);
++			spin_unlock_bh(lock);
++
++			local_bh_disable();
++			bh_lock_sock(sk);
++			sk->sk_err = ETIMEDOUT;
++			sk->sk_error_report(sk);
++
++			tcp_done(sk);
++			bh_unlock_sock(sk);
++			local_bh_enable();
++			sock_put(sk);
++
++			goto restart;
++		}
++		spin_unlock_bh(lock);
++	}
++
++	return 0;
++}
+diff --git a/net/ipv6/af_inet6.c b/net/ipv6/af_inet6.c
+index e3f701e..a5e8f1b 100644
+--- a/net/ipv6/af_inet6.c
++++ b/net/ipv6/af_inet6.c
+@@ -507,6 +507,21 @@ int inet6_getname(struct socket *sock, struct sockaddr *uaddr,
+ 
+ EXPORT_SYMBOL(inet6_getname);
+ 
++int inet6_killaddr_ioctl(struct net *net, void __user *arg) {
++	struct in6_ifreq ireq;
++	struct sockaddr_in6 sin6;
++
++	if (!capable(CAP_NET_ADMIN))
++		return -EACCES;
++
++	if (copy_from_user(&ireq, arg, sizeof(struct in6_ifreq)))
++		return -EFAULT;
++
++	sin6.sin6_family = AF_INET6;
++	sin6.sin6_addr = ireq.ifr6_addr;
++	return tcp_nuke_addr(net, (struct sockaddr *) &sin6);
++}
++
+ int inet6_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ {
+ 	struct sock *sk = sock->sk;
+@@ -531,6 +546,8 @@ int inet6_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)
+ 		return addrconf_del_ifaddr(net, (void __user *) arg);
+ 	case SIOCSIFDSTADDR:
+ 		return addrconf_set_dstaddr(net, (void __user *) arg);
++	case SIOCKILLADDR:
++		return inet6_killaddr_ioctl(net, (void __user *) arg);
+ 	default:
+ 		if (!sk->sk_prot->ioctl)
+ 			return -ENOIOCTLCMD;
+-- 
+1.8.0
+

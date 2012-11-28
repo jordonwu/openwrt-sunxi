@@ -1,0 +1,106 @@
+From cf22c7f63807f46e9a0f2b7468b11e121bf1644a Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 26 Oct 2012 22:35:12 +0200
+Subject: [PATCH 853/944] video:sunxi:disp: unification of leftovers
+
+* bout_yuv is unused anyway
+* limit to one scaler on sun5i
+* hollow out DE_SCAL_Set_Filtercoef_Ready on sun5i
+* remove commented out define of a function that does not exist
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h   | 1 -
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c    | 4 ++++
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c    | 2 ++
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c    | 2 ++
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c    | 4 +++-
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h | 2 --
+ 6 files changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+index 60ee974..42b3f2b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+@@ -111,7 +111,6 @@ typedef struct
+ #endif
+     __u32                   max_layers;
+     __layer_man_t           layer_manage[4];
+-    __bool                  bout_yuv;
+ #ifdef CONFIG_ARCH_SUN4I
+     __u32                   de_flicker_status;
+ #else
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+index 7c89234..9871268 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+@@ -380,6 +380,10 @@ __s32 Scaler_Request(__u32 sel)
+ 
+     DE_INF("Scaler_Request,%d\n", sel);
+ 
++#ifdef CONFIG_ARCH_SUN5I
++    sel = 0;//only one scaler
++#endif
++
+     if(sel == 0)//request scaler0
+     {
+         if(!(gdisp.scaler[0].status & SCALER_USED))
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+index e95860d..7337a75d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+@@ -1009,7 +1009,9 @@ __s32 DE_SCAL_Start(__u8 sel)
+ //***********************************************************************************
+ __s32 DE_SCAL_Set_Filtercoef_Ready(__u8 sel)
+ {
++#ifdef CONFIG_ARCH_SUN4I
+     scal_dev[sel]->frm_ctrl.bits.coef_rdy_en = 0x1;
++#endif
+ 
+     return 0;
+ }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+index f02fed9..0e1934c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+@@ -380,7 +380,9 @@ __s32 Scaler_Request(__u32 sel)
+ 
+     DE_INF("Scaler_Request,%d\n", sel);
+ 
++#ifdef CONFIG_ARCH_SUN5I
+     sel = 0;//only one scaler
++#endif
+ 
+     if(sel == 0)//request scaler0
+     {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+index 44a2a43..7337a75d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+@@ -1009,7 +1009,9 @@ __s32 DE_SCAL_Start(__u8 sel)
+ //***********************************************************************************
+ __s32 DE_SCAL_Set_Filtercoef_Ready(__u8 sel)
+ {
+-    //scal_dev[sel]->frm_ctrl.bits.coef_rdy_en = 0x1;
++#ifdef CONFIG_ARCH_SUN4I
++    scal_dev[sel]->frm_ctrl.bits.coef_rdy_en = 0x1;
++#endif
+ 
+     return 0;
+ }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+index 745f888..284d054 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+@@ -376,8 +376,6 @@ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_output_csc_enable(__u32 sel, __bool enable);
+ #endif
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable);
+-
+-//__s32 DE_BE_Output_Cfg_Csc_Coeff(__u32 sel, __u8 cs_mode);
+ __s32 DE_BE_Format_To_Bpp(__u32 sel, __u8 format);
+ __u32 DE_BE_Offset_To_Addr(__u32 src_addr,__u32 width,__u32 x,__u32 y,__u32 bpp);
+ __u32 DE_BE_Addr_To_Offset(__u32 src_addr,__u32 off_addr,__u32 width,__u32 bpp,__disp_pos_t *pos);
+-- 
+1.8.0
+

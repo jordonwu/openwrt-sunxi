@@ -1,0 +1,4983 @@
+From ba3bc0a14e6847b639efc265f278880fcf3e8b27 Mon Sep 17 00:00:00 2001
+From: Benn Huang <benn@allwinnertech.com>
+Date: Wed, 16 Nov 2011 16:36:45 +0800
+Subject: [PATCH 329/944] standby: port standby driver
+
+1. port standby from 2.6.36
+2. FIXME: cannot wakeup!
+3. FIXME: mmc suspend/resume compile error
+4. update build script
+---
+ arch/arm/mach-sun4i/Makefile                    |   1 +
+ arch/arm/mach-sun4i/include/mach/dram.h         |  66 +++
+ arch/arm/mach-sun4i/pm/Makefile                 |   3 +
+ arch/arm/mach-sun4i/pm/pm.c                     | 456 ++++++++++++++++++
+ arch/arm/mach-sun4i/pm/standby.S                |   6 +
+ arch/arm/mach-sun4i/pm/standby/Makefile         |  47 ++
+ arch/arm/mach-sun4i/pm/standby/common.c         |  71 +++
+ arch/arm/mach-sun4i/pm/standby/common.h         |  74 +++
+ arch/arm/mach-sun4i/pm/standby/dram/dram.c      | 445 ++++++++++++++++++
+ arch/arm/mach-sun4i/pm/standby/dram/dram_i.h    |  98 ++++
+ arch/arm/mach-sun4i/pm/standby/dram/dram_init.c | 587 ++++++++++++++++++++++++
+ arch/arm/mach-sun4i/pm/standby/stack.S          |  86 ++++
+ arch/arm/mach-sun4i/pm/standby/standby.c        | 252 ++++++++++
+ arch/arm/mach-sun4i/pm/standby/standby.xn       |  21 +
+ arch/arm/mach-sun4i/pm/standby/standby_cfg.h    |  35 ++
+ arch/arm/mach-sun4i/pm/standby/standby_clock.c  | 397 ++++++++++++++++
+ arch/arm/mach-sun4i/pm/standby/standby_clock.h  |  54 +++
+ arch/arm/mach-sun4i/pm/standby/standby_delay.S  |   8 +
+ arch/arm/mach-sun4i/pm/standby/standby_i.h      |  77 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_int.c    | 143 ++++++
+ arch/arm/mach-sun4i/pm/standby/standby_int.h    |  84 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_ir.c     |  95 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_ir.h     |  29 ++
+ arch/arm/mach-sun4i/pm/standby/standby_key.c    |  96 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_key.h    |  39 ++
+ arch/arm/mach-sun4i/pm/standby/standby_power.c  | 236 ++++++++++
+ arch/arm/mach-sun4i/pm/standby/standby_power.h  |  96 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_tmr.c    | 240 ++++++++++
+ arch/arm/mach-sun4i/pm/standby/standby_tmr.h    | 104 +++++
+ arch/arm/mach-sun4i/pm/standby/standby_twi.c    | 283 ++++++++++++
+ arch/arm/mach-sun4i/pm/standby/standby_twi.h    |  54 +++
+ arch/arm/mach-sun4i/pm/standby/standby_usb.c    |  99 ++++
+ arch/arm/mach-sun4i/pm/standby/standby_usb.h    |  29 ++
+ arch/arm/mach-sun4i/pm/test/Makefile            |  29 ++
+ arch/arm/mach-sun4i/pm/test/pm_test.c           |  71 +++
+ drivers/mmc/sunxi-host/host_op.c                |   6 +
+ include/linux/power/aw_pm.h                     |  77 ++++
+ scripts/build_sun4i-lite.sh                     |   7 +
+ scripts/build_sun4i.sh                          |   7 +
+ 39 files changed, 4608 insertions(+)
+ create mode 100644 arch/arm/mach-sun4i/include/mach/dram.h
+ create mode 100644 arch/arm/mach-sun4i/pm/Makefile
+ create mode 100644 arch/arm/mach-sun4i/pm/pm.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby.S
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/Makefile
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/common.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/common.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/dram/dram.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/dram/dram_i.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/dram/dram_init.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/stack.S
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby.xn
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_cfg.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_clock.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_clock.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_delay.S
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_i.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_int.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_int.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_ir.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_ir.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_key.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_key.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_power.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_power.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_tmr.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_tmr.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_twi.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_twi.h
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_usb.c
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/standby_usb.h
+ create mode 100644 arch/arm/mach-sun4i/pm/test/Makefile
+ create mode 100644 arch/arm/mach-sun4i/pm/test/pm_test.c
+ create mode 100644 include/linux/power/aw_pm.h
+
+diff --git a/arch/arm/mach-sun4i/Makefile b/arch/arm/mach-sun4i/Makefile
+index a3a268b..88b116c 100644
+--- a/arch/arm/mach-sun4i/Makefile
++++ b/arch/arm/mach-sun4i/Makefile
+@@ -1,4 +1,5 @@
+ obj-y += clock/
+ obj-y += dma/
+ obj-y += core.o  devices.o sys_config.o
++obj-$(CONFIG_PM) += pm/
+ 
+diff --git a/arch/arm/mach-sun4i/include/mach/dram.h b/arch/arm/mach-sun4i/include/mach/dram.h
+new file mode 100644
+index 0000000..50337c1
+--- /dev/null
++++ b/arch/arm/mach-sun4i/include/mach/dram.h
+@@ -0,0 +1,66 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : dram.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-6-2 14:54
++* Descript: dram interface
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#ifndef __AW_DRAM_H__
++#define __AW_DRAM_H__
++
++#include <linux/kernel.h>
++
++struct dram_para_t
++{
++    unsigned int    dram_baseaddr;
++    unsigned int    dram_clk;
++    unsigned int    dram_type;
++    unsigned int    dram_rank_num;
++    unsigned int    dram_chip_density;
++    unsigned int    dram_io_width;
++    unsigned int    dram_bus_width;
++    unsigned int    dram_cas;
++    unsigned int    dram_zq;
++    unsigned int    dram_odt_en;
++    unsigned int    dram_size;
++    unsigned int    dram_tpr0;
++    unsigned int    dram_tpr1;
++    unsigned int    dram_tpr2;
++    unsigned int    dram_tpr3;
++    unsigned int    dram_tpr4;
++    unsigned int    dram_tpr5;
++    unsigned int    dram_emr1;
++    unsigned int    dram_emr2;
++    unsigned int    dram_emr3;
++};
++
++int dram_init(void);
++int dram_exit(void);
++int dram_get_size(void);
++void dram_set_clock(int clk);
++void dram_set_drive(void);
++void dram_set_autorefresh_cycle(unsigned int clk);
++int  dram_scan_readpipe(void);
++void dram_enter_selfrefresh(void);
++void dram_exit_selfrefresh(void);
++void dram_enter_power_down(void);
++void dram_exit_power_down(void);
++void dram_hostport_on_off(unsigned int port_idx, unsigned int on);
++unsigned int dram_hostport_check_ahb_fifo_status(unsigned int port_idx);
++void dram_hostport_setup(unsigned int port, unsigned int prio, unsigned int wait_cycle, unsigned int cmd_num);
++void dram_power_save_process(void);
++unsigned int dram_power_up_process(void);
++
++#endif  /* __AW_DRAM_H__ */
++
+diff --git a/arch/arm/mach-sun4i/pm/Makefile b/arch/arm/mach-sun4i/pm/Makefile
+new file mode 100644
+index 0000000..cbdc1d3
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/Makefile
+@@ -0,0 +1,3 @@
++
++obj-y		+= pm.o standby.o
++
+diff --git a/arch/arm/mach-sun4i/pm/pm.c b/arch/arm/mach-sun4i/pm/pm.c
+new file mode 100644
+index 0000000..04e5a1e
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/pm.c
+@@ -0,0 +1,456 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : pm.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-27 14:08
++* Descript: power manager for allwinners chips platform.
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#include <linux/module.h>
++#include <linux/suspend.h>
++#include <linux/cdev.h>
++#include <linux/fs.h>
++#include <linux/module.h>
++#include <linux/syscalls.h>
++#include <linux/slab.h>
++#include <linux/major.h>
++#include <linux/device.h>
++#include <asm/uaccess.h>
++#include <asm/delay.h>
++#include <asm/io.h>
++#include <linux/power/aw_pm.h>
++
++#define AW_PM_DBG   1
++#undef PM_DBG
++#if(AW_PM_DBG)
++    #define PM_DBG(format,args...)   printk("[pm]"format,##args)
++#else
++    #define PM_DBG(format,args...)   do{}while(0)
++#endif
++
++/* define major number for power manager */
++#define AW_PMU_MAJOR    267
++
++
++extern char *standby_bin_start;
++extern char *standby_bin_end;
++
++static struct aw_pm_info standby_info = {
++    .standby_para = {
++        .event = SUSPEND_WAKEUP_SRC_EXINT,
++    },
++    .pmu_arg = {
++        .twi_port = 0,
++        .dev_addr = 10,
++    },
++};
++static struct cdev *pmu_cdev=NULL;
++static struct device *pmu_device=NULL;
++static dev_t  pmu_dev;
++static struct class *pm_class;
++
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_valid
++*
++*Description: determine if given system sleep state is supported by the platform;
++*
++*Arguments  : state     suspend state;
++*
++*Return     : if the state is valid, return 1, else return 0;
++*
++*Notes      : this is a call-back function, registered into PM core;
++*
++*********************************************************************************************************
++*/
++static int aw_pm_valid(suspend_state_t state)
++{
++    PM_DBG("valid\n");
++
++    if(!((state > PM_SUSPEND_ON) && (state < PM_SUSPEND_MAX))){
++        PM_DBG("state (%d) invalid!\n", state);
++        return 0;
++    }
++
++    return 1;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_begin
++*
++*Description: Initialise a transition to given system sleep state;
++*
++*Arguments  : state     suspend state;
++*
++*Return     : return 0 for process successed;
++*
++*Notes      : this is a call-back function, registered into PM core, and this function
++*             will be called before devices suspened;
++*********************************************************************************************************
++*/
++int aw_pm_begin(suspend_state_t state)
++{
++    PM_DBG("%d state begin\n", state);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_prepare
++*
++*Description: Prepare the platform for entering the system sleep state.
++*
++*Arguments  : none;
++*
++*Return     : return 0 for process successed, and negative code for error;
++*
++*Notes      : this is a call-back function, registered into PM core, this function
++*             will be called after devices suspended, and before device late suspend
++*             call-back functions;
++*********************************************************************************************************
++*/
++int aw_pm_prepare(void)
++{
++    PM_DBG("prepare\n");
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_prepare_late
++*
++*Description: Finish preparing the platform for entering the system sleep state.
++*
++*Arguments  : none;
++*
++*Return     : return 0 for process successed, and negative code for error;
++*
++*Notes      : this is a call-back function, registered into PM core.
++*             prepare_late is called before disabling nonboot CPUs and after
++*              device drivers' late suspend callbacks have been executed;
++*********************************************************************************************************
++*/
++int aw_pm_prepare_late(void)
++{
++    PM_DBG("prepare_late\n");
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_enter
++*
++*Description: Enter the system sleep state;
++*
++*Arguments  : state     system sleep state;
++*
++*Return     : return 0 is process successed;
++*
++*Notes      : this function is the core function for platform sleep.
++*********************************************************************************************************
++*/
++static int aw_pm_enter(suspend_state_t state)
++{
++    int (*standby)(struct aw_pm_info *arg) = (int (*)(struct aw_pm_info *arg))SRAM_FUNC_START;
++
++    PM_DBG("enter state %d\n", state);
++
++    //move standby code to sram
++    memcpy((void *)SRAM_FUNC_START, (void *)&standby_bin_start, (int)&standby_bin_end - (int)&standby_bin_start);
++
++    /* config system wakeup evetn type */
++    standby_info.standby_para.event = SUSPEND_WAKEUP_SRC_EXINT | SUSPEND_WAKEUP_SRC_ALARM;
++
++    /*FIXME: cannot wakeup */
++    /* goto sram and run */
++    //standby(&standby_info);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_wake
++*
++*Description: platform wakeup;
++*
++*Arguments  : none;
++*
++*Return     : none;
++*
++*Notes      : This function called when the system has just left a sleep state, right after
++*             the nonboot CPUs have been enabled and before device drivers' early resume
++*             callbacks are executed. This function is opposited to the aw_pm_prepare_late;
++*********************************************************************************************************
++*/
++static void aw_pm_wake(void)
++{
++    PM_DBG("platform wakeup, wakesource is:0x%x\n", standby_info.standby_para.event);
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_finish
++*
++*Description: Finish wake-up of the platform;
++*
++*Arguments  : none
++*
++*Return     : none
++*
++*Notes      : This function is called right prior to calling device drivers' regular suspend
++*              callbacks. This function is opposited to the aw_pm_prepare function.
++*********************************************************************************************************
++*/
++void aw_pm_finish(void)
++{
++    PM_DBG("platform wakeup finish\n");
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_end
++*
++*Description: Notify the platform that system is in work mode now.
++*
++*Arguments  : none
++*
++*Return     : none
++*
++*Notes      : This function is called by the PM core right after resuming devices, to indicate to
++*             the platform that the system has returned to the working state or
++*             the transition to the sleep state has been aborted. This function is opposited to
++*             aw_pm_begin function.
++*********************************************************************************************************
++*/
++void aw_pm_end(void)
++{
++    PM_DBG("aw_pm_end!\n");
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_recover
++*
++*Description: Recover platform from a suspend failure;
++*
++*Arguments  : none
++*
++*Return     : none
++*
++*Notes      : This function alled by the PM core if the suspending of devices fails.
++*             This callback is optional and should only be implemented by platforms
++*             which require special recovery actions in that situation.
++*********************************************************************************************************
++*/
++void aw_pm_recover(void)
++{
++    PM_DBG("aw_pm_recover\n");
++}
++
++
++/*
++    define platform_suspend_ops which is registered into PM core.
++*/
++static struct platform_suspend_ops aw_pm_ops = {
++    .valid = aw_pm_valid,
++    .begin = aw_pm_begin,
++    .prepare = aw_pm_prepare,
++    .prepare_late = aw_pm_prepare_late,
++    .enter = aw_pm_enter,
++    .wake = aw_pm_wake,
++    .finish = aw_pm_finish,
++    .end = aw_pm_end,
++    .recover = aw_pm_recover,
++};
++
++
++/*
++*********************************************************************************************************
++*                           aw_set_pmu
++*
++*Description: set parameters for pmu device.
++*
++*Arguments  : arg   pm information from user;
++*
++*Return     : result,
++*
++*Notes      : pmu is a virtual char device for user access.
++*
++*********************************************************************************************************
++*/
++static int aw_set_pmu(struct aw_pm_info *arg)
++{
++    struct aw_pm_info   tmp_arg;
++
++    copy_from_user((void *)&tmp_arg, (void *)arg, sizeof(struct aw_pm_info));
++
++    /* check if parameter is valid */
++    if((tmp_arg.pmu_arg.twi_port < 0) || (tmp_arg.pmu_arg.twi_port > 2))
++    {
++        printk("pmu paraeter invlalid(standby_para.twi_port:%d\n)!\n", arg->pmu_arg.twi_port);
++        return -1;
++    }
++
++    memcpy((void *)&standby_info, (void *)arg, sizeof(struct aw_pm_info));
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pmu_ioctl
++*
++*Description: function for user control pmu virtual device.
++*
++*Arguments  : pfile pmu device handle;
++*             cmd   command for pmu device operation;
++*             arg   arguments for pmu device operation;
++*
++*Return     : result;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static long aw_pmu_ioctl(struct file *pfile, unsigned int cmd, unsigned long arg)
++{
++    int ret = -EINVAL;
++
++    PM_DBG("aw_pmu_ioctl\n");
++
++    switch(cmd){
++    case AW_PMU_SET:
++        ret = aw_set_pmu((struct aw_pm_info *)arg);
++        break;
++    default:
++        break;
++    }
++
++    return ret;
++}
++
++
++static struct file_operations pmudev_fops= {
++    .owner  = THIS_MODULE,
++    .unlocked_ioctl = aw_pmu_ioctl,
++};
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_init
++*
++*Description: initial pm sub-system for platform;
++*
++*Arguments  : none;
++*
++*Return     : result;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static int __init aw_pm_init(void)
++{
++    int     result;
++
++    PM_DBG("aw_pm_init!\n");
++
++    pmu_dev = MKDEV(AW_PMU_MAJOR,0);
++    result = register_chrdev_region(pmu_dev,PMU_MAX_DEVS,"aw_pmu");
++    if(result){
++        printk(KERN_ERR "alloc_chrdev_region() failed for pmu\n");
++        return -EIO;
++    }
++
++    pmu_cdev = kzalloc(sizeof(struct cdev),GFP_KERNEL);
++    if(!pmu_cdev){
++        printk(KERN_ERR "malloc memory  fails for pmu device\n");
++        unregister_chrdev_region(pmu_dev,PMU_MAX_DEVS);
++        return -ENOMEM;
++    }
++
++    cdev_init(pmu_cdev, &pmudev_fops);
++    if(cdev_add(pmu_cdev, pmu_dev, 1))
++        goto out_err;
++
++    pm_class = class_create(THIS_MODULE, "pm_class");
++    if (IS_ERR(pm_class)){
++        printk(KERN_ERR"create class error\n");
++        return -EPERM;
++    }
++
++    pmu_device = device_create(pm_class, NULL, pmu_dev, NULL, "pm");
++
++    suspend_set_ops(&aw_pm_ops);
++
++    return 0;
++
++out_err:
++    printk(KERN_ERR "register failed  for pmu device\n");
++    kfree(pmu_cdev);
++    unregister_chrdev_region(pmu_dev, PMU_MAX_DEVS);
++    return -ENODEV;
++}
++
++
++/*
++*********************************************************************************************************
++*                           aw_pm_exit
++*
++*Description: exit pm sub-system on platform;
++*
++*Arguments  : none
++*
++*Return     : none
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++static void __exit aw_pm_exit(void)
++{
++    PM_DBG("aw_pm_exit!\n");
++
++    device_destroy(pm_class, pmu_dev);
++    class_destroy(pm_class);
++
++    if(pmu_cdev)
++    {
++        cdev_del(pmu_cdev);
++        kfree(pmu_cdev);
++    }
++    unregister_chrdev_region(pmu_dev,PMU_MAX_DEVS);
++
++    suspend_set_ops(NULL);
++}
++
++module_init(aw_pm_init);
++module_exit(aw_pm_exit);
++
+diff --git a/arch/arm/mach-sun4i/pm/standby.S b/arch/arm/mach-sun4i/pm/standby.S
+new file mode 100644
+index 0000000..843c7f4
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby.S
+@@ -0,0 +1,6 @@
++	.globl	standby_bin_start
++standby_bin_start:
++	.incbin	"arch/arm/mach-sun4i/pm/standby/standby.code"
++	.globl	standby_bin_end
++standby_bin_end:
++	.align	2
+diff --git a/arch/arm/mach-sun4i/pm/standby/Makefile b/arch/arm/mach-sun4i/pm/standby/Makefile
+new file mode 100644
+index 0000000..55c69cf
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/Makefile
+@@ -0,0 +1,47 @@
++#makefile for standby.bin
++
++INCLUDE   = -I. \
++	-I$(KDIR)/include \
++	-I$(KDIR)/arch/arm/mach-sun4i/include
++
++OBJ = common.o standby.o stack.o standby_clock.o dram/dram.o dram/dram_init.o   \
++      standby_int.o standby_ir.o standby_key.o standby_power.o  \
++      standby_tmr.o standby_twi.o standby_usb.o standby_delay.o
++
++
++OUPUTFILE = standby
++
++LD_FILE = standby.xn
++CC = $(CROSS_COMPILE)gcc
++
++CFLAGS = -Os -g -march=armv7-a -fno-unwind-tables -fno-asynchronous-unwind-tables -mlittle-endian  -c
++
++all:
++	$(CC) $(INCLUDE) $(CFLAGS) common.c           -o common.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby.c          -o standby.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_clock.c    -o standby_clock.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_int.c      -o standby_int.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_ir.c       -o standby_ir.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_key.c      -o standby_key.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_power.c    -o standby_power.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_tmr.c      -o standby_tmr.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_twi.c      -o standby_twi.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_usb.c      -o standby_usb.o
++	$(CC) $(INCLUDE) $(CFLAGS) standby_delay.S    -o standby_delay.o
++	$(CC) $(INCLUDE) $(CFLAGS) dram/dram.c        -o dram/dram.o
++	$(CC) $(INCLUDE) $(CFLAGS) dram/dram_init.c   -o dram/dram_init.o
++	$(CC) $(INCLUDE) $(CFLAGS) stack.S            -o stack.o
++
++	$(CROSS_COMPILE)ld -T $(LD_FILE)  -EL  $(OBJ) -o $(OUPUTFILE).elf  -Map $(OUPUTFILE).map
++	$(CROSS_COMPILE)objdump -D $(OUPUTFILE).elf > $(OUPUTFILE).lst
++	$(CROSS_COMPILE)objcopy -O binary $(OUPUTFILE).elf $(OUPUTFILE).bin
++
++	rm -rf *.o ../*.o
++
++	cp standby.bin standby.code
++
++	@echo ----------------------------------------
++	@echo well done!
++clean:
++	-rm *.o *.map *.lst *.bin *.elf *.exe dram/*.o
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/common.c b/arch/arm/mach-sun4i/pm/standby/common.c
+new file mode 100644
+index 0000000..0c1e831
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/common.c
+@@ -0,0 +1,71 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : common.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 19:38
++* Descript: common lib for standby
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++
++/*
++*********************************************************************************************************
++*                           standby_memcpy
++*
++*Description: memory copy function for standby.
++*
++*Arguments  :
++*
++*Return     :
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void standby_memcpy(void *dest, void *src, int n)
++{
++    char    *tmp_src = (char *)src;
++    char    *tmp_dst = (char *)dest;
++
++    if(!dest || !src){
++        /* parameter is invalid */
++        return;
++    }
++
++    for( ; n > 0; n--){
++        *tmp_dst ++ = *tmp_src ++;
++    }
++
++    return;
++}
++
++
++/*
++*********************************************************************************************************
++*                           mdelay
++*
++*Description: mdelay function
++*
++*Arguments  :
++*
++*Return     :
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void standby_mdelay(int ms)
++{
++    standby_delay(ms * cpu_ms_loopcnt);
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/common.h b/arch/arm/mach-sun4i/pm/standby/common.h
+new file mode 100644
+index 0000000..ede1e28
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/common.h
+@@ -0,0 +1,74 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : common.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 17:21
++* Descript: common lib for standby.
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __COMMON_H__
++#define __COMMON_H__
++
++typedef signed char         __s8;
++typedef unsigned char       __u8;
++typedef signed short        __s16;
++typedef unsigned short      __u16;
++typedef signed int          __s32;
++typedef unsigned int        __u32;
++typedef signed long long    __s64;
++typedef unsigned long long  __u64;
++
++
++static inline __u64 standby_uldiv(__u64 dividend, __u32 divisior)
++{
++    __u64   tmpDiv = (__u64)divisior;
++    __u64   tmpQuot = 0;
++    __s32   shift = 0;
++
++    if(!divisior)
++    {
++        /* divide 0 error abort */
++        return 0;
++    }
++
++    while(!(tmpDiv & ((__u64)1<<63)))
++    {
++        tmpDiv <<= 1;
++        shift ++;
++    }
++
++    do
++    {
++        if(dividend >= tmpDiv)
++        {
++            dividend -= tmpDiv;
++            tmpQuot = (tmpQuot << 1) | 1;
++        }
++        else
++        {
++            tmpQuot = (tmpQuot << 1) | 0;
++        }
++        tmpDiv >>= 1;
++        shift --;
++    } while(shift >= 0);
++
++    return tmpQuot;
++}
++
++
++
++void standby_memcpy(void *dest, void *src, int n);
++void standby_mdelay(int ms);
++void standby_delay(int cycle);
++
++#endif  //__COMMON_H__
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/dram/dram.c b/arch/arm/mach-sun4i/pm/standby/dram/dram.c
+new file mode 100644
+index 0000000..cd5c211
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/dram/dram.c
+@@ -0,0 +1,445 @@
++/*
++*********************************************************************************************************
++* File    : dram.c
++* By      : Berg.Xing
++* Date    : 2011-06-01
++* Descript: dram  for AW1623 chipset
++* Update  : date          auther      ver     notes
++*     2011-06-01      			Berg        1.0     create file
++*	  2011-07-29		  Berg        1.1	  change dram_power_save_process() and dram_power_up_process()
++*	  2011-08-05		  Berg        1.2     add retraining method in power up process when failed
++*********************************************************************************************************
++*/
++#include "dram_i.h"
++
++
++/*
++*********************************************************************************************************
++*                 DRAM ENTER SELF REFRESH
++*
++* Description: dram enter/exit self-refresh;
++*
++* Arguments  : none
++*
++* Returns    : none
++*
++* Note       :
++*********************************************************************************************************
++*/
++void mctl_precharge_all(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	reg_val = mctl_read_w(SDR_DCR);
++	reg_val &= ~(0x1fU<<27);
++	reg_val |= 0x15U<<27;
++	mctl_write_w(SDR_DCR, reg_val);
++
++	//check whether command has been executed
++	while( mctl_read_w(SDR_DCR)& (0x1U<<31) );
++    standby_delay(0x100);
++}
++
++void DRAMC_enter_selfrefresh(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	//disable all port
++	for(i=0; i<31; i++)
++	{
++		DRAMC_hostport_on_off(i, 0x0);
++	}
++
++	//disable auto-fresh
++	reg_val = mctl_read_w(SDR_DRR);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DRR, reg_val);
++
++	//issue prechage all command
++	mctl_precharge_all();
++
++	//enter into self-refresh
++	reg_val = mctl_read_w(SDR_DCR);
++	reg_val &= ~(0x1fU<<27);
++	reg_val |= 0x12U<<27;
++	mctl_write_w(SDR_DCR, reg_val);
++	while( mctl_read_w(SDR_DCR)& (0x1U<<31) );
++	standby_delay(0x100);
++}
++void mctl_mode_exit(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	reg_val = mctl_read_w(SDR_DCR);
++	reg_val &= ~(0x1fU<<27);
++	reg_val |= 0x17U<<27;
++	mctl_write_w(SDR_DCR, reg_val);
++
++	//check whether command has been executed
++	while( mctl_read_w(SDR_DCR)& (0x1U<<31) );
++	standby_delay(0x100);
++}
++
++void DRAMC_exit_selfrefresh(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	//exit self-refresh state
++	mctl_mode_exit();
++
++	//issue a refresh command
++	reg_val = mctl_read_w(SDR_DCR);
++	reg_val &= ~(0x1fU<<27);
++	reg_val |= 0x13U<<27;
++	mctl_write_w(SDR_DCR, reg_val);
++	while( mctl_read_w(SDR_DCR)& (0x1U<<31) );
++    standby_delay(0x100);
++
++	//enable auto-fresh
++	reg_val = mctl_read_w(SDR_DRR);
++	reg_val &= ~(0x1U<<31);
++	mctl_write_w(SDR_DRR, reg_val);
++
++	//enable all port
++	for(i=0; i<31; i++)
++	{
++		DRAMC_hostport_on_off(i, 0x1);
++	}
++}
++
++/*
++*********************************************************************************************************
++*                 DRAM POWER DOWN
++*
++* Description: enter/exit dram power down state
++*
++* Arguments  :
++*
++* Returns    : none;
++*
++* Note       :
++*********************************************************************************************************
++*/
++void DRAMC_enter_power_down(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	reg_val = mctl_read_w(SDR_DCR);
++	reg_val &= ~(0x1fU<<27);
++	reg_val |= 0x1eU<<27;
++	mctl_write_w(SDR_DCR, reg_val);
++
++	//check whether command has been executed
++	while( mctl_read_w(SDR_DCR)& (0x1U<<31) );
++	standby_delay(0x100);
++}
++
++void DRAMC_exit_power_down(void)
++{
++    mctl_mode_exit();
++}
++
++/*
++**********************************************************************************************************************
++*                 DRAM HOSTPORT CONTROL
++*
++* Description: dram host port enable/ disable
++*
++* Arguments  : __u32 port_idx		host port index   (0,1,...31)
++*				__u32 on		enable or disable (0: diable, 1: enable)
++*
++* Returns    :
++*
++* Notes      :
++*
++**********************************************************************************************************************
++*/
++void DRAMC_hostport_on_off(__u32 port_idx, __u32 on)
++{
++    __u32   reg_val;
++
++    if(port_idx<=31)
++    {
++	    reg_val = mctl_read_w(SDR_HPCR + (port_idx<<2));
++	    if(on)
++	    	reg_val |= 0x1;
++	    else
++	    	reg_val &= ~(0x1);
++	    mctl_write_w(SDR_HPCR + (port_idx<<2), reg_val);
++	}
++}
++/*
++**********************************************************************************************************************
++*                 DRAM GET HOSTPORT STATUS
++*
++* Description: dram get AHB FIFO status
++*
++* Arguments  : __u32 port_idx		host port index   	(0,1,...31)
++*
++* Returns    : __u32 ret_val		AHB FIFO status 	(0: FIFO not empty ,1: FIFO empty)
++*
++* Notes      :
++*
++**********************************************************************************************************************
++*/
++__u32 DRAMC_hostport_check_ahb_fifo_status(__u32 port_idx)
++{
++    __u32   reg_val;
++
++    if(port_idx<=31)
++    {
++	    reg_val = mctl_read_w(SDR_CFSR);
++	    return ( (reg_val>>port_idx)&0x1 );
++	}
++	else
++	{
++		return 0;
++	}
++}
++/*
++**********************************************************************************************************************
++*                 DRAM GET HOSTPORT STATUS
++*
++* Description: dram get AHB FIFO status
++*
++* Arguments  : 	__u32 port_idx				host port index   	(0,1,...31)
++*				__u32 port_pri_level		priority level		(0,1,2,3)
++*
++* Returns    :
++*
++* Notes      :
++*
++**********************************************************************************************************************
++*/
++void DRAMC_hostport_setup(__u32 port_idx, __u32 port_pri_level, __u32 port_wait_cycle, __u32 cmd_num)
++{
++    __u32   reg_val;
++
++    if(port_idx<=31)
++    {
++	    reg_val = mctl_read_w(SDR_HPCR + (port_idx<<2));
++	    reg_val &= ~(0x3<<2);
++	    reg_val |= (port_pri_level&0x3)<<2;
++	    reg_val &= ~(0xf<<4);
++	    reg_val |= (port_wait_cycle&0xf)<<4;
++	    reg_val &= ~(0xff<<8);
++	    reg_val |= (cmd_num&0x3)<<8;
++	    mctl_write_w(SDR_HPCR + (port_idx<<2), reg_val);
++	}
++}
++/*
++*********************************************************************************************************
++*                 DRAM power save process
++*
++* Description: We can save power by disable DRAM PLL.
++*			   DRAMC_power_save_process() is called to disable DRAMC ITM and DLL, then disable PLL to save power;
++*			   Before exit SDRAM self-refresh state, we should enable DRAM PLL and make sure that it is stable clock.
++*			   Then call function DRAMC_exit_selfrefresh() to exit self-refresh state. Before access external SDRAM,
++*              the function DRAMC_power_up_process() should be called to enable DLL and re-training DRAM controller.
++*
++* Arguments  : none
++*
++* Returns    : none
++*
++* Note       :
++*********************************************************************************************************
++*/
++__u32 mctl_ahb_reset(void)
++{
++	__u32 i;
++	__u32 reg_val;
++
++	reg_val = mctl_read_w(DRAM_CCM_AHB_GATE_REG);
++	reg_val &=~(0x1<<14);
++	mctl_write_w(DRAM_CCM_AHB_GATE_REG,reg_val);
++    standby_delay(0x10);
++
++	reg_val = mctl_read_w(DRAM_CCM_AHB_GATE_REG);
++	reg_val |=(0x1<<14);
++	mctl_write_w(DRAM_CCM_AHB_GATE_REG,reg_val);
++}
++
++__s32 DRAMC_retraining(void)
++{
++	__u32 i;
++	__u32 reg_val;
++	__u32 ret_val;
++	__u32 reg_dcr, reg_drr, reg_tpr0, reg_tpr1, reg_tpr2, reg_mr, reg_emr, reg_emr2, reg_emr3;
++	__u32 reg_zqcr0, reg_iocr;
++
++	//remember register value
++	reg_dcr = mctl_read_w(SDR_DCR);
++	reg_drr = mctl_read_w(SDR_DRR);
++	reg_tpr0 = mctl_read_w(SDR_TPR0);
++	reg_tpr1 = mctl_read_w(SDR_TPR1);
++	reg_tpr2 = mctl_read_w(SDR_TPR2);
++	reg_mr = mctl_read_w(SDR_MR);
++	reg_emr = mctl_read_w(SDR_EMR);
++	reg_emr2 = mctl_read_w(SDR_EMR2);
++	reg_emr3 = mctl_read_w(SDR_EMR3);
++	reg_zqcr0 = mctl_read_w(SDR_ZQCR0);
++	reg_iocr = mctl_read_w(SDR_IOCR);
++	while(1){
++		mctl_ahb_reset();
++
++		//reset external DRAM
++		mctl_ddr3_reset();
++		mctl_set_drive();
++
++		//dram clock off
++		DRAMC_clock_output_en(0);
++
++		//select dram controller 1
++		mctl_write_w(SDR_SCSR, 0x16237495);
++
++		mctl_itm_disable();
++		mctl_enable_dll0();
++
++		//configure external DRAM
++		mctl_write_w(SDR_DCR, reg_dcr);
++
++		//dram clock on
++		DRAMC_clock_output_en(1);
++        standby_delay(0x10);
++		while(mctl_read_w(SDR_CCR) & (0x1U<<31)) {};
++
++		mctl_enable_dllx();
++
++		//set odt impendance divide ratio
++		mctl_write_w(SDR_ZQCR0, reg_zqcr0);
++
++		//set I/O configure register
++		mctl_write_w(SDR_IOCR, reg_iocr);
++
++		//set refresh period
++		mctl_write_w(SDR_DRR, reg_drr);
++
++		//set timing parameters
++		mctl_write_w(SDR_TPR0, reg_tpr0);
++		mctl_write_w(SDR_TPR1, reg_tpr1);
++		mctl_write_w(SDR_TPR2, reg_tpr2);
++
++		//set mode register
++		mctl_write_w(SDR_MR, reg_mr);
++		mctl_write_w(SDR_EMR, reg_emr);
++		mctl_write_w(SDR_EMR2, reg_emr2);
++		mctl_write_w(SDR_EMR3, reg_emr3);
++
++		//set DQS window mode
++		reg_val = mctl_read_w(SDR_CCR);
++		reg_val |= 0x1U<<14;
++		mctl_write_w(SDR_CCR, reg_val);
++
++		//initial external DRAM
++		reg_val = mctl_read_w(SDR_CCR);
++		reg_val |= 0x1U<<31;
++		mctl_write_w(SDR_CCR, reg_val);
++
++		while(mctl_read_w(SDR_CCR) & (0x1U<<31)) {};
++
++		//scan read pipe value
++		mctl_itm_enable();
++		ret_val = DRAMC_scan_readpipe();
++
++		//configure all host port
++		mctl_configure_hostport();
++
++		if(ret_val == 0)
++			return 0;
++    }
++}
++
++void dram_power_save_process(void)
++{
++	__u32 reg_val;
++
++	//put external SDRAM into self-fresh state
++	DRAMC_enter_selfrefresh();
++
++	//disable ITM
++	mctl_itm_disable();
++
++	//dramc clock off
++	DRAMC_clock_output_en(0);
++
++	//disable and reset all DLL
++	mctl_disable_dll();
++}
++__u32 dram_power_up_process(void)
++{
++	__u32 i;
++	__s32 ret_val;
++
++	mctl_itm_disable();
++
++	mctl_enable_dll0();
++
++	//dram clock on
++	DRAMC_clock_output_en(1);
++    standby_delay(0x10);
++
++	mctl_enable_dllx();
++
++	//enable ITM
++	mctl_itm_enable();
++
++	//exit from self-refresh state
++	DRAMC_exit_selfrefresh();
++
++	//scan read pipe value
++	ret_val = DRAMC_scan_readpipe();
++	if(ret_val != 0)
++	{
++		DRAMC_retraining();
++	}
++
++	return (ret_val);
++}
++
++
++void dram_enter_selfrefresh(void)
++{
++    DRAMC_enter_selfrefresh();
++}
++
++
++void dram_exit_selfrefresh(void)
++{
++    DRAMC_exit_selfrefresh();
++}
++
++
++void dram_enter_power_down(void)
++{
++    DRAMC_enter_power_down();
++}
++
++
++void dram_exit_power_down(void)
++{
++    DRAMC_exit_power_down();
++}
++
++
++void dram_hostport_on_off(__u32 port_idx, __u32 on)
++{
++    DRAMC_hostport_on_off(port_idx, on);
++}
++
++
++__u32 dram_hostport_check_ahb_fifo_status(__u32 port_idx)
++{
++    return DRAMC_hostport_check_ahb_fifo_status(port_idx);
++}
++
++
++void dram_hostport_setup(__u32 port, __u32 prio, __u32 wait_cycle, __u32 cmd_num)
++{
++    DRAMC_hostport_setup(port, prio, wait_cycle, cmd_num);
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/dram/dram_i.h b/arch/arm/mach-sun4i/pm/standby/dram/dram_i.h
+new file mode 100644
+index 0000000..2e7dae4
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/dram/dram_i.h
+@@ -0,0 +1,98 @@
++/*
++*********************************************************************************************************
++* File    : dram_i.h
++* By      : Berg.Xing
++* Date    : 2011-06-01
++* Descript: dram csp for AW1623 chipset;
++* Update  : date          auther      ver     notes
++*     2011-06-01      			Berg        1.0     create file
++*			2011-07-01			Berg        1.1     add extern function description
++*			2011-08-05			Berg		1.2		add CPU_CFIG_REG in timer module
++*********************************************************************************************************
++*/
++#ifndef __DRAM_I_H__
++#define __DRAM_I_H__
++
++#include <mach/dram.h>
++#include "./../standby_i.h"
++
++#define DRAMC_IO_BASE       SW_VA_DRAM_IO_BASE
++#define DRAMC_MEM_SIZE      0x400
++
++#define SDR_CCR				(DRAMC_IO_BASE + 0x00)
++#define SDR_DCR				(DRAMC_IO_BASE + 0x04)
++#define SDR_IOCR			(DRAMC_IO_BASE + 0x08)
++#define SDR_CSR				(DRAMC_IO_BASE + 0x0c)
++#define SDR_DRR				(DRAMC_IO_BASE + 0x10)
++#define SDR_TPR0			(DRAMC_IO_BASE + 0x14)
++#define SDR_TPR1			(DRAMC_IO_BASE + 0x18)
++#define SDR_TPR2			(DRAMC_IO_BASE + 0x1c)
++#define SDR_RSLR0			(DRAMC_IO_BASE + 0x4c)
++#define SDR_RSLR1			(DRAMC_IO_BASE + 0x50)
++#define SDR_RDQSGR			(DRAMC_IO_BASE + 0x5c)
++#define SDR_ODTCR			(DRAMC_IO_BASE + 0x98)
++#define SDR_DTR0			(DRAMC_IO_BASE + 0x9c)
++#define SDR_DTR1			(DRAMC_IO_BASE + 0xa0)
++#define SDR_DTAR			(DRAMC_IO_BASE + 0xa4)
++#define SDR_ZQCR0			(DRAMC_IO_BASE + 0xa8)
++#define SDR_ZQCR1			(DRAMC_IO_BASE + 0xac)
++#define SDR_ZQSR			(DRAMC_IO_BASE + 0xb0)
++#define SDR_IDCR			(DRAMC_IO_BASE + 0xb4)
++#define SDR_MR				(DRAMC_IO_BASE + 0x1f0)
++#define SDR_EMR				(DRAMC_IO_BASE + 0x1f4)
++#define SDR_EMR2			(DRAMC_IO_BASE + 0x1f8)
++#define SDR_EMR3  			(DRAMC_IO_BASE + 0x1fc)
++#define SDR_DLLCR			(DRAMC_IO_BASE + 0x200)
++#define SDR_DLLCR0			(DRAMC_IO_BASE + 0x204)
++#define SDR_DLLCR1			(DRAMC_IO_BASE + 0x208)
++#define SDR_DLLCR2			(DRAMC_IO_BASE + 0x20c)
++#define SDR_DLLCR3			(DRAMC_IO_BASE + 0x210)
++#define SDR_DLLCR4			(DRAMC_IO_BASE + 0x214)
++#define SDR_DQTR0			(DRAMC_IO_BASE + 0x218)
++#define SDR_DQTR1			(DRAMC_IO_BASE + 0x21c)
++#define SDR_DQTR2			(DRAMC_IO_BASE + 0x220)
++#define SDR_DQTR3			(DRAMC_IO_BASE + 0x224)
++#define SDR_DQSTR0			(DRAMC_IO_BASE + 0x228)
++#define SDR_DQSTR1			(DRAMC_IO_BASE + 0x22c)
++#define SDR_CR				(DRAMC_IO_BASE + 0x230)
++#define SDR_CFSR			(DRAMC_IO_BASE + 0x234)
++#define SDR_APR  			(DRAMC_IO_BASE + 0x240)
++#define SDR_LTR	  			(DRAMC_IO_BASE + 0x244)
++#define SDR_HPCR			(DRAMC_IO_BASE + 0x250)
++#define SDR_SCSR			(DRAMC_IO_BASE + 0x2e0)
++
++
++
++#define mctl_read_w(n)      (*((volatile unsigned int *)(n)))
++#define mctl_write_w(n,c)   (*((volatile unsigned int *)(n)) = (c))
++
++
++//CCM register for dram
++#define DRAM_CCM_BASE       SW_VA_CCM_IO_BASE
++#define DRAM_CCM_MEMSIZE    0x400
++
++#define DRAM_CCM_SDRAM_PLL_REG    (DRAM_CCM_BASE + 0x20)
++#define DRAM_CCM_AHB_GATE_REG     (DRAM_CCM_BASE + 0x60)
++#define DRAM_CCM_GPS_CLK_REG      (DRAM_CCM_BASE + 0xd0)
++#define DRAM_CCM_SDRAM_CLK_REG    (DRAM_CCM_BASE + 0x100)
++
++
++//TIMER register for system
++#define DRAM_TIMER_BASE     SW_VA_TIMERC_IO_BASE
++#define TIMER_CPU_CFG_REG   (DRAM_TIMER_BASE + 0x13c)
++
++
++extern void 	DRAMC_clock_output_en(__u32 on);
++extern void 	DRAMC_set_autorefresh_cycle(__u32 clk);
++extern int  	DRAMC_scan_readpipe(void);
++extern unsigned DRAMC_get_dram_size(void);
++
++extern void mctl_itm_disable(void);
++extern void mctl_itm_enable(void);
++extern void mctl_enable_dll0(void);
++extern void mctl_enable_dllx(void);
++extern void mctl_disable_dll(void);
++extern void DRAMC_hostport_on_off(__u32 port_idx, __u32 on);
++
++#endif  //__DRAM_REG_H__
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/dram/dram_init.c b/arch/arm/mach-sun4i/pm/standby/dram/dram_init.c
+new file mode 100644
+index 0000000..4e82b8b
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/dram/dram_init.c
+@@ -0,0 +1,587 @@
++/*
++*********************************************************************************************************
++* File    : dram_init.c
++* By      : Berg.Xing
++* Date    : 2011-06-01
++* Descript: dram for AW1623 chipset;
++* Update  : date                auther      ver     notes
++*           2011-06-01                  Berg        1.0     create file
++*           2011-06-15      			Berg        1.1     change pad drive mode to dynamic mode0;
++*															change to automatic IDDQ mode when entry into
++*															self-refresh or power down for saving power
++*           2011-07-01      			Berg        1.2     add mctl_disable_dll() function
++*															add odt control bit and odt impendance
++*															increase dram pll delay time
++*           2011-07-27      			Berg        1.3     change pad to high speed mode and
++*															select DQS passive window mode
++*															tune port priority level
++*			2011-08-05					Berg		1.4		change mctl_ddr3_reset() for different die
++*			2011-09-16					Berg		1.5		disable dqs drfit compensation for low tempature
++*********************************************************************************************************
++*/
++#include "dram_i.h"
++
++typedef struct dram_para_t  __dram_para_t;
++
++
++/*
++*********************************************************************************************************
++*                                   DRAM INIT
++*
++* Description: dram init function
++*
++* Arguments  : para     dram config parameter
++*
++*
++* Returns    : result
++*
++* Note       :
++*********************************************************************************************************
++*/
++void mctl_ddr3_reset(void)
++{
++    __u32 reg_val;
++    __u32 i=0;
++
++    mctl_write_w(TIMER_CPU_CFG_REG, 0);
++    reg_val = mctl_read_w(TIMER_CPU_CFG_REG);
++    reg_val >>=6;
++    reg_val &=0x3;
++    if(reg_val == 0)
++    {
++        reg_val = mctl_read_w(SDR_CR);
++        reg_val &= ~(0x1<<12);
++        mctl_write_w(SDR_CR, reg_val);
++        standby_delay(0x100);
++        reg_val = mctl_read_w(SDR_CR);
++        reg_val |= (0x1<<12);
++        mctl_write_w(SDR_CR, reg_val);
++    }
++    else
++    {
++        reg_val = mctl_read_w(SDR_CR);
++        reg_val |= (0x1<<12);
++        mctl_write_w(SDR_CR, reg_val);
++        standby_delay(0x100);
++        reg_val = mctl_read_w(SDR_CR);
++        reg_val &= ~(0x1<<12);
++        mctl_write_w(SDR_CR, reg_val);
++    }
++}
++
++void mctl_set_drive(void)
++{
++    __u32 reg_val;
++
++    reg_val = mctl_read_w(SDR_CR);
++    reg_val |= (0x6<<12);
++		reg_val |= 0xFFC;
++    reg_val &= ~0x3;
++    mctl_write_w(SDR_CR, reg_val);
++}
++
++void mctl_itm_disable(void)
++{
++    __u32 reg_val = 0x0;
++
++    reg_val = mctl_read_w(SDR_CCR);
++    reg_val |= 0x1<<28;
++    mctl_write_w(SDR_CCR, reg_val);
++}
++
++void mctl_itm_enable(void)
++{
++    __u32 reg_val = 0x0;
++
++    reg_val = mctl_read_w(SDR_CCR);
++    reg_val &= ~(0x1<<28);
++    mctl_write_w(SDR_CCR, reg_val);
++}
++
++void mctl_enable_dll0(void)
++{
++    __u32 i = 0;
++
++    mctl_write_w(SDR_DLLCR0, mctl_read_w(SDR_DLLCR0) & ~0x40000000 | 0x80000000);
++	standby_delay(0x100);
++
++    mctl_write_w(SDR_DLLCR0, mctl_read_w(SDR_DLLCR0) & ~0xC0000000);
++	standby_delay(0x1000);
++
++    mctl_write_w(SDR_DLLCR0, mctl_read_w(SDR_DLLCR0) & ~0x80000000 | 0x40000000);
++    standby_delay(0x1000);
++}
++
++void mctl_enable_dllx(void)
++{
++    __u32 i = 0;
++
++    for(i=1; i<5; i++)
++    {
++        mctl_write_w(SDR_DLLCR0+(i<<2), mctl_read_w(SDR_DLLCR0+(i<<2)) & ~0x40000000 | 0x80000000);
++    }
++
++	standby_delay(0x100);
++
++    for(i=1; i<5; i++)
++    {
++        mctl_write_w(SDR_DLLCR0+(i<<2), mctl_read_w(SDR_DLLCR0+(i<<2)) & ~0xC0000000);
++    }
++
++	standby_delay(0x1000);
++
++    for(i=1; i<5; i++)
++    {
++        mctl_write_w(SDR_DLLCR0+(i<<2), mctl_read_w(SDR_DLLCR0+(i<<2)) & ~0x80000000 | 0x40000000);
++    }
++    standby_delay(0x1000);
++}
++
++void mctl_disable_dll(void)
++{
++	__u32 reg_val;
++
++	reg_val = mctl_read_w(SDR_DLLCR0);
++	reg_val &= ~(0x1<<30);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DLLCR0, reg_val);
++
++	reg_val = mctl_read_w(SDR_DLLCR1);
++	reg_val &= ~(0x1<<30);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DLLCR1, reg_val);
++
++	reg_val = mctl_read_w(SDR_DLLCR2);
++	reg_val &= ~(0x1<<30);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DLLCR2, reg_val);
++
++	reg_val = mctl_read_w(SDR_DLLCR3);
++	reg_val &= ~(0x1<<30);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DLLCR3, reg_val);
++
++	reg_val = mctl_read_w(SDR_DLLCR4);
++	reg_val &= ~(0x1<<30);
++	reg_val |= 0x1U<<31;
++	mctl_write_w(SDR_DLLCR4, reg_val);
++}
++
++__u32 hpcr_value[32] = {
++    0x00000301,0x00000301,0x00000301,0x00000301,
++    0x00000301,0x00000301,0x0,       0x0,
++    	0x0,       0x0,       0x0,       0x0,
++    0x0,       0x0,       0x0,       0x0,
++			0x00001031,0x00001031,0x00000735,0x00001035,
++			0x00001035,0x00000731,0x00001031,0x00000735,
++			0x00001035,0x00001031,0x00000731,0x00001035,
++			0x00001031,0x00000301,0x00000301,0x00000731,
++};
++
++void mctl_configure_hostport(void)
++{
++    __u32 i;
++
++    for(i=0; i<32; i++)
++    {
++        mctl_write_w(SDR_HPCR + (i<<2), hpcr_value[i]);
++    }
++}
++
++void mctl_setup_dram_clock(__u32 clk)
++{
++    __u32 i;
++    __u32 reg_val;
++
++    //setup DRAM PLL
++    reg_val = mctl_read_w(DRAM_CCM_SDRAM_PLL_REG);
++    reg_val &= ~0x3;
++    reg_val |= 0x1;                     //m factor
++    reg_val &= ~(0x3<<4);
++    reg_val |= 0x1<<4;                  //k factor
++    reg_val &= ~(0x1f<<8);
++    reg_val |= (standby_uldiv((__u64)clk, 24)&0x1f)<<8;      //n factor
++    reg_val &= ~(0x3<<16);
++    reg_val |= 0x1<<16;                 //p factor
++    reg_val &= ~(0x1<<29);                                         //PLL on
++    reg_val |= (__u32)0x1<<31;          //PLL En
++    mctl_write_w(DRAM_CCM_SDRAM_PLL_REG, reg_val);
++    standby_delay(0x100000);
++    reg_val = mctl_read_w(DRAM_CCM_SDRAM_PLL_REG);
++	reg_val |= 0x1<<29;
++    mctl_write_w(DRAM_CCM_SDRAM_PLL_REG, reg_val);
++
++    //reset GPS
++    reg_val = mctl_read_w(DRAM_CCM_GPS_CLK_REG);
++    reg_val &= ~0x3;
++    mctl_write_w(DRAM_CCM_GPS_CLK_REG, reg_val);
++    reg_val = mctl_read_w(DRAM_CCM_AHB_GATE_REG);
++    reg_val |= (0x1<<26);
++    mctl_write_w(DRAM_CCM_AHB_GATE_REG, reg_val);
++    standby_delay(0x20);
++    reg_val = mctl_read_w(DRAM_CCM_AHB_GATE_REG);
++    reg_val &= ~(0x1<<26);
++    mctl_write_w(DRAM_CCM_AHB_GATE_REG, reg_val);
++
++    //open DRAMC AHB clock
++    //close it first
++    reg_val = mctl_read_w(DRAM_CCM_AHB_GATE_REG);
++    reg_val &= ~(0x1<<14);
++    mctl_write_w(DRAM_CCM_AHB_GATE_REG, reg_val);
++	standby_delay(0x1000);
++
++    //then open it
++    reg_val |= 0x1<<14;
++    mctl_write_w(DRAM_CCM_AHB_GATE_REG, reg_val);
++	standby_delay(0x1000);
++}
++
++__s32 DRAMC_init(__dram_para_t *para)
++{
++    __u32 i;
++    __u32 reg_val;
++    __s32 ret_val;
++
++    //check input dram parameter structure
++    if(!para)
++    {
++        //dram parameter is invalid
++        return -1;
++    }
++
++    //setup DRAM relative clock
++    mctl_setup_dram_clock(para->dram_clk);
++
++    //reset external DRAM
++    mctl_ddr3_reset();
++    mctl_set_drive();
++
++    //dram clock off
++    DRAMC_clock_output_en(0);
++
++    //select dram controller 1
++    mctl_write_w(SDR_SCSR, 0x16237495);
++
++    mctl_itm_disable();
++    mctl_enable_dll0();
++
++    //configure external DRAM
++    reg_val = 0;
++    if(para->dram_type == 3)
++        reg_val |= 0x1;
++    reg_val |= (para->dram_io_width>>3) <<1;
++
++    if(para->dram_chip_density == 256)
++        reg_val |= 0x0<<3;
++    else if(para->dram_chip_density == 512)
++        reg_val |= 0x1<<3;
++    else if(para->dram_chip_density == 1024)
++        reg_val |= 0x2<<3;
++    else if(para->dram_chip_density == 2048)
++        reg_val |= 0x3<<3;
++    else if(para->dram_chip_density == 4096)
++        reg_val |= 0x4<<3;
++    else if(para->dram_chip_density == 8192)
++        reg_val |= 0x5<<3;
++    else
++        reg_val |= 0x0<<3;
++    reg_val |= ((para->dram_bus_width>>3) - 1)<<6;
++    reg_val |= (para->dram_rank_num -1)<<10;
++    reg_val |= 0x1<<12;
++    reg_val |= ((0x1)&0x3)<<13;
++    mctl_write_w(SDR_DCR, reg_val);
++
++    //dram clock on
++    DRAMC_clock_output_en(1);
++	standby_delay(0x10);
++    while(mctl_read_w(SDR_CCR) & (0x1U<<31)) {};
++
++		mctl_enable_dllx();
++
++		//set odt impendance divide ratio
++		reg_val = mctl_read_w(SDR_ZQCR0);
++		reg_val &= ~(0xff<<20);
++		reg_val |= ((para->dram_zq)&0xff)<<20;
++		mctl_write_w(SDR_ZQCR0, reg_val);
++
++		//set I/O configure register
++		reg_val = 0x00cc0000;
++		reg_val |= (para->dram_odt_en)&0x3;
++		reg_val |= ((para->dram_odt_en)&0x3)<<30;
++		mctl_write_w(SDR_IOCR, reg_val);
++
++		//set refresh period
++    DRAMC_set_autorefresh_cycle(para->dram_clk);
++
++    //set timing parameters
++    mctl_write_w(SDR_TPR0, para->dram_tpr0);
++    mctl_write_w(SDR_TPR1, para->dram_tpr1);
++    mctl_write_w(SDR_TPR2, para->dram_tpr2);
++
++    //set mode register
++    if(para->dram_type==3)                  //ddr3
++    {
++        reg_val = 0x0;
++        reg_val |= (para->dram_cas - 4)<<4;
++        reg_val |= 0x5<<9;
++    }
++    else if(para->dram_type==2)             //ddr2
++    {
++        reg_val = 0x2;
++        reg_val |= para->dram_cas<<4;
++        reg_val |= 0x5<<9;
++    }
++    mctl_write_w(SDR_MR, reg_val);
++
++    reg_val = 0x0;
++    mctl_write_w(SDR_EMR, para->dram_emr1);
++    reg_val = 0x0;
++		mctl_write_w(SDR_EMR2, para->dram_emr2);
++    reg_val = 0x0;
++		mctl_write_w(SDR_EMR3, para->dram_emr3);
++
++	//set DQS window mode
++	reg_val = mctl_read_w(SDR_CCR);
++	reg_val |= 0x1U<<14;
++	reg_val &= ~(0x1U<<17);
++	mctl_write_w(SDR_CCR, reg_val);
++
++    //initial external DRAM
++    reg_val = mctl_read_w(SDR_CCR);
++    reg_val |= 0x1U<<31;
++    mctl_write_w(SDR_CCR, reg_val);
++
++    while(mctl_read_w(SDR_CCR) & (0x1U<<31)) {};
++
++    //scan read pipe value
++    mctl_itm_enable();
++    ret_val = DRAMC_scan_readpipe();
++
++    if(ret_val < 0)
++    {
++        return 0;
++    }
++    //configure all host port
++    mctl_configure_hostport();
++
++    return DRAMC_get_dram_size();
++}
++
++/*
++*********************************************************************************************************
++*                                   DRAM EXIT
++*
++* Description: dram exit;
++*
++* Arguments  : none;
++*
++* Returns    : result;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 DRAMC_exit(void)
++{
++    return 0;
++}
++
++/*
++*********************************************************************************************************
++*                                   CHECK DDR READPIPE
++*
++* Description: check ddr readpipe;
++*
++* Arguments  : none
++*
++* Returns    : result, 0:fail, 1:success;
++*
++* Note       :
++*********************************************************************************************************
++*/
++__s32 DRAMC_scan_readpipe(void)
++{
++    __u32 reg_val;
++
++    //data training trigger
++    reg_val = mctl_read_w(SDR_CCR);
++    reg_val |= 0x1<<30;
++    mctl_write_w(SDR_CCR, reg_val);
++
++    //check whether data training process is end
++    while(mctl_read_w(SDR_CCR) & (0x1<<30)) {};
++
++    //check data training result
++    reg_val = mctl_read_w(SDR_CSR);
++    if(reg_val & (0x1<<20))
++    {
++        return -1;
++    }
++
++    return (0);
++}
++
++
++/*
++*********************************************************************************************************
++*                                   DRAM SCAN READ PIPE
++*
++* Description: dram scan read pipe
++*
++* Arguments  : none
++*
++* Returns    : result, 0:fail, 1:success;
++*
++* Note       :
++*********************************************************************************************************
++*/
++
++
++/*
++*********************************************************************************************************
++*                                   DRAM CLOCK CONTROL
++*
++* Description: dram get clock
++*
++* Arguments  : on   dram clock output (0: disable, 1: enable)
++*
++* Returns    : none
++*
++* Note       :
++*********************************************************************************************************
++*/
++void DRAMC_clock_output_en(__u32 on)
++{
++    __u32 reg_val;
++
++    reg_val = mctl_read_w(DRAM_CCM_SDRAM_CLK_REG);
++
++    if(on)
++        reg_val |= 0x1<<15;
++    else
++        reg_val &= ~(0x1<<15);
++
++    mctl_write_w(DRAM_CCM_SDRAM_CLK_REG, reg_val);
++}
++/*
++*********************************************************************************************************
++* Description: Set autorefresh cycle
++*
++* Arguments  : clock value in MHz unit
++*
++* Returns    : none
++*
++* Note       :
++*********************************************************************************************************
++*/
++void DRAMC_set_autorefresh_cycle(__u32 clk)
++{
++    __u32 reg_val;
++    __u32 dram_size;
++    __u32 tmp_val;
++
++    dram_size = mctl_read_w(SDR_DCR);
++    dram_size >>=3;
++    dram_size &= 0x7;
++
++    if(clk < 600)
++    {
++        if(dram_size<=0x2)
++            tmp_val = (131*clk)>>10;
++        else
++            tmp_val = (336*clk)>>10;
++        reg_val = tmp_val;
++        tmp_val = (7987*clk)>>10;
++        tmp_val = tmp_val*9 - 200;
++        reg_val |= tmp_val<<8;
++        reg_val |= 0x8<<24;
++        mctl_write_w(SDR_DRR, reg_val);
++    }
++    else
++    {
++        mctl_write_w(SDR_DRR, 0x0);
++    }
++}
++
++
++/*
++**********************************************************************************************************************
++*                                               GET DRAM SIZE
++*
++* Description: Get DRAM Size in MB unit;
++*
++* Arguments  : None
++*
++* Returns    : 32/64/128
++*
++* Notes      :
++*
++**********************************************************************************************************************
++*/
++__u32 DRAMC_get_dram_size(void)
++{
++    __u32 reg_val;
++    __u32 dram_size;
++    __u32 chip_den;
++
++    reg_val = mctl_read_w(SDR_DCR);
++    chip_den = (reg_val>>3)&0x7;
++    if(chip_den == 0)
++        dram_size = 32;
++    else if(chip_den == 1)
++        dram_size = 64;
++    else if(chip_den == 2)
++        dram_size = 128;
++    else if(chip_den == 3)
++        dram_size = 256;
++    else if(chip_den == 4)
++        dram_size = 512;
++    else
++        dram_size = 1024;
++
++    if( ((reg_val>>1)&0x3) == 0x1)
++        dram_size<<=1;
++    if( ((reg_val>>6)&0x7) == 0x3)
++        dram_size<<=1;
++    if( ((reg_val>>10)&0x3) == 0x1)
++        dram_size<<=1;
++
++    return dram_size;
++}
++
++
++__s32 dram_init(void)
++{
++    /* do nothing for dram init */
++    return 0;
++}
++
++__s32 dram_exit(void)
++{
++    return DRAMC_exit();
++}
++
++__s32 dram_get_size(void)
++{
++    return DRAMC_get_dram_size();
++}
++
++void dram_set_clock(int clk)
++{
++    return mctl_setup_dram_clock(clk);
++}
++
++void dram_set_drive(void)
++{
++    mctl_set_drive();
++}
++
++void dram_set_autorefresh_cycle(__u32 clk)
++{
++    DRAMC_set_autorefresh_cycle(clk);
++}
++
++__s32 dram_scan_readpipe(void)
++{
++    return DRAMC_scan_readpipe();
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/stack.S b/arch/arm/mach-sun4i/pm/standby/stack.S
+new file mode 100644
+index 0000000..65f8027
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/stack.S
+@@ -0,0 +1,86 @@
++#include <mach/platform.h>
++
++/**stack point address in sram*/
++#define SP_IN_SRAM	0xf0007ffc
++
++    .text
++    .globl save_sp
++save_sp:
++    mov r0, r13
++    ldr  r13, =SP_IN_SRAM
++    mov pc,lr
++
++    .text
++    .globl restore_sp
++restore_sp:
++    mov r13, r0
++    mov pc,lr
++
++
++    .text
++    .globl standby_flush_tlb
++standby_flush_tlb:
++    push    {r0-r3}
++    /* invalid un-locked data and instruction tlb */
++    mcr p15, 0, r0, c8, c7, 0
++    pop     {r0-r3}
++    mov pc,lr
++
++    .text
++    .globl standby_preload_tlb
++standby_preload_tlb:
++    push    {r0-r3}
++    /* preload data tlb for standby io operation */
++    ldr r0, =SW_VA_CCM_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_TWI0_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_TWI1_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_TWI2_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_INT_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_TIMERC_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =SW_VA_LRADC_IO_BASE
++    mcr p15, 0, r0, c10, c1, 0
++    /* preload data tlb for standby code&data area */
++    ldr r0, =0xf0000000
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0000400
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0000800
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0000c00
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0001000
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0001400
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0001800
++    mcr p15, 0, r0, c10, c1, 0
++    ldr r0, =0xf0001c00
++    mcr p15, 0, r0, c10, c1, 0
++
++    /* preload instruction tlb for standby code&data area */
++    ldr r0, =0xf0000000
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0000400
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0000800
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0000c00
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0001000
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0001400
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0001800
++    mcr p15, 0, r0, c10, c1, 1
++    ldr r0, =0xf0001c00
++    mcr p15, 0, r0, c10, c1, 1
++
++    pop     {r0-r3}
++    mov pc,lr
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby.c b/arch/arm/mach-sun4i/pm/standby/standby.c
+new file mode 100644
+index 0000000..5516966
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby.c
+@@ -0,0 +1,252 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 18:34
++* Descript: platform standby fucntion.
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++
++extern unsigned int save_sp(void);
++extern void restore_sp(unsigned int sp);
++extern void standby_flush_tlb(void);
++extern void standby_preload_tlb(void);
++extern char *__bss_start;
++extern char *__bss_end;
++extern char *__standby_start;
++extern char *__standby_end;
++
++static __u32 sp_backup;
++static void standby(void);
++static __u32 dcdc2, dcdc3;
++static struct sun4i_clk_div_t  clk_div;
++static struct sun4i_clk_div_t  tmp_clk_div;
++
++/* parameter for standby, it will be transfered from sys_pwm module */
++struct aw_pm_info  pm_info;
++
++#define DRAM_BASE_ADDR      0xc0000000
++#define DRAM_TRANING_SIZE   (16)
++static __u32 dram_traning_area_back[DRAM_TRANING_SIZE];
++
++/*
++*********************************************************************************************************
++*                                   STANDBY MAIN PROCESS ENTRY
++*
++* Description: standby main process entry.
++*
++* Arguments  : arg  pointer to the parameter that transfered from sys_pwm module.
++*
++* Returns    : none
++*
++* Note       :
++*********************************************************************************************************
++*/
++int main(struct aw_pm_info *arg)
++{
++    char    *tmpPtr = (char *)&__bss_start;
++
++    if(!arg){
++        /* standby parameter is invalid */
++        return -1;
++    }
++
++    /* flush data and instruction tlb, there is 32 items of data tlb and 32 items of instruction tlb,
++       The TLB is normally allocated on a rotating basis. The oldest entry is always the next allocated */
++    standby_flush_tlb();
++    /* preload tlb for standby */
++    standby_preload_tlb();
++
++    /* clear bss segment */
++    do{*tmpPtr ++ = 0;}while(tmpPtr <= (char *)&__bss_end);
++
++    /* copy standby parameter from dram */
++    standby_memcpy(&pm_info, arg, sizeof(pm_info));
++    /* copy standby code & data to load tlb */
++    standby_memcpy((char *)&__standby_end, (char *)&__standby_start, (char *)&__bss_end - (char *)&__bss_start);
++    /* backup dram traning area */
++    standby_memcpy((char *)dram_traning_area_back, (char *)DRAM_BASE_ADDR, sizeof(__u32)*DRAM_TRANING_SIZE);
++
++    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
++    /* init module before dram enter selfrefresh */
++    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
++
++    /* initialise standby modules */
++    standby_clk_init();
++    standby_int_init();
++    standby_tmr_init();
++    standby_power_init();
++    /* init some system wake source */
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_EXINT){
++        standby_enable_int(INT_SOURCE_EXTNMI);
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_KEY){
++        standby_key_init();
++        standby_enable_int(INT_SOURCE_LRADC);
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_IR){
++        standby_ir_init();
++        standby_enable_int(INT_SOURCE_IR0);
++        standby_enable_int(INT_SOURCE_IR1);
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_ALARM){
++        //standby_alarm_init();???
++        standby_enable_int(INT_SOURCE_ALARM);
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_USB){
++        standby_usb_init();
++        standby_enable_int(INT_SOURCE_USB0);
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_TIMEOFF){
++        /* set timer for power off */
++        if(pm_info.standby_para.time_off) {
++            standby_tmr_set(pm_info.standby_para.time_off);
++            standby_enable_int(INT_SOURCE_TIMER0);
++        }
++    }
++
++    /* save stack pointer registger, switch stack to sram */
++    sp_backup = save_sp();
++    /* enable dram enter into self-refresh */
++    dram_power_save_process();
++    /* process standby */
++    standby();
++    /* enable watch-dog to preserve dram training failed */
++    standby_tmr_enable_watchdog();
++    /* restore dram */
++    dram_power_up_process();
++    /* disable watch-dog    */
++    standby_tmr_disable_watchdog();
++
++    /* restore stack pointer register, switch stack back to dram */
++    restore_sp(sp_backup);
++
++    /* exit standby module */
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_USB){
++        standby_usb_exit();
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_IR){
++        standby_ir_exit();
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_ALARM){
++        //standby_alarm_exit();
++    }
++    if(pm_info.standby_para.event & SUSPEND_WAKEUP_SRC_KEY){
++        standby_key_exit();
++    }
++    standby_power_exit();
++    standby_tmr_exit();
++    standby_int_exit();
++    standby_clk_exit();
++
++    /* restore dram traning area */
++    standby_memcpy((char *)DRAM_BASE_ADDR, (char *)dram_traning_area_back, sizeof(__u32)*DRAM_TRANING_SIZE);
++
++    /* report which wake source wakeup system */
++    arg->standby_para.event = pm_info.standby_para.event;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     SYSTEM PWM ENTER STANDBY MODE
++*
++* Description: enter standby mode.
++*
++* Arguments  : none
++*
++* Returns    : none;
++*********************************************************************************************************
++*/
++static void standby(void)
++{
++    /* gating off dram clock */
++    standby_clk_dramgating(0);
++
++    /* switch cpu clock to HOSC, and disable pll */
++    standby_clk_core2hosc();
++    standby_clk_plldisable();
++
++    /* backup voltages */
++    dcdc2 = standby_get_voltage(POWER_VOL_DCDC2);
++    dcdc3 = standby_get_voltage(POWER_VOL_DCDC3);
++
++    /* adjust voltage */
++    standby_set_voltage(POWER_VOL_DCDC2, STANDBY_DCDC2_VOL);
++    standby_set_voltage(POWER_VOL_DCDC3, STANDBY_DCDC3_VOL);
++
++    /* set clock division cpu:axi:ahb:apb = 2:2:2:1 */
++    standby_clk_getdiv(&clk_div);
++    tmp_clk_div.axi_div = 0;
++    tmp_clk_div.ahb_div = 0;
++    tmp_clk_div.apb_div = 0;
++    standby_clk_setdiv(&tmp_clk_div);
++    /* swtich apb1 to losc */
++    standby_clk_apb2losc();
++    standby_mdelay(10);
++    /* switch cpu to 32k */
++    standby_clk_core2losc();
++    #if(ALLOW_DISABLE_HOSC)
++    // disable HOSC, and disable LDO
++    standby_clk_hoscdisable();
++    standby_clk_ldodisable();
++    #endif
++
++    /* cpu enter sleep, wait wakeup by interrupt */
++    asm("WFI");
++
++    #if(ALLOW_DISABLE_HOSC)
++    /* enable LDO, enable HOSC */
++    standby_clk_ldoenable();
++    /* delay 1ms for power be stable */
++    standby_delay(1);
++    standby_clk_hoscenable();
++    standby_delay(1);
++    #endif
++    /* swtich apb1 to hosc */
++    standby_clk_apb2hosc();
++    /* switch clock to hosc */
++    standby_clk_core2hosc();
++    /* restore clock division */
++    standby_clk_setdiv(&clk_div);
++
++    /* check system wakeup event */
++    pm_info.standby_para.event = 0;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_EXTNMI)? 0:SUSPEND_WAKEUP_SRC_EXINT;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_USB0)? 0:SUSPEND_WAKEUP_SRC_USB;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_LRADC)? 0:SUSPEND_WAKEUP_SRC_KEY;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_IR0)? 0:SUSPEND_WAKEUP_SRC_IR;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_ALARM)? 0:SUSPEND_WAKEUP_SRC_ALARM;
++    pm_info.standby_para.event |= standby_query_int(INT_SOURCE_TIMER0)? 0:SUSPEND_WAKEUP_SRC_TIMEOFF;
++
++    /* restore voltage for exit standby */
++    standby_set_voltage(POWER_VOL_DCDC2, dcdc2);
++    standby_set_voltage(POWER_VOL_DCDC3, dcdc3);
++    standby_mdelay(10);
++
++    /* enable pll */
++    standby_clk_pllenable();
++    standby_mdelay(10);
++    /* switch cpu clock to core pll */
++    standby_clk_core2pll();
++    standby_mdelay(10);
++
++    /* gating on dram clock */
++    standby_clk_dramgating(1);
++
++    return;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby.xn b/arch/arm/mach-sun4i/pm/standby/standby.xn
+new file mode 100644
+index 0000000..7696e8c
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby.xn
+@@ -0,0 +1,21 @@
++
++OUTPUT_ARCH(arm)
++ENTRY(main)
++
++SECTIONS
++{
++	__standby_start = . ;
++	.text 0xf0000000 :
++	{
++		standby.o(.text)
++		*(.text)
++	}
++	.rodata : { *(.rodata) }
++	.data   : { *(.data) }
++
++	__bss_start = . ;
++	.bss : { *(.sbss) *(.scommon) *(.bss) *(COMMON) }
++	__bss_end = .;
++	__standby_end = . ;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_cfg.h b/arch/arm/mach-sun4i/pm/standby/standby_cfg.h
+new file mode 100644
+index 0000000..69675e3
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_cfg.h
+@@ -0,0 +1,35 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_cfg.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 14:29
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_CFG_H__
++#define __STANDBY_CFG_H__
++
++
++//config wakeup source for standby
++#define ALLOW_DISABLE_HOSC          (1)     // if allow disable hosc
++
++#define STANDBY_LDO1_VOL            (1300)  //LDO1 voltage value
++#define STANDBY_LDO2_VOL            (3000)  //LDO2 voltage value
++#define STANDBY_LDO3_VOL            (2800)  //LDO3 voltage value
++#define STANDBY_LDO4_VOL            (3300)  //LDO4 voltage value
++#define STANDBY_DCDC2_VOL           (1000)  //DCDC2 voltage value
++#define STANDBY_DCDC3_VOL           (1000)  //DCDC3 voltage value
++
++
++#endif  /* __STANDBY_CFG_H__ */
++
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_clock.c b/arch/arm/mach-sun4i/pm/standby/standby_clock.c
+new file mode 100644
+index 0000000..d945b9e
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_clock.c
+@@ -0,0 +1,397 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_clock.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 13:40
++* Descript: ccmu process for platform standby;
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#include "standby_i.h"
++
++
++static __ccmu_reg_list_t   *CmuReg;;
++static __u32    ccu_reg_back[7];
++__u32   cpu_ms_loopcnt;
++
++//==============================================================================
++// CLOCK SET FOR SYSTEM STANDBY
++//==============================================================================
++
++
++
++
++/*
++*********************************************************************************************************
++*                           standby_clk_init
++*
++*Description: ccu init for platform standby
++*
++*Arguments  : none
++*
++*Return     : result,
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++__s32 standby_clk_init(void)
++{
++    CmuReg = (__ccmu_reg_list_t *)SW_VA_CCM_IO_BASE;
++
++    /* backup pll registers */
++    ccu_reg_back[0] = *(volatile __u32 *)&CmuReg->Pll1Ctl;
++    ccu_reg_back[1] = *(volatile __u32 *)&CmuReg->Pll2Ctl;
++    ccu_reg_back[2] = *(volatile __u32 *)&CmuReg->Pll3Ctl;
++    ccu_reg_back[3] = *(volatile __u32 *)&CmuReg->Pll4Ctl;
++    ccu_reg_back[4] = *(volatile __u32 *)&CmuReg->Pll5Ctl;
++    ccu_reg_back[5] = *(volatile __u32 *)&CmuReg->Pll6Ctl;
++    ccu_reg_back[6] = *(volatile __u32 *)&CmuReg->Pll7Ctl;
++
++    /* cpu frequency is 60mhz now */
++    cpu_ms_loopcnt = 3000;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_clk_exit
++*
++*Description: ccu exit for platform standby
++*
++*Arguments  : none
++*
++*Return     : result,
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++__s32 standby_clk_exit(void)
++{
++    /* restore pll registers */
++    *(volatile __u32 *)&CmuReg->Pll1Ctl = ccu_reg_back[0];
++    *(volatile __u32 *)&CmuReg->Pll2Ctl = ccu_reg_back[1];
++    *(volatile __u32 *)&CmuReg->Pll3Ctl = ccu_reg_back[2];
++    *(volatile __u32 *)&CmuReg->Pll4Ctl = ccu_reg_back[3];
++    *(volatile __u32 *)&CmuReg->Pll5Ctl = ccu_reg_back[4];
++    *(volatile __u32 *)&CmuReg->Pll6Ctl = ccu_reg_back[5];
++    *(volatile __u32 *)&CmuReg->Pll7Ctl = ccu_reg_back[6];
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_core2losc
++*
++* Description: switch core clock to 32k low osc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_core2losc(void)
++{
++    CmuReg->SysClkDiv.AC328ClkSrc = 0;
++    /* cpu frequency is 32k hz */
++    cpu_ms_loopcnt = 1;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_core2hosc
++*
++* Description: switch core clock to 24M high osc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_core2hosc(void)
++{
++    CmuReg->SysClkDiv.AC328ClkSrc = 1;
++    /* cpu frequency is 24M hz */
++    cpu_ms_loopcnt = 600;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_core2pll
++*
++* Description: switch core clock to core pll.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_core2pll(void)
++{
++    CmuReg->SysClkDiv.AC328ClkSrc = 2;
++    /* cpu frequency is 60M hz */
++    cpu_ms_loopcnt = 2000;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_plldisable
++*
++* Description: disable dram pll.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_plldisable(void)
++{
++    CmuReg->Pll1Ctl.PLLEn = 0;
++    CmuReg->Pll2Ctl.PLLEn = 0;
++    CmuReg->Pll3Ctl.PLLEn = 0;
++    CmuReg->Pll4Ctl.PLLEn = 0;
++    CmuReg->Pll5Ctl.PLLEn = 0;
++    CmuReg->Pll6Ctl.PLLEn = 0;
++    CmuReg->Pll7Ctl.PLLEn = 0;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_pllenable
++*
++* Description: enable dram pll.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_pllenable(void)
++{
++    CmuReg->Pll1Ctl.PLLEn = 1;
++    CmuReg->Pll2Ctl.PLLEn = 1;
++    CmuReg->Pll3Ctl.PLLEn = 1;
++    CmuReg->Pll4Ctl.PLLEn = 1;
++    CmuReg->Pll5Ctl.PLLEn = 1;
++    CmuReg->Pll6Ctl.PLLEn = 1;
++    CmuReg->Pll7Ctl.PLLEn = 1;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_hoscdisable
++*
++* Description: disable HOSC.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_hoscdisable(void)
++{
++    CmuReg->HoscCtl.OSC24MEn = 0;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_hoscenable
++*
++* Description: enable HOSC.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_hoscenable(void)
++{
++    CmuReg->HoscCtl.OSC24MEn = 1;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_ldodisable
++*
++* Description: disable LDO.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_ldodisable(void)
++{
++    CmuReg->HoscCtl.KeyField = 0x538;
++    CmuReg->HoscCtl.LDOEn = 0;
++    CmuReg->Pll5Ctl.LDO2En = 0;
++    CmuReg->HoscCtl.KeyField = 0x00;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_ldoenable
++*
++* Description: enable LDO.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_ldoenable(void)
++{
++    CmuReg->HoscCtl.KeyField = 0x538;
++    CmuReg->HoscCtl.LDOEn = 1;
++    CmuReg->Pll5Ctl.LDO2En = 1;
++    CmuReg->HoscCtl.KeyField = 0x00;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_setdiv
++*
++* Description: switch core clock to 32k low osc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_setdiv(struct sun4i_clk_div_t  *clk_div)
++{
++    if(!clk_div)
++    {
++        return -1;
++    }
++
++    CmuReg->SysClkDiv.AXIClkDiv = clk_div->axi_div;
++    CmuReg->SysClkDiv.AHBClkDiv = clk_div->ahb_div;
++    CmuReg->SysClkDiv.APB0ClkDiv = clk_div->apb_div;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_getdiv
++*
++* Description: switch core clock to 32k low osc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_getdiv(struct sun4i_clk_div_t  *clk_div)
++{
++    if(!clk_div)
++    {
++        return -1;
++    }
++
++    clk_div->axi_div = CmuReg->SysClkDiv.AXIClkDiv;
++    clk_div->ahb_div = CmuReg->SysClkDiv.AHBClkDiv;
++    clk_div->apb_div = CmuReg->SysClkDiv.APB0ClkDiv;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_dramgating
++*
++* Description: gating dram clock.
++*
++* Arguments  : onoff    dram clock gating on or off;
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++void standby_clk_dramgating(int onoff)
++{
++    if(onoff) {
++        CmuReg->Pll5Ctl.OutputEn = 1;
++    }
++    else {
++        CmuReg->Pll5Ctl.OutputEn = 0;
++    }
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_apb2losc
++*
++* Description: switch apb1 clock to 32k low osc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_apb2losc(void)
++{
++    CmuReg->Apb1ClkDiv.ClkSrc = 2;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_clk_apb2hosc
++*
++* Description: switch apb1 clock to 24M hosc.
++*
++* Arguments  : none
++*
++* Returns    : 0;
++*********************************************************************************************************
++*/
++__s32 standby_clk_apb2hosc(void)
++{
++    CmuReg->Apb1ClkDiv.ClkSrc = 0;
++    return 0;
++}
++
++
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_clock.h b/arch/arm/mach-sun4i/pm/standby/standby_clock.h
+new file mode 100644
+index 0000000..12929f2
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_clock.h
+@@ -0,0 +1,54 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_clock.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 21:05
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_CLOCK_H__
++#define __STANDBY_CLOCK_H__
++
++#include "standby_cfg.h"
++#include <mach/ccmu_regs.h>
++
++
++struct sun4i_clk_div_t {
++    __u32   cpu_div:4;      /* division of cpu clock, divide core_pll */
++    __u32   axi_div:4;      /* division of axi clock, divide cpu clock*/
++    __u32   ahb_div:4;      /* division of ahb clock, divide axi clock*/
++    __u32   apb_div:4;      /* division of apb clock, divide ahb clock*/
++    __u32   reserved:16;
++};
++
++
++__s32 standby_clk_init(void);
++__s32 standby_clk_exit(void);
++__s32 standby_clk_core2losc(void);
++__s32 standby_clk_core2hosc(void);
++__s32 standby_clk_core2pll(void);
++__s32 standby_clk_plldisable(void);
++__s32 standby_clk_pllenable(void);
++__s32 standby_clk_hoscdisable(void);
++__s32 standby_clk_hoscenable(void);
++__s32 standby_clk_ldodisable(void);
++__s32 standby_clk_ldoenable(void);
++__s32 standby_clk_setdiv(struct sun4i_clk_div_t  *clk_div);
++__s32 standby_clk_getdiv(struct sun4i_clk_div_t  *clk_div);
++void standby_clk_dramgating(int onoff);
++__s32 standby_clk_apb2losc(void);
++__s32 standby_clk_apb2hosc(void);
++
++extern __u32   cpu_ms_loopcnt;
++
++#endif  /* __STANDBY_CLOCK_H__ */
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_delay.S b/arch/arm/mach-sun4i/pm/standby/standby_delay.S
+new file mode 100644
+index 0000000..c2beeb7
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_delay.S
+@@ -0,0 +1,8 @@
++
++    .text
++    .globl standby_delay
++standby_delay:
++	subs    r0, r0, #1
++	bhi	    standby_delay
++	mov     pc, lr
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_i.h b/arch/arm/mach-sun4i/pm/standby/standby_i.h
+new file mode 100644
+index 0000000..7db84bb
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_i.h
+@@ -0,0 +1,77 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_i.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 17:21
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_I_H__
++#define __STANDBY_I_H__
++
++#include <linux/power/aw_pm.h>
++#include <mach/platform.h>
++
++#include "standby_cfg.h"
++#include "common.h"
++#include "standby_clock.h"
++#include "standby_key.h"
++#include "standby_power.h"
++#include "standby_usb.h"
++#include "standby_twi.h"
++#include "standby_ir.h"
++#include "standby_tmr.h"
++#include "standby_int.h"
++
++extern struct aw_pm_info  pm_info;
++
++
++static inline __u32 raw_lib_udiv(__u32 dividend, __u32 divisior)
++{
++    __u32   tmpDiv = (__u32)divisior;
++    __u32   tmpQuot = 0;
++    __s32   shift = 0;
++
++    if(!divisior)
++    {
++        /* divide 0 error abort */
++        return 0;
++    }
++
++    while(!(tmpDiv & ((__u32)1<<31)))
++    {
++        tmpDiv <<= 1;
++        shift ++;
++    }
++
++    do
++    {
++        if(dividend >= tmpDiv)
++        {
++            dividend -= tmpDiv;
++            tmpQuot = (tmpQuot << 1) | 1;
++        }
++        else
++        {
++            tmpQuot = (tmpQuot << 1) | 0;
++        }
++        tmpDiv >>= 1;
++        shift --;
++    } while(shift >= 0);
++
++    return tmpQuot;
++}
++
++
++
++#endif  //__STANDBY_I_H__
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_int.c b/arch/arm/mach-sun4i/pm/standby/standby_int.c
+new file mode 100644
+index 0000000..ce625cf
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_int.c
+@@ -0,0 +1,143 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_int.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 20:13
++* Descript: interrupt for platform standby
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++static __u32    IrqEnReg[3], IrqMaskReg[3], IrqSelReg[3];
++static struct standby_int_reg_t  *IntcReg;
++
++
++
++
++/*
++*********************************************************************************************************
++*                                       STANDBY INTERRUPT INITIALISE
++*
++* Description: standby interrupt initialise.
++*
++* Arguments  : none.
++*
++* Returns    : 0/-1;
++*********************************************************************************************************
++*/
++__s32 standby_int_init(void)
++{
++    IntcReg = (struct standby_int_reg_t *)SW_VA_INT_IO_BASE;
++
++    /* save interrupt controller registers */
++    IrqEnReg[0] = IntcReg->IrqEn[0];
++    IrqEnReg[1] = IntcReg->IrqEn[1];
++    IrqEnReg[2] = IntcReg->IrqEn[2];
++    IrqMaskReg[0] = IntcReg->IrqMask[0];
++    IrqMaskReg[1] = IntcReg->IrqMask[1];
++    IrqMaskReg[2] = IntcReg->IrqMask[2];
++    IrqSelReg[0] = IntcReg->TypeSel[0];
++    IrqSelReg[1] = IntcReg->TypeSel[1];
++    IrqSelReg[2] = IntcReg->TypeSel[2];
++
++    /* initialise interrupt enable and mask for standby */
++    IntcReg->IrqEn[0] = 0;
++    IntcReg->IrqEn[1] = 0;
++    IntcReg->IrqEn[2] = 0;
++    IntcReg->IrqMask[0] = 0xffffffff;
++    IntcReg->IrqMask[1] = 0xffffffff;
++    IntcReg->IrqMask[2] = 0xffffffff;
++    IntcReg->TypeSel[0] = 0;
++    IntcReg->TypeSel[1] = 0;
++    IntcReg->TypeSel[2] = 0;
++
++    /* clear external irq pending */
++    IntcReg->IrqPend[0] = 1;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                       STANDBY INTERRUPT INITIALISE
++*
++* Description: standby interrupt initialise.
++*
++* Arguments  : none.
++*
++* Returns    : 0/-1;
++*********************************************************************************************************
++*/
++__s32 standby_int_exit(void)
++{
++    /* restore interrupt registers */
++    IntcReg->IrqEn[0] = IrqEnReg[0];
++    IntcReg->IrqEn[1] = IrqEnReg[1];
++    IntcReg->IrqEn[2] = IrqEnReg[2];
++    IntcReg->IrqMask[0] = IrqMaskReg[0];
++    IntcReg->IrqMask[1] = IrqMaskReg[1];
++    IntcReg->IrqMask[2] = IrqMaskReg[2];
++    IntcReg->TypeSel[0] = IrqSelReg[0];
++    IntcReg->TypeSel[1] = IrqSelReg[1];
++    IntcReg->TypeSel[2] = IrqSelReg[2];
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                       QUERY INTERRUPT
++*
++* Description: query interrupt.
++*
++* Arguments  : src  interrupt source number.
++*
++* Returns    : 0/-1;
++*********************************************************************************************************
++*/
++__s32 standby_enable_int(enum interrupt_source_e src)
++{
++    __u32   tmpGrp = (__u32)src >> 5;
++    __u32   tmpSrc = (__u32)src & 0x1f;
++
++    //enable interrupt source
++    IntcReg->IrqEn[tmpGrp] |=  (1<<tmpSrc);
++    IntcReg->IrqMask[tmpGrp] &= ~(1<<tmpSrc);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                       QUERY INTERRUPT
++*
++* Description: query interrupt.
++*
++* Arguments  : src  interrupt source number.
++*
++* Returns    : 0/-1;
++*********************************************************************************************************
++*/
++__s32 standby_query_int(enum interrupt_source_e src)
++{
++    __s32   result = 0;
++    __u32   tmpGrp = (__u32)src >> 5;
++    __u32   tmpSrc = (__u32)src & 0x1f;
++
++    result = IntcReg->IrqPend[tmpGrp] & (1<<tmpSrc);
++
++    return result? 0:-1;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_int.h b/arch/arm/mach-sun4i/pm/standby/standby_int.h
+new file mode 100644
+index 0000000..66b80f5
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_int.h
+@@ -0,0 +1,84 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_int.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-30 19:50
++* Descript: intterupt bsp for platform standby.
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_INT_H__
++#define __STANDBY_INT_H__
++
++#include "standby_cfg.h"
++
++
++/* define interrupt source */
++enum interrupt_source_e{
++
++    INT_SOURCE_EXTNMI   = 0,
++    INT_SOURCE_IR0      = 5,
++    INT_SOURCE_IR1      = 6,
++    INT_SOURCE_KEYPAD   = 21,
++    INT_SOURCE_TIMER0   = 22,
++    INT_SOURCE_TIMER1   = 23,
++    INT_SOURCE_ALARM    = 24,
++    INT_SOURCE_TOUCHPNL = 29,
++    INT_SOURCE_LRADC    = 31,
++    INT_SOURCE_USB0     = 38,
++    INT_SOURCE_USB1     = 39,
++    INT_SOURCE_USB2     = 40,
++    INT_SOURCE_USB3     = 64,
++    INT_SOURCE_USB4     = 65,
++};
++
++
++/* define register for interrupt controller */
++struct standby_int_reg_t{
++
++    volatile __u32   Vector;
++    volatile __u32   BaseAddr;
++    volatile __u32   reserved0;
++    volatile __u32   NmiCtrl;
++
++    volatile __u32   IrqPend[3];
++    volatile __u32   reserved1;
++
++    volatile __u32   FiqPend[3];
++    volatile __u32   reserved2;
++
++    volatile __u32   TypeSel[3];
++    volatile __u32   reserved3;
++
++    volatile __u32   IrqEn[3];
++    volatile __u32   reserved4;
++
++    volatile __u32   IrqMask[3];
++    volatile __u32   reserved5;
++
++    volatile __u32   IrqResp[3];
++    volatile __u32   reserved6;
++
++    volatile __u32   IrqForce[3];
++    volatile __u32   reserved7;
++
++    volatile __u32   IrqPrio[5];
++};
++
++
++extern __s32 standby_int_init(void);
++extern __s32 standby_int_exit(void);
++extern __s32 standby_enable_int(enum interrupt_source_e src);
++extern __s32 standby_query_int(enum interrupt_source_e src);
++
++
++#endif  //__STANDBY_INT_H__
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_ir.c b/arch/arm/mach-sun4i/pm/standby/standby_ir.c
+new file mode 100644
+index 0000000..e2a4dcd
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_ir.c
+@@ -0,0 +1,95 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_ir.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 14:36
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include  "standby_i.h"
++
++
++
++/*
++*********************************************************************************************************
++*                           INIT IR FOR STANDBY
++*
++*Description: init ir for standby;
++*
++*Arguments  : none
++*
++*Return     : result;
++*               EPDK_OK,    init ir successed;
++*               EPDK_FAIL,  init ir failed;
++*********************************************************************************************************
++*/
++__s32  standby_ir_init(void)
++{
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           EXIT IR FOR STANDBY
++*
++*Description: exit ir for standby;
++*
++*Arguments  : none;
++*
++*Return     : result.
++*               EPDK_OK,    exit ir successed;
++*               EPDK_FAIL,  exit ir failed;
++*********************************************************************************************************
++*/
++__s32 standby_ir_exit(void)
++{
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           DETECT IR FOR STANDBY
++*
++*Description: detect ir for standby;
++*
++*Arguments  : none
++*
++*Return     : result;
++*               EPDK_OK,    receive some signal;
++*               EPDK_FAIL,  no signal;
++*********************************************************************************************************
++*/
++__s32 standby_ir_detect(void)
++{
++    return 0;
++}
++
++/*
++*********************************************************************************************************
++*                           VERIFY IR SIGNAL FOR STANDBY
++*
++*Description: verify ir signal for standby;
++*
++*Arguments  : none
++*
++*Return     : result;
++*               EPDK_OK,    valid ir signal;
++*               EPDK_FAIL,  invalid ir signal;
++*********************************************************************************************************
++*/
++__s32 standby_ir_verify(void)
++{
++    return -1;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_ir.h b/arch/arm/mach-sun4i/pm/standby/standby_ir.h
+new file mode 100644
+index 0000000..f46f4b0
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_ir.h
+@@ -0,0 +1,29 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_ir.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:15
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#ifndef __STANDBY_IR_H__
++#define __STANDBY_IR_H__
++
++#include "standby_cfg.h"
++
++extern __s32 standby_ir_init(void);
++extern __s32 standby_ir_exit(void);
++extern __s32 standby_ir_detect(void);
++extern __s32 standby_ir_verify(void);
++
++#endif  /*__STANDBY_IR_H__*/
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_key.c b/arch/arm/mach-sun4i/pm/standby/standby_key.c
+new file mode 100644
+index 0000000..4f58dfb
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_key.c
+@@ -0,0 +1,96 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_key.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:16
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++static __standby_key_reg_t  *KeyReg;
++static __u32 KeyCtrl, KeyIntc, KeyInts, KeyData0, KeyData1;
++
++//==============================================================================
++// QUERRY KEY FOR WAKE UP SYSTEM FROM STANDBY
++//==============================================================================
++
++
++/*
++*********************************************************************************************************
++*                                     INIT KEY FOR STANDBY
++*
++* Description: init key for standby.
++*
++* Arguments  : none
++*
++* Returns    : EPDK_OK;
++*********************************************************************************************************
++*/
++__s32 standby_key_init(void)
++{
++    /* set key register base */
++    KeyReg = (__standby_key_reg_t *)SW_VA_LRADC_IO_BASE;
++
++    /* backup LRADC registers */
++    KeyCtrl = KeyReg->Lradc_Ctrl;
++    KeyIntc = KeyReg->Lradc_Intc;
++    KeyReg->Lradc_Ctrl = 0;
++    standby_mdelay(10);
++    KeyReg->Lradc_Ctrl = (0x1<<6)|(0x1<<0);
++    KeyReg->Lradc_Intc = (0x1<<1);
++    KeyReg->Lradc_Ints = (0x1<<1);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     EXIT KEY FOR STANDBY
++*
++* Description: exit key for standby.
++*
++* Arguments  : none
++*
++* Returns    : EPDK_OK;
++*********************************************************************************************************
++*/
++__s32 standby_key_exit(void)
++{
++    KeyReg->Lradc_Ctrl =  KeyCtrl;
++    KeyReg->Lradc_Intc =  KeyIntc;
++    return 0;
++}
++/*
++*********************************************************************************************************
++*                                     QUERY KEY FOR WAKEUP STANDBY
++*
++* Description: query key for wakeup standby.
++*
++* Arguments  : none
++*
++* Returns    : result;
++*               EPDK_TRUE,      get a key;
++*               EPDK_FALSE,     no key;
++*********************************************************************************************************
++*/
++__s32 standby_query_key(void)
++{
++    if(KeyReg->Lradc_Ints & 0x2)
++    {
++        KeyReg->Lradc_Ints = 0x2;
++        return 0;
++    }
++    return -1;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_key.h b/arch/arm/mach-sun4i/pm/standby/standby_key.h
+new file mode 100644
+index 0000000..d4d1f51
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_key.h
+@@ -0,0 +1,39 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_key.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:16
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_KEY_H__
++#define __STANDBY_KEY_H__
++
++#include "standby_cfg.h"
++//define key controller registers
++typedef struct __STANDBY_KEY_REG
++{
++    // offset:0x00
++    volatile __u32   Lradc_Ctrl;
++    volatile __u32   Lradc_Intc;
++    volatile __u32   Lradc_Ints;
++    volatile __u32   Lradc_Data0;
++    volatile __u32   Lradc_Data1;
++} __standby_key_reg_t;
++
++extern __s32 standby_key_init(void);
++extern __s32 standby_key_exit(void);
++extern __s32 standby_query_key(void);
++
++
++#endif  /* __STANDBY_KEY_H__ */
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_power.c b/arch/arm/mach-sun4i/pm/standby/standby_power.c
+new file mode 100644
+index 0000000..95a6633
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_power.c
+@@ -0,0 +1,236 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_power.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 14:34
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++
++//==============================================================================
++// POWER CHECK FOR SYSTEM STANDBY
++//==============================================================================
++
++
++/*
++*********************************************************************************************************
++*                           standby_power_init
++*
++* Description: init power for standby.
++*
++* Arguments  : none;
++*
++* Returns    : result;
++*********************************************************************************************************
++*/
++__s32 standby_power_init(void)
++{
++    __u8 val, mask, reg_val;
++    __s32   i;
++
++	standby_twi_init(AXP_IICBUS);
++
++    #if(AXP_WAKEUP & AXP_WAKEUP_KEY)
++    /* enable pek long/short */
++	twi_byte_rw(TWI_OP_RD, AXP_ADDR,AXP20_IRQEN3, &reg_val);
++	reg_val |= 0x03;
++	twi_byte_rw(TWI_OP_WR, AXP_ADDR,AXP20_IRQEN3, &reg_val);
++    #endif
++
++    #if(AXP_WAKEUP & AXP_WAKEUP_LOWBATT)
++    /* enable low voltage warning */
++	twi_byte_rw(TWI_OP_RD, AXP_ADDR,AXP20_IRQEN4, &reg_val);
++	reg_val |= 0x03;
++	twi_byte_rw(TWI_OP_WR, AXP_ADDR,AXP20_IRQEN4, &reg_val);
++    /* clear pending */
++	reg_val = 0x03;
++	twi_byte_rw(TWI_OP_WR, AXP_ADDR,AXP20_IRQ4, &reg_val);
++    #endif
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_power_exit
++*
++* Description: exit power for standby.
++*
++* Arguments  : none;
++*
++* Returns    : result;
++*********************************************************************************************************
++*/
++__s32 standby_power_exit(void)
++{
++    __u8    reg_val;
++
++    #if(AXP_WAKEUP & AXP_WAKEUP_KEY)
++    /* disable pek long/short */
++	twi_byte_rw(TWI_OP_RD, AXP_ADDR,AXP20_IRQEN3, &reg_val);
++	reg_val &= ~0x03;
++	twi_byte_rw(TWI_OP_WR, AXP_ADDR,AXP20_IRQEN3, &reg_val);
++    #endif
++
++    #if(AXP_WAKEUP & AXP_WAKEUP_LOWBATT)
++    /* disable low voltage warning */
++	twi_byte_rw(TWI_OP_RD, AXP_ADDR,AXP20_IRQEN4, &reg_val);
++	reg_val &= ~0x03;
++	twi_byte_rw(TWI_OP_WR, AXP_ADDR,AXP20_IRQEN4, &reg_val);
++    #endif
++
++    standby_twi_exit();
++    return 0;
++}
++
++
++static inline int check_range(struct axp_info *info,__s32 voltage)
++{
++	if (voltage < info->min_uV || voltage > info->max_uV)
++		return -1;
++
++	return 0;
++}
++
++static int axp20_ldo4_data[] = {
++    1250, 1300, 1400, 1500, 1600, 1700,
++    1800, 1900, 2000, 2500, 2700, 2800,
++    3000, 3100, 3200, 3300
++};
++
++static struct axp_info axp20_info[] = {
++	AXP(POWER_VOL_LDO1,	 AXP20LDO1,	AXP20LDO1,	  0, AXP20_LDO1,  0, 0),//ldo1 for rtc
++	AXP(POWER_VOL_LDO2,	      1800,      3300,  100, AXP20_LDO2,  4, 4),//ldo2 for analog1
++	AXP(POWER_VOL_LDO3,	       700,      3500,   25, AXP20_LDO3,  0, 7),//ldo3 for digital
++	AXP(POWER_VOL_LDO4,	      1250,      3300,  100, AXP20_LDO4,  0, 4),//ldo4 for analog2
++	AXP(POWER_VOL_DCDC2,       700,      2275,   25, AXP20_BUCK2, 0, 6),//buck2 for core
++	AXP(POWER_VOL_DCDC3,       700,      3500,   25, AXP20_BUCK3, 0, 7),//buck3 for memery
++};
++
++static inline struct axp_info *find_info(int id)
++{
++	struct axp_info *ri;
++	int i;
++
++	for (i = 0; i < sizeof(axp20_info)/sizeof(struct axp_info); i++) {
++		ri = &axp20_info[i];
++		if (ri->id == id)
++			return ri;
++	}
++	return 0;
++}
++
++/*
++*********************************************************************************************************
++*                           standby_set_voltage
++*
++*Description: set voltage for standby;
++*
++*Arguments  : type      voltage type, defined as "enum power_vol_type_e";
++*             voltage   voltage value, based on "mv";
++*
++*Return     : none;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void  standby_set_voltage(enum power_vol_type_e type, __s32 voltage)
++{
++	struct axp_info *info = 0;
++	__u8 val, mask, reg_val;
++
++	info = find_info(type);
++	if (info == 0) {
++		return;
++	}
++
++	if (check_range(info, voltage)) {
++		return;
++	}
++
++	if (type != POWER_VOL_LDO4)
++		val = raw_lib_udiv((voltage-info->min_uV+info->step_uV-1), info->step_uV);
++	else{
++		if(voltage == 1250000 ){
++			val = 0;
++		}
++		else{
++			val = raw_lib_udiv((voltage-1200000+info->step_uV-1), info->step_uV);
++			if(val > 16){
++				val = val - 6;
++			}
++			else if(val > 13){
++				val = val - 5;
++			}
++			else if(val > 12){
++				val = val - 4;
++			}
++			else if(val > 8)
++				val = 8;
++		}
++	}
++
++
++	val <<= info->vol_shift;
++	mask = ((1 << info->vol_nbits) - 1)  << info->vol_shift;
++
++	twi_byte_rw(TWI_OP_RD,AXP_ADDR,info->vol_reg, &reg_val);
++
++	if ((reg_val & mask) != val) {
++		reg_val = (reg_val & ~mask) | val;
++		twi_byte_rw(TWI_OP_WR,AXP_ADDR,info->vol_reg, &reg_val);
++	}
++
++	return;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_get_voltage
++*
++*Description: get voltage for standby;
++*
++*Arguments  : type  voltage type, defined as "enum power_vol_type_e";
++*
++*Return     : voltage value, based on "mv";
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++__u32 standby_get_voltage(enum power_vol_type_e type)
++{
++	struct axp_info *info = 0;
++	__u8 val, mask;
++	int ret;
++
++	info = find_info(type);
++	if (info == 0) {
++		return -1;
++	}
++
++	twi_byte_rw(TWI_OP_RD,AXP_ADDR,info->vol_reg, &val);
++
++	mask = ((1 << info->vol_nbits) - 1)  << info->vol_shift;
++	val = (val & mask) >> info->vol_shift;
++	if (type != POWER_VOL_LDO4)
++		return info->min_uV + info->step_uV * val;
++	else
++		return axp20_ldo4_data[val]*1000;
++}
++
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_power.h b/arch/arm/mach-sun4i/pm/standby/standby_power.h
+new file mode 100644
+index 0000000..bf80cbd
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_power.h
+@@ -0,0 +1,96 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_power.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 14:34
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_POWER_H__
++#define __STANDBY_POWER_H__
++
++#include "standby_cfg.h"
++
++enum power_vol_type_e{
++
++    POWER_VOL_DCDC1,
++    POWER_VOL_DCDC2,
++    POWER_VOL_DCDC3,
++    POWER_VOL_LDO1,
++    POWER_VOL_LDO2,
++    POWER_VOL_LDO3,
++    POWER_VOL_LDO4,
++
++};
++
++#define AXP_ADDR        (0x34)
++#define AXP_IICBUS      (0)
++#define AXP20_LDO1      (0x00)
++#define AXP20_LDO2      (0x28)
++#define AXP20_LDO3      (0x29)
++#define AXP20_LDO4      (0x28)
++#define AXP20_BUCK2     (0x23)
++#define AXP20_BUCK3     (0x27)
++
++#define AXP20_IRQEN1    (0x40)
++#define AXP20_IRQEN2    (0x41)
++#define AXP20_IRQEN3    (0x42)
++#define AXP20_IRQEN4    (0x43)
++#define AXP20_IRQEN5    (0x44)
++
++#define AXP20_IRQ1      (0x48)
++#define AXP20_IRQ2      (0x49)
++#define AXP20_IRQ3      (0x4A)
++#define AXP20_IRQ4      (0x4B)
++#define AXP20_IRQ5      (0x4C)
++
++#define AXP20LDO1       1300
++
++
++#define AXP(_id, min, max, step, vreg, shift, nbits)    \
++{                               \
++    .id = _id,                  \
++    .min_uV        = (min),     \
++    .max_uV        = (max),     \
++    .step_uV    = (step),       \
++    .vol_reg    =  (vreg),      \
++    .vol_shift    = (shift),    \
++    .vol_nbits    = (nbits),    \
++}
++
++struct axp_info {
++    enum    power_vol_type_e id;
++    int     min_uV;
++    int     max_uV;
++    int     step_uV;
++    int     vol_reg;
++    int     vol_shift;
++    int     vol_nbits;
++};
++
++
++#define AXP_WAKEUP_KEY          (1<<0)
++#define AXP_WAKEUP_LOWBATT      (1<<1)
++#define AXP_WAKEUP_USB          (1<<2)
++#define AXP_WAKEUP_AC           (1<<3)
++
++#define AXP_WAKEUP              (AXP_WAKEUP_KEY | AXP_WAKEUP_LOWBATT)
++
++extern __s32 standby_power_init(void);
++extern __s32 standby_power_exit(void);
++extern void  standby_set_voltage(enum power_vol_type_e type, __s32 voltage);
++extern __u32 standby_get_voltage(enum power_vol_type_e type);
++
++
++#endif  /* __STANDBY_POWER_H__ */
++
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_tmr.c b/arch/arm/mach-sun4i/pm/standby/standby_tmr.c
+new file mode 100644
+index 0000000..623e134
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_tmr.c
+@@ -0,0 +1,240 @@
++/*
++*********************************************************************************************************
++*                                                    eMOD
++*                                   the Easy Portable/Player Operation System
++*                                            power manager sub-system
++*
++*                                     (c) Copyright 2008-2009, kevin.z China
++*                                              All Rights Reserved
++*
++* File   : standby_tmr.c
++* Version: V1.0
++* By     : kevin.z
++* Date   : 2009-7-22 18:31
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++
++static __standby_tmr_reg_t  *TmrReg;
++static __u32 TmrIntCtl, Tmr0Ctl, Tmr0IntVal, Tmr0CntVal, Tmr1Ctl, Tmr1IntVal, Tmr1CntVal;
++
++
++
++
++
++/*
++*********************************************************************************************************
++*                                     TIMER INIT
++*
++* Description: initialise timer for standby.
++*
++* Arguments  : none
++*
++* Returns    : EPDK_TRUE/EPDK_FALSE;
++*********************************************************************************************************
++*/
++__s32 standby_tmr_init(void)
++{
++    __s32       i;
++
++    /* set timer register base */
++    TmrReg = (__standby_tmr_reg_t *)SW_VA_TIMERC_IO_BASE;
++
++    /* backup timer registers */
++    TmrIntCtl   = TmrReg->IntCtl;
++    Tmr0Ctl     = TmrReg->Tmr0Ctl;
++    Tmr0IntVal  = TmrReg->Tmr0IntVal;
++    Tmr0CntVal  = TmrReg->Tmr0CntVal;
++    Tmr1Ctl     = TmrReg->Tmr1Ctl;
++    Tmr1IntVal  = TmrReg->Tmr1IntVal;
++    Tmr1CntVal  = TmrReg->Tmr1CntVal;
++
++    /* config timer interrrupt */
++    TmrReg->IntCtl   = 0;
++    TmrReg->IntSta   = 1;
++
++    /* config timer1 for process udelay */
++    TmrReg->Tmr1Ctl  = 0;
++    standby_delay(1000);
++    TmrReg->Tmr1Ctl  = (1<<7)|(5<<4);
++    standby_delay(1000);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     TIMER EXIT
++*
++* Description: exit timer for standby.
++*
++* Arguments  : none
++*
++* Returns    : EPDK_TRUE/EPDK_FALSE;
++*********************************************************************************************************
++*/
++__s32 standby_tmr_exit(void)
++{
++    __s32   i;
++
++    /* restore timer0 parameters */
++    TmrReg->Tmr0IntVal  = Tmr0IntVal;
++    TmrReg->Tmr0CntVal  = Tmr0CntVal;
++    TmrReg->Tmr0Ctl     = Tmr0Ctl;
++    TmrReg->Tmr1IntVal  = Tmr1IntVal;
++    TmrReg->Tmr1CntVal  = Tmr1CntVal;
++    TmrReg->Tmr1Ctl     = Tmr1Ctl;
++    TmrReg->IntCtl      = TmrIntCtl;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_tmr_set
++*
++*Description: set timer for wakeup system.
++*
++*Arguments  : second    time value for wakeup system.
++*
++*Return     : result, 0 - successed, -1 - failed;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++__s32 standby_tmr_set(__u32 second)
++{
++    /* config timer interrrupt */
++    TmrReg->IntSta     = 1;
++    TmrReg->IntCtl     = 1;
++
++    /* config timer0 for standby */
++    TmrReg->Tmr0Ctl    = 0;
++    TmrReg->Tmr0IntVal = second << 10;
++    TmrReg->Tmr0Ctl    = (1<<7) | (5<<4);
++    TmrReg->Tmr0Ctl   |= (1<<1);
++    TmrReg->Tmr0Ctl   |= (1<<0);
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_tmr_enable_watchdog
++*
++*Description: enable watch-dog.
++*
++*Arguments  : none.
++*
++*Return     : none;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void standby_tmr_enable_watchdog(void)
++{
++    /* set watch-dog reset, timeout is 2 seconds */
++    TmrReg->DogMode = (2<<3) | (1<<1);
++    /* enable watch-dog */
++    TmrReg->DogMode |= (1<<0);
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_tmr_disable_watchdog
++*
++*Description: disable watch-dog.
++*
++*Arguments  : none.
++*
++*Return     : none;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void standby_tmr_disable_watchdog(void)
++{
++    /* disable watch-dog reset */
++    TmrReg->DogMode &= ~(1<<1);
++    /* disable watch-dog */
++    TmrReg->DogMode &= ~(1<<0);
++}
++
++
++/*
++**********************************************************************************************************************
++*                                               standby_tmr_query
++*
++* Description:
++*
++* Arguments  :
++*
++* Returns    :
++*
++* Notes      :
++*
++**********************************************************************************************************************
++*/
++__s32 standby_tmr_query(enum tmr_event_type_e type)
++{
++    __s32   result;
++
++    switch(type)
++    {
++        case TMR_EVENT_POWEROFF:
++        {
++            if(TmrReg->IntSta & 1)
++            {
++                TmrReg->IntSta = 1;
++                return 0;
++            }
++            return -1;
++        }
++
++        case TMR_EVENT_ALARM:
++        default:
++            return -1;
++    }
++
++    return -1;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_tmr_mdlay
++*
++*Description: delay ms
++*
++*Arguments  : ms    time for delay;
++*
++*Return     : none
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++void standby_tmr_mdlay(int ms)
++{
++    int     i;
++
++    if(ms < 30){
++        ms = 30;
++    }
++
++    TmrReg->Tmr1IntVal = ms;
++    TmrReg->Tmr1Ctl   |= (1<<1);
++    TmrReg->Tmr1Ctl   |= (1<<0);
++    standby_delay(3000);
++    while(TmrReg->Tmr1CntVal);
++
++    return;
++}
+\ No newline at end of file
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_tmr.h b/arch/arm/mach-sun4i/pm/standby/standby_tmr.h
+new file mode 100644
+index 0000000..cd1da3c
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_tmr.h
+@@ -0,0 +1,104 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_tmr.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:23
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_TMR_H__
++#define __STANDBY_TMR_H__
++
++#include "standby_cfg.h"
++
++
++//define timer controller registers
++typedef struct __STANDBY_TMR_REG
++{
++    // offset:0x00
++    volatile __u32   IntCtl;
++    volatile __u32   IntSta;
++    volatile __u32   reserved0[2];
++    // offset:0x10
++    volatile __u32   Tmr0Ctl;
++    volatile __u32   Tmr0IntVal;
++    volatile __u32   Tmr0CntVal;
++    volatile __u32   reserved1;
++    // offset:0x20
++    volatile __u32   Tmr1Ctl;
++    volatile __u32   Tmr1IntVal;
++    volatile __u32   Tmr1CntVal;
++    volatile __u32   reserved2;
++    // offset:0x30
++    volatile __u32   Tmr2Ctl;
++    volatile __u32   Tmr2IntVal;
++    volatile __u32   Tmr2CntVal;
++    volatile __u32   reserved3;
++    // offset:0x40
++    volatile __u32   Tmr3Ctl;
++    volatile __u32   Tmr3IntVal;
++    volatile __u32   reserved4[2];
++    // offset:0x50
++    volatile __u32   Tmr4Ctl;
++    volatile __u32   Tmr4IntVal;
++    volatile __u32   Tmr4CntVal;
++    volatile __u32   reserved5;
++    // offset:0x60
++    volatile __u32   Tmr5Ctl;
++    volatile __u32   Tmr5IntVal;
++    volatile __u32   Tmr5CntVal;
++    volatile __u32   reserved6[5];
++    // offset:0x80
++    volatile __u32   AvsCtl;
++    volatile __u32   Avs0Cnt;
++    volatile __u32   Avs1Cnt;
++    volatile __u32   AvsDiv;
++    // offset:0x90
++    volatile __u32   DogCtl;
++    volatile __u32   DogMode;
++    volatile __u32   reserved7[2];
++    // offset:0xa0
++    volatile __u32   Cnt64Ctl;
++    volatile __u32   Cnt64Lo;
++    volatile __u32   Cnt64Hi;
++    volatile __u32   reserved8[21];
++    // offset:0x100
++    volatile __u32   LoscCtl;
++    volatile __u32   RtcYMD;
++    volatile __u32   RtcHMS;
++    volatile __u32   RtcDHMS;
++    // offset:0x110
++    volatile __u32   AlarmWHMS;
++    volatile __u32   AlarmEn;
++    volatile __u32   AlarmIrqEn;
++    volatile __u32   AlarmIrqSta;
++    // offset:0x120
++    volatile __u32   TmrGpReg[4];
++
++} __standby_tmr_reg_t;
++
++
++enum tmr_event_type_e{
++    TMR_EVENT_POWEROFF,
++    TMR_EVENT_ALARM,
++};
++
++
++__s32 standby_tmr_init(void);
++__s32 standby_tmr_exit(void);
++__s32 standby_tmr_query(enum tmr_event_type_e type);
++void standby_tmr_mdlay(int ms);
++void standby_tmr_enable_watchdog(void);
++void standby_tmr_disable_watchdog(void);
++
++#endif  //__STANDBY_TMR_H__
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_twi.c b/arch/arm/mach-sun4i/pm/standby/standby_twi.c
+new file mode 100644
+index 0000000..024847d5
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_twi.c
+@@ -0,0 +1,283 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_twi.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:22
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++#define TWI_CHECK_TIMEOUT       (0xff)
++
++static __twic_reg_t*   TWI_REG_BASE[3] = {
++    (__twic_reg_t*)SW_VA_TWI0_IO_BASE,
++    (__twic_reg_t*)SW_VA_TWI1_IO_BASE,
++    (__twic_reg_t*)SW_VA_TWI2_IO_BASE
++};
++
++static __u32 TwiClkRegBak = 0;
++static __u32 TwiCtlRegBak = 0;
++static __twic_reg_t *twi_reg  = 0;
++
++
++
++/*
++*********************************************************************************************************
++*                                   standby_twi_init
++*
++*Description: init twi transfer.
++*
++*Arguments  :
++*
++*Return     :
++*
++*********************************************************************************************************
++*/
++__s32 standby_twi_init(int group)
++{
++    twi_reg  = TWI_REG_BASE[group];
++    TwiClkRegBak = twi_reg->reg_clkr;
++    TwiCtlRegBak = 0x80&twi_reg->reg_ctl;/* backup INT_EN;no need for BUS_EN(0xc0)  */
++    twi_reg->reg_clkr = (2<<3)|3;
++    twi_reg->reg_reset |= 0x1;
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                   standby_twi_exit
++*
++*Description: exit twi transfer.
++*
++*Arguments  :
++*
++*Return     :
++*
++*********************************************************************************************************
++*/
++__s32 standby_twi_exit(void)
++{
++    /* softreset twi module  */
++    twi_reg->reg_reset |= 0x1;
++    /* delay */
++    standby_mdelay(10);
++
++    /* restore clock division */
++    twi_reg->reg_clkr = TwiClkRegBak;
++    /* restore INT_EN */
++    twi_reg->reg_ctl |= TwiCtlRegBak;
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                   _standby_twi_stop
++*
++*Description: stop current twi transfer.
++*
++*Arguments  :
++*
++*Return     :
++*
++*********************************************************************************************************
++*/
++static int _standby_twi_stop(void)
++{
++    unsigned int   nop_read;
++    unsigned int   timeout = TWI_CHECK_TIMEOUT;
++
++    twi_reg->reg_ctl = (twi_reg->reg_ctl & 0xc0) | 0x10;/* set stop+clear int flag */
++
++    nop_read = twi_reg->reg_ctl;/* apb时钟低时必须假读一次stop bit,下一个周期才生效 */
++    nop_read = nop_read;
++    // 1. stop bit is zero.
++    while((twi_reg->reg_ctl & 0x10)&&(timeout--));
++    if(timeout == 0)
++    {
++        return -1;
++    }
++    // 2. twi fsm is idle(0xf8).
++    timeout = TWI_CHECK_TIMEOUT;
++    while((0xf8 != twi_reg->reg_status)&&(timeout--));
++    if(timeout == 0)
++    {
++        return -1;
++    }
++    // 3. twi scl & sda must high level.
++    timeout = TWI_CHECK_TIMEOUT;
++    while((0x3a != twi_reg->reg_lctl)&&(timeout--));
++    if(timeout == 0)
++    {
++        return -1;
++    }
++
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                   twi_byte_rw
++*
++*Description: twi byte read and write.
++*
++*Arguments  : op        operation read or write;
++*             saddr     slave address;
++*             baddr     byte address;
++*             data      pointer to the data to be read or write;
++*
++*Return     : result;
++*               = EPDK_OK,      byte read or write successed;
++*               = EPDK_FAIL,    btye read or write failed!
++*********************************************************************************************************
++*/
++__s32 twi_byte_rw(enum twi_op_type_e op, __u8 saddr, __u8 baddr, __u8 *data)
++{
++    unsigned char state_tmp;
++    unsigned int   timeout;
++    int   ret = -1;
++
++    twi_reg->reg_efr = 0;/* 标准读写必须置0 */
++
++    state_tmp = twi_reg->reg_status;
++    if(state_tmp != 0xf8)
++    {
++        goto stop_out;
++    }
++
++    /* control registser bitmap
++         7      6       5     4       3       2    1    0
++      INT_EN  BUS_EN  START  STOP  INT_FLAG  ACK  NOT  NOT
++    */
++
++    //1.Send Start
++    twi_reg->reg_ctl |= 0x20;
++    timeout = TWI_CHECK_TIMEOUT;
++    while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++    if(timeout == 0)
++    {
++        goto stop_out;
++    }
++    state_tmp = twi_reg->reg_status;
++    if(state_tmp != 0x08)
++    {
++        goto stop_out;
++    }
++
++    //2.Send Slave Address
++    twi_reg->reg_data = (saddr<<1) | 0; /* slave address + write */
++    twi_reg->reg_ctl &= 0xf7;/* clear int flag */
++    timeout = TWI_CHECK_TIMEOUT;
++    while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++    if(timeout == 0)
++    {
++        goto stop_out;
++    }
++    state_tmp = twi_reg->reg_status;
++    if(state_tmp != 0x18)
++    {
++        goto stop_out;
++    }
++
++    //3.Send Byte Address
++    twi_reg->reg_data = baddr;
++    twi_reg->reg_ctl &= 0xf7;/* clear int flag */
++    timeout = TWI_CHECK_TIMEOUT;
++    while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++    if(timeout == 0)
++    {
++        goto stop_out;
++    }
++    state_tmp = twi_reg->reg_status;
++    if(state_tmp != 0x28)
++    {
++        goto stop_out;
++    }
++
++    if(op == TWI_OP_WR)
++    {
++        //4.Send Data to be write
++        twi_reg->reg_data = *data;
++        twi_reg->reg_ctl &= 0xf7;/* clear int flag */
++        timeout = TWI_CHECK_TIMEOUT;
++        while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++        if(timeout == 0)
++        {
++            goto stop_out;
++        }
++        state_tmp = twi_reg->reg_status;
++        if(state_tmp != 0x28)
++        {
++            goto stop_out;
++        }
++    }
++    else
++    {
++        //4. Send restart for read
++        twi_reg->reg_ctl = (twi_reg->reg_ctl & 0xc0) | 0x20;/* set start+clear int flag */
++        timeout = TWI_CHECK_TIMEOUT;
++        while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++        if(timeout == 0)
++        {
++            goto stop_out;
++        }
++        state_tmp = twi_reg->reg_status;
++        if(state_tmp != 0x10)
++        {
++            goto stop_out;
++        }
++
++        //5.Send Slave Address
++        twi_reg->reg_data = (saddr<<1) | 1;/* slave address+ read */
++        twi_reg->reg_ctl &= 0xf7;/* clear int flag then 0x40 come in */
++        timeout = TWI_CHECK_TIMEOUT;
++        while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++        if(timeout == 0)
++        {
++            goto stop_out;
++        }
++        state_tmp = twi_reg->reg_status;
++        if(state_tmp != 0x40)
++        {
++            goto stop_out;
++        }
++
++        //6.Get data
++        twi_reg->reg_ctl &= 0xf7;/* clear int flag then data come in */
++        timeout = TWI_CHECK_TIMEOUT;
++        while((!(twi_reg->reg_ctl & 0x08))&&(timeout--));
++        if(timeout == 0)
++        {
++            goto stop_out;
++        }
++        *data = twi_reg->reg_data;
++        state_tmp = twi_reg->reg_status;
++        if(state_tmp != 0x58)
++        {
++          goto stop_out;
++        }
++    }
++
++    ret = 0;
++
++stop_out:
++    //WRITE: step 5; READ: step 7
++    //Send Stop
++    _standby_twi_stop();
++
++    return ret;
++}
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_twi.h b/arch/arm/mach-sun4i/pm/standby/standby_twi.h
+new file mode 100644
+index 0000000..391d977
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_twi.h
+@@ -0,0 +1,54 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_twi.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:22
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++
++#ifndef __STANDBY_TWI_H__
++#define __STANDBY_TWI_H__
++
++#include "standby_cfg.h"
++
++
++typedef struct tag_twic_reg
++{
++    volatile unsigned int reg_saddr;
++    volatile unsigned int reg_xsaddr;
++    volatile unsigned int reg_data;
++    volatile unsigned int reg_ctl;
++    volatile unsigned int reg_status;
++    volatile unsigned int reg_clkr;
++    volatile unsigned int reg_reset;
++    volatile unsigned int reg_efr;
++    volatile unsigned int reg_lctl;
++
++}__twic_reg_t;
++
++
++
++enum twi_op_type_e{
++    TWI_OP_RD,
++    TWI_OP_WR,
++};
++
++
++extern __s32 standby_twi_init(int group);
++extern __s32 standby_twi_exit(void);
++extern __s32 twi_byte_rw(enum twi_op_type_e op, __u8 saddr, __u8 baddr, __u8 *data);
++
++
++
++#endif  /* __STANDBY_TWI_H__ */
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_usb.c b/arch/arm/mach-sun4i/pm/standby/standby_usb.c
+new file mode 100644
+index 0000000..adb6ec5
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_usb.c
+@@ -0,0 +1,99 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_usb.c
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:18
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#include "standby_i.h"
++
++
++
++//==============================================================================
++// USB CHECK FOR WAKEUP SYSTEM FROM STANDBY
++//==============================================================================
++
++
++/*
++*********************************************************************************************************
++*                                     standby_usb_init
++*
++* Description: init usb for standby.
++*
++* Arguments  : none;
++*
++* Returns    : none;
++*********************************************************************************************************
++*/
++__s32 standby_usb_init(void)
++{
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_usb_exit
++*
++* Description: exit usb for standby.
++*
++* Arguments  : none;
++*
++* Returns    : none;
++*********************************************************************************************************
++*/
++__s32 standby_usb_exit(void)
++{
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                           standby_is_usb_status_change
++*
++*Description: check if usb status is change.
++*
++*Arguments  : port  usb port number;
++*
++*Return     : result, 0 status not change, !0 status changed;
++*
++*Notes      :
++*
++*********************************************************************************************************
++*/
++__s32 standby_is_usb_status_change(__u32 port)
++{
++    return 0;
++}
++
++
++/*
++*********************************************************************************************************
++*                                     standby_query_usb_event
++*
++* Description: query usb event for wakeup system from standby.
++*
++* Arguments  : none;
++*
++* Returns    : result;
++*               EPDK_TRUE,  some usb event happenned;
++*               EPDK_FALSE, none usb event;
++*********************************************************************************************************
++*/
++__s32 standby_query_usb_event(void)
++{
++    return -1;
++}
++
++
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_usb.h b/arch/arm/mach-sun4i/pm/standby/standby_usb.h
+new file mode 100644
+index 0000000..5b3ce21
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/standby_usb.h
+@@ -0,0 +1,29 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : standby_usb.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-31 15:17
++* Descript:
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __STANDBY_USB_H__
++#define __STANDBY_USB_H__
++
++#include "standby_cfg.h"
++
++
++extern __s32 standby_usb_init(void);
++extern __s32 standby_usb_exit(void);
++extern __s32 standby_query_usb_event(void);
++
++#endif  /* __STANDBY_USB_H__ */
++
+diff --git a/arch/arm/mach-sun4i/pm/test/Makefile b/arch/arm/mach-sun4i/pm/test/Makefile
+new file mode 100644
+index 0000000..1e0f5c7
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/test/Makefile
+@@ -0,0 +1,29 @@
++#makefile for standby test
++LINUX_ROOT = ./../../../../..
++LINUX_INC = $(LINUX_ROOT)/include/linux
++ARCH_INC = $(LINUX_ROOT)/arch/arm/mach-sun4i/include
++SRCDIR = .
++
++INCLUDE   = -I$(SRCDIR)\
++		-I$(LINUX_INC)/power\
++		-I$(ARCH_INC)
++
++INPUTFILE = pm_test.c
++OBJ = pm_test.o
++OUPUTFILE = pm_test
++
++CROSS_COMPILE = arm-none-linux-gnueabi-
++#LD_FILE = standby.xn
++CFLAGS = -Os   -g  -fno-unwind-tables -fno-asynchronous-unwind-tables -mlittle-endian  -static
++
++all:$(INPUTFILE)
++	$(CROSS_COMPILE)gcc $(INCLUDE) $(CFLAGS) pm_test.c  -o $(OUPUTFILE).app
++
++#	$(CROSS_COMPILE)objdump -D $(OUPUTFILE).app > $(OUPUTFILE).lst
++#	$(CROSS_COMPILE)objcopy -O binary $(OUPUTFILE).app $(OUPUTFILE).bin
++
++	@echo ----------------------------------------
++	@echo well done!
++clean:
++	-rm *.o *.exe *.app *.map *.lst
++
+diff --git a/arch/arm/mach-sun4i/pm/test/pm_test.c b/arch/arm/mach-sun4i/pm/test/pm_test.c
+new file mode 100644
+index 0000000..546991b
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/test/pm_test.c
+@@ -0,0 +1,71 @@
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++#include <fcntl.h>
++#include <errno.h>
++#include <aw_pm.h>
++#include <sys/stat.h>
++
++
++#define SYS_PM_STAT_PATH	"/sys/power/state"
++#define PMU_DEV_PATH		"/dev/pm"
++
++
++
++int main(void)
++{
++	int pm_dev, pm_state, bin_file, ret, i;
++	char test_buf[128];
++	struct stat fbuf;
++	char *func_buf;
++    struct aw_pm_info  pm_info;
++
++    printf("---------------------------------------------------\n");
++    printf(" start to test pm:\n");
++    printf("---------------------------------------------------\n");
++
++    /* config pmu */
++	pm_dev = open(PMU_DEV_PATH, O_RDWR);
++	if(pm_dev==-1){
++		printf("cant open pmu device!\n");
++		exit(-19);
++	}
++    /* set standby information to pm device */
++    pm_info.standby_para.event =  SUSPEND_WAKEUP_SRC_USB    \
++                                | SUSPEND_WAKEUP_SRC_KEY    \
++                                | SUSPEND_WAKEUP_SRC_IR     \
++                                | SUSPEND_WAKEUP_SRC_TIMEOFF;
++    pm_info.standby_para.time_off = 120;
++
++    pm_info.pmu_arg.twi_port = 0;
++    pm_info.pmu_arg.dev_addr = 0x28;
++	ioctl(pm_dev, AW_PMU_SET, &pm_info);
++	close(pm_dev);
++
++	/*****************************************
++	enter standby
++	*******************************************/
++	pm_state = open(SYS_PM_STAT_PATH, O_RDWR);
++	if(pm_state==-1){
++		printf("cant open power state\n");
++		exit(-19);
++	}
++	/*read status*/
++	ret = read(pm_state, test_buf, 128);
++	if(ret>0){
++		test_buf[ret] = '\0';
++		printf("power state:%s\n", test_buf);
++		memcpy(test_buf, "mem", 3);
++		write(pm_state, test_buf, 3);
++	}else{
++		printf("read failed :%d\n", ret);
++	}
++	close(pm_state);
++
++    printf("---------------------------------------------------\n");
++    printf(" test pm end!\n");
++    printf("---------------------------------------------------\n");
++
++	exit(0);
++}
++
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index 2f2e516..34de786 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -790,6 +790,7 @@ static int __devexit sunximmc_remove(struct platform_device *pdev)
+ #ifdef CONFIG_PM
+ static int sunximmc_suspend(struct device *dev)
+ {
++#if 0
+     struct platform_device *pdev = to_platform_device(dev);
+     struct mmc_host *mmc = platform_get_drvdata(pdev);
+     int ret = 0;
+@@ -822,10 +823,13 @@ static int sunximmc_suspend(struct device *dev)
+ 
+     SMC_DBG("smc %d suspend\n", pdev->id);
+     return ret;
++#endif
++	return 0;
+ }
+ 
+ static int sunximmc_resume(struct device *dev)
+ {
++#if 0
+     struct platform_device *pdev = to_platform_device(dev);
+     struct mmc_host *mmc = platform_get_drvdata(pdev);
+     int ret = 0;
+@@ -860,6 +864,8 @@ static int sunximmc_resume(struct device *dev)
+ 
+     SMC_DBG("smc %d resume\n", pdev->id);
+     return ret;
++#endif
++	return 0;
+ }
+ 
+ static const struct dev_pm_ops sunximmc_pm = {
+diff --git a/include/linux/power/aw_pm.h b/include/linux/power/aw_pm.h
+new file mode 100644
+index 0000000..30fa5bf
+--- /dev/null
++++ b/include/linux/power/aw_pm.h
+@@ -0,0 +1,77 @@
++/*
++*********************************************************************************************************
++*                                                    LINUX-KERNEL
++*                                        AllWinner Linux Platform Develop Kits
++*                                                   Kernel Module
++*
++*                                    (c) Copyright 2006-2011, kevin.z China
++*                                             All Rights Reserved
++*
++* File    : pm.h
++* By      : kevin.z
++* Version : v1.0
++* Date    : 2011-5-27 14:08
++* Descript: power manager
++* Update  : date                auther      ver     notes
++*********************************************************************************************************
++*/
++#ifndef __AW_PM_H__
++#define __AW_PM_H__
++
++
++/**max device number of pmu*/
++#define PMU_MAX_DEVS        2
++/**start address for function run in sram*/
++#define SRAM_FUNC_START     SW_VA_SRAM_BASE
++
++/**
++*@name PMU command
++*@{
++*/
++#define AW_PMU_SET          0x10
++#define AW_PMU_VALID        0x20
++/**
++*@}
++*/
++
++/*
++* define event source for wakeup system when suspended
++*/
++#define SUSPEND_WAKEUP_SRC_EXINT    (1<<0)  /* external interrupt, pmu event for ex.    */
++#define SUSPEND_WAKEUP_SRC_USB      (1<<1)  /* usb connection event */
++#define SUSPEND_WAKEUP_SRC_KEY      (1<<2)  /* key event    */
++#define SUSPEND_WAKEUP_SRC_IR       (1<<3)  /* ir event */
++#define SUSPEND_WAKEUP_SRC_ALARM    (1<<4)  /* alarm event  */
++#define SUSPEND_WAKEUP_SRC_TIMEOFF  (1<<5)  /* set time to power off event  */
++
++
++
++/**
++*@brief struct of pmu device arg
++*/
++struct aw_pmu_arg{
++    unsigned int  twi_port;     /**<twi port for pmu chip   */
++    unsigned char dev_addr;     /**<address of pmu device   */
++};
++
++
++/**
++*@brief struct of standby
++*/
++struct aw_standby_para{
++    unsigned int event;     /**<event type for system wakeup    */
++    signed int   time_off;  /**<time to power off from now, based on second */
++};
++
++
++/**
++*@brief struct of power management info
++*/
++struct aw_pm_info{
++    struct aw_standby_para  standby_para;   /* standby parameter            */
++    struct aw_pmu_arg       pmu_arg;        /**<args used by main function  */
++};
++
++
++#endif /* __AW_PM_H__ */
++
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 96a0831..86e98cc 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -48,6 +48,11 @@ Invalid Options:
+ "
+ }
+ 
++build_standby()
++{
++	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
++		-C ${LICHEE_KDIR}/arch/arm/mach-sun4i/pm/standby all
++}
+ 
+ build_kernel()
+ {
+@@ -56,6 +61,8 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_defconfig .config
+ 	fi
+ 
++	build_standby
++
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8
+ 	update_kern_ver
+ 
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 2a82f01..45c140c 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -48,6 +48,11 @@ Invalid Options:
+ "
+ }
+ 
++build_standby()
++{
++	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} KDIR=${LICHEE_KDIR} \
++		-C ${LICHEE_KDIR}/arch/arm/mach-sun4i/pm/standby all
++}
+ 
+ build_kernel()
+ {
+@@ -56,7 +61,9 @@ build_kernel()
+ 		cp arch/arm/configs/sun4i_defconfig .config
+ 	fi
+ 
++	build_standby
+ 	make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} -j8 uImage zImage
++
+ 	update_kern_ver
+ 
+ 	if [ -d output ]; then
+-- 
+1.8.0
+

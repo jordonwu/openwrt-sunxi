@@ -1,0 +1,49 @@
+From 9c9a559206a8e28e486b7d31292f353e507228b0 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 4 Jun 2012 10:29:31 +0200
+Subject: [PATCH 505/944] serial: 8250: sunxi: use UPIO_MEM32 instead of the
+ deprecated UPIO_DWAPB32
+
+---
+ arch/arm/mach-sun4i/devices.c        | 2 +-
+ drivers/tty/serial/8250/8250_sunxi.c | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/devices.c b/arch/arm/mach-sun4i/devices.c
+index 06b74fc..a2f07b2 100644
+--- a/arch/arm/mach-sun4i/devices.c
++++ b/arch/arm/mach-sun4i/devices.c
+@@ -37,7 +37,7 @@ static struct plat_serial8250_port debug_uart_platform_data[] = {
+ 		.mapbase	= (resource_size_t)SW_PA_UART0_IO_BASE,
+ 		.irq		= SW_INT_IRQNO_UART0,
+ 		.flags		= UPF_BOOT_AUTOCONF,
+-		.iotype		= UPIO_DWAPB32,
++		.type		= UPIO_MEM32,
+ 		.regshift	= 2,
+ 		.uartclk	= 24000000,
+ 	}, {
+diff --git a/drivers/tty/serial/8250/8250_sunxi.c b/drivers/tty/serial/8250/8250_sunxi.c
+index dc57705..a5587f2 100644
+--- a/drivers/tty/serial/8250/8250_sunxi.c
++++ b/drivers/tty/serial/8250/8250_sunxi.c
+@@ -7,7 +7,7 @@
+  * it under the terms of the GNU General Public License version 2 as
+  * published by the Free Software Foundation.
+  */
+-#define pr_fmt(fmt)	"8250-sunxi: " fmt
++#define pr_fmt(fmt)	"[uart]: " fmt
+ 
+ #include <linux/module.h>
+ #include <linux/types.h>
+@@ -176,7 +176,7 @@ static int __devinit sw_serial_probe(struct platform_device *dev)
+ 	sport->port.irq = sport->irq;
+ 	sport->port.fifosize = 64;
+ 	sport->port.regshift = 2;
+-	sport->port.iotype  = UPIO_DWAPB32;
++	sport->port.iotype  = UPIO_MEM32;
+ 	sport->port.flags = UPF_IOREMAP | UPF_BOOT_AUTOCONF;
+ 	sport->port.uartclk = sport->sclk;
+ 	sport->port.pm = sw_serial_pm;
+-- 
+1.8.0
+

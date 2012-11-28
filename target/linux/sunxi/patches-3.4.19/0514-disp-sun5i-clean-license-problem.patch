@@ -1,0 +1,2279 @@
+From 5fa78f0d005e5c595bfda626dc55dbdc92347d00 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Tue, 5 Jun 2012 15:48:19 +0800
+Subject: [PATCH 514/944] disp: sun5i: clean license problem
+
+---
+ drivers/video/sun5i/disp/de_bsp/bsp_display.h      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_clk.c      | 22 ++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_clk.h      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_combined.c | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_combined.h | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_de.c       | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_de.h       | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_display.c  | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_display.h  | 23 +++++++++++++
+ .../video/sun5i/disp/de_bsp/de/disp_display_i.h    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_event.c    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_event.h    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c     | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h     | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_layer.c    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_layer.h    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c      | 24 ++++++++++++-
+ drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_tv.c       | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_tv.h       | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_vga.c      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_vga.h      | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_video.c    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/disp_video.h    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c   | 39 ++++++++++++----------
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h   | 33 ++++++++++++------
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c  | 23 +++++++++++++
+ .../video/sun5i/disp/de_bsp/de/ebios/de_layer.c    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c | 23 +++++++++++++
+ .../video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h   | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c | 23 +++++++++++++
+ .../video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h   | 23 +++++++++++++
+ .../video/sun5i/disp/de_bsp/de/ebios/ebios_de.h    | 23 +++++++++++++
+ .../sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h    | 23 +++++++++++++
+ drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c | 23 +++++++++++++
+ drivers/video/sun5i/disp/dev_disp.c                | 23 +++++++++++++
+ drivers/video/sun5i/disp/dev_disp.h                | 23 +++++++++++++
+ drivers/video/sun5i/disp/dev_fb.c                  | 23 +++++++++++++
+ drivers/video/sun5i/disp/drv_disp_i.h              | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_core.c            | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_core.h            | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_edid.c            | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_hal.c             | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_interface.c       | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/aw/hdmi_interface.h       | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/dev_hdmi.c                | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/dev_hdmi.h                | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/drv_hdmi.c                | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/drv_hdmi_i.h              | 23 +++++++++++++
+ drivers/video/sun5i/hdmi/hdmi_hal.h                | 23 +++++++++++++
+ drivers/video/sun5i/lcd/dev_lcd.c                  | 23 +++++++++++++
+ drivers/video/sun5i/lcd/dev_lcd.h                  | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd0_panel_cfg.c           | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd1_panel_cfg.c           | 23 +++++++++++++
+ .../video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c  | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd_bak/TC102.c            | 23 +++++++++++++
+ .../video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c       | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c | 23 +++++++++++++
+ .../sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c   | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c        | 23 +++++++++++++
+ drivers/video/sun5i/lcd/lcd_panel_cfg.h            | 23 +++++++++++++
+ 70 files changed, 1608 insertions(+), 28 deletions(-)
+
+diff --git a/drivers/video/sun5i/disp/de_bsp/bsp_display.h b/drivers/video/sun5i/disp/de_bsp/bsp_display.h
+index 342a294..b90c605 100644
+--- a/drivers/video/sun5i/disp/de_bsp/bsp_display.h
++++ b/drivers/video/sun5i/disp/de_bsp/bsp_display.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/bsp_display.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __EBSP_DISPLAY_H__
+ #define __EBSP_DISPLAY_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_clk.c b/drivers/video/sun5i/disp/de_bsp/de/disp_clk.c
+index 892a79f..11f51fa 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_clk.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_clk.c
+@@ -1,3 +1,25 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_clk.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include "disp_display_i.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_clk.h b/drivers/video/sun5i/disp/de_bsp/de/disp_clk.h
+index 0110e59..6f45957 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_clk.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_clk.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_clk.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_CLK_H__
+ #define __DISP_CLK_H__
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_combined.c b/drivers/video/sun5i/disp/de_bsp/de/disp_combined.c
+index 0d27ad3..81d0a0c 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_combined.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_combined.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_combined.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_combined.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_combined.h b/drivers/video/sun5i/disp/de_bsp/de/disp_combined.h
+index 296227a..5154eec 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_combined.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_combined.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_combined.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_COMBINED_H__
+ #define __DISP_COMBINED_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_de.c b/drivers/video/sun5i/disp/de_bsp/de/disp_de.c
+index cfab711..3f9f2ca 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_de.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_de.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_de.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_de.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_de.h b/drivers/video/sun5i/disp/de_bsp/de/disp_de.h
+index faed1ce..1c4aa6d 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_de.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_de.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_de.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_DE_H_
+ #define __DISP_DE_H_
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_display.c b/drivers/video/sun5i/disp/de_bsp/de/disp_display.c
+index 6d32870..9f28214 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_display.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_display.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_display.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_de.h"
+ #include "disp_lcd.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_display.h b/drivers/video/sun5i/disp/de_bsp/de/disp_display.h
+index 8c94006..79ce33b 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_display.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_display.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_display.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_DISPLAY_H__
+ #define __DISP_DISPLAY_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_display_i.h b/drivers/video/sun5i/disp/de_bsp/de/disp_display_i.h
+index a20f0aa..5485b83 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_display_i.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_display_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_display_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_DISPLAY_I_H__
+ #define __DISP_DISPLAY_I_H__
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_event.c b/drivers/video/sun5i/disp/de_bsp/de/disp_event.c
+index fed7c8c..a88cbc5 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_event.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_event.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_event.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_event.h"
+ #include "disp_display.h"
+ #include "disp_de.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_event.h b/drivers/video/sun5i/disp/de_bsp/de/disp_event.h
+index 640f2a0..91d9e27 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_event.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_event.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_event.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_EVENT_H__
+ #define __DISP_EVENT_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c b/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c
+index b6da80d..9b91674 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_hdmi.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h b/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h
+index 40b0da7..356cb7b 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_hdmi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_HDMI_H__
+ #define __DISP_HDMI_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c b/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c
+index d1411f8..e2943f5 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_hwc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_hwc.h"
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h b/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h
+index dd51ba1..c149388 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_hwc.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_HWC_H_
+ #define _DISP_HWC_H_
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_layer.c b/drivers/video/sun5i/disp/de_bsp/de/disp_layer.c
+index e1e9733..67ad844 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_layer.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_layer.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_layer.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_layer.h"
+ #include "disp_de.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_layer.h b/drivers/video/sun5i/disp/de_bsp/de/disp_layer.h
+index 547224b..4774e91 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_layer.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_layer.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_layer.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_LAYER_H_
+ #define _DISP_LAYER_H_
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
+index 7b58dcc..940b972 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
+@@ -1,5 +1,27 @@
+-#include <linux/export.h>
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
++#include <linux/export.h>
+ #include "disp_lcd.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h
+index 14e704b..3a8c11a 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_lcd.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_LCD_H__
+ #define __DISP_LCD_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c b/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c
+index fb22232..1f11582 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_scaler.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "disp_scaler.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h b/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h
+index 7367068..683c3a6 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_scaler.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_SCALER_H_
+ #define _DISP_SCALER_H_
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c b/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c
+index b338879..f0572e6 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_sprite.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_sprite.h"
+ #include "disp_display.h"
+ #include "disp_layer.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h b/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h
+index 9334408..13e8311 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_sprite.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef _DISP_SPRITE_H_
+ #define _DISP_SPRITE_H_
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_tv.c b/drivers/video/sun5i/disp/de_bsp/de/disp_tv.c
+index 39def16..576bab5 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_tv.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_tv.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_tv.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_tv.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_tv.h b/drivers/video/sun5i/disp/de_bsp/de/disp_tv.h
+index 04fceec..f2327c9 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_tv.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_tv.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_tv.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_TV_H__
+ #define __DISP_TV_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_vga.c b/drivers/video/sun5i/disp/de_bsp/de/disp_vga.c
+index c2174b4..b74f02d 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_vga.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_vga.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_vga.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_vga.h"
+ #include "disp_de.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_vga.h b/drivers/video/sun5i/disp/de_bsp/de/disp_vga.h
+index 830205a..74d3844 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_vga.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_vga.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_vga.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_VGA_H__
+ #define __DISP_VGA_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_video.c b/drivers/video/sun5i/disp/de_bsp/de/disp_video.c
+index f6f07d8..6a58f93 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_video.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_video.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_video.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "disp_video.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_video.h b/drivers/video/sun5i/disp/de_bsp/de/disp_video.h
+index 25e1adf..9a5ad7a 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_video.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_video.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/disp_video.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_VIDEO_H_
+ #define __DISP_VIDEO_H_
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c
+index c8b79fb..ca44b10 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "de_be.h"
+ #include "de_fe.h"
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h
+index fca56ff..f90219b 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_be.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DE_BE_H__
+ #define __DE_BE_H__
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c
+index a8e5ab0..20bc46d 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c
+@@ -1,20 +1,25 @@
+-//*****************************************************************************
+-//  All Winner Micro, All Right Reserved. 2006-2011 Copyright (c)
+-//
+-//  File name   :        de_scal_bsp.c
+-//
+-//  Description :  display engine scaler base functions implement for aw1623
+-//
+-//  History       :
+-//                 2011/05/03      zchmin       v1.0    Initial version
+-//                 2011/05/13      vito            v1.1    added vpp function
+-//                 2011/05/25      zchmin       v1.2    redefine 3d inmode
+-//                 2011/07/01      zchmin       v1.3    modify set scal coef error
+-//                 2011/07/14      zchmin       v1.4    added input/output rg swap
+-//                 2011/08/04      zchmin       v1.5    added divisor no-zero limited
+-//                 2011/09/28      zchmin       v1.6    added 3D interleaved input format support
+-//******************************************************************************
+-
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include "de_fe.h"
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h
+index 9d2c923..21564a1 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h
+@@ -1,13 +1,26 @@
+-//*****************************************************************************
+-//  All Winner Micro, All Right Reserved. 2006-2011 Copyright (c)
+-//
+-//  File name   :        de_scal_bsp.h
+-//
+-//  Description :  display engine scaler registers and interface functions define
+-//                 for aw1625
+-//  History     :
+-//                2011/09/09      zchmin       v0.1    Initial version
+-//******************************************************************************
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_fe.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DE_FE_H__
+ #define __DE_FE_H__
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c
+index a26db50..dc98edb 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_hwc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "de_be.h"
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_layer.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_layer.c
+index 36d961f31..124720a 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_layer.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_layer.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_layer.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "de_be.h"
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c
+index f2463bf..c6a64a0 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "ebios_lcdc_tve.h"
+ #include "de_lcdc_i.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h
+index b70ab2c..5d7f584 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_lcdc_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DE_LCDC_I_H__
+ #define __DE_LCDC_I_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c
+index a55b168..3617f38 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "ebios_lcdc_tve.h"
+ #include "de_tvec_i.h"
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h
+index 7c614eb..8d698a7 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/de_tvec_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DE_TVE_I_H__
+ #define __DE_TVE_I_H__
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_de.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_de.h
+index caa926e..79a5773 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_de.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_de.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_de.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __EBIOS_DE_H__
+ #define __EBIOS_DE_H__
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h b/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
+index 0d70b8d..3342532 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef _LCDC_TVE_H_
+ #define _LCDC_TVE_H_
+ 
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c b/drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c
+index aa43e14..7744f43 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c
+@@ -1,4 +1,27 @@
+ /*
++ * drivers/video/sun5i/disp/de_bsp/de/ebios/vga_std.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
+ const __disp_vga_t disp_vga_h1024_v768 =
+ {
+ 	//__u32	pixel_clk;
+diff --git a/drivers/video/sun5i/disp/dev_disp.c b/drivers/video/sun5i/disp/dev_disp.c
+index df2a263..726b7af 100644
+--- a/drivers/video/sun5i/disp/dev_disp.c
++++ b/drivers/video/sun5i/disp/dev_disp.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/dev_disp.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_disp.h"
+ 
+diff --git a/drivers/video/sun5i/disp/dev_disp.h b/drivers/video/sun5i/disp/dev_disp.h
+index 8ac8f04..9f0bec0 100644
+--- a/drivers/video/sun5i/disp/dev_disp.h
++++ b/drivers/video/sun5i/disp/dev_disp.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/dev_disp.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_DISP_H__
+ #define __DEV_DISP_H__
+ 
+diff --git a/drivers/video/sun5i/disp/dev_fb.c b/drivers/video/sun5i/disp/dev_fb.c
+index 1b24157..4b2d87f 100644
+--- a/drivers/video/sun5i/disp/dev_fb.c
++++ b/drivers/video/sun5i/disp/dev_fb.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/dev_fb.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "drv_disp_i.h"
+ #include "dev_disp.h"
+diff --git a/drivers/video/sun5i/disp/drv_disp_i.h b/drivers/video/sun5i/disp/drv_disp_i.h
+index 9ea2fb9..0ae0e49 100644
+--- a/drivers/video/sun5i/disp/drv_disp_i.h
++++ b/drivers/video/sun5i/disp/drv_disp_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/disp/drv_disp_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DRV_DISP_I_H__
+ #define __DRV_DISP_I_H__
+ 
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_core.c b/drivers/video/sun5i/hdmi/aw/hdmi_core.c
+index 3827d0f..0a23bb8 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_core.c
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_core.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_core.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "hdmi_core.h"
+ 
+ __s32 			hdmi_state	=	HDMI_State_Idle;
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_core.h b/drivers/video/sun5i/hdmi/aw/hdmi_core.h
+index 4e9229e..26c4e06 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_core.h
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_core.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_core.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_CORE_H__
+ #define __HDMI_CORE_H__
+ 
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_edid.c b/drivers/video/sun5i/hdmi/aw/hdmi_edid.c
+index 7a1dac1..bf5d480 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_edid.c
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_edid.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_edid.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "hdmi_core.h"
+ void DDC_Init(void)
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_hal.c b/drivers/video/sun5i/hdmi/aw/hdmi_hal.c
+index 5751624..4f4b2b5 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_hal.c
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_hal.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_hal.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "../hdmi_hal.h"
+ #include "hdmi_interface.h"
+ #include "hdmi_core.h"
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_interface.c b/drivers/video/sun5i/hdmi/aw/hdmi_interface.c
+index ab86a6e..6e6b7ff 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_interface.c
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_interface.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_interface.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "hdmi_interface.h"
+ 
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_interface.h b/drivers/video/sun5i/hdmi/aw/hdmi_interface.h
+index 3a64557..273349c 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_interface.h
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_interface.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/aw/hdmi_interface.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_INTERFACE_H__
+ #define __HDMI_INTERFACE_H__
+ 
+diff --git a/drivers/video/sun5i/hdmi/dev_hdmi.c b/drivers/video/sun5i/hdmi/dev_hdmi.c
+index 1d9cd4c..8b86952 100644
+--- a/drivers/video/sun5i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun5i/hdmi/dev_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/dev_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_hdmi.h"
+ #include "drv_hdmi_i.h"
+diff --git a/drivers/video/sun5i/hdmi/dev_hdmi.h b/drivers/video/sun5i/hdmi/dev_hdmi.h
+index f8d8fd6..d29ed02 100644
+--- a/drivers/video/sun5i/hdmi/dev_hdmi.h
++++ b/drivers/video/sun5i/hdmi/dev_hdmi.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/dev_hdmi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_DISPLAY_H__
+ #define __DEV_DISPLAY_H__
+ 
+diff --git a/drivers/video/sun5i/hdmi/drv_hdmi.c b/drivers/video/sun5i/hdmi/drv_hdmi.c
+index ac1242b..cc17b76 100644
+--- a/drivers/video/sun5i/hdmi/drv_hdmi.c
++++ b/drivers/video/sun5i/hdmi/drv_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/drv_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "drv_hdmi_i.h"
+ #include "hdmi_hal.h"
+diff --git a/drivers/video/sun5i/hdmi/drv_hdmi_i.h b/drivers/video/sun5i/hdmi/drv_hdmi_i.h
+index 855db1d..163ee20 100644
+--- a/drivers/video/sun5i/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sun5i/hdmi/drv_hdmi_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/drv_hdmi_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef  _DRV_HDMI_I_H_
+ #define  _DRV_HDMI_I_H_
+diff --git a/drivers/video/sun5i/hdmi/hdmi_hal.h b/drivers/video/sun5i/hdmi/hdmi_hal.h
+index f528ed6..de46a23 100644
+--- a/drivers/video/sun5i/hdmi/hdmi_hal.h
++++ b/drivers/video/sun5i/hdmi/hdmi_hal.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/hdmi/hdmi_hal.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_HAL_H__
+ #define __HDMI_HAL_H__
+ 
+diff --git a/drivers/video/sun5i/lcd/dev_lcd.c b/drivers/video/sun5i/lcd/dev_lcd.c
+index 48ac83a..e9643ef 100644
+--- a/drivers/video/sun5i/lcd/dev_lcd.c
++++ b/drivers/video/sun5i/lcd/dev_lcd.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/dev_lcd.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_lcd.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/dev_lcd.h b/drivers/video/sun5i/lcd/dev_lcd.h
+index b46bf01..bd7a379 100644
+--- a/drivers/video/sun5i/lcd/dev_lcd.h
++++ b/drivers/video/sun5i/lcd/dev_lcd.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/dev_lcd.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_LCD_H__
+ #define __DEV_LCD_H__
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd0_panel_cfg.c b/drivers/video/sun5i/lcd/lcd0_panel_cfg.c
+index a276d1c..d3c6043 100644
+--- a/drivers/video/sun5i/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sun5i/lcd/lcd0_panel_cfg.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd0_panel_cfg.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd1_panel_cfg.c b/drivers/video/sun5i/lcd/lcd1_panel_cfg.c
+index ff5e77c..4298676 100644
+--- a/drivers/video/sun5i/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sun5i/lcd/lcd1_panel_cfg.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd1_panel_cfg.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index 4843dba..44046e8 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/TC101+tl080wx800-v0.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/TC102.c b/drivers/video/sun5i/lcd/lcd_bak/TC102.c
+index e728452..3e7d678 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/TC102.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/TC102.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index 52bf03e..d87415a 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  cpu_320x240_kgm281i0.c
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c b/drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c
+index ac1135b..0f3ff52 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/hv_800x480.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  hv_800x480.c
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c
+index 339c4c3..d9b4037 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/hv_800x480_td043.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  hv_800x480_td043.c
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 26003f5..ee31024 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  lvds_1024x600_hds100ifw1.c
+diff --git a/drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c b/drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c
+index 61c24c0..ce7e342 100644
+--- a/drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_bak/lvds_1080.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/lcd_panel_cfg.h b/drivers/video/sun5i/lcd/lcd_panel_cfg.h
+index a4d74ae..5a12352 100644
+--- a/drivers/video/sun5i/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sun5i/lcd/lcd_panel_cfg.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun5i/lcd/lcd_panel_cfg.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __LCD_PANNEL_CFG_H__
+ #define __LCD_PANNEL_CFG_H__
+-- 
+1.8.0
+

@@ -1,0 +1,58 @@
+From 575abc8c6cb9e3b558755455a6dac6cb17a40203 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@linux-sunxi.org>
+Date: Mon, 8 Oct 2012 22:59:14 +0000
+Subject: [PATCH 788/944] sunxi: clock: guard against missing event handler
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If we kexec the kernel, we are more likely to get an IRQ handle
+request without a valid handler pointer set up. Make sure the
+pointer is valid before running it.
+
+This happens just one time on kexec boot, so use likely to hint
+the compiler adequately.
+
+arch/arm/mach-msm/timer.c takes the same approach.
+
+Signed-off-by: Emilio López <turl@linux-sunxi.org>
+---
+ arch/arm/mach-sun4i/clock/aw_clocksrc.c | 4 +++-
+ arch/arm/mach-sun5i/clock/aw_clocksrc.c | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/clock/aw_clocksrc.c b/arch/arm/mach-sun4i/clock/aw_clocksrc.c
+index eee0227..8d50710 100644
+--- a/arch/arm/mach-sun4i/clock/aw_clocksrc.c
++++ b/arch/arm/mach-sun4i/clock/aw_clocksrc.c
+@@ -253,8 +253,10 @@ static irqreturn_t aw_clkevt_irq(int irq, void *handle)
+         CLKSRC_DBG("aw_clkevt_irq!\n");
+         /* clear pending */
+         TMR_REG_IRQ_STAT = (1<<1);
++
+         /* clock event interrupt handled */
+-        aw_clock_event.event_handler(&aw_clock_event);
++	if(likely(aw_clock_event.event_handler != NULL))
++		aw_clock_event.event_handler(&aw_clock_event);
+ 
+         return IRQ_HANDLED;
+     }
+diff --git a/arch/arm/mach-sun5i/clock/aw_clocksrc.c b/arch/arm/mach-sun5i/clock/aw_clocksrc.c
+index b5b1993..46ee885 100644
+--- a/arch/arm/mach-sun5i/clock/aw_clocksrc.c
++++ b/arch/arm/mach-sun5i/clock/aw_clocksrc.c
+@@ -253,8 +253,10 @@ static irqreturn_t aw_clkevt_irq(int irq, void *handle)
+         CLKSRC_DBG("aw_clkevt_irq!\n");
+         /* clear pending */
+         TMR_REG_IRQ_STAT = (1<<1);
++
+         /* clock event interrupt handled */
+-        aw_clock_event.event_handler(&aw_clock_event);
++	if(likely(aw_clock_event.event_handler != NULL))
++		aw_clock_event.event_handler(&aw_clock_event);
+ 
+         return IRQ_HANDLED;
+     }
+-- 
+1.8.0
+

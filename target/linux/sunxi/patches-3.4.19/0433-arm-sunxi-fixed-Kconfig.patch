@@ -1,0 +1,59 @@
+From 667b88255e7be49f11bbc4d152d3f606e13211de Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 14 May 2012 13:18:42 +0200
+Subject: [PATCH 433/944] arm: sunxi: fixed Kconfig
+
+---
+ arch/arm/Kconfig            | 14 ++++----------
+ arch/arm/mach-sun3i/Kconfig |  2 ++
+ 2 files changed, 6 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index e4ab868..9f29b6d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -742,16 +742,6 @@ config ARCH_SUN5I
+         help
+           This enables support for Allwinner Technology Co., Ltd A12/A13 SoC based systems
+ 
+-#if ARCH_SUN3I
+-source "arch/arm/mach-sun3i/Kconfig"
+-#endif
+-#if ARCH_SUN4I
+-#source "arch/arm/mach-sun4i/Kconfig"
+-#endif
+-if ARCH_SUN5I
+-source "arch/arm/mach-sun5i/Kconfig"
+-endif
+-
+ config ARCH_PNX4008
+ 	bool "Philips Nexperia PNX4008 Mobile"
+ 	select CPU_ARM926T
+@@ -1162,6 +1152,10 @@ source "arch/arm/mach-s5pc100/Kconfig"
+ 
+ source "arch/arm/mach-s5pv210/Kconfig"
+ 
++source "arch/arm/mach-sun3i/Kconfig"
++source "arch/arm/mach-sun4i/Kconfig"
++source "arch/arm/mach-sun5i/Kconfig"
++
+ source "arch/arm/mach-exynos/Kconfig"
+ 
+ source "arch/arm/mach-shmobile/Kconfig"
+diff --git a/arch/arm/mach-sun3i/Kconfig b/arch/arm/mach-sun3i/Kconfig
+index f227f46..e000d7e 100644
+--- a/arch/arm/mach-sun3i/Kconfig
++++ b/arch/arm/mach-sun3i/Kconfig
+@@ -1,3 +1,4 @@
++if ARCH_SUN3I
+ menu "All winner system configure"
+ 
+ config SW_SYSMEM_TOTAL_MEM
+@@ -29,3 +30,4 @@ config SW_PIN_TEST
+ 	  "Test code for PIN module"
+ 
+ endmenu
++endif
+-- 
+1.8.0
+

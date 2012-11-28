@@ -1,0 +1,63 @@
+From be69452a5d1599b9522d4d7e4cdfb35995b23502 Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Tue, 15 May 2012 20:44:33 -0700
+Subject: [PATCH 253/944] usb: gadget: composite: Fix corruption when changing
+ configuration
+
+Remove the config from the configs list before releasing the spinlock.
+Otherwise the other cpu might be processing a SET_CONFIGURATION that
+will switch to the configuration that is being released.
+
+Change-Id: Id4da0d0e18ead63e20cb236cd1d3e8e6d116acce
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/usb/gadget/composite.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/usb/gadget/composite.c b/drivers/usb/gadget/composite.c
+index 343d842..8f82fc0 100644
+--- a/drivers/usb/gadget/composite.c
++++ b/drivers/usb/gadget/composite.c
+@@ -775,7 +775,7 @@ done:
+ 	return status;
+ }
+ 
+-static int remove_config(struct usb_composite_dev *cdev,
++static int unbind_config(struct usb_composite_dev *cdev,
+ 			      struct usb_configuration *config)
+ {
+ 	while (!list_empty(&config->functions)) {
+@@ -790,7 +790,6 @@ static int remove_config(struct usb_composite_dev *cdev,
+ 			/* may free memory for "f" */
+ 		}
+ 	}
+-	list_del(&config->list);
+ 	if (config->unbind) {
+ 		DBG(cdev, "unbind config '%s'/%p\n", config->label, config);
+ 		config->unbind(config);
+@@ -818,9 +817,11 @@ int usb_remove_config(struct usb_composite_dev *cdev,
+ 	if (cdev->config == config)
+ 		reset_config(cdev);
+ 
++	list_del(&config->list);
++
+ 	spin_unlock_irqrestore(&cdev->lock, flags);
+ 
+-	return remove_config(cdev, config);
++	return unbind_config(cdev, config);
+ }
+ 
+ /*-------------------------------------------------------------------------*/
+@@ -1379,7 +1380,8 @@ composite_unbind(struct usb_gadget *gadget)
+ 		struct usb_configuration	*c;
+ 		c = list_first_entry(&cdev->configs,
+ 				struct usb_configuration, list);
+-		remove_config(cdev, c);
++		list_del(&c->list);
++		unbind_config(cdev, c);
+ 	}
+ 	if (composite->unbind)
+ 		composite->unbind(cdev);
+-- 
+1.8.0
+

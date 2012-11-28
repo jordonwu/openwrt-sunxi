@@ -1,0 +1,79 @@
+From feae537a1aa3b2f89ff0b8218db49cc64b67d76e Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Tue, 26 Jun 2012 17:17:02 -0700
+Subject: [PATCH 296/944] net: wireless: bcmdhd: Decrease chip recognition
+ attempts to 3
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd.h        | 4 ++--
+ drivers/net/wireless/bcmdhd/dhd_linux.c  | 8 ++++----
+ drivers/net/wireless/bcmdhd/wl_android.c | 2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 3b1e93f..9fdbe82 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -93,10 +93,10 @@ enum dhd_bus_state {
+ #define DHD_SCAN_PASSIVE_TIME	130 /* ms: Embedded default Passive setting from DHD Driver */
+ 
+ #ifndef POWERUP_MAX_RETRY
+-#define POWERUP_MAX_RETRY	(10) /* how many times we retry to power up the chip */
++#define POWERUP_MAX_RETRY	3 /* how many times we retry to power up the chip */
+ #endif
+ #ifndef POWERUP_WAIT_MS
+-#define POWERUP_WAIT_MS		(2000) /* ms: time out in waiting wifi to come up */
++#define POWERUP_WAIT_MS		2000 /* ms: time out in waiting wifi to come up */
+ #endif
+ 
+ enum dhd_bus_wake_state {
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index e3d8976..5e0d58a 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -2459,7 +2459,7 @@ dhd_open(struct net_device *net)
+ 		firmware_path[0] = '\0';
+ 	}
+ 
+-	dhd->pub.dongle_trap_occured = 0;
++	dhd->pub.dongle_trap_occured = 0;
+ 	dhd->pub.hang_was_sent = 0;
+ #if !defined(WL_CFG80211)
+ 	/*
+@@ -3894,8 +3894,8 @@ void dhd_detach(dhd_pub_t *dhdp)
+ 	if (dhd->dhd_state & DHD_ATTACH_STATE_WAKELOCKS_INIT) {
+ #ifdef CONFIG_HAS_WAKELOCK
+ 		dhd->wakelock_counter = 0;
+-		dhd->wakelock_rx_timeout_enable = 0;
+-		dhd->wakelock_ctrl_timeout_enable = 0; 
++		dhd->wakelock_rx_timeout_enable = 0;
++		dhd->wakelock_ctrl_timeout_enable = 0;
+ 		wake_lock_destroy(&dhd->wl_wifi);
+ 		wake_lock_destroy(&dhd->wl_rxwake);
+ 		wake_lock_destroy(&dhd->wl_ctrlwake);
+@@ -3998,7 +3998,7 @@ dhd_module_init(void)
+ 			break;
+ 		}
+ 		DHD_ERROR(("\nfailed to power up wifi chip, retry again (%d left) **\n\n",
+-			retry+1));
++			retry));
+ 		dhd_bus_unreg_sdio_notify();
+ #if defined(CONFIG_WIFI_CONTROL_FUNC)
+ 		wl_android_wifictrl_func_del();
+diff --git a/drivers/net/wireless/bcmdhd/wl_android.c b/drivers/net/wireless/bcmdhd/wl_android.c
+index 9157a21..0ab637d 100644
+--- a/drivers/net/wireless/bcmdhd/wl_android.c
++++ b/drivers/net/wireless/bcmdhd/wl_android.c
+@@ -391,7 +391,7 @@ int wl_android_wifi_on(struct net_device *dev)
+ 			if (ret == 0)
+ 				break;
+ 			DHD_ERROR(("\nfailed to power up wifi chip, retry again (%d left) **\n\n",
+-				retry+1));
++				retry));
+ 			dhd_customer_gpio_wlan_ctrl(WLAN_RESET_OFF);
+ 		} while (retry-- >= 0);
+ 		if (ret != 0) {
+-- 
+1.8.0
+

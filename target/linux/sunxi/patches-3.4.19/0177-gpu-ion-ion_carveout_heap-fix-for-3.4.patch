@@ -1,0 +1,37 @@
+From 9a82640ba5d84b7ebb57f553eb59f6fe664dd540 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 4 Apr 2012 13:50:43 -0700
+Subject: [PATCH 177/944] gpu: ion: ion_carveout_heap: fix for 3.4
+
+__arch_ioremap is no longer available, use __arm_ioremap instead.
+
+Change-Id: Ied98208a3c1be6bc5ac195c3ade496fbb5003f37
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/gpu/ion/ion_carveout_heap.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion_carveout_heap.c b/drivers/gpu/ion/ion_carveout_heap.c
+index 606adae..b4fcb3c 100644
+--- a/drivers/gpu/ion/ion_carveout_heap.c
++++ b/drivers/gpu/ion/ion_carveout_heap.c
+@@ -99,14 +99,14 @@ void ion_carveout_heap_unmap_dma(struct ion_heap *heap,
+ void *ion_carveout_heap_map_kernel(struct ion_heap *heap,
+ 				   struct ion_buffer *buffer)
+ {
+-	return __arch_ioremap(buffer->priv_phys, buffer->size,
++	return __arm_ioremap(buffer->priv_phys, buffer->size,
+ 			      MT_MEMORY_NONCACHED);
+ }
+ 
+ void ion_carveout_heap_unmap_kernel(struct ion_heap *heap,
+ 				    struct ion_buffer *buffer)
+ {
+-	__arch_iounmap(buffer->vaddr);
++	__arm_iounmap(buffer->vaddr);
+ 	buffer->vaddr = NULL;
+ 	return;
+ }
+-- 
+1.8.0
+

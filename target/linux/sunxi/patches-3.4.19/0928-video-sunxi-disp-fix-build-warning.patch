@@ -1,0 +1,30 @@
+From 2ef3ea6ec9f9a2503544f63b22097094e362902e Mon Sep 17 00:00:00 2001
+From: Alexsey Shestacov <wingrime@gmail.com>
+Date: Sun, 4 Nov 2012 14:30:15 +0600
+Subject: [PATCH 928/944] video:sunxi:disp: fix build warning
+
+drivers/video/sunxi/disp/de_fe.c: In function 'DE_SCAL_Set_Scaling_Coef':
+drivers/video/sunxi/disp/de_fe.c:686: warning: 'ch1h_smth_level' may be used uninitialized in this function
+drivers/video/sunxi/disp/de_fe.c:684: warning: 'ch1v_smth_level' may be used uninitialized in this function
+all assigments of this variables does in conditional blocks, in some cases variables may be used uninitialized
+---
+ drivers/video/sunxi/disp/de_fe.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/video/sunxi/disp/de_fe.c b/drivers/video/sunxi/disp/de_fe.c
+index 429c236..a9975c1 100644
+--- a/drivers/video/sunxi/disp/de_fe.c
++++ b/drivers/video/sunxi/disp/de_fe.c
+@@ -543,6 +543,9 @@ __s32 DE_SCAL_Set_Scaling_Coef(__u8 sel, __scal_scan_mod_t *in_scan,
+ 	out_w0 = out_size->width;
+ 	out_h0 = out_size->height;
+ 
++	ch1h_smth_level = 0;
++	ch1v_smth_level = 0;
++
+ 	zoom0_size = 1;
+ 	zoom1_size = 8;
+ 	zoom2_size = 4;
+-- 
+1.8.0
+

@@ -1,0 +1,131 @@
+From 6ef410db2f8029641a534319fadf8cf9c2233c3a Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Thu, 12 Jul 2012 16:58:00 -0700
+Subject: [PATCH 533/944] net: wireless: bcmdhd: Add info_string param with
+ driver/fw/chip info
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+
+Conflicts:
+
+	drivers/net/wireless/bcmdhd/dhd_linux.c
+---
+ drivers/net/wireless/bcmdhd/dhd.h       |  5 +++++
+ drivers/net/wireless/bcmdhd/dhd_linux.c | 20 ++++++++++++++++++++
+ drivers/net/wireless/bcmdhd/dhd_sdio.c  | 18 +++++++++++++++++-
+ 3 files changed, 42 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 3b8df89..c647035 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -463,6 +463,7 @@ extern void dhd_os_sdlock_eventq(dhd_pub_t * pub);
+ extern void dhd_os_sdunlock_eventq(dhd_pub_t * pub);
+ extern bool dhd_os_check_hang(dhd_pub_t *dhdp, int ifidx, int ret);
+ extern int net_os_send_hang_message(struct net_device *dev);
++extern void dhd_set_version_info(dhd_pub_t *pub, char *fw);
+ 
+ #ifdef PNO_SUPPORT
+ extern int dhd_pno_enable(dhd_pub_t *dhd, int pfn_enabled);
+@@ -549,6 +550,8 @@ extern int dhd_bus_membytes(dhd_pub_t *dhdp, bool set, uint32 address, uint8 *da
+ extern void dhd_print_buf(void *pbuf, int len, int bytes_per_line);
+ extern bool dhd_is_associated(dhd_pub_t *dhd, void *bss_buf, int *retval);
+ extern uint dhd_bus_chip_id(dhd_pub_t *dhdp);
++extern uint dhd_bus_chiprev_id(dhd_pub_t *dhdp);
++extern uint dhd_bus_chippkg_id(dhd_pub_t *dhdp);
+ 
+ #if defined(KEEP_ALIVE)
+ extern int dhd_keep_alive_onoff(dhd_pub_t *dhd);
+@@ -647,6 +650,8 @@ extern uint dhd_pktgen_len;
+ extern char fw_path[MOD_PARAM_PATHLEN];
+ extern char nv_path[MOD_PARAM_PATHLEN];
+ 
++#define MOD_PARAM_INFOLEN	512
++
+ #ifdef SOFTAP
+ extern char fw_path2[MOD_PARAM_PATHLEN];
+ #endif
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 2799e68..2b6adea 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -326,6 +326,9 @@ typedef struct dhd_info {
+ char firmware_path[MOD_PARAM_PATHLEN];
+ char nvram_path[MOD_PARAM_PATHLEN];
+ 
++char info_string[MOD_PARAM_INFOLEN];
++module_param_string(info_string, info_string, MOD_PARAM_INFOLEN, 0444);
++
+ int op_mode = 0;
+ int disable_proptx = 0;
+ module_param(op_mode, int, 0644);
+@@ -347,6 +350,7 @@ module_param(dhd_msg_level, int, 0);
+ 
+ /* Disable Prop tx */
+ module_param(disable_proptx, int, 0);
++
+ /* load firmware and/or nvram values from the filesystem */
+ module_param_string(firmware_path, firmware_path, MOD_PARAM_PATHLEN, 0660);
+ module_param_string(nvram_path, nvram_path, MOD_PARAM_PATHLEN, 0);
+@@ -3623,6 +3627,8 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
+ 		/* Print fw version info */
+ 		DHD_ERROR(("Firmware version = %s\n", buf));
+ 
++		dhd_set_version_info(dhd, buf);
++
+ 		DHD_BLOG(buf, strlen(buf) + 1);
+ 		DHD_BLOG(dhd_version, strlen(dhd_version) + 1);
+ 
+@@ -5234,6 +5240,20 @@ int dhd_os_check_if_up(void *dhdp)
+ 	return pub->up;
+ }
+ 
++void dhd_set_version_info(dhd_pub_t *dhdp, char *fw)
++{
++	int i;
++
++	i = snprintf(info_string, sizeof(info_string),
++		"WLAN:\n  Driver: %s\n  Firmware: %s ", EPI_VERSION_STR, fw);
++
++	if (!dhdp)
++		return;
++	i = snprintf(&info_string[i], sizeof(info_string) - i,
++		"\n  Chip: %x Rev %x Pkg %x\n", dhd_bus_chip_id(dhdp),
++		dhd_bus_chiprev_id(dhdp), dhd_bus_chippkg_id(dhdp));
++}
++
+ int dhd_ioctl_entry_local(struct net_device *net, wl_ioctl_t *ioc, int cmd)
+ {
+ 	int ifidx;
+diff --git a/drivers/net/wireless/bcmdhd/dhd_sdio.c b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+index 74e05f8..394997a 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+@@ -7085,7 +7085,23 @@ uint dhd_bus_chip_id(dhd_pub_t *dhdp)
+ {
+ 	dhd_bus_t *bus = dhdp->bus;
+ 
+-	return  bus->sih->chip;
++	return bus->sih->chip;
++}
++
++/* Get Chip Rev ID version */
++uint dhd_bus_chiprev_id(dhd_pub_t *dhdp)
++{
++	dhd_bus_t *bus = dhdp->bus;
++
++	return bus->sih->chiprev;
++}
++
++/* Get Chip Pkg ID version */
++uint dhd_bus_chippkg_id(dhd_pub_t *dhdp)
++{
++	dhd_bus_t *bus = dhdp->bus;
++
++	return bus->sih->chippkg;
+ }
+ int
+ dhd_bus_membytes(dhd_pub_t *dhdp, bool set, uint32 address, uint8 *data, uint size)
+-- 
+1.8.0
+

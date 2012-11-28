@@ -1,0 +1,53 @@
+From 0aa6d5b3b37279e810c9a2dc55778b0b87e7f3b9 Mon Sep 17 00:00:00 2001
+From: Olav Haugan <ohaugan@codeaurora.org>
+Date: Tue, 15 May 2012 14:40:11 -0700
+Subject: [PATCH 623/944] gpu: ion: IOCTL return success when error occurs
+
+ION_IOC_MAP, ION_IOC_SHARE, and ION_IOC_IMPORT may return
+success when an error occurs.
+
+Add correct error handling to ION_IOC_MAP, ION_IOC_SHARE, and
+ION_IOC_IMPORT.
+
+Change-Id: I61c6b0c574da425604235b2d39e13e4a27f7b6f3
+Signed-off-by: Olav Haugan <ohaugan@codeaurora.org>
+---
+ drivers/gpu/ion/ion.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 53123df..156a68e 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -1040,20 +1040,27 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 		data.fd = ion_share_dma_buf(client, data.handle);
+ 		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
+ 			return -EFAULT;
++		if (data.fd < 0)
++			return data.fd;
+ 		break;
+ 	}
+ 	case ION_IOC_IMPORT:
+ 	{
+ 		struct ion_fd_data data;
++		int ret = 0;
+ 		if (copy_from_user(&data, (void __user *)arg,
+ 				   sizeof(struct ion_fd_data)))
+ 			return -EFAULT;
+ 		data.handle = ion_import_dma_buf(client, data.fd);
+-		if (IS_ERR(data.handle))
++		if (IS_ERR(data.handle)) {
++			ret = PTR_ERR(data.handle);
+ 			data.handle = NULL;
++		}
+ 		if (copy_to_user((void __user *)arg, &data,
+ 				 sizeof(struct ion_fd_data)))
+ 			return -EFAULT;
++		if (ret < 0)
++			return ret;
+ 		break;
+ 	}
+ 	case ION_IOC_SYNC:
+-- 
+1.8.0
+

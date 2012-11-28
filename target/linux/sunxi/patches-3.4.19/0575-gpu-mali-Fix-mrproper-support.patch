@@ -1,0 +1,109 @@
+From c9441687b969077d981123295cfff206f8162ee2 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Tue, 5 Jun 2012 01:48:48 +0000
+Subject: [PATCH 575/944] gpu: mali: Fix mrproper support
+
+RELEASEVERSION is not set, and it triggers the wrong code on the
+Kbuilds, so clean up the makefiles to prevent such issues.
+---
+ drivers/gpu/mali/mali/Kbuild | 13 -----------
+ drivers/gpu/mali/ump/Kbuild  | 55 --------------------------------------------
+ 2 files changed, 68 deletions(-)
+
+diff --git a/drivers/gpu/mali/mali/Kbuild b/drivers/gpu/mali/mali/Kbuild
+index 1cfdfe3..12f6c10 100644
+--- a/drivers/gpu/mali/mali/Kbuild
++++ b/drivers/gpu/mali/mali/Kbuild
+@@ -39,19 +39,6 @@ DRIVER_DIR=$(srctree)/$(src)
+ MALI_RELEASE_NAME=$(shell cat $(DRIVER_DIR)/.version 2> /dev/null)
+ include $(DRIVER_DIR)/Makefile.common
+ 
+-# Validate selected config
+-ifneq ($(shell [ -d $(DRIVER_DIR)/arch-$(CONFIG) ] && [ -f $(DRIVER_DIR)/arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+-$(warning Current directory is $(shell pwd))
+-$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+-else
+-ifeq ($(KERNELRELEASE),)
+-# Link arch to the selected arch-config directory
+-$(shell [ -L $(DRIVER_DIR)/arch ] && rm $(DRIVER_DIR)/arch)
+-$(shell ln -sf $(DRIVER_DIR)/arch-$(CONFIG) $(DRIVER_DIR)/arch)
+-$(shell touch $(DRIVER_DIR)/arch/config.h)
+-endif
+-endif
+-
+ # Set up our defines, which will be passed to gcc
+ DEFINES += -DUSING_OS_MEMORY=$(USING_OS_MEMORY)
+ DEFINES += -DUSING_MMU=1
+diff --git a/drivers/gpu/mali/ump/Kbuild b/drivers/gpu/mali/ump/Kbuild
+index 34fa1ee..0c6a4c9 100644
+--- a/drivers/gpu/mali/ump/Kbuild
++++ b/drivers/gpu/mali/ump/Kbuild
+@@ -31,9 +31,6 @@ endif
+ 
+ # linux build system integration
+ 
+-ifneq ($(KERNELRELEASE),)
+-# Inside the kernel build system
+-
+ EXTRA_CFLAGS += -I$(DRIVER_DIR_UMP) -I$(DRIVER_DIR_UMP)/common -I$(DRIVER_DIR_UMP)/linux -I$(DRIVER_DIR_UMP)/../mali/common -I$(DRIVER_DIR_UMP)/../mali/linux -I$(DRIVER_DIR_UMP)/../../ump/include/ump -I$(DRIVER_DIR_UMP)/../include/ump
+ 
+ # For customer releases the Linux Device Drivers will be provided as ARM proprietary and GPL releases:
+@@ -67,55 +64,3 @@ MODULE:=ump.ko
+ 
+ obj-m := $(MODULE:.ko=.o)
+ $(MODULE:.ko=-y) := $(SRC:.c=.o)
+-
+-else
+-# Outside the kernel build system
+-
+-# Check that required parameters are supplied.
+-ifeq ($(CONFIG),)
+-$(error "CONFIG must be specified.")
+-endif
+-ifeq ($(CPU)$(KDIR),)
+-$(error "KDIR or CPU must be specified.")
+-endif
+-
+-# Get any user defined KDIR-<names> or maybe even a hardcoded KDIR
+--include KDIR_CONFIGURATION
+-
+-# Define host system directory
+-KDIR-$(shell uname -m):=/lib/modules/$(shell uname -r)/build
+-
+-ifeq ($(ARCH), arm)
+-	# when compiling for ARM we're cross compiling
+-	export CROSS_COMPILE ?= arm-none-linux-gnueabi-
+-endif
+-
+-# look up KDIR based om CPU selection
+-KDIR ?= $(KDIR-$(CPU))
+-
+-ifeq ($(KDIR),)
+-$(error No KDIR found for platform $(CPU))
+-endif
+-
+-# Validate selected config
+-ifneq ($(shell [ -d arch-$(CONFIG) ] && [ -f arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+-$(warning Current directory is $(shell pwd))
+-$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+-else
+-# Link arch to the selected arch-config directory
+-$(shell [ -L arch ] && rm arch)
+-$(shell ln -sf arch-$(CONFIG) arch)
+-$(shell touch arch/config.h)
+-endif
+-
+-all:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) modules
+-
+-kernelrelease:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) kernelrelease
+-
+-clean:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) clean
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR)/../mali clean
+-
+-endif
+-- 
+1.8.0
+

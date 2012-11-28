@@ -1,0 +1,26 @@
+From e9a110d2f6403f4c49c134e165f1bc7577e4ce49 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Wed, 29 Aug 2012 10:30:08 -0700
+Subject: [PATCH 689/944] gpu: ion: Fix bug in ion_free
+
+Change-Id: I9e92ed750c5cd5d0329ce1747e419c908e0f37ef
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 3ae7785..20dca80 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -406,6 +406,7 @@ void ion_free(struct ion_client *client, struct ion_handle *handle)
+ 
+ 	if (!valid_handle) {
+ 		WARN(1, "%s: invalid handle passed to free.\n", __func__);
++		mutex_unlock(&client->lock);
+ 		return;
+ 	}
+ 	ion_handle_put(handle);
+-- 
+1.8.0
+

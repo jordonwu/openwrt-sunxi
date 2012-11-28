@@ -1,0 +1,31 @@
+From 74b370e31ca370cb64934b9ed4662f9d3685a4d9 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Tue, 13 Mar 2012 13:14:31 -0700
+Subject: [PATCH 163/944] android: persistent_trace: fix section mismatch
+ warning
+
+persistent_trace_probe can be calls persistent_ram init
+functions that are __devinit, mark it __devinit as well.
+
+Change-Id: I8f3cfb1bc443d143dc838b2bced2d191b3bf52d7
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/staging/android/trace_persistent.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/android/trace_persistent.c b/drivers/staging/android/trace_persistent.c
+index 377d4d9..7c3e949 100644
+--- a/drivers/staging/android/trace_persistent.c
++++ b/drivers/staging/android/trace_persistent.c
+@@ -202,7 +202,7 @@ static const struct file_operations persistent_trace_old_fops = {
+ 	.release	= seq_release,
+ };
+ 
+-static int persistent_trace_probe(struct platform_device *pdev)
++static int __devinit persistent_trace_probe(struct platform_device *pdev)
+ {
+ 	struct dentry *d;
+ 	int ret;
+-- 
+1.8.0
+

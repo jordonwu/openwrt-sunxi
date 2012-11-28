@@ -1,0 +1,33 @@
+From 9d6d432654f6b806401b9fa90730610787bb4971 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Fri, 27 Apr 2012 18:04:18 -0700
+Subject: [PATCH 204/944] ARM: vfp: only clear vfp state for current cpu in
+ vfp_pm_suspend
+
+vfp_pm_suspend runs on each cpu, only clear the hardware state
+pointer for the current cpu.  Prevents a possible crash if one
+cpu clears the hw state pointer when another cpu has already
+checked if it is valid.
+
+Change-Id: I997ab1554944eba86730818ff242d7ebe1b32736
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/vfp/vfpmodule.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/vfp/vfpmodule.c b/arch/arm/vfp/vfpmodule.c
+index a163c4b..13ee675 100644
+--- a/arch/arm/vfp/vfpmodule.c
++++ b/arch/arm/vfp/vfpmodule.c
+@@ -460,7 +460,7 @@ static int vfp_pm_suspend(void)
+ 	}
+ 
+ 	/* clear any information we had about last context state */
+-	memset(vfp_current_hw_state, 0, sizeof(vfp_current_hw_state));
++	vfp_current_hw_state[ti->cpu] = NULL;
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

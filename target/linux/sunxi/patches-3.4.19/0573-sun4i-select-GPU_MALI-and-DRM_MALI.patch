@@ -1,0 +1,26 @@
+From 6470ca293a0148d2e0195cdf11369d5f6b46fc28 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 4 Jun 2012 17:21:26 +0000
+Subject: [PATCH 573/944] sun4i: select GPU_MALI and DRM_MALI
+
+---
+ arch/arm/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 69a68ae..8d8cf4e 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -722,6 +722,9 @@ config ARCH_SUN4I
+ 	select GENERIC_CLOCKEVENTS
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARM_L1_CACHE_SHIFT_6
++	select GPU_MALI
++	select DRM
++	select DRM_MALI
+ 	help
+ 	  This enables support for Allwinner Technology Co., Ltd A10 SoC based systems
+ 
+-- 
+1.8.0
+

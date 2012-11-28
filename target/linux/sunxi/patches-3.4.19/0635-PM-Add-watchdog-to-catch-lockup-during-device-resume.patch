@@ -1,0 +1,186 @@
+From e88bd9bdb109f4dd56f2d8b2c40dc44422019506 Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Mon, 14 Feb 2011 21:32:43 -0800
+Subject: [PATCH 635/944] PM: Add watchdog to catch lockup during device
+ resume
+
+Refactor the dpm suspend watchdog code and add watchdogs
+on resume too. The dpm wachdog prints the stack trace and
+reboots the system if a device takes more than 12 seconds
+to suspend or resume.
+
+Change-Id: If00c047a17b80bdc13a8426393c698bc450a7347
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/base/power/main.c | 99 ++++++++++++++++++++++++++++-------------------
+ 1 file changed, 60 insertions(+), 39 deletions(-)
+
+diff --git a/drivers/base/power/main.c b/drivers/base/power/main.c
+index fb017f0..ab7f180 100644
+--- a/drivers/base/power/main.c
++++ b/drivers/base/power/main.c
+@@ -55,10 +55,10 @@ struct suspend_stats suspend_stats;
+ static DEFINE_MUTEX(dpm_list_mtx);
+ static pm_message_t pm_transition;
+ 
+-static void dpm_drv_timeout(unsigned long data);
+-struct dpm_drv_wd_data {
+-	struct device *dev;
+-	struct task_struct *tsk;
++struct dpm_watchdog {
++	struct device		*dev;
++	struct task_struct	*tsk;
++	struct timer_list	timer;
+ };
+ 
+ static int async_error;
+@@ -396,6 +396,56 @@ static int dpm_run_callback(pm_callback_t cb, struct device *dev,
+ 	return error;
+ }
+ 
++/**
++ * dpm_wd_handler - Driver suspend / resume watchdog handler.
++ *
++ * Called when a driver has timed out suspending or resuming.
++ * There's not much we can do here to recover so BUG() out for
++ * a crash-dump
++ */
++static void dpm_wd_handler(unsigned long data)
++{
++	struct dpm_watchdog *wd = (void *)data;
++	struct device *dev      = wd->dev;
++	struct task_struct *tsk = wd->tsk;
++
++	dev_emerg(dev, "**** DPM device timeout ****\n");
++	show_stack(tsk, NULL);
++
++	BUG();
++}
++
++/**
++ * dpm_wd_set - Enable pm watchdog for given device.
++ * @wd: Watchdog. Must be allocated on the stack.
++ * @dev: Device to handle.
++ */
++static void dpm_wd_set(struct dpm_watchdog *wd, struct device *dev)
++{
++	struct timer_list *timer = &wd->timer;
++
++	wd->dev = dev;
++	wd->tsk = get_current();
++
++	init_timer_on_stack(timer);
++	timer->expires = jiffies + HZ * 12;
++	timer->function = dpm_wd_handler;
++	timer->data = (unsigned long)wd;
++	add_timer(timer);
++}
++
++/**
++ * dpm_wd_clear - Disable pm watchdog.
++ * @wd: Watchdog to disable.
++ */
++static void dpm_wd_clear(struct dpm_watchdog *wd)
++{
++	struct timer_list *timer = &wd->timer;
++
++	del_timer_sync(timer);
++	destroy_timer_on_stack(timer);
++}
++
+ /*------------------------- Resume routines -------------------------*/
+ 
+ /**
+@@ -572,6 +622,7 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
+ 	char *info = NULL;
+ 	int error = 0;
+ 	bool put = false;
++	struct dpm_watchdog wd;
+ 
+ 	TRACE_DEVICE(dev);
+ 	TRACE_RESUME(0);
+@@ -584,6 +635,7 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
+ 	 * a resumed device, even if the device hasn't been completed yet.
+ 	 */
+ 	dev->power.is_prepared = false;
++	dpm_wd_set(&wd, dev);
+ 
+ 	if (!dev->power.is_suspended)
+ 		goto Unlock;
+@@ -638,6 +690,7 @@ static int device_resume(struct device *dev, pm_message_t state, bool async)
+ 
+  Unlock:
+ 	device_unlock(dev);
++	dpm_wd_clear(&wd);
+ 	complete_all(&dev->power.completion);
+ 
+ 	TRACE_RESUME(error);
+@@ -666,30 +719,6 @@ static bool is_async(struct device *dev)
+ }
+ 
+ /**
+- *	dpm_drv_timeout - Driver suspend / resume watchdog handler
+- *	@data: struct device which timed out
+- *
+- * 	Called when a driver has timed out suspending or resuming.
+- * 	There's not much we can do here to recover so
+- * 	BUG() out for a crash-dump
+- *
+- */
+-static void dpm_drv_timeout(unsigned long data)
+-{
+-	struct dpm_drv_wd_data *wd_data = (void *)data;
+-	struct device *dev = wd_data->dev;
+-	struct task_struct *tsk = wd_data->tsk;
+-
+-	printk(KERN_EMERG "**** DPM device timeout: %s (%s)\n", dev_name(dev),
+-	       (dev->driver ? dev->driver->name : "no driver"));
+-
+-	printk(KERN_EMERG "dpm suspend stack:\n");
+-	show_stack(tsk, NULL);
+-
+-	BUG();
+-}
+-
+-/**
+  * dpm_resume - Execute "resume" callbacks for non-sysdev devices.
+  * @state: PM transition of the system being carried out.
+  *
+@@ -1066,8 +1095,7 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
+ 	pm_callback_t callback = NULL;
+ 	char *info = NULL;
+ 	int error = 0;
+-	struct timer_list timer;
+-	struct dpm_drv_wd_data data;
++	struct dpm_watchdog wd;
+ 
+ 	dpm_wait_for_children(dev, async);
+ 
+@@ -1084,13 +1112,7 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
+ 		goto Complete;
+ 	}
+ 
+-	data.dev = dev;
+-	data.tsk = get_current();
+-	init_timer_on_stack(&timer);
+-	timer.expires = jiffies + HZ * 12;
+-	timer.function = dpm_drv_timeout;
+-	timer.data = (unsigned long)&data;
+-	add_timer(&timer);
++	dpm_wd_set(&wd, dev);
+ 
+ 	device_lock(dev);
+ 
+@@ -1147,8 +1169,7 @@ static int __device_suspend(struct device *dev, pm_message_t state, bool async)
+ 
+ 	device_unlock(dev);
+ 
+-	del_timer_sync(&timer);
+-	destroy_timer_on_stack(&timer);
++	dpm_wd_clear(&wd);
+ 
+  Complete:
+ 	complete_all(&dev->power.completion);
+-- 
+1.8.0
+

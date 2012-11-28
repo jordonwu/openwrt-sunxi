@@ -1,0 +1,27 @@
+From e2d0b9d6731a8795f1cc5d7c55d590a2d91d51a1 Mon Sep 17 00:00:00 2001
+From: Greg Hackmann <ghackmann@google.com>
+Date: Wed, 22 Aug 2012 17:38:04 -0700
+Subject: [PATCH 676/944] gpu: ion: fix page offset in dma_buf_kmap()
+
+Change-Id: I1c975f0ffde5c75d6166ae20d379991d3f770a26
+Signed-off-by: Greg Hackmann <ghackmann@google.com>
+---
+ drivers/gpu/ion/ion.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index b782397..34c12df 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -846,7 +846,7 @@ static void ion_dma_buf_release(struct dma_buf *dmabuf)
+ static void *ion_dma_buf_kmap(struct dma_buf *dmabuf, unsigned long offset)
+ {
+ 	struct ion_buffer *buffer = dmabuf->priv;
+-	return buffer->vaddr + offset;
++	return buffer->vaddr + offset * PAGE_SIZE;
+ }
+ 
+ static void ion_dma_buf_kunmap(struct dma_buf *dmabuf, unsigned long offset,
+-- 
+1.8.0
+

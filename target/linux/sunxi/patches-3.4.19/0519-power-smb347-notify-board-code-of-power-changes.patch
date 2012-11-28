@@ -1,0 +1,52 @@
+From 9232b37c14d521d8289c1d698b2d2e92f33bbb2f Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Mon, 2 Jul 2012 22:49:37 -0700
+Subject: [PATCH 519/944] power: smb347: notify board code of power changes
+
+smb347_battery power supply will use the supplied_to
+provided by the board file in pdata, if any, and pass
+along a power_supply_changed() for itself if provided.
+The board file can use its external_power_changed callback
+to be notified of changes in state of the smb347 mains, usb,
+or battery supplies.
+
+Change-Id: Idd08b7cc49c5f8c639907371b686fca255825079
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c       | 6 ++++++
+ include/linux/power/smb347-charger.h | 2 ++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index ce1694d..83b40a3 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -1207,6 +1207,12 @@ static int smb347_probe(struct i2c_client *client,
+ 	smb->battery.properties = smb347_battery_properties;
+ 	smb->battery.num_properties = ARRAY_SIZE(smb347_battery_properties);
+ 
++	if (smb->pdata->supplied_to) {
++		smb->battery.supplied_to = smb->pdata->supplied_to;
++		smb->battery.num_supplicants = smb->pdata->num_supplicants;
++		smb->battery.external_power_changed = power_supply_changed;
++	}
++
+ 	ret = power_supply_register(dev, &smb->mains);
+ 	if (ret < 0)
+ 		return ret;
+diff --git a/include/linux/power/smb347-charger.h b/include/linux/power/smb347-charger.h
+index b3cb20d..12c63e3 100644
+--- a/include/linux/power/smb347-charger.h
++++ b/include/linux/power/smb347-charger.h
+@@ -112,6 +112,8 @@ struct smb347_charger_platform_data {
+ 	bool		use_usb_otg;
+ 	int		irq_gpio;
+ 	enum smb347_chg_enable enable_control;
++	char		**supplied_to;
++	size_t		num_supplicants;
+ };
+ 
+ #endif /* SMB347_CHARGER_H */
+-- 
+1.8.0
+

@@ -1,0 +1,120 @@
+From f83c730cf0e2f161bf111fe657fec897bb6ed07e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 30 Jul 2012 16:56:59 +0200
+Subject: [PATCH 785/944] sunxi: remove unused mach/vmalloc.h
+
+---
+ arch/arm/mach-sun3i/include/mach/vmalloc.h | 23 ----------------------
+ arch/arm/mach-sun4i/include/mach/vmalloc.h | 31 ------------------------------
+ arch/arm/mach-sun5i/include/mach/vmalloc.h | 31 ------------------------------
+ 3 files changed, 85 deletions(-)
+ delete mode 100644 arch/arm/mach-sun3i/include/mach/vmalloc.h
+ delete mode 100644 arch/arm/mach-sun4i/include/mach/vmalloc.h
+ delete mode 100644 arch/arm/mach-sun5i/include/mach/vmalloc.h
+
+diff --git a/arch/arm/mach-sun3i/include/mach/vmalloc.h b/arch/arm/mach-sun3i/include/mach/vmalloc.h
+deleted file mode 100644
+index 30801e7..0000000
+--- a/arch/arm/mach-sun3i/include/mach/vmalloc.h
++++ /dev/null
+@@ -1,23 +0,0 @@
+-/*
+- * arch/arm/mach-sun3i/include/mach/vmalloc.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#define VMALLOC_END		(PAGE_OFFSET + 0x18000000)
+diff --git a/arch/arm/mach-sun4i/include/mach/vmalloc.h b/arch/arm/mach-sun4i/include/mach/vmalloc.h
+deleted file mode 100644
+index 45e6cf7..0000000
+--- a/arch/arm/mach-sun4i/include/mach/vmalloc.h
++++ /dev/null
+@@ -1,31 +0,0 @@
+-/*
+- * arch/arm/mach-sun4i/include/mach/vmalloc.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef __SW_VMALLOC_H
+-#define __SW_VMALLOC_H
+-
+-#include <asm/sizes.h>
+-
+-#define VMALLOC_END        0xF0000000UL
+-
+-#endif
+diff --git a/arch/arm/mach-sun5i/include/mach/vmalloc.h b/arch/arm/mach-sun5i/include/mach/vmalloc.h
+deleted file mode 100644
+index 7462532..0000000
+--- a/arch/arm/mach-sun5i/include/mach/vmalloc.h
++++ /dev/null
+@@ -1,31 +0,0 @@
+-/*
+- * arch/arm/mach-sun5i/include/mach/vmalloc.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * Benn Huang <benn@allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef __SW_VMALLOC_H
+-#define __SW_VMALLOC_H
+-
+-#include <asm/sizes.h>
+-
+-#define VMALLOC_END        0xF0000000UL
+-
+-#endif
+-- 
+1.8.0
+

@@ -1,0 +1,46 @@
+From d3b8e45c9d889457ab215ae8d675fa9dec5b85bb Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 18 Oct 2012 10:46:48 +0200
+Subject: [PATCH 812/944] sun4i: clock: fix PLL4 initialization for non-revC
+
+Based on a patch by Andreas Baierl <list@imkreisrum.de> to fix a problem
+initializing Mali's clock on a revB board.
+---
+ arch/arm/mach-sun4i/clock/clock.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/clock/clock.c b/arch/arm/mach-sun4i/clock/clock.c
+index 2331e5f..2619c6d 100644
+--- a/arch/arm/mach-sun4i/clock/clock.c
++++ b/arch/arm/mach-sun4i/clock/clock.c
+@@ -162,20 +162,21 @@ int clk_init(void)
+     tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+     tmpSclk->set_clk(tmpSclk->clk);
+ 
+-    if(MAGIC_VER_C == sw_get_ic_ver()) {
+-        /* initiate PLL4 */
+-        #if(USE_PLL6M_REPLACE_PLL4)
++	/* initiate PLL4 */
++#if(USE_PLL6M_REPLACE_PLL4)
++	if(MAGIC_VER_C == sw_get_ic_ver()) {
+         tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL4];
+         tmpSclk->clk->onoff = AW_CCU_CLK_OFF;
+         tmpSclk->set_clk(tmpSclk->clk);
+-        #else
++	} else
++#endif
++	{
+         tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL4];
+         tmpSclk->clk->rate  = 960000000;
+         tmpSclk->set_clk(tmpSclk->clk);
+         tmpSclk->clk->onoff = AW_CCU_CLK_ON;
+         tmpSclk->set_clk(tmpSclk->clk);
+-        #endif
+-    }
++	}
+ 
+ 	/* initiate PLL6 */
+ 	tmpSclk = &ccu_sys_clk[AW_SYS_CLK_PLL6];
+-- 
+1.8.0
+

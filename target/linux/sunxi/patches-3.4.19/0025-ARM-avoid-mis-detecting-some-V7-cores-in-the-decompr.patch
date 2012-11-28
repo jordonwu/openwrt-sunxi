@@ -1,0 +1,38 @@
+From ed275aa26f3bcde6da3356755ae5ad8eeab7444f Mon Sep 17 00:00:00 2001
+From: Brian Swetland <swetland@google.com>
+Date: Mon, 26 Jan 2009 17:15:49 -0800
+Subject: [PATCH 025/944] [ARM] avoid mis-detecting some V7 cores in the
+ decompressor
+
+This allows kernel decompress to happen nearly instantly instead
+of taking over 20 seconds.
+
+Signed-off-by: Brian Swetland <swetland@google.com>
+---
+ arch/arm/boot/compressed/head.S | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/boot/compressed/head.S b/arch/arm/boot/compressed/head.S
+index 5f6045f..1dcf1b8 100644
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -766,6 +766,8 @@ proc_types:
+ @		b	__arm6_mmu_cache_off
+ @		b	__armv3_mmu_cache_flush
+ 
++#if !defined(CONFIG_CPU_V7)
++		/* This collides with some V7 IDs, preventing correct detection */
+ 		.word	0x00000000		@ old ARM ID
+ 		.word	0x0000f000
+ 		mov	pc, lr
+@@ -774,6 +776,7 @@ proc_types:
+  THUMB(		nop				)
+ 		mov	pc, lr
+  THUMB(		nop				)
++#endif
+ 
+ 		.word	0x41007000		@ ARM7/710
+ 		.word	0xfff8fe00
+-- 
+1.8.0
+

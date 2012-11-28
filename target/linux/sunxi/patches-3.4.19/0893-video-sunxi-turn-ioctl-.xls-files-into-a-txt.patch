@@ -1,0 +1,2567 @@
+From c6818abdcfd081618143ddaefdfaf378fcdc6d24 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Mon, 22 Oct 2012 16:48:39 +0200
+Subject: [PATCH 893/944] video:sunxi: turn ioctl .xls files into a txt
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ .../sunxi/A10_linux_display_driver_interface.xls   |  Bin 65024 -> 0 bytes
+ .../sunxi/A13_linux_display_driver_interface.xls   |  Bin 64512 -> 0 bytes
+ drivers/video/sunxi/disp_ioctls.txt                | 1872 ++++++++++++++++++++
+ 3 files changed, 1872 insertions(+)
+ delete mode 100644 drivers/video/sunxi/A10_linux_display_driver_interface.xls
+ delete mode 100644 drivers/video/sunxi/A13_linux_display_driver_interface.xls
+ create mode 100644 drivers/video/sunxi/disp_ioctls.txt
+
+diff --git a/drivers/video/sunxi/A10_linux_display_driver_interface.xls b/drivers/video/sunxi/A10_linux_display_driver_interface.xls
+deleted file mode 100644
+index 9138359b09af0c84cc74d7900bf9efc2400f17df..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 65024
+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
+
+diff --git a/drivers/video/sunxi/A13_linux_display_driver_interface.xls b/drivers/video/sunxi/A13_linux_display_driver_interface.xls
+deleted file mode 100644
+index fbdd729566be683a0604d0ce02cb00f4cb445a62..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 64512
+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
+Cd;SLi
+
+diff --git a/drivers/video/sunxi/disp_ioctls.txt b/drivers/video/sunxi/disp_ioctls.txt
+new file mode 100644
+index 0000000..56a7bac
+--- /dev/null
++++ b/drivers/video/sunxi/disp_ioctls.txt
+@@ -0,0 +1,1872 @@
++This document is a google translated, asciified version of
++A10_linux_display_driver_interface.xls and
++A13_linux_display_driver_interface.xls.
++
++It documents all the ioctls available for the sunxi disp driver,
++although most are very self-explanatory.
++
++-- Libv.
++
++A) FB engine.
++
++
++1) FBIOGET_VSCREENINFO
++
++1) FBIOGET_VSCREENINFO
++
++Args:
++	* var screen information（struct fb_var_screeninfo*）
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer var screen information.
++
++2) FBIOPUT_VSCREENINFO
++
++Args:
++	* var screen information(struct fb_var_screeninfo*）
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set framebuffer var screen information.
++
++3) FBIOGET_FSCREENINFO
++
++Args:
++	* fix screen information(struct fb_fix_screeninfo *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer fix screen information.
++
++4) FBIOPUTCMAP
++
++Args:
++	* Palette(struct fb_cmap_user*)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set framebuffer Palette.
++
++5) FBIOGETCMAP
++
++Args:
++	* Palette(struct fb_cmap_user*)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer Palette.
++
++6) FBIOPAN_DISPLAY
++
++Args:
++	* var screen information(struct fb_var_screeninfo*）
++Returns:
++	Success: 0;
++	Failed: errno.
++
++pan display, adjustment var.xoffset, var.yoffset, var.xres, var.yres.
++
++7) FBIOBLANK
++
++Args:
++	* blank mode
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Currently defined for the framebuffer the corresponding layers switch??? (todo)
++
++8) FBIOGET_LAYER_HDL_0
++
++Args:
++	* Back the Layers handle （unsigned int*）
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer handle corresponding layers on the screen 0.
++
++
++9) FBIOGET_LAYER_HDL_1
++
++Args:
++	* Back the Layers handle （unsigned int*）
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer handle corresponding layers on the screen 1.
++
++B) Disp engine.
++
++1) framebuffer:
++---------------
++
++1.1) DISP_CMD_FB_REQUEST
++
++Args:
++	* framebuffer id(0~7)
++	* the framebuffer to apply parameters （__disp_fb_create_para_t *）
++
++Returns:
++	Success: framebuffer handle.
++	Failed: errno.
++
++Application framebuffer, the framebuffer operation must apply.
++
++1.2) DISP_CMD_FB_RELEASE
++
++Args:
++	framebuffer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Release framebuffer
++
++2) global:
++----------
++
++2.1) DISP_CMD_START_CMD_CACHE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Start cache. Behind the IO command will not be executed immediately, but wait
++until call DISP_CMD_EXECUTE_CMD_AND_STOP_CACHE after execution in conjunction.
++
++2.2) DISP_CMD_EXECUTE_CMD_AND_STOP_CACHE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Execute commands and stop the cache.
++
++2.3) DISP_CMD_SET_BKCOLOR
++
++Args:
++	* screen [0, 1]
++	* background colour (__disp_color_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the background colour.
++
++2.4) DISP_CMD_GET_BKCOLOR
++
++Args:
++	* screen [0, 1]
++	* Background colour (__disp_color_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get the background colour.
++
++5) DISP_CMD_SET_COLORKEY
++
++Args:
++	* screen [0, 1]
++	* color key parameter (__disp_colorkey_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set color key.
++
++6) DISP_CMD_GET_COLORKEY
++
++Args:
++	* screen [0, 1]
++	* color key parameter (__disp_colorkey_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get color key.
++
++7) DISP_CMD_SET_PALETTE_TBL
++
++Args:
++	* screen id (0/1)
++	* Address (__u32 *)
++	* offset (__u32, 4bytes alignment)
++	* size (4bytes alignment, unit byte)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the palette, the total size of the system palette is 256 * 4 byte, and can
++be set to any period of continuous regional palette.
++
++8) DISP_CMD_GET_PALETTE_TBL
++
++Args:
++	* screen [0, 1]
++	* Address (__u32 *)
++	* offset (__u32, 4bytes alignment)
++	* size (4bytes alignment, unit byte)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get palette
++
++9) DISP_CMD_SCN_GET_WIDTH
++
++Args:
++	screen [0, 1]
++
++Returns:
++	The width of the screen.
++
++Get the current width of the screen.
++
++10) DISP_CMD_SCN_GET_HEIGHT
++
++Args:
++	screen [0, 1]
++
++Returns:
++	The height of the screen.
++
++Get the current height of the screen.
++
++11) DISP_CMD_GET_OUTPUT_TYPE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Output type (__disp_output_type_t)
++
++Get the current output type (LCD,TV,HDMI,VGA,NONE)
++
++12) DISP_CMD_SET_GAMMA_TABLE
++
++Args:
++	* screen [0, 1]
++	* Address(__u32 *)
++	* N/A
++	* size (4bytes alignment, unit byte)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the gamma correction coefficient table.
++
++13) DISP_CMD_GAMMA_CORRECTION_ON
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enabel gamma correction.
++
++14) DISP_CMD_GAMMA_CORRECTION_OFF
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable gamma correction.
++
++15) DISP_CMD_SET_BRIGHT
++
++Args:
++	* screen [0, 1]
++	* brightness value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the brightness of the screen.
++
++16) DISP_CMD_GET_BRIGHT
++
++Args:
++	screen [0, 1]
++
++Returns:
++	The brightness of the screen.
++
++Get the brightness of the screen.
++
++17) DISP_CMD_SET_CONTRAST
++
++Args:
++	* screen [0, 1]
++	* contrast values ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the contrast of the screen.
++
++18) DISP_CMD_GET_CONTRAST
++
++Args:
++	screen [0, 1]
++
++Returns
++	The contrast of the screen.
++
++Get the contrast of the screen.
++
++19) DISP_CMD_SET_SATURATION
++
++Args:
++	* screen [0, 1]
++	* saturation value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set screen saturation.
++
++20) DISP_CMD_GET_SATURATION
++
++Args:
++	screen [0, 1]
++
++Returns
++	screen saturation
++
++Get screen saturation.
++
++21) DISP_CMD_SET_HUE (sun4i only)
++
++Args:
++	* screen [0, 1]
++	* saturation value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set screen hue.
++
++22) DISP_CMD_GET_HUE (sun4i only)
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	* screen hue
++
++Get screen hue.
++
++23) DISP_CMD_ENHANCE_ON
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable screen enhance function.
++
++24) DISP_CMD_ENHANCE_OFF
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable screen enhance function.
++
++25) DISP_CMD_GET_ENHANCE_EN
++
++Args:
++	screen [0, 1]
++
++Returns:
++	0: disabled
++	1: enabled
++
++Query whether screen enhance function is enabled.
++
++26) DISP_CMD_DE_FLICKER_ON
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable deflicker function （in the output interlace where used）.
++
++27) DISP_CMD_DE_FLICKER_OFF
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable deflicker function.
++
++3) layer:
++---------
++
++3.1) DISP_CMD_LAYER_REQUEST
++
++Args:
++	* screen [0, 1]
++	* layers work mode (__disp_layer_work_mode_t)
++
++Returns:
++	Success :layer_handle
++	Failed :NULL
++
++The application layer, the drive will only be allocated to a layer out, did not
++make any of the layers set, it is recommended to set this parameter layers call
++DISP_CMD_LAYER_SET_PARA command immediately after the application layer.
++
++3.2) DISP_CMD_LAYER_RELEASE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++The release layer, after the release of the layers, all the layers registers
++are cleared to the default of value, so if you want to re-think using the layer
++must re-apply.
++
++3.3) DISP_CMD_LAYER_OPEN
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Open the Layer, that can see the layers.
++
++3.4) DISP_CMD_LAYER_CLOSE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Close layer.
++
++3.5) DISP_CMD_LAYER_SET_FB
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* framebuffer information (__disp_fb_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set layer framebuffer, the original source window remains set.
++
++3.6) DISP_CMD_LAYER_GET_FB
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* framebuffer information (__disp_fb_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get the layers framebuffer.
++
++3.7) DISP_CMD_LAYER_SET_SRC_WINDOW
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* source window (__disp_rect *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the layers source window
++
++3.8) DISP_CMD_LAYER_GET_SRC_WINDOW
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* source window(__disp_rect *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get the layers source window.
++
++3.9) DISP_CMD_LAYER_SET_SCN_WINDOW
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* screen window (__disp_rect *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the layers screen window.
++
++3.10) DISP_CMD_LAYER_GET_SCN_WINDOW
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* screen window (__disp_rect *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get the layers screen window.
++
++3.11) DISP_CMD_LAYER_SET_PARA
++
++Args:
++      * screen [0, 1]
++      * layer_handle
++      * layers parameter (__disp_layer_info_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set layer parameters, all the parameters of the layer are set by the command,
++in addition to the priority (priority adjustment can only be implemented
++through DISP_CMD_LAYER_TOP / DISP_CMD_LAYER_BOTTOM).
++
++3.12) DISP_CMD_LAYER_GET_PARA
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* layers parameter(__disp_layer_info_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get layer parameter.
++
++3.13) DISP_CMD_LAYER_ALPHA_ON
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Open layers of global alpha function, that use surface alpha.
++
++3.14) DISP_CMD_LAYER_ALPHA_OFF
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Open layers of global alpha function, that use surface alpha.
++
++3.15) DISP_CMD_LAYER_GET_ALPHA_EN
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	0: disabled
++	1: enabled
++
++Query whether layer has global alpha enabled.
++
++3.16) DISP_CMD_LAYER_SET_ALPHA_VALUE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* global alpha value (__u32)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get a layers global alpha value.
++
++3.17) DISP_CMD_LAYER_GET_ALPHA_VALUE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	* global alpha value
++
++Get a layers global alpha value.
++
++3.18) DISP_CMD_LAYER_CK_ON
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable colour key on a layer.
++
++3.19) DISP_CMD_LAYER_CK_OFF
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable a layers colour key.
++
++3.20) DISP_CMD_LAYER_GET_CK_EN
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	0: colour key disabled.
++	1: colour key enabled.
++
++Enable a layers colour key.
++
++3.21) DISP_CMD_LAYER_SET_PIPE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* pipe (__u32)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the layer pipe, a pipe layer can only be high priority coverage low
++priority, rather than do alpha blending.
++
++3.22) DISP_CMD_LAYER_GET_PIPE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	pipe
++
++Get the pipe associated with the layer.
++
++3.23) DISP_CMD_LAYER_TOP
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Layer top, the relative relationship between the other layers priority remains
++unchanged.
++
++3.24) DISP_CMD_LAYER_BOTTOM
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set bottom layer, the relative relationship between the other layers of the
++priority remains the same.
++
++3.25) DISP_CMD_LAYER_GET_PRIO
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	priority.
++
++Get priority layers (layers from the bottom to the top priority from low to high).
++
++3.26) DISP_CMD_LAYER_SET_SMOOTH
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* smooth (__disp_video_smooth_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the layer of smooth (the layer must scaler layers).
++
++3.27) DISP_CMD_LAYER_GET_SMOOTH
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns
++	smooth (__disp_video_smooth_t)
++
++Get the layers smooth (the layer must scaler layer).
++
++3.28) DISP_CMD_LAYER_SET_BRIGHT
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* brightness value([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the brightness of the scaler layer.
++
++3.29) DISP_CMD_LAYER_GET_BRIGHT
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	brightness level.
++
++Get scaler layers brightness.
++
++3.30) DISP_CMD_LAYER_SET_CONTRAST
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* contrast value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set scaler layers contrast.
++
++3.31) DISP_CMD_LAYER_GET_CONTRAST
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	* contrast value.
++
++Get scaler layers contrast.
++
++3.32) DISP_CMD_LAYER_SET_SATURATION
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* saturation value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set scaler layers saturation
++
++3.33) DISP_CMD_LAYER_GET_SATURATION
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	saturation value.
++
++Get scaler layers saturation.
++
++3.34) DISP_CMD_LAYER_SET_HUE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* tone/hue value ([0-100], default: 50)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set scaler layers tone/hue.
++
++3.35) DISP_CMD_LAYER_GET_HUE
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns
++	tone/hue value.
++
++Get scaler layers tone/hue.
++
++3.36) DISP_CMD_LAYER_ENHANCE_ON
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable scaler layers enhance function.
++
++3.37) DISP_CMD_LAYER_ENHANCE_OFF
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable scaler layers enhance function.
++
++3.38) DISP_CMD_LAYER_GET_ENHANCE_EN
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	0: disabled
++	1: enabled.
++
++Query whether a scaler layers enhance function is enabled.
++
++3.39) DISP_CMD_LAYER_VPP_ON
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable video post-processing functions (only for scaler layers).
++
++40) DISP_CMD_LAYER_VPP_OFF
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable video post-processing functions.
++
++3.41) DISP_CMD_LAYER_GET_VPP_EN
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	0: disabled
++	1: enabled
++
++Query whether a layers vpp function is enabled.
++
++3.42) DISP_CMD_LAYER_SET_LUMA_SHARP_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* Luminance sharpening level [0-4]
++		* 0: disabled.
++		* 1-4: higher level, sharper.
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set luminance sharpening level.
++
++3.43) DISP_CMD_LAYER_GET_LUMA_SHARP_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Luminance sharpening level.
++
++Get luminance sharpening level.
++
++3.44) DISP_CMD_LAYER_SET_CHROMA_SHARP_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* hue sharpening level [0-4]
++		* 0: disabled.
++		* 1-4: higher level, sharper.
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set hue sharpening level.
++
++3.45) DISP_CMD_LAYER_GET_CHROMA_SHARP_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	hue sharpening level.
++
++Get hue sharpening level.
++
++3.46) DISP_CMD_LAYER_SET_WHITE_EXTEN_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* White level expansion value [0-4]
++		* 0: disabled.
++		* 1-4: higher level, sharper.
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set white level expansion value.
++
++3.47) DISP_CMD_LAYER_GET_WHITE_EXTEN_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	white level expansion value.
++
++Get white level expansion value.
++
++3.48) DISP_CMD_LAYER_SET_BLACK_EXTEN_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* Black level expansion value [0-4]
++		* 0: disabled.
++		* 1-4: higher level, sharper.
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set black level expansion value.
++
++3.49) DISP_CMD_LAYER_GET_BLACK_EXTEN_LEVEL
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	black level expansion value.
++
++Get black level expansion value.
++
++4) scaler:
++----------
++
++4.1) DISP_CMD_SCALER_REQUEST
++
++Args:
++	screen [0, 1]
++
++Returns:
++	scaler handle
++
++Application scaler is used to write-back.
++
++4.2) DISP_CMD_SCALER_RELEASE
++
++Args:
++	* screen [0, 1]
++	* scaler handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Release scaler.
++
++4.3) DISP_CMD_SCALER_EXECUTE
++
++Args:
++	* screen [0, 1]
++	* scaler handle
++	* scaler parameter (__disp_scaler_para_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Perform scaler.
++
++5) hwc:
++-------
++
++5.1) DISP_CMD_HWC_OPEN
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Open hw cursor.
++
++5.2) DISP_CMD_HWC_CLOSE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Close hw cursor.
++
++5.3) DISP_CMD_HWC_SET_POS
++
++Args:
++	* screen [0, 1]
++	* Starting coordinate on screen (__disp_pos_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set starting coordinates of the hw cursor on the screen.
++
++5.4) DISP_CMD_HWC_GET_POS
++
++Args:
++	* screen [0, 1]
++	* Starting coordinate on screen (__disp_pos_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get starting coordinates of the hw cursor on the screen.
++
++5.5) DISP_CMD_HWC_SET_FB
++
++Args:
++	* screen [0, 1]
++	* (__disp_hwc_pattern_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set hw cursor framebuffer information.
++
++5.6) DISP_CMD_HWC_SET_PALETTE_TABLE
++
++Args:
++	* screen [0, 1]
++	* Address (__u32 *)
++	* N/A
++	* size (4 bytes alignment, unit byte)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set palette table for hw cursor.
++
++6) video:
++---------
++
++6.1) DISP_CMD_VIDEO_START
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Start video playback.
++
++6.2) DISP_CMD_VIDEO_STOP
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Stop video playback.
++
++6.3) DISP_CMD_VIDEO_SET_FB
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++	* framebuffer information (__disp_video_fb_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set video framebuffer information.
++
++6.4) DISP_CMD_VIDEO_GET_DIT_INFO
++
++Args:
++     * screen [0, 1]
++     * layer_handle
++     * deinterlace information (__disp_dit_info_t *)
++
++Returns:
++	deinterlace information
++
++The deinterlace information for video display.
++
++6.5) DISP_CMD_VIDEO_GET_FRAME_ID
++
++Args:
++	* screen [0, 1]
++	* layer_handle
++
++Returns:
++	Success: framebuffer id
++	Failed: errno.
++
++Get currently being displayed framebuffer id.
++
++7) lcd:
++-------
++
++7.1) DISP_CMD_LCD_ON
++
++Args:
++	screen [0, 1]
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable LCD
++
++7.2) DISP_CMD_LCD_OFF
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable LCD.
++
++7.3) DISP_CMD_LCD_SET_BRIGHTNESS
++
++Args:
++	* screen [0, 1]
++	* brightness (__disp_lcd_bright_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set LCD brightness.
++
++7.4) DISP_CMD_LCD_GET_BRIGHTNESS
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	LCD brightness (__disp_lcd_bright_t)
++
++Get LCD brightness.
++
++7.5) DISP_CMD_LCD_SET_SRC
++
++Args:
++	* screen [0, 1]
++	* lcd source (__disp_lcdc_src_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set source for LCD.
++
++8) tv:
++------
++
++8.1) DISP_CMD_TV_ON
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable TV display.
++
++8.2) DISP_CMD_TV_OFF
++
++Args:
++	* screen [0, 1]
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable TV display.
++
++8.3) DISP_CMD_TV_SET_MODE
++
++Args:
++	* screen [0, 1]
++	* mode (__disp_tv_mode_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the mode on the TV display.
++
++8.4) DISP_CMD_TV_GET_MODE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	mode (__disp_tv_mode_t)
++
++Get current TV mode.
++
++8.4) DISP_CMD_TV_GET_INTERFACE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	interface (disp_tv_output_t)
++
++Get TV interface.
++
++8.5) DISP_CMD_TV_SET_SRC
++
++Args:
++	* screen [0, 1]
++	* source (__disp_lcdc_src_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set TV source.
++
++9) hdmi:
++--------
++
++9.1) DISP_CMD_HDMI_ON
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable HDMI display.
++
++9.2) DISP_CMD_HDMI_OFF
++
++Args:
++	screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable HDMI display.
++
++9.3) DISP_CMD_HDMI_SET_MODE
++
++Args:
++	* screen [0, 1]
++	* mode (__disp_tv_mode_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set HDMI mode.
++
++9.4) DISP_CMD_HDMI_GET_MODE
++
++Args:
++	screen [0, 1]
++
++Returns:
++	mode (__disp_tv_mode_t)
++
++Get current HDMI mode.
++
++9.5) DISP_CMD_HDMI_SUPPORT_MODE
++
++Args:
++     * screen [0, 1]
++     * mode(__disp_tv_mode_t)
++
++
++Returns:
++	0: invalid
++	1: supported.
++
++Query whether a mode is supported on hdmi.
++
++9.6) DISP_CMD_HDMI_GET_HPD_STATUS
++
++Args
++	screen [0, 1]
++
++Returns:
++	0: nothing attached
++	1: hpd attached.
++
++Query the current hdmi hpd status.
++
++9.7) DISP_CMD_HDMI_SET_SRC
++
++Args:
++	* screen [0, 1]
++	* source (__disp_lcdc_src_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set hdmi source.
++
++10) vga:
++--------
++
++10.1) DISP_CMD_VGA_ON
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable VGA display.
++
++10.2) DISP_CMD_VGA_OFF
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable VGA display.
++
++10.3) DISP_CMD_VGA_SET_MODE
++
++Args:
++	* screen [0, 1]
++	* mode (__disp_vga_mode_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set VGA mode.
++
++10.4) DISP_CMD_VGA_GET_MODE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	* mode (__disp_vga_mode_t)
++
++Get current VGA mode.
++
++10.4) DISP_CMD_VGA_SET_SRC
++
++Args:
++	* screen [0, 1]
++	* source (__disp_lcdc_src_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set source of vga display.
++
++11) sprite:
++-----------
++
++11.1) DISP_CMD_SPRITE_OPEN
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Global switch to open the sprite, sprite, each the sprite block of switch can be set.
++
++11.2) DISP_CMD_SPRITE_CLOSE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Close sprite.
++
++11.3) DISP_CMD_SPRITE_SET_FORMAT
++
++Args:
++	* screen [0, 1]
++	* format (__disp_pixel_fmt_t)
++	* pixel sequence (__disp_pixel_seq_t)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the format of the sprite Note only sprite block format is the same, so the
++format is valid for all block, each block can no longer separate set its
++format.
++
++11.4) DISP_CMD_SPRITE_GLOBAL_ALPHA_ENABLE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Enable global alpha on sprite.
++
++11.5) DISP_CMD_SPRITE_GLOBAL_ALPHA_DISABLE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Disable global alpha on sprite.
++
++11.6) DISP_CMD_SPRITE_GET_GLOBAL_ALPHA_ENABLE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	0: disabled
++	1: enabled
++
++Query the current state of global alpha on the sprite.
++
++11.7) DISP_CMD_SPRITE_SET_GLOBAL_ALPHA_VALUE
++
++Args:
++	* screen [0, 1]
++	* global alpha value
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the value of global alpha on the sprite.
++
++11.8) DISP_CMD_SPRITE_GET_GLOBAL_ALPHA_VALUE
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	global alpha value
++
++Get the value of global alpha on the sprite.
++
++11.9) DISP_CMD_SPRITE_SET_ORDER
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* target block handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++A block to the front of the target block.
++
++11.10) DISP_CMD_SPRITE_GET_TOP_BLOCK
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	* block handle
++
++Get the handle of the top block.
++
++11.11) DISP_CMD_SPRITE_GET_BOTTOM_BLOCK
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	* block handle
++
++Get the handle of the bottom block.
++
++11.12) DISP_CMD_SPRITE_SET_PALETTE_TBL
++
++Args:
++	* screen [0, 1]
++	* Address (__u32 *)
++	* offset (__u32, 4 bytes alignment)
++	* size (4 bytes alignment, unit byte)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set sprite palette table.
++
++11.13) DISP_CMD_SPRITE_GET_BLOCK_NUM
++
++Args:
++	* screen [0, 1]
++
++Returns:
++	Number of blocks used.
++
++Get the number of blocks in use.
++
++11.14) DISP_CMD_SPRITE_BLOCK_REQUEST
++
++Args:
++	* screen [0, 1]
++	* block parameter (__disp_sprite_block_para_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Request a sprite block.
++
++11.15) DISP_CMD_SPRITE_BLOCK_RELEASE
++
++Args:
++	* screen [0, 1]
++	* block handle
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Release a sprite block.
++
++11.16) DISP_CMD_SPRITE_BLOCK_OPEN
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Open a sprite block.
++
++11.17) DISP_CMD_SPRITE_BLOCK_CLOSE
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Close a sprite block.
++
++11.18) DISP_CMD_SPRITE_BLOCK_SET_SOURCE_WINDOW
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block source window (__disp_rect_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the sprite block the source window, because the sprite block without
++scaling function, driven only concerned with x and y, while the width and
++height of the width and height of the screen window.
++
++11.19) DISP_CMD_SPRITE_BLOCK_GET_SOURCE_WINDOW
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block source window (__disp_rect_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get the source window of a sprite block.
++
++11.20) DISP_CMD_SPRITE_BLOCK_SET_SCREEN_WINDOW
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block screen window (__disp_rect_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set screen window of a sprite block.
++
++11.21) DISP_CMD_SPRITE_BLOCK_GET_SCREEN_WINDOW
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block screen window (__disp_rect_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get screen window of a sprite block.
++
++11.22) DISP_CMD_SPRITE_BLOCK_SET_FB
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block framebuffer (__disp_fb_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set the framebuffer information for the sprite block, only cares about the
++address and line width.
++
++11.23) DISP_CMD_SPRITE_BLOCK_GET_FB
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block framebuffer(__disp_fb_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get framebuffer information of a sprite block.
++
++11.24) DISP_CMD_SPRITE_BLOCK_SET_PARA
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block parameters (__disp_sprite_block_para_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Set sprite block parameters.
++
++11.25) DISP_CMD_SPRITE_BLOCK_GET_PARA
++
++Args:
++	* screen [0, 1]
++	* block handle
++	* block parameters (__disp_sprite_block_para_t *)
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Get sprite block parameters
++
++11.26) DISP_CMD_SPRITE_BLOCK_SET_TOP
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Move the sprite block to the top.
++
++11.27) DISP_CMD_SPRITE_BLOCK_SET_BOTTOM
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	Success: 0;
++	Failed: errno.
++
++Move the sprite block to the bottom.
++
++11.28) DISP_CMD_SPRITE_BLOCK_GET_PREV_BLOCK
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	block handle
++
++Get the previous sprite block handle.
++
++11.29) DISP_CMD_SPRITE_BLOCK_GET_NEXT_BLOCK
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	* block handle
++
++Get the next block handle.
++
++11.30) DISP_CMD_SPRITE_BLOCK_GET_PRIO
++
++Args:
++	* screen [0, 1]
++	* block handle
++
++Returns:
++	block priority.
++
++Get the ordering of the sprite block (from bottom to top).
+-- 
+1.8.0
+

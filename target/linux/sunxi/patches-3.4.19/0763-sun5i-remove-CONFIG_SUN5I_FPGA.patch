@@ -1,0 +1,105 @@
+From 8f715b1be890eeaf51710ddffedaa2c08753bf22 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 30 Sep 2012 13:37:53 +0200
+Subject: [PATCH 763/944] sun5i: remove CONFIG_SUN5I_FPGA
+
+---
+ arch/arm/configs/a12_defconfig     | 1 -
+ arch/arm/configs/a13_defconfig     | 1 -
+ arch/arm/configs/sun5i_defconfig   | 1 -
+ drivers/input/keyboard/sun5i-ir.c  | 5 -----
+ drivers/mmc/sunxi-host/host_op.c   | 4 ----
+ drivers/mmc/sunxi-host/host_plat.h | 7 -------
+ 6 files changed, 19 deletions(-)
+
+diff --git a/arch/arm/configs/a12_defconfig b/arch/arm/configs/a12_defconfig
+index 8d0ad89..6875002 100644
+--- a/arch/arm/configs/a12_defconfig
++++ b/arch/arm/configs/a12_defconfig
+@@ -275,7 +275,6 @@ CONFIG_ARCH_SUN5I=y
+ # System MMU
+ #
+ CONFIG_SW_DEBUG_UART=0
+-# CONFIG_SUN5I_FPGA is not set
+ 
+ #
+ # Processor Type
+diff --git a/arch/arm/configs/a13_defconfig b/arch/arm/configs/a13_defconfig
+index 5ba6992..a0525da 100644
+--- a/arch/arm/configs/a13_defconfig
++++ b/arch/arm/configs/a13_defconfig
+@@ -275,7 +275,6 @@ CONFIG_ARCH_SUN5I=y
+ # System MMU
+ #
+ CONFIG_SW_DEBUG_UART=0
+-# CONFIG_SUN5I_FPGA is not set
+ 
+ #
+ # Processor Type
+diff --git a/arch/arm/configs/sun5i_defconfig b/arch/arm/configs/sun5i_defconfig
+index 162a37a..1c59e7d 100644
+--- a/arch/arm/configs/sun5i_defconfig
++++ b/arch/arm/configs/sun5i_defconfig
+@@ -273,7 +273,6 @@ CONFIG_ARCH_SUN5I=y
+ #
+ # System MMU
+ #
+-# CONFIG_SUN5I_FPGA is not set
+ 
+ #
+ # Processor Type
+diff --git a/drivers/input/keyboard/sun5i-ir.c b/drivers/input/keyboard/sun5i-ir.c
+index bf38b8b..11def39 100644
+--- a/drivers/input/keyboard/sun5i-ir.c
++++ b/drivers/input/keyboard/sun5i-ir.c
+@@ -56,13 +56,8 @@ static struct clk *apb_ir_clk;
+ static struct clk *ir_clk;
+ static u32 ir_gpio_hdle;
+ 
+-#ifdef CONFIG_SUN5I_FPGA
+-#define FPGA_SIM_CONFIG            //input clk is 24M
+-//#define SYS_CLK_CFG_EN
+-#else
+ //#define FPGA_SIM_CONFIG            //input clk is 24M
+ #define SYS_CLK_CFG_EN
+-#endif
+ 
+ #define SYS_GPIO_CFG_EN
+ //#define DEBUG_IR
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index 47ee70c..da1e05f 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -66,11 +66,7 @@ static int sunximmc_set_src_clk(struct sunxi_mmc_host* smc_host)
+     clk_set_rate(smc_host->mclk, smc_host->mod_clk);
+     clk_enable(smc_host->mclk);
+ 
+-    #ifdef CONFIG_SUN5I_FPGA
+-    smc_host->mod_clk = 24000000;
+-    #else
+     smc_host->mod_clk = clk_get_rate(smc_host->mclk);
+-    #endif
+     clk_enable(smc_host->hclk);
+ 
+     SMC_INFO("smc %d, source = %s, src_clk = %u, mclk %u, \n", smc_host->pdev->id, name[smc_host->clk_source], (unsigned)clk_get_rate(source_clock), smc_host->mod_clk);
+diff --git a/drivers/mmc/sunxi-host/host_plat.h b/drivers/mmc/sunxi-host/host_plat.h
+index 1e5fc4e..a9c2bdc 100644
+--- a/drivers/mmc/sunxi-host/host_plat.h
++++ b/drivers/mmc/sunxi-host/host_plat.h
+@@ -68,13 +68,6 @@ enum mclk_src {
+ #define SMC_MAX_IO_CLOCK(n)     (52000000)
+ #define SMC_MOD_CLK_SRC(n)      (SMC_MCLK_SRC_SATAPLL)
+ 
+-#ifdef CONFIG_SUN5I_FPGA
+-#undef   SMC_MAX_IO_CLOCK
+-#define  SMC_MAX_IO_CLOCK       (26000000)
+-#define  SUNXI_MMC_HOST_NUM     3
+-#define  SUNXI_MMC_USED_CTRL    (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED)
+-#endif //CONFIG_SUN5I_FPGA
+-
+ #endif
+ 
+ #define SMC_DBG_ERR     (1 << 0)
+-- 
+1.8.0
+

@@ -1,0 +1,80 @@
+From 694a0ef864b3d6940f7360894f480e5629b0cdb7 Mon Sep 17 00:00:00 2001
+From: Patrick Wood <patrickhwood@gmail.com>
+Date: Mon, 6 Aug 2012 13:40:40 -0400
+Subject: [PATCH 694/944] block: sun4i-nand: export the entire device as
+ /dev/nand
+
+---
+ drivers/block/sun4i_nand/nfd/mbr.c      | 17 ++++++++++++++---
+ drivers/block/sun4i_nand/nfd/nand_blk.c | 16 ++++++++++------
+ 2 files changed, 24 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/block/sun4i_nand/nfd/mbr.c b/drivers/block/sun4i_nand/nfd/mbr.c
+index e644683..9a36b94 100644
+--- a/drivers/block/sun4i_nand/nfd/mbr.c
++++ b/drivers/block/sun4i_nand/nfd/mbr.c
+@@ -111,13 +111,24 @@ __s32 _free_mbr(void)
+ int mbr2disks(struct nand_disk* disk_array)
+ {
+ 	int part_cnt = 0;
+-	int part_index;
++	int part_index = 0;
++
++	PRINT("The %d disk name = %s, class name = %s, disk start = 0, disk size = %d\n",
++		part_index, "DEVICE", "NAND", DiskSize);
++
++	/*
++	 * for nand recovery in case it's trashed during formatting always
++	 * make the nand device before possibly failing on a bad mbr
++	 */
++	disk_array[part_index].offset = 0;
++	disk_array[part_index].size = DiskSize;
++	part_index++;
+ 
+ 	if(_get_mbr()){
+ 		printk("get mbr error\n" );
+-		return part_cnt;
++		return part_index;
+ 	}
+-	part_index = 0;
++
+ 	//查找出所有的LINUX盘符
+ 	for(part_cnt = 0; part_cnt < mbr->PartCount && part_cnt < MAX_PART_COUNT; part_cnt++)
+ 	{
+diff --git a/drivers/block/sun4i_nand/nfd/nand_blk.c b/drivers/block/sun4i_nand/nfd/nand_blk.c
+index c39eed2..1176318 100644
+--- a/drivers/block/sun4i_nand/nfd/nand_blk.c
++++ b/drivers/block/sun4i_nand/nfd/nand_blk.c
+@@ -58,7 +58,8 @@
+ extern struct __NandStorageInfo_t  NandStorageInfo;
+ extern struct __NandDriverGlobal_t NandDriverInfo;
+ 
+-struct nand_disk disk_array[MAX_PART_COUNT];
++/* +1 for whole nand device /dev/nand file */
++struct nand_disk disk_array[MAX_PART_COUNT+1];
+ 
+ #define BLK_ERR_MSG_ON
+ #ifdef  BLK_ERR_MSG_ON
+@@ -811,11 +812,14 @@ static int nand_add_dev(struct nand_blk_ops *nandr, struct nand_disk *part)
+ 	gd->first_minor = (dev->devnum) << nandr->minorbits;
+ 	gd->fops = &nand_blktrans_ops;
+ 
+-	snprintf(gd->disk_name, sizeof(gd->disk_name),
+-		 "%s%c", nandr->name, (nandr->minorbits?'a':'0') + dev->devnum);
+-	//snprintf(gd->devfs_name, sizeof(gd->devfs_name),
+-	//	 "%s/%c", nandr->name, (nandr->minorbits?'a':'0') + dev->devnum);
+-
++	if (dev->devnum)
++		/* /dev/nand[a-o] */
++		snprintf(gd->disk_name, sizeof(gd->disk_name),
++			 "%s%c", nandr->name, (nandr->minorbits?'a':'0') + dev->devnum-1);
++	else
++		/* /dev/nand */
++		snprintf(gd->disk_name, sizeof(gd->disk_name),
++			 "%s", nandr->name);
+ 
+ 	/* 2.5 has capacity in units of 512 bytes while still
+ 	   having BLOCK_SIZE_BITS set to 10. Just to keep us amused. */
+-- 
+1.8.0
+

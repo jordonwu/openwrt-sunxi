@@ -1,0 +1,123 @@
+From f1637cf78d20e3503dbdcafd2b1c768e53971e2a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 17 Jan 2012 10:48:44 +0100
+Subject: [PATCH 425/944] arm: sun4i: pm: build standby.bin during the normal
+ loop
+
+---
+ arch/arm/mach-sun4i/pm/Makefile            |  5 +++
+ arch/arm/mach-sun4i/pm/standby.S           |  2 +-
+ arch/arm/mach-sun4i/pm/standby/Makefile    | 56 +++++++++---------------------
+ arch/arm/mach-sun4i/pm/standby/standby.lds |  2 +-
+ 4 files changed, 24 insertions(+), 41 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/pm/Makefile b/arch/arm/mach-sun4i/pm/Makefile
+index cbdc1d3..1d1f171 100644
+--- a/arch/arm/mach-sun4i/pm/Makefile
++++ b/arch/arm/mach-sun4i/pm/Makefile
+@@ -1,3 +1,8 @@
++subdir-		:= standby
+ 
+ obj-y		+= pm.o standby.o
+ 
++$(obj)/standby.o: $(obj)/standby/standby.bin
++
++$(obj)/standby/standby.bin: FORCE
++	$(Q)$(MAKE) $(build)=$(obj)/standby
+diff --git a/arch/arm/mach-sun4i/pm/standby.S b/arch/arm/mach-sun4i/pm/standby.S
+index 843c7f4..8e6a071 100644
+--- a/arch/arm/mach-sun4i/pm/standby.S
++++ b/arch/arm/mach-sun4i/pm/standby.S
+@@ -1,6 +1,6 @@
+ 	.globl	standby_bin_start
+ standby_bin_start:
+-	.incbin	"arch/arm/mach-sun4i/pm/standby/standby.code"
++	.incbin	"arch/arm/mach-sun4i/pm/standby/standby.bin"
+ 	.globl	standby_bin_end
+ standby_bin_end:
+ 	.align	2
+diff --git a/arch/arm/mach-sun4i/pm/standby/Makefile b/arch/arm/mach-sun4i/pm/standby/Makefile
+index 9ae69be..7b6780d 100644
+--- a/arch/arm/mach-sun4i/pm/standby/Makefile
++++ b/arch/arm/mach-sun4i/pm/standby/Makefile
+@@ -1,47 +1,25 @@
+-#makefile for standby.bin
++always	:= standby.bin
++targets := standby.elf
+ 
+-INCLUDE   = -I. \
+-	-I$(KDIR)/include \
+-	-I$(KDIR)/arch/arm/mach-sun4i/include
++standby-y := common.o standby.o stack.o standby_clock.o \
++	     dram/dram.o dram/dram_init.o \
++	     standby_int.o standby_ir.o standby_key.o standby_power.o \
++	     standby_tmr.o standby_twi.o standby_usb.o standby_delay.o
+ 
+-OBJ = common.o standby.o stack.o standby_clock.o dram/dram.o dram/dram_init.o   \
+-      standby_int.o standby_ir.o standby_key.o standby_power.o  \
+-      standby_tmr.o standby_twi.o standby_usb.o standby_delay.o
+-
+-
+-OUPUTFILE = standby
++targets	+= $(standby-y)
++STANDBY_OBJS = $(addprefix $(obj)/,$(standby-y))
+ 
+ LD_FILE = standby.lds
+-CC = $(CROSS_COMPILE)gcc
+-
+-CFLAGS = -Os -g -march=armv7-a -fno-unwind-tables -fno-asynchronous-unwind-tables -mlittle-endian  -c
+-
+-all:
+-	$(CC) $(INCLUDE) $(CFLAGS) common.c           -o common.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby.c          -o standby.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_clock.c    -o standby_clock.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_int.c      -o standby_int.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_ir.c       -o standby_ir.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_key.c      -o standby_key.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_power.c    -o standby_power.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_tmr.c      -o standby_tmr.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_twi.c      -o standby_twi.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_usb.c      -o standby_usb.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_delay.S    -o standby_delay.o
+-	$(CC) $(INCLUDE) $(CFLAGS) dram/dram.c        -o dram/dram.o
+-	$(CC) $(INCLUDE) $(CFLAGS) dram/dram_init.c   -o dram/dram_init.o
+-	$(CC) $(INCLUDE) $(CFLAGS) stack.S            -o stack.o
+-
+-	$(CROSS_COMPILE)ld -T $(LD_FILE)  -EL  $(OBJ) -o $(OUPUTFILE).elf  -Map $(OUPUTFILE).map
+-	$(CROSS_COMPILE)objdump -D $(OUPUTFILE).elf > $(OUPUTFILE).lst
+-	$(CROSS_COMPILE)objcopy -O binary $(OUPUTFILE).elf $(OUPUTFILE).bin
+ 
+-	rm -rf *.o ../*.o
++KBUILD_CFLAGS := $(LINUXINCLUDE) -Os -g -march=armv7-a -mlittle-endian -c
++KBUILD_CFLAGS += -fno-unwind-tables -fno-asynchronous-unwind-tables
++KBUILD_AFLAGS := $(KBUILD_CFLAGS) -D__ASSEMBLY__
+ 
+-	cp standby.bin standby.code
++LDFLAGS_standby.elf := -T
++OBJCOPYFLAGS_standby.bin := -O binary
+ 
+-	@echo ----------------------------------------
+-	@echo well done!
+-clean:
+-	-rm *.o *.map *.lst *.bin *.elf *.exe dram/*.o
++$(obj)/standby.elf: $(src)/$(LD_FILE) $(STANDBY_OBJS) FORCE
++	$(call if_changed,ld)
+ 
++$(obj)/standby.bin: $(obj)/standby.elf FORCE
++	$(call if_changed,objcopy)
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby.lds b/arch/arm/mach-sun4i/pm/standby/standby.lds
+index 7696e8c..16467c4 100644
+--- a/arch/arm/mach-sun4i/pm/standby/standby.lds
++++ b/arch/arm/mach-sun4i/pm/standby/standby.lds
+@@ -7,7 +7,7 @@ SECTIONS
+ 	__standby_start = . ;
+ 	.text 0xf0000000 :
+ 	{
+-		standby.o(.text)
++		arch/arm/mach-sun4i/pm/standby/standby.o(.text)
+ 		*(.text)
+ 	}
+ 	.rodata : { *(.rodata) }
+-- 
+1.8.0
+

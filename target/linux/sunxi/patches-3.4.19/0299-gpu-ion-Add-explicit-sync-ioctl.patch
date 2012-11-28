@@ -1,0 +1,113 @@
+From a73e94ce46cfc32b6deeb1589142e3c53fee09ab Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Tue, 26 Jun 2012 13:17:34 -0700
+Subject: [PATCH 299/944] gpu: ion: Add explicit sync ioctl
+
+This is deprecated in favor of using the dma_buf api which will
+automatically sync a buffer to memory when it is mapped to a device.
+However, that functionality is not ready, so this patch adds the
+ability to sync a buffer explicitly.
+
+Change-Id: Ia15810a13cd5c4b939f4afa5c8e721c89fac76d4
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c | 38 ++++++++++++++++++++++++++++++++++++--
+ include/linux/ion.h   | 12 +++++++++++-
+ 2 files changed, 47 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 80639bc..6cf7dc3 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -684,8 +684,7 @@ static struct sg_table *ion_map_dma_buf(struct dma_buf_attachment *attachment,
+ 	struct dma_buf *dmabuf = attachment->dmabuf;
+ 	struct ion_buffer *buffer = dmabuf->priv;
+ 
+-	if (buffer->flags & ION_FLAG_CACHED)
+-		ion_buffer_sync_for_device(buffer, attachment->dev, direction);
++	ion_buffer_sync_for_device(buffer, attachment->dev, direction);
+ 	return buffer->sg_table;
+ }
+ 
+@@ -721,6 +720,10 @@ static void ion_buffer_sync_for_device(struct ion_buffer *buffer,
+ 
+ 	pr_debug("%s: syncing for device %s\n", __func__,
+ 		 dev ? dev_name(dev) : "null");
++
++	if (!(buffer->flags & ION_FLAG_CACHED))
++		return;
++
+ 	mutex_lock(&buffer->lock);
+ 	for_each_sg(buffer->sg_table->sgl, sg, buffer->sg_table->nents, i) {
+ 		if (!test_bit(i, buffer->dirty))
+@@ -958,6 +961,28 @@ end:
+ 	return handle;
+ }
+ 
++static int ion_sync_for_device(struct ion_client *client, int fd)
++{
++	struct dma_buf *dmabuf;
++	struct ion_buffer *buffer;
++
++	dmabuf = dma_buf_get(fd);
++	if (IS_ERR_OR_NULL(dmabuf))
++		return PTR_ERR(dmabuf);
++
++	/* if this memory came from ion */
++	if (dmabuf->ops != &dma_buf_ops) {
++		pr_err("%s: can not sync dmabuf from another exporter\n",
++		       __func__);
++		dma_buf_put(dmabuf);
++		return -EINVAL;
++	}
++	buffer = dmabuf->priv;
++	ion_buffer_sync_for_device(buffer, NULL, DMA_BIDIRECTIONAL);
++	dma_buf_put(dmabuf);
++	return 0;
++}
++
+ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ {
+ 	struct ion_client *client = filp->private_data;
+@@ -1022,6 +1047,15 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
+ 			return -EFAULT;
+ 		break;
+ 	}
++	case ION_IOC_SYNC:
++	{
++		struct ion_fd_data data;
++		if (copy_from_user(&data, (void __user *)arg,
++				   sizeof(struct ion_fd_data)))
++			return -EFAULT;
++		ion_sync_for_device(client, data.fd);
++		break;
++	}
+ 	case ION_IOC_CUSTOM:
+ 	{
+ 		struct ion_device *dev = client->dev;
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+index 90aaa30..e72c09e 100644
+--- a/include/linux/ion.h
++++ b/include/linux/ion.h
+@@ -330,7 +330,17 @@ struct ion_custom_data {
+  * descriptor obtained from ION_IOC_SHARE and returns the struct with the handle
+  * filed set to the corresponding opaque handle.
+  */
+-#define ION_IOC_IMPORT		_IOWR(ION_IOC_MAGIC, 5, int)
++#define ION_IOC_IMPORT		_IOWR(ION_IOC_MAGIC, 5, struct ion_fd_data)
++
++/**
++ * DOC: ION_IOC_SYNC - syncs a shared file descriptors to memory
++ *
++ * Deprecated in favor of using the dma_buf api's correctly (syncing
++ * will happend automatically when the buffer is mapped to a device).
++ * If necessary should be used after touching a cached buffer from the cpu,
++ * this will make the buffer in memory coherent.
++ */
++#define ION_IOC_SYNC		_IOWR(ION_IOC_MAGIC, 7, struct ion_fd_data)
+ 
+ /**
+  * DOC: ION_IOC_CUSTOM - call architecture specific ion ioctl
+-- 
+1.8.0
+

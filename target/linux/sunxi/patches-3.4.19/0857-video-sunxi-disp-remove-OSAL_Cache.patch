@@ -1,0 +1,287 @@
+From 965dec116afc9c218afe9bacd4151c13f248c25e Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 18 Oct 2012 11:25:56 +0200
+Subject: [PATCH 857/944] video:sunxi:disp: remove OSAL_Cache.*
+
+The one function OSAL_CacheRangeFlush was empty anyway.
+
+No functional changes.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile          |  2 +-
+ drivers/video/sunxi/disp/OSAL/OSAL.h       |  1 -
+ drivers/video/sunxi/disp/OSAL/OSAL_Cache.c | 94 ------------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Cache.h | 57 ------------------
+ drivers/video/sunxi/disp/disp_layer.c      |  4 +-
+ drivers/video/sunxi/disp/disp_scaler.c     |  4 +-
+ drivers/video/sunxi/disp/disp_sprite.c     |  3 -
+ 7 files changed, 3 insertions(+), 162 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index fb4d964..dfaa540 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -1,7 +1,7 @@
+ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+-disp-objs += OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
++disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+ 	OSAL/OSAL_Pin.o OSAL/OSAL_Parser.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index e665822..b6c8417 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -23,7 +23,6 @@
+ 
+ #include "../bsp_display.h"
+ 
+-#include  "OSAL_Cache.h"
+ #include  "OSAL_Clock.h"
+ #include  "OSAL_Pin.h"
+ #include  "OSAL_Int.h"
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
+deleted file mode 100644
+index 0edd00a..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
++++ /dev/null
+@@ -1,94 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "OSAL.h"
+-
+-/* 刷新标记位 */
+-#define  CACHE_FLUSH_I_CACHE_REGION				0  /* 清除I-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_FLUSH_D_CACHE_REGION				1  /* 清除D-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_FLUSH_CACHE_REGION				2  /* 清除D-cache和I-cache中代表主存中一块区域的cache行 */
+-#define  CACHE_CLEAN_D_CACHE_REGION				3  /* 清理D-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_CLEAN_FLUSH_D_CACHE_REGION	 	4  /* 清理并清除D-cache中代表主存中一块区域的cache行 	*/
+-#define  CACHE_CLEAN_FLUSH_CACHE_REGION			5  /* 清理并清除D-cache，接下来解除I-cache 				*/
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_CacheRangeFlush
+-*
+-* Description:
+-*    Cache操作
+-*
+-* Parameters:
+-*    Address    :  要被刷新的虚拟起始地址
+-*    Length     :  被刷新的大小
+-*    Flags      :  刷新标记位
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_CacheRangeFlush(void*Address, __u32 Length, __u32 Flags)
+-{
+-
+-    //flush_cache_range(NULL, (unsigned long)Address, ((unsigned long)Address)+Length);
+-        if(Address == NULL || Length == 0)
+-        {
+-            return;
+-        }
+-
+-        switch(Flags)
+-        {
+-        case CACHE_FLUSH_I_CACHE_REGION:
+-
+-            break;
+-
+-        case CACHE_FLUSH_D_CACHE_REGION:
+-           // flush_cach
+-            break;
+-
+-        case CACHE_FLUSH_CACHE_REGION:
+-
+-            break;
+-
+-        case CACHE_CLEAN_D_CACHE_REGION:
+-            //clean_dcache_area((unsigned long)Address, Length);
+-            break;
+-
+-        case CACHE_CLEAN_FLUSH_D_CACHE_REGION:
+-
+-            break;
+-
+-        case CACHE_CLEAN_FLUSH_CACHE_REGION:
+-
+-            break;
+-
+-        default:
+-
+-            break;
+-        }
+-        return;
+-}
+-
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
+deleted file mode 100644
+index a50eb1e..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
++++ /dev/null
+@@ -1,57 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_CACHE_H__
+-#define  __OSAL_CACHE_H__
+-
+-/* 刷新标记位 */
+-#define  CACHE_FLUSH_I_CACHE_REGION				0  /* 清除I-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_FLUSH_D_CACHE_REGION				1  /* 清除D-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_FLUSH_CACHE_REGION				2  /* 清除D-cache和I-cache中代表主存中一块区域的cache行 */
+-#define  CACHE_CLEAN_D_CACHE_REGION				3  /* 清理D-cache中代表主存中一块区域的cache行 			*/
+-#define  CACHE_CLEAN_FLUSH_D_CACHE_REGION	 	4  /* 清理并清除D-cache中代表主存中一块区域的cache行 	*/
+-#define  CACHE_CLEAN_FLUSH_CACHE_REGION			5  /* 清理并清除D-cache，接下来解除I-cache 				*/
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_CacheRangeFlush
+-*
+-* Description:
+-*    Cache操作
+-*
+-* Parameters:
+-*    Address    :  要被刷新的虚拟起始地址
+-*    Length     :  被刷新的大小
+-*    Flags      :  刷新标记位
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_CacheRangeFlush(void*Address, __u32 Length, __u32 Flags);
+-
+-
+-#endif   //__OSAL_CACHE_H__
+-
+-
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 5035d2f..651152f 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -590,7 +590,6 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)//k
+             OSAL_IrqUnLock(cpu_sr);
+ 
+             size = (pfb->size.width * layer_man->para.src_win.height * de_format_to_bpp(pfb->format) + 7)/8;
+-            OSAL_CacheRangeFlush((void *)pfb->addr[0],size ,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+ 
+ 			if(layer_man->para.mode == DISP_LAYER_WORK_MODE_SCALER)
+ 			{
+@@ -991,7 +990,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+ 
+ 	            bpp = DE_BE_Format_To_Bpp(sel, layer_fb.format);
+                 size = (player->fb.size.width * player->scn_win.height * bpp + 7)/8;
+-                OSAL_CacheRangeFlush((void *)player->fb.addr[0], size,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
++
+                 DE_BE_Layer_Set_Framebuffer(sel, hid,&layer_fb);
+             }
+         }
+@@ -1016,7 +1015,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+         OSAL_IrqUnLock(cpu_sr);
+ 
+         size = (player->fb.size.width * player->src_win.height * de_format_to_bpp(player->fb.format) + 7)/8;
+-        OSAL_CacheRangeFlush((void *)player->fb.addr[0],size ,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+ 
+         if(layer_man->para.mode == DISP_LAYER_WORK_MODE_SCALER)
+         {
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 4b821a2..507380b 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -1076,10 +1076,9 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+     size = (para->input_fb.size.width * para->input_fb.size.height * de_format_to_bpp(para->input_fb.format) + 7)/8;
+-    OSAL_CacheRangeFlush((void *)para->input_fb.addr[0],size ,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+ 
+     size = (para->output_fb.size.width * para->output_fb.size.height * de_format_to_bpp(para->output_fb.format) + 7)/8;
+-    OSAL_CacheRangeFlush((void *)para->output_fb.addr[0],size ,CACHE_FLUSH_D_CACHE_REGION);
++
+     if(para->input_fb.b_trd_src)
+     {
+         __scal_3d_inmode_t inmode;
+@@ -1313,7 +1312,6 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para)
+     out_addr.ch2_addr = para->output_fb.addr[2];
+ 
+     size = (para->output_fb.size.width * para->output_fb.size.height * de_format_to_bpp(para->output_fb.format) + 7)/8;
+-    OSAL_CacheRangeFlush((void *)para->output_fb.addr[0],size ,CACHE_FLUSH_D_CACHE_REGION);
+ 
+     if(BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE)
+     {
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 0e72151..db6a27b 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -318,8 +318,6 @@ static __s32 sprite_set_sprite_block_para(__u32 sel, __u32 id, __u32 next_id, __
+ 	DE_BE_Sprite_Block_Set_Size(sel, id, para->scn_win.width, para->scn_win.height);
+ 	DE_BE_Sprite_Block_Set_Next_Id(sel, id, next_id);
+ 
+-    OSAL_CacheRangeFlush((void*)para->fb.addr[0], (para->fb.size.width * para->scn_win.height * bpp + 7)/8,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+-
+     return 0;
+ }
+ 
+@@ -877,7 +875,6 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid, __disp_fb_t *
+ 		node = List_Find_Sprite_Block(sel, id);
+ 
+ 		bpp = de_format_to_bpp(gsprite[sel].format);
+-		OSAL_CacheRangeFlush((void *)fb->addr[0], (fb->size.width * node->data->src_win.height * bpp + 7)/8,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+ 
+ 		addr = DE_BE_Offset_To_Addr(fb->addr[0], fb->size.width, node->data->src_win.x, node->data->src_win.y, bpp);
+ 		DE_BE_Sprite_Block_Set_fb(sel, id, addr, fb->size.width * (bpp >> 3));
+-- 
+1.8.0
+

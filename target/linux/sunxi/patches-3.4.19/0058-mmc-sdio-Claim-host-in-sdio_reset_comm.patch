@@ -1,0 +1,51 @@
+From 4c5391f1f7ff5832043ecd5d65a4fddc1fe4a6fe Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 29 Jul 2009 10:22:03 -0700
+Subject: [PATCH 058/944] mmc: sdio: Claim host in sdio_reset_comm()
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/mmc/core/sdio.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/core/sdio.c b/drivers/mmc/core/sdio.c
+index 839de28..9695605 100644
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -10,6 +10,7 @@
+  */
+ 
+ #include <linux/err.h>
++#include <linux/module.h>
+ #include <linux/pm_runtime.h>
+ 
+ #include <linux/mmc/host.h>
+@@ -1228,6 +1229,8 @@ int sdio_reset_comm(struct mmc_card *card)
+ 	int err;
+ 
+ 	printk("%s():\n", __func__);
++	mmc_claim_host(host);
++
+ 	mmc_go_idle(host);
+ 
+ 	mmc_set_clock(host, host->f_min);
+@@ -1268,13 +1271,12 @@ int sdio_reset_comm(struct mmc_card *card)
+ 	err = sdio_enable_wide(card);
+ 	if (err)
+ 		goto err;
+-
++	mmc_release_host(host);
+ 	return 0;
+- err:
++err:
+ 	printk("%s: Error resetting SDIO communications (%d)\n",
+ 	       mmc_hostname(host), err);
++	mmc_release_host(host);
+ 	return err;
+ }
+ EXPORT_SYMBOL(sdio_reset_comm);
+-
+-
+-- 
+1.8.0
+

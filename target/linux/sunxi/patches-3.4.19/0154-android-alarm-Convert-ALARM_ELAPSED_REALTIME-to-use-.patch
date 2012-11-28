@@ -1,0 +1,196 @@
+From 1b16062778209fc584b65fd8601b152f99528873 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Tue, 21 Jun 2011 17:01:27 -0700
+Subject: [PATCH 154/944] android-alarm: Convert ALARM_ELAPSED_REALTIME to use
+ CLOCK_BOOTTIME
+
+The ALARM_ELAPSED_REALTIME clock domain in Android pointed
+to the need for something similar in linux system-wide
+(instead of limited to just the alarm interface).
+
+Thus CLOCK_BOOTTIME was introduced into the upstream kernel
+in 2.6.39.
+
+This patch attempts to convert the android alarm timer to utilize
+the kernel's CLOCK_BOOTTIME clockid for ALARM_ELAPSED_REALTIME,
+instead of managing it itself.
+
+Change-Id: I4867ed2823ebb29d27c53f236c6a3dbb47f3ac78
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ drivers/staging/android/alarm-dev.c     |  3 +-
+ drivers/staging/android/alarm.c         | 70 +++++++--------------------------
+ drivers/staging/android/android_alarm.h |  7 +++-
+ 3 files changed, 22 insertions(+), 58 deletions(-)
+
+diff --git a/drivers/staging/android/alarm-dev.c b/drivers/staging/android/alarm-dev.c
+index 03efb34..bc57568 100644
+--- a/drivers/staging/android/alarm-dev.c
++++ b/drivers/staging/android/alarm-dev.c
+@@ -179,8 +179,7 @@ from_old_alarm_set:
+ 			break;
+ 		case ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP:
+ 		case ANDROID_ALARM_ELAPSED_REALTIME:
+-			tmp_time =
+-				ktime_to_timespec(alarm_get_elapsed_realtime());
++			get_monotonic_boottime(&tmp_time);
+ 			break;
+ 		case ANDROID_ALARM_TYPE_COUNT:
+ 		case ANDROID_ALARM_SYSTEMTIME:
+diff --git a/drivers/staging/android/alarm.c b/drivers/staging/android/alarm.c
+index c68950b..9ac4f7b 100644
+--- a/drivers/staging/android/alarm.c
++++ b/drivers/staging/android/alarm.c
+@@ -65,7 +65,6 @@ struct alarm_queue {
+ 	struct rb_root alarms;
+ 	struct rb_node *first;
+ 	struct hrtimer timer;
+-	ktime_t delta;
+ 	bool stopped;
+ 	ktime_t stopped_time;
+ };
+@@ -107,8 +106,8 @@ static void update_timer_locked(struct alarm_queue *base, bool head_removed)
+ 	}
+ 
+ 	hrtimer_try_to_cancel(&base->timer);
+-	base->timer.node.expires = ktime_add(base->delta, alarm->expires);
+-	base->timer._softexpires = ktime_add(base->delta, alarm->softexpires);
++	base->timer.node.expires = alarm->expires;
++	base->timer._softexpires = alarm->softexpires;
+ 	hrtimer_start_expires(&base->timer, HRTIMER_MODE_ABS);
+ }
+ 
+@@ -279,10 +278,6 @@ int android_alarm_set_rtc(struct timespec new_time)
+ 		alarms[i].stopped = true;
+ 		alarms[i].stopped_time = timespec_to_ktime(tmp_time);
+ 	}
+-	alarms[ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP].delta =
+-		alarms[ANDROID_ALARM_ELAPSED_REALTIME].delta =
+-		ktime_sub(alarms[ANDROID_ALARM_ELAPSED_REALTIME].delta,
+-			timespec_to_ktime(timespec_sub(tmp_time, new_time)));
+ 	spin_unlock_irqrestore(&alarm_slock, flags);
+ 	ret = do_settimeofday(&new_time);
+ 	spin_lock_irqsave(&alarm_slock, flags);
+@@ -310,24 +305,6 @@ err:
+ 	return ret;
+ }
+ 
+-/**
+- * alarm_get_elapsed_realtime - get the elapsed real time in ktime_t format
+- *
+- * returns the time in ktime_t format
+- */
+-ktime_t alarm_get_elapsed_realtime(void)
+-{
+-	ktime_t now;
+-	unsigned long flags;
+-	struct alarm_queue *base = &alarms[ANDROID_ALARM_ELAPSED_REALTIME];
+-
+-	spin_lock_irqsave(&alarm_slock, flags);
+-	now = base->stopped ? base->stopped_time : ktime_get_real();
+-	now = ktime_sub(now, base->delta);
+-	spin_unlock_irqrestore(&alarm_slock, flags);
+-	return now;
+-}
+-
+ static enum hrtimer_restart alarm_timer_triggered(struct hrtimer *timer)
+ {
+ 	struct alarm_queue *base;
+@@ -339,7 +316,6 @@ static enum hrtimer_restart alarm_timer_triggered(struct hrtimer *timer)
+ 
+ 	base = container_of(timer, struct alarm_queue, timer);
+ 	now = base->stopped ? base->stopped_time : hrtimer_cb_get_time(timer);
+-	now = ktime_sub(now, base->delta);
+ 
+ 	pr_alarm(INT, "alarm_timer_triggered type %ld at %lld\n",
+ 		base - alarms, ktime_to_ns(now));
+@@ -536,40 +512,25 @@ static struct platform_driver alarm_driver = {
+ 	}
+ };
+ 
+-static int __init alarm_late_init(void)
+-{
+-	unsigned long   flags;
+-	struct timespec tmp_time, system_time;
+-
+-	/* this needs to run after the rtc is read at boot */
+-	spin_lock_irqsave(&alarm_slock, flags);
+-	/* We read the current rtc and system time so we can later calulate
+-	 * elasped realtime to be (boot_systemtime + rtc - boot_rtc) ==
+-	 * (rtc - (boot_rtc - boot_systemtime))
+-	 */
+-	getnstimeofday(&tmp_time);
+-	ktime_get_ts(&system_time);
+-	alarms[ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP].delta =
+-		alarms[ANDROID_ALARM_ELAPSED_REALTIME].delta =
+-			timespec_to_ktime(timespec_sub(tmp_time, system_time));
+-
+-	spin_unlock_irqrestore(&alarm_slock, flags);
+-	return 0;
+-}
+-
+ static int __init alarm_driver_init(void)
+ {
+ 	int err;
+ 	int i;
+ 
+-	for (i = 0; i < ANDROID_ALARM_SYSTEMTIME; i++) {
+-		hrtimer_init(&alarms[i].timer,
+-				CLOCK_REALTIME, HRTIMER_MODE_ABS);
+-		alarms[i].timer.function = alarm_timer_triggered;
+-	}
++	hrtimer_init(&alarms[ANDROID_ALARM_RTC_WAKEUP].timer,
++			CLOCK_REALTIME, HRTIMER_MODE_ABS);
++	hrtimer_init(&alarms[ANDROID_ALARM_RTC].timer,
++			CLOCK_REALTIME, HRTIMER_MODE_ABS);
++	hrtimer_init(&alarms[ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP].timer,
++			CLOCK_BOOTTIME, HRTIMER_MODE_ABS);
++	hrtimer_init(&alarms[ANDROID_ALARM_ELAPSED_REALTIME].timer,
++			CLOCK_BOOTTIME, HRTIMER_MODE_ABS);
+ 	hrtimer_init(&alarms[ANDROID_ALARM_SYSTEMTIME].timer,
+-		     CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
+-	alarms[ANDROID_ALARM_SYSTEMTIME].timer.function = alarm_timer_triggered;
++			CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++
++	for (i = 0; i < ANDROID_ALARM_TYPE_COUNT; i++)
++		alarms[i].timer.function = alarm_timer_triggered;
++
+ 	err = platform_driver_register(&alarm_driver);
+ 	if (err < 0)
+ 		goto err1;
+@@ -595,7 +556,6 @@ static void  __exit alarm_exit(void)
+ 	platform_driver_unregister(&alarm_driver);
+ }
+ 
+-late_initcall(alarm_late_init);
+ module_init(alarm_driver_init);
+ module_exit(alarm_exit);
+ 
+diff --git a/drivers/staging/android/android_alarm.h b/drivers/staging/android/android_alarm.h
+index 6eecbde..011be19 100644
+--- a/drivers/staging/android/android_alarm.h
++++ b/drivers/staging/android/android_alarm.h
+@@ -37,6 +37,7 @@ enum android_alarm_type {
+ 
+ #include <linux/ktime.h>
+ #include <linux/rbtree.h>
++#include <linux/hrtimer.h>
+ 
+ /*
+  * The alarm interface is similar to the hrtimer interface but adds support
+@@ -71,7 +72,11 @@ void android_alarm_start_range(struct android_alarm *alarm, ktime_t start,
+ 								ktime_t end);
+ int android_alarm_try_to_cancel(struct android_alarm *alarm);
+ int android_alarm_cancel(struct android_alarm *alarm);
+-ktime_t alarm_get_elapsed_realtime(void);
++
++static inline ktime_t alarm_get_elapsed_realtime(void)
++{
++	return ktime_get_boottime();
++}
+ 
+ /* set rtc while preserving elapsed realtime */
+ int android_alarm_set_rtc(const struct timespec ts);
+-- 
+1.8.0
+

@@ -1,0 +1,41 @@
+From 81508e95d761e0466b0c5a7f62eb03690bc2c59c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@linux-sunxi.org>
+Date: Fri, 2 Nov 2012 18:48:33 +0000
+Subject: [PATCH 926/944] arm: sun4i: disable USE_PLL6M_REPLACE_PLL4
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Given the issues with SATA and Mali that the different clocks caused,
+this patch disables USE_PLL6M_REPLACE_PLL4 so PLL6 and PLL4 become
+two independent clocks on A10 rev C devices.
+
+This way, we keep SATA working with a PLL6 at 1.2Ghz and PLL4 remains
+operational as 960Mhz for video decoding and Mali.
+
+According to Tom, USE_PLL6M_REPLACE_PLL4 was created to work around
+a problem with PLL4 on rev C hardware that would cause video
+decoding to fail, but I have not experienced any such issues
+during my testing on said hardware revision.
+
+Signed-off-by: Emilio López <turl@linux-sunxi.org>
+---
+ arch/arm/mach-sun4i/include/mach/aw_ccu.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/include/mach/aw_ccu.h b/arch/arm/mach-sun4i/include/mach/aw_ccu.h
+index 7af508e..98bfe80 100644
+--- a/arch/arm/mach-sun4i/include/mach/aw_ccu.h
++++ b/arch/arm/mach-sun4i/include/mach/aw_ccu.h
+@@ -29,7 +29,7 @@
+ 
+ /* define if need use pll6 to take the place of pll4,
+    this definition is significative on C ver. only */
+-#define USE_PLL6M_REPLACE_PLL4      (1)
++#define USE_PLL6M_REPLACE_PLL4      (0)
+ 
+ 
+ /* define clock error type      */
+-- 
+1.8.0
+

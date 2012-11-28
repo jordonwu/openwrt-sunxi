@@ -1,0 +1,538 @@
+From ff45b64db16d0a18dbba82ae9f67b51c19cb8fe9 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 00:57:59 +0200
+Subject: [PATCH 865/944] video:sunxi:disp: fix some spelling mistakes
+
+* timming -> timing
+* vaild -> valid
+* saturaion -> saturation
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/bsp_display.h |  4 ++--
+ drivers/video/sunxi/disp/de_be.c       | 36 +++++++++++++++---------------
+ drivers/video/sunxi/disp/de_fe.c       | 12 +++++-----
+ drivers/video/sunxi/disp/dev_fb.c      |  8 +++----
+ drivers/video/sunxi/disp/disp_clk.c    | 40 +++++++++++++++++-----------------
+ drivers/video/sunxi/disp/disp_hdmi.c   |  2 +-
+ drivers/video/sunxi/disp/disp_iep.c    | 10 ++++-----
+ drivers/video/sunxi/disp/disp_lcd.c    |  6 ++---
+ drivers/video/sunxi/disp/disp_tv.c     |  2 +-
+ drivers/video/sunxi/disp/disp_vga.c    |  2 +-
+ drivers/video/sunxi/disp/ebios_de.h    |  6 ++---
+ 11 files changed, 64 insertions(+), 64 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index f844de9..001a8f9 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -227,7 +227,7 @@ extern __s32 LCD_BL_EN(__u32 sel, __bool b_en);
+ extern __s32 BSP_disp_lcd_user_defined_func(__u32 sel, __u32 para1, __u32 para2, __u32 para3);
+ extern __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+ extern __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
+-extern __s32 BSP_disp_get_timming(__u32 sel, __disp_tcon_timing_t * tt);
++extern __s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt);
+ extern __u32 BSP_disp_get_cur_line(__u32 sel);
+ #ifdef CONFIG_ARCH_SUN5I
+ extern __s32 BSP_disp_close_lcd_backlight(__u32 sel);
+@@ -301,7 +301,7 @@ extern __s32 BSP_disp_iep_get_drc_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)	;
+ #endif
+ 
+-__s32 Display_set_fb_timming(__u32 sel);
++__s32 Display_set_fb_timing(__u32 sel);
+ 
+ /* symbol exists in dev_disp.c */
+ int sunxi_is_version_A(void);
+diff --git a/drivers/video/sunxi/disp/de_be.c b/drivers/video/sunxi/disp/de_be.c
+index 3258d35..8d6ae42 100644
+--- a/drivers/video/sunxi/disp/de_be.c
++++ b/drivers/video/sunxi/disp/de_be.c
+@@ -840,11 +840,11 @@ __s32 DE_BE_Sprite_Set_Palette_Table(__u32 sel, __u32 address, __u32 offset, __u
+ #ifdef CONFIG_ARCH_SUN4I
+ //out_csc: 0:rgb, 1:yuv for tv, 2:yuv for hdmi
+ //out_color_range:  0:16~255, 1:0~255, 2:16~235
+-__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue)
++__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturation, __u32 hue)
+ {
+ 	__s32 i_bright;
+ 	__s32 i_contrast;
+-	__s32 i_saturaion;
++	__s32 i_saturation;
+ 	__s32 i_hue;	//fix
+ 	__scal_matrix4x4 matrixEn;
+ 	__scal_matrix4x4 matrixconv, *ptmatrix;
+@@ -856,10 +856,10 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u
+ 
+ 	brightness = brightness>100?100:(brightness<0?0:brightness);
+ 	contrast = contrast>100?100:(contrast<0?0:contrast);
+-	saturaion = saturaion>100?100:(saturaion<0?0:saturaion);
++	saturation = saturation>100?100:(saturation<0?0:saturation);
+ 
+ 	i_bright = (__s32)(brightness*64/100);
+-	i_saturaion = (__s32)(saturaion*64/100);
++	i_saturation = (__s32)(saturation*64/100);
+ 	i_contrast = (__s32)(contrast*64/100);
+ 	i_hue = (__s32)(hue*64/100);
+ 
+@@ -872,12 +872,12 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u
+ 	matrixEn.x02 = 0;
+ 	matrixEn.x03 = (((i_bright - 32) + 16) <<10) - ( i_contrast << 9);
+ 	matrixEn.x10 = 0;
+-	matrixEn.x11 = (i_contrast * i_saturaion * cosv) >> 7;
+-	matrixEn.x12 = (i_contrast * i_saturaion * sinv) >> 7;
++	matrixEn.x11 = (i_contrast * i_saturation * cosv) >> 7;
++	matrixEn.x12 = (i_contrast * i_saturation * sinv) >> 7;
+ 	matrixEn.x13 = (1<<17) - ((matrixEn.x11 + matrixEn.x12)<<7);
+ 	matrixEn.x20 = 0;
+-	matrixEn.x21 = (-i_contrast * i_saturaion * sinv)>>7;
+-	matrixEn.x22 = (i_contrast * i_saturaion * cosv) >> 7;
++	matrixEn.x21 = (-i_contrast * i_saturation * sinv)>>7;
++	matrixEn.x22 = (i_contrast * i_saturation * cosv) >> 7;
+ 	matrixEn.x23 = (1<<17) - ((matrixEn.x22 + matrixEn.x21)<<7);
+ 	matrixEn.x30 = 0;
+ 	matrixEn.x31 = 0;
+@@ -1049,12 +1049,12 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u
+ #else
+ //brightness -100~100
+ //contrast -100~100
+-//saturaion -100~100
+-__s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 brightness, __s32 contrast, __s32 saturaion, __s32 hue)
++//saturation -100~100
++__s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 brightness, __s32 contrast, __s32 saturation, __s32 hue)
+ {
+ 	__s32 i_bright;
+ 	__s32 i_contrast;
+-	__s32 i_saturaion;
++	__s32 i_saturation;
+ 	__s32 i_hue;
+ 	__scal_matrix4x4 matrixEn;
+ 	__scal_matrix4x4 *ptmatrix;
+@@ -1065,11 +1065,11 @@ __s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 br
+ 
+ 	brightness = brightness>100?100:(brightness<0?0:brightness);
+ 	contrast = contrast>100?100:(contrast<0?0:contrast);
+-	saturaion = saturaion>100?100:(saturaion<0?0:saturaion);
+-	hue = hue>100?100:(hue<0?0:saturaion);
++	saturation = saturation>100?100:(saturation<0?0:saturation);
++	hue = hue>100?100:(hue<0?0:saturation);
+ 
+ 	i_bright = (__s32)(brightness*64/100);
+-	i_saturaion = (__s32)(saturaion*64/100);
++	i_saturation = (__s32)(saturation*64/100);
+ 	i_contrast = (__s32)(contrast*64/100);
+ 	i_hue = (__s32)(hue*64/100);
+ 
+@@ -1081,12 +1081,12 @@ __s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 br
+ 	matrixEn.x02 = 0;
+ 	matrixEn.x03 = (((i_bright - 32) + 16) <<10) - ( i_contrast << 9);
+ 	matrixEn.x10 = 0;
+-	matrixEn.x11 = (i_contrast * i_saturaion * cosv) >> 7;
+-	matrixEn.x12 = (i_contrast * i_saturaion * sinv) >> 7;
++	matrixEn.x11 = (i_contrast * i_saturation * cosv) >> 7;
++	matrixEn.x12 = (i_contrast * i_saturation * sinv) >> 7;
+ 	matrixEn.x13 = (1<<17) - ((matrixEn.x11 + matrixEn.x12)<<7);
+ 	matrixEn.x20 = 0;
+-	matrixEn.x21 = (-i_contrast * i_saturaion * sinv)>>7;
+-	matrixEn.x22 = (i_contrast * i_saturaion * cosv) >> 7;
++	matrixEn.x21 = (-i_contrast * i_saturation * sinv)>>7;
++	matrixEn.x22 = (i_contrast * i_saturation * cosv) >> 7;
+ 	matrixEn.x23 = (1<<17) - ((matrixEn.x22 + matrixEn.x21)<<7);
+ 	matrixEn.x30 = 0;
+ 	matrixEn.x31 = 0;
+diff --git a/drivers/video/sunxi/disp/de_fe.c b/drivers/video/sunxi/disp/de_fe.c
+index 7337a75d..49538e2 100644
+--- a/drivers/video/sunxi/disp/de_fe.c
++++ b/drivers/video/sunxi/disp/de_fe.c
+@@ -1480,7 +1480,7 @@ __s32 iDE_SCAL_Csc_Lmt(__s32 *value, __s32 min, __s32 max, __s32 shift, __s32 va
+ //               success
+ //***********************************************************************************************
+ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode, __u8 incs, __u8 outcs,
+-                                                   __s32  bright, __s32 contrast, __s32 saturaion, __s32 hue,
++                                                   __s32  bright, __s32 contrast, __s32 saturation, __s32 hue,
+                                                    __u32  in_br_swap, __u32 out_br_swap)
+ {
+ 	__scal_matrix4x4 matrixEn;
+@@ -1493,7 +1493,7 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode
+ 	__s32 sinv, cosv;   //sin_tab: 7 bit fractional
+ 
+ 	bright = bright*64/100;
+-	bright = saturaion*64/100;
++	bright = saturation*64/100;
+ 	bright = contrast*64/100;
+ 	bright = hue*64/100;
+ 
+@@ -1505,12 +1505,12 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode
+ 	matrixEn.x02 = 0;
+ 	matrixEn.x03 = (((bright - 32) + 16) <<10) - ( contrast << 9);
+ 	matrixEn.x10 = 0;
+-	matrixEn.x11 = (contrast * saturaion * cosv) >> 7;
+-	matrixEn.x12 = (contrast * saturaion * sinv) >> 7;
++	matrixEn.x11 = (contrast * saturation * cosv) >> 7;
++	matrixEn.x12 = (contrast * saturation * sinv) >> 7;
+ 	matrixEn.x13 = (1<<17) - ((matrixEn.x11 + matrixEn.x12)<<7);
+ 	matrixEn.x20 = 0;
+-	matrixEn.x21 = (-contrast * saturaion * sinv)>>7;
+-	matrixEn.x22 = (contrast * saturaion * cosv) >> 7;
++	matrixEn.x21 = (-contrast * saturation * sinv)>>7;
++	matrixEn.x22 = (contrast * saturation * cosv) >> 7;
+ 	matrixEn.x23 = (1<<17) - ((matrixEn.x22 + matrixEn.x21)<<7);
+ 	matrixEn.x30 = 0;
+ 	matrixEn.x31 = 0;
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 83d816c..e7c7c60 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1085,7 +1085,7 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+ 
+         sel = (g_fbi.fb_mode[info->node] == FB_MODE_SCREEN1)?1:0;
+         line = BSP_disp_get_cur_line(sel);
+-        BSP_disp_get_timming(sel, &tt);
++        BSP_disp_get_timing(sel, &tt);
+ 
+         memset(&vblank, 0, sizeof(struct fb_vblank));
+         vblank.flags |= FB_VBLANK_HAVE_VBLANK;
+@@ -1189,7 +1189,7 @@ __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t *fb_para)
+             {
+                 __disp_tcon_timing_t tt;
+ 
+-                if(BSP_disp_get_timming(sel, &tt) >= 0)
++                if(BSP_disp_get_timing(sel, &tt) >= 0)
+                 {
+                     info->var.pixclock = 1000000000 / tt.pixel_clk;
+                     info->var.left_margin = tt.hor_back_porch;
+@@ -1330,7 +1330,7 @@ __s32 Display_get_disp_init_para(__disp_init_t * init_para)
+     return 0;
+ }
+ 
+-__s32 Display_set_fb_timming(__u32 sel)
++__s32 Display_set_fb_timing(__u32 sel)
+ {
+ 	__u8 fb_id=0;
+ 
+@@ -1343,7 +1343,7 @@ __s32 Display_set_fb_timming(__u32 sel)
+             {
+                 __disp_tcon_timing_t tt;
+ 
+-                if(BSP_disp_get_timming(sel, &tt)>=0)
++                if(BSP_disp_get_timing(sel, &tt)>=0)
+                 {
+                     g_fbi.fbinfo[fb_id]->var.pixclock = 1000000000 / tt.pixel_clk;
+                     g_fbi.fbinfo[fb_id]->var.left_margin = tt.hor_back_porch;
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index 74beff8..72e945c 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -26,8 +26,8 @@
+ 
+ #define CLK_ON 1
+ #define CLK_OFF 0
+-#define RST_INVAILD 0
+-#define RST_VAILD   1
++#define RST_INVALID 0
++#define RST_VALID   1
+ 
+ #define CLK_DEBE0_AHB_ON	0x00000001
+ #define CLK_DEBE0_MOD_ON 	0x00000002
+@@ -156,7 +156,7 @@ __s32 image_clk_init(__u32 sel)
+ 
+ 		//NEW OSAL_clk reset
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_debe0mclk, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_debe0mclk, RST_INVALID);
+ #endif
+ 		OSAL_CCMU_SetMclkSrc(h_debe0mclk, AW_SYS_CLK_PLL5P);	//FIX CONNECT TO DRAM PLL
+ 
+@@ -185,7 +185,7 @@ __s32 image_clk_init(__u32 sel)
+ 		h_debe1dramclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_SDRAM_DEBE1);
+ #ifdef RESET_OSAL
+ 
+-        OSAL_CCMU_MclkReset(h_debe1mclk, RST_INVAILD);
++        OSAL_CCMU_MclkReset(h_debe1mclk, RST_INVALID);
+ #endif
+         OSAL_CCMU_SetMclkSrc(h_debe1mclk, AW_SYS_CLK_PLL5P);	//FIX CONNECT TO DRAM PLL
+ 
+@@ -218,7 +218,7 @@ __s32 image_clk_exit(__u32 sel)
+ 	if(sel == 0)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_debe0mclk, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_debe0mclk, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_debe0ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_debe0dramclk, CLK_OFF);
+@@ -232,7 +232,7 @@ __s32 image_clk_exit(__u32 sel)
+ 	else if(sel == 1)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_debe1mclk, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_debe1mclk, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_debe1ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_debe1dramclk, CLK_OFF);
+@@ -287,7 +287,7 @@ __s32 scaler_clk_init(__u32 sel)
+ 		h_defe0mclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_DEFE0);
+ #ifdef RESET_OSAL
+ 
+-		OSAL_CCMU_MclkReset(h_defe0mclk, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_defe0mclk, RST_INVALID);
+ #endif
+ 
+ 		OSAL_CCMU_SetMclkSrc(h_defe0mclk, AW_SYS_CLK_PLL7);	//FIX CONNECT TO VIDEO PLL1
+@@ -307,7 +307,7 @@ __s32 scaler_clk_init(__u32 sel)
+ 		h_defe1dramclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_SDRAM_DEFE1);
+ 		h_defe1mclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_DEFE1);
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_defe1mclk, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_defe1mclk, RST_INVALID);
+ #endif
+ 		OSAL_CCMU_SetMclkSrc(h_defe1mclk, AW_SYS_CLK_PLL7);	//FIX CONNECT TO VIDEO PLL1
+ 		OSAL_CCMU_SetMclkDiv(h_defe1mclk, 1);
+@@ -328,7 +328,7 @@ __s32 scaler_clk_exit(__u32 sel)
+ 	if(sel == 0)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_defe0mclk, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_defe0mclk, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_defe0ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_defe0dramclk, CLK_OFF);
+@@ -343,7 +343,7 @@ __s32 scaler_clk_exit(__u32 sel)
+ 	else if(sel == 1)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_defe1mclk, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_defe1mclk, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_defe1ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_defe1dramclk, CLK_OFF);
+@@ -419,7 +419,7 @@ __s32 lcdc_clk_init(__u32 sel)
+ 		OSAL_CCMU_SetMclkDiv(h_lcd0ch1mclk2, 10);
+ 		OSAL_CCMU_SetMclkDiv(h_lcd0ch1mclk1, 10);
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_lcd0ch0mclk0, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_lcd0ch0mclk0, RST_INVALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ahbclk, CLK_ON);
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch0mclk0, CLK_ON);
+@@ -450,7 +450,7 @@ __s32 lcdc_clk_init(__u32 sel)
+ 		OSAL_CCMU_SetMclkDiv(h_lcd1ch1mclk2, 10);
+ 		OSAL_CCMU_SetMclkDiv(h_lcd1ch1mclk1, 10);
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_lcd1ch0mclk0, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_lcd1ch0mclk0, RST_INVALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ahbclk, CLK_ON);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_ON);
+@@ -471,7 +471,7 @@ __s32 lcdc_clk_exit(__u32 sel)
+ 	if(sel == 0)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_lcd0ch0mclk0, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_lcd0ch0mclk0, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch0mclk0, CLK_OFF);
+@@ -487,7 +487,7 @@ __s32 lcdc_clk_exit(__u32 sel)
+ 	else if(sel == 1)
+ 	{
+ #ifdef RESET_OSAL
+-		OSAL_CCMU_MclkReset(h_lcd1ch0mclk0, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_lcd1ch0mclk0, RST_VALID);
+ #endif
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ahbclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_OFF);
+@@ -552,7 +552,7 @@ __s32 tve_clk_init(__u32 sel)
+ 	if(sel == 0)
+ 	{
+ #ifdef CONFIG_ARCH_SUN5I
+-		OSAL_CCMU_MclkReset(h_lcd0ch1mclk2, RST_INVAILD);
++		OSAL_CCMU_MclkReset(h_lcd0ch1mclk2, RST_INVALID);
+ #endif
+ 		h_tvenc0ahbclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_AHB_TVE0);
+ 		OSAL_CCMU_MclkOnOff(h_tvenc0ahbclk, CLK_ON);
+@@ -577,7 +577,7 @@ __s32 tve_clk_exit(__u32 sel)
+ 		OSAL_CCMU_MclkOnOff(h_tvenc0ahbclk, CLK_OFF);
+ 		OSAL_CCMU_CloseMclk(h_tvenc0ahbclk);
+ #ifdef CONFIG_ARCH_SUN5I
+-		OSAL_CCMU_MclkReset(h_lcd0ch1mclk2, RST_VAILD);
++		OSAL_CCMU_MclkReset(h_lcd0ch1mclk2, RST_VALID);
+ #endif
+ 
+ 		g_clk_status &= CLK_TVENC0_AHB_OFF;
+@@ -607,7 +607,7 @@ __s32 hdmi_clk_init(void)
+ 	h_hdmiahbclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_AHB_HDMI);
+ 	h_hdmimclk   = OSAL_CCMU_OpenMclk(AW_MOD_CLK_HDMI);
+ #ifdef RESET_OSAL
+-	OSAL_CCMU_MclkReset(h_hdmimclk, RST_INVAILD);
++	OSAL_CCMU_MclkReset(h_hdmimclk, RST_INVALID);
+ #endif
+ #ifdef CONFIG_ARCH_SUN4I
+ 	OSAL_CCMU_SetMclkSrc(h_hdmimclk, AW_SYS_CLK_PLL7);
+@@ -630,7 +630,7 @@ __s32 hdmi_clk_init(void)
+ __s32 hdmi_clk_exit(void)
+ {
+ #ifdef RESET_OSAL
+-	OSAL_CCMU_MclkReset(h_hdmimclk, RST_VAILD);
++	OSAL_CCMU_MclkReset(h_hdmimclk, RST_VALID);
+ #endif
+ 	OSAL_CCMU_MclkOnOff(h_hdmimclk, CLK_OFF);
+ 	OSAL_CCMU_MclkOnOff(h_hdmiahbclk, CLK_OFF);
+@@ -669,7 +669,7 @@ __s32 lvds_clk_init(void)
+ {
+ 	h_lvdsmclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_LVDS);
+ #ifdef RESET_OSAL
+-	OSAL_CCMU_MclkReset(h_lvdsmclk, RST_INVAILD);
++	OSAL_CCMU_MclkReset(h_lvdsmclk, RST_INVALID);
+ #endif
+ 	return DIS_SUCCESS;
+ }
+@@ -677,7 +677,7 @@ __s32 lvds_clk_init(void)
+ __s32 lvds_clk_exit(void)
+ {
+ #ifdef RESET_OSAL
+-	OSAL_CCMU_MclkReset(h_lvdsmclk, RST_VAILD);
++	OSAL_CCMU_MclkReset(h_lvdsmclk, RST_VALID);
+ #endif
+ 	OSAL_CCMU_CloseMclk(AW_MOD_CLK_LVDS);
+ 
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index 78d44ff..a77f849 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -103,7 +103,7 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+         gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_HDMI;
+ 
+-        Display_set_fb_timming(sel);
++        Display_set_fb_timing(sel);
+     }
+ 
+     return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_iep.c b/drivers/video/sunxi/disp/disp_iep.c
+index ae8560d..c9b692c 100644
+--- a/drivers/video/sunxi/disp/disp_iep.c
++++ b/drivers/video/sunxi/disp/disp_iep.c
+@@ -23,8 +23,8 @@ static __u32 printf_cnt=0; //for test
+ 
+ #define CLK_ON 1
+ #define CLK_OFF 0
+-#define RST_INVAILD 0
+-#define RST_VAILD   1
++#define RST_INVALID 0
++#define RST_VALID   1
+ 
+ //#define DRC_DEFAULT_ENABLE	//Enable drc default
+ //#define DRC_DEMO //when defined DRC_DEFAULT_ENABLE, run DRC in DEMO mode
+@@ -299,7 +299,7 @@ __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)
+ 		(regn->y < 0) || ((regn->y + regn->height)>scn_height))
+ 	{
+ 		DE_WRN("BSP_disp_iep_set_demo_win: win_x: %d, win_y: %d, win_width: %d, win_height: %d.\n", regn->x, regn->y, regn->width, regn->height);
+-		DE_WRN("IEP Windows Size Invaild!\n");
++		DE_WRN("IEP Windows Size Invalid!\n");
+ 		return DIS_PARA_FAILED;
+ 	}
+ 
+@@ -594,7 +594,7 @@ __s32 iep_clk_init(__u32 sel)
+     h_iepdramclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_SDRAM_IEP);
+     h_iepmclk = OSAL_CCMU_OpenMclk(AW_MOD_CLK_IEP);
+ 
+-	OSAL_CCMU_MclkReset(h_iepmclk, RST_INVAILD);
++	OSAL_CCMU_MclkReset(h_iepmclk, RST_INVALID);
+ 	OSAL_CCMU_MclkOnOff(h_iepahbclk, CLK_ON);
+ 
+ 	g_clk_status  |= CLK_IEP_AHB_ON;
+@@ -603,7 +603,7 @@ __s32 iep_clk_init(__u32 sel)
+ 
+ __s32 iep_clk_exit(__u32 sel)
+ {
+-	OSAL_CCMU_MclkReset(h_iepmclk, RST_VAILD);
++	OSAL_CCMU_MclkReset(h_iepmclk, RST_VALID);
+ 
+ 	if(g_clk_status & CLK_IEP_DRAM_ON)
+ 	{
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 6054b66..5b4173a 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -1765,7 +1765,7 @@ __s32 BSP_disp_lcd_open_after(__u32 sel)
+     Disp_drc_enable(sel, TRUE);
+ #endif
+ 
+-    Display_set_fb_timming(sel);
++    Display_set_fb_timing(sel);
+ 
+     return DIS_SUCCESS;
+ }
+@@ -1946,7 +1946,7 @@ void LCD_set_panel_funs(__lcd_panel_fun_t * lcd0_cfg, __lcd_panel_fun_t * lcd1_c
+     lcd_panel_fun[1].lcd_user_defined_func = lcd1_cfg->lcd_user_defined_func;
+ }
+ 
+-__s32 BSP_disp_get_timming(__u32 sel, __disp_tcon_timing_t * tt)
++__s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt)
+ {
+     memset(tt, 0, sizeof(__disp_tcon_timing_t));
+ 
+@@ -1971,7 +1971,7 @@ __s32 BSP_disp_get_timming(__u32 sel, __disp_tcon_timing_t * tt)
+     }
+     else
+     {
+-        DE_INF("get timming fail because device is not output !\n");
++        DE_INF("get timing fail because device is not output !\n");
+         return -1;
+     }
+ 
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index 8e518a9..d612855 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -289,7 +289,7 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         Disp_set_out_interlace(sel);
+ #endif
+ 
+-        Display_set_fb_timming(sel);
++        Display_set_fb_timing(sel);
+     }
+     return DIS_SUCCESS;
+ }
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index 0a4efe3..3a13b54 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -85,7 +85,7 @@ __s32 BSP_disp_vga_open(__u32 sel)
+     	gdisp.screen[sel].status |= VGA_ON;
+     	gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+     	gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_VGA;
+-        Display_set_fb_timming(sel);
++        Display_set_fb_timing(sel);
+ 	}
+ 
+ 	return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/ebios_de.h b/drivers/video/sunxi/disp/ebios_de.h
+index 22f8316..6cba471 100644
+--- a/drivers/video/sunxi/disp/ebios_de.h
++++ b/drivers/video/sunxi/disp/ebios_de.h
+@@ -283,7 +283,7 @@ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr);
+ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel);
+ #endif
+ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode, __u8 incs, __u8 outcs,
+-                                                   __s32  bright, __s32 contrast, __s32 saturaion, __s32 hue,
++                                                   __s32  bright, __s32 contrast, __s32 saturation, __s32 hue,
+                                                    __u32  in_br_swap, __u32 out_br_swap);
+ __s32 DE_SCAL_Get_3D_In_Single_Size(__scal_3d_inmode_t inmode, __scal_src_size_t *fullsize,__scal_src_size_t *singlesize);
+ __s32 DE_SCAL_Get_3D_Out_Single_Size(__scal_3d_outmode_t outmode, __scal_out_size_t *singlesize,__scal_out_size_t *fullsize);
+@@ -363,9 +363,9 @@ __s32 DE_BE_Sprite_Block_Set_fb(__u32 sel, __u8 blk_idx,__u32 addr, __u32 line_w
+ __s32 DE_BE_Sprite_Block_Set_Next_Id(__u32 sel, __u8 blk_idx,__u8 next_blk_id);
+ __s32 DE_BE_Sprite_Set_Palette_Table(__u32 sel, __u32 address, __u32 offset, __u32 size);
+ #ifdef CONFIG_ARCH_SUN4I
+-__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturaion, __u32 hue);
++__s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range, __u32 enhance_en, __u32 brightness, __u32 contrast, __u32 saturation, __u32 hue);
+ #else
+-__s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 brightness, __s32 contrast, __s32 saturaion, __s32 hue);
++__s32 DE_BE_Set_Enhance(__u8 sel, __u32 out_csc, __u32 out_color_range, __s32 brightness, __s32 contrast, __s32 saturation, __s32 hue);
+ #endif
+ __s32 DE_BE_enhance_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_set_display_size(__u32 sel, __u32 width, __u32 height);
+-- 
+1.8.0
+

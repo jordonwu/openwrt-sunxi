@@ -1,0 +1,41 @@
+From 2c84fade76cb0081805fdc6827c3b858c1b2d68b Mon Sep 17 00:00:00 2001
+From: Edward Nielsen <enielsen2013@gmail.com>
+Date: Sat, 19 May 2012 11:00:05 +0200
+Subject: [PATCH 569/944] sun4i: enable mali_drm support
+
+---
+ arch/arm/mach-sun4i/devices.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/mach-sun4i/devices.c b/arch/arm/mach-sun4i/devices.c
+index 7dd37ee..7de2dd5 100644
+--- a/arch/arm/mach-sun4i/devices.c
++++ b/arch/arm/mach-sun4i/devices.c
+@@ -174,6 +174,13 @@ struct platform_device sun4i_twi2_device = {
+ 	},
+ };
+ 
++#ifdef CONFIG_DRM_MALI
++static struct platform_device sun4i_device_mali_drm = {
++	.name = "mali_drm",
++	.id   = -1,
++};
++#endif
++
+ static struct platform_device *sw_pdevs[] __initdata = {
+ #if 0
+ 	&debug_uart,
+@@ -183,6 +190,10 @@ static struct platform_device *sw_pdevs[] __initdata = {
+ 	&sun4i_twi0_device,
+ 	&sun4i_twi1_device,
+ 	&sun4i_twi2_device,
++#ifdef CONFIG_DRM_MALI
++	&sun4i_device_mali_drm,
++#endif
++
+ };
+ 
+ void __init sw_pdev_init(void)
+-- 
+1.8.0
+

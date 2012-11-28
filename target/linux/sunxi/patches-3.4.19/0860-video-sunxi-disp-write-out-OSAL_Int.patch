@@ -1,0 +1,508 @@
+From 9b93530fd9cb5668aae757c78af26e2673d1f104 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 19 Oct 2012 14:30:48 +0200
+Subject: [PATCH 860/944] video:sunxi:disp: write out OSAL_Int.*
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile        |   3 +-
+ drivers/video/sunxi/disp/OSAL/OSAL.h     |   2 -
+ drivers/video/sunxi/disp/OSAL/OSAL_Int.c | 124 ------------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Int.h | 127 -------------------------------
+ drivers/video/sunxi/disp/disp_de.h       |   6 --
+ drivers/video/sunxi/disp/disp_display.c  |  16 ++--
+ drivers/video/sunxi/disp/disp_lcd.c      |  24 +++---
+ drivers/video/sunxi/disp/disp_lcd.h      |   5 --
+ drivers/video/sunxi/disp/disp_scaler.c   |  24 +++---
+ 9 files changed, 31 insertions(+), 300 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Int.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Int.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index bd4809a..2d845b9 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -1,8 +1,7 @@
+ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+-disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+-	OSAL/OSAL_Pin.o
++disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_IrqLock.o OSAL/OSAL_Pin.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+ 	de_layer.o de_lcdc.o de_tvec.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index 64b086b..a841d94 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -24,8 +24,6 @@
+ #include "../bsp_display.h"
+ 
+ #include  "OSAL_Clock.h"
+-#include  "OSAL_Pin.h"
+-#include  "OSAL_Int.h"
+ #include  "OSAL_IrqLock.h"
+ #include  "OSAL_Pin.h"
+ 
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Int.c b/drivers/video/sunxi/disp/OSAL/OSAL_Int.c
+deleted file mode 100644
+index 7face94..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Int.c
++++ /dev/null
+@@ -1,124 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-
+-
+-#include "OSAL.h"
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_RegISR
+-*
+-* Description:
+-*    注册中断服务程序
+-*
+-* Parameters:
+-*    irqno    	    ：input.  中断号
+-*    flags    	    ：input.  中断类型，默认值为0。
+-*    Handler  	    ：input.  中断处理程序入口，或者中断事件句柄
+-*    pArg 	        ：input.  参数
+-*    DataSize 	    ：input.  参数的长度
+-*    prio	        ：input.  中断优先级
+-
+-*
+-* Return value:
+-*     返回成功或者失败。
+-*
+-* note:
+-*    中断处理函数原型，typedef __s32 (*ISRCallback)( void *pArg)。
+-*
+-*******************************************************************************
+-*/
+-int OSAL_RegISR(__u32 IrqNo, __u32 Flags,ISRCallback Handler,void *pArg,__u32 DataSize,__u32 Prio)
+-{
+-    return request_irq(IrqNo, (irq_handler_t)Handler, IRQF_DISABLED, "dev_name", pArg);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_UnRegISR
+-*
+-* Description:
+-*    注销中断服务程序
+-*
+-* Parameters:
+-*    irqno    	：input.  中断号
+-*    handler  	：input.  中断处理程序入口，或者中断事件句柄
+-*    Argment 	：input.  参数
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_UnRegISR(__u32 IrqNo, ISRCallback Handler, void *pArg)
+-{
+-    free_irq(IrqNo, pArg);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_InterruptEnable
+-*
+-* Description:
+-*    中断使能
+-*
+-* Parameters:
+-*    irqno ：input.  中断号
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_InterruptEnable(__u32 IrqNo)
+-{
+-    enable_irq(IrqNo);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_InterruptDisable
+-*
+-* Description:
+-*    中断禁止
+-*
+-* Parameters:
+-*     irqno ：input.  中断号
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_InterruptDisable(__u32 IrqNo)
+-{
+-    disable_irq(IrqNo);
+-}
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Int.h b/drivers/video/sunxi/disp/OSAL/OSAL_Int.h
+deleted file mode 100644
+index a7a83a4..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Int.h
++++ /dev/null
+@@ -1,127 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_INT_H__
+-#define  __OSAL_INT_H__
+-
+-#define __LINUX_OSAL__
+-
+-#ifndef __LINUX_OSAL__
+-typedef __s32 (*ISRCallback)( void *);
+-#else
+-typedef int (*ISRCallback)( int, void* );
+-#endif
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_RegISR
+-*
+-* Description:
+-*    注册中断服务程序
+-*
+-* Parameters:
+-*    irqno    	    ：input.  中断号
+-*    flags    	    ：input.  中断类型，默认值为0。
+-*    Handler  	    ：input.  中断处理程序入口，或者中断事件句柄
+-*    pArg 	        ：input.  参数
+-*    DataSize 	    ：input.  参数的长度
+-*    prio	        ：input.  中断优先级
+-
+-*
+-* Return value:
+-*     返回成功或者失败。
+-*
+-* note:
+-*    中断处理函数原型，typedef __s32 (*ISRCallback)( void *pArg)。
+-*
+-*******************************************************************************
+-*/
+-int OSAL_RegISR(__u32 IrqNo,
+-				__u32 Flags,
+-				ISRCallback Handler,
+-				void *pArg,
+-				__u32 DataSize,
+-				__u32 Prio);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_UnRegISR
+-*
+-* Description:
+-*    注销中断服务程序
+-*
+-* Parameters:
+-*    irqno    	：input.  中断号
+-*    handler  	：input.  中断处理程序入口，或者中断事件句柄
+-*    Argment 	：input.  参数
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_UnRegISR(__u32 IrqNo, ISRCallback Handler, void *pArg);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_InterruptEnable
+-*
+-* Description:
+-*    中断使能
+-*
+-* Parameters:
+-*    irqno ：input.  中断号
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_InterruptEnable(__u32 IrqNo);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_InterruptDisable
+-*
+-* Description:
+-*    中断禁止
+-*
+-* Parameters:
+-*     irqno ：input.  中断号
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_InterruptDisable(__u32 IrqNo);
+-
+-#endif   //__OSAL_INT_H__
+-
+-
+diff --git a/drivers/video/sunxi/disp/disp_de.h b/drivers/video/sunxi/disp/disp_de.h
+index 9d7107b..9abd9d9 100644
+--- a/drivers/video/sunxi/disp/disp_de.h
++++ b/drivers/video/sunxi/disp/disp_de.h
+@@ -29,12 +29,6 @@ extern __hdle   h_tvahbclk;
+ extern __hdle   h_tv1clk;
+ extern __hdle   h_tv2clk;
+ 
+-#ifdef __LINUX_OSAL__
+-__s32 Scaler_event_proc(int irq, void *parg);
+-#else
+-__s32 Scaler_event_proc(void *parg);
+-#endif
+-
+ __s32 Image_init(__u32 sel);
+ __s32 Image_exit(__u32 sel);
+ __s32 Image_open(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index ba411e2..5237862 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -135,20 +135,20 @@ __s32 BSP_disp_exit(__u32 mode)
+     }
+     else if(mode == DISP_EXIT_MODE_CLEAN_PARTLY)
+     {
+-        OSAL_InterruptDisable(INTC_IRQNO_LCDC0);
+-        OSAL_UnRegISR(INTC_IRQNO_LCDC0,Disp_lcdc_event_proc,(void*)0);
++        disable_irq(INTC_IRQNO_LCDC0);
++        free_irq(INTC_IRQNO_LCDC0, NULL);
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+-        OSAL_InterruptDisable(INTC_IRQNO_LCDC1);
+-        OSAL_UnRegISR(INTC_IRQNO_LCDC1,Disp_lcdc_event_proc,(void*)0);
++	disable_irq(INTC_IRQNO_LCDC1);
++        free_irq(INTC_IRQNO_LCDC1, NULL);
+ #endif
+ 
+-        OSAL_InterruptDisable(INTC_IRQNO_SCALER0);
+-        OSAL_UnRegISR(INTC_IRQNO_SCALER0,Scaler_event_proc,(void*)0);
++        disable_irq(INTC_IRQNO_SCALER0);
++        free_irq(INTC_IRQNO_SCALER0, NULL);
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+-        OSAL_InterruptDisable(INTC_IRQNO_SCALER1);
+-        OSAL_UnRegISR(INTC_IRQNO_SCALER1,Scaler_event_proc,(void*)0);
++	disable_irq(INTC_IRQNO_SCALER1);
++        free_irq(INTC_IRQNO_SCALER1, NULL);
+ #endif
+     }
+ 
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index e5e43b2..021fe96 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -1289,11 +1289,7 @@ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
+ }
+ 
+ 
+-#ifdef __LINUX_OSAL__
+-__s32 Disp_lcdc_event_proc(int irq, void *parg)
+-#else
+-__s32 Disp_lcdc_event_proc(void *parg)
+-#endif
++static irqreturn_t Disp_lcdc_event_proc(int irq, void *parg)
+ {
+     __u32  lcdc_flags;
+     __u32 sel = (__u32)parg;
+@@ -1315,6 +1311,8 @@ __s32 Disp_lcdc_event_proc(void *parg)
+ 
+ __s32 Disp_lcdc_init(__u32 sel)
+ {
++    irqreturn_t ret;
++
+     LCD_get_sys_config(sel, &(gdisp.screen[sel].lcd_cfg));
+ 
+     lcdc_clk_init(sel);
+@@ -1325,17 +1323,17 @@ __s32 Disp_lcdc_init(__u32 sel)
+ 
+     if(sel == 0)
+     {
+-        OSAL_RegISR(INTC_IRQNO_LCDC0,0,Disp_lcdc_event_proc,(void*)sel,0,0);
++	ret = request_irq(INTC_IRQNO_LCDC0, Disp_lcdc_event_proc, IRQF_DISABLED, "sunxi lcd0", (void *) sel);
+ #ifndef __LINUX_OSAL__
+-        OSAL_InterruptEnable(INTC_IRQNO_LCDC0);
++        enable_irq(INTC_IRQNO_LCDC0);
+         LCD_get_panel_funs_0(&lcd_panel_fun[sel]);
+ #endif
+     }
+     else
+     {
+-        OSAL_RegISR(INTC_IRQNO_LCDC1,0,Disp_lcdc_event_proc,(void*)sel,0,0);
++	ret = request_irq(INTC_IRQNO_LCDC1, Disp_lcdc_event_proc, IRQF_DISABLED, "sunxi lcd1", (void *) sel);
+ #ifndef __LINUX_OSAL__
+-        OSAL_InterruptEnable(INTC_IRQNO_LCDC1);
++        enable_irq(INTC_IRQNO_LCDC1);
+         LCD_get_panel_funs_1(&lcd_panel_fun[sel]);
+ #endif
+     }
+@@ -1380,13 +1378,13 @@ __s32 Disp_lcdc_exit(__u32 sel)
+ {
+     if(sel == 0)
+     {
+-        OSAL_InterruptDisable(INTC_IRQNO_LCDC0);
+-        OSAL_UnRegISR(INTC_IRQNO_LCDC0,Disp_lcdc_event_proc,(void*)sel);
++        disable_irq(INTC_IRQNO_LCDC0);
++        free_irq(INTC_IRQNO_LCDC0, (void *) sel);
+     }
+     else if(sel == 1)
+     {
+-        OSAL_InterruptDisable(INTC_IRQNO_LCDC1);
+-        OSAL_UnRegISR(INTC_IRQNO_LCDC1,Disp_lcdc_event_proc,(void*)sel);
++        disable_irq(INTC_IRQNO_LCDC1);
++        free_irq(INTC_IRQNO_LCDC1, (void *) sel);
+     }
+ 
+     LCDC_exit(sel);
+diff --git a/drivers/video/sunxi/disp/disp_lcd.h b/drivers/video/sunxi/disp/disp_lcd.h
+index 6182bda..a80a299 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.h
++++ b/drivers/video/sunxi/disp/disp_lcd.h
+@@ -32,11 +32,6 @@ extern __panel_para_t		gpanel_info[2];
+ __s32 Disp_lcdc_init(__u32 sel);
+ __s32 Disp_lcdc_exit(__u32 sel);
+ 
+-#ifdef __LINUX_OSAL__
+-__s32 Disp_lcdc_event_proc(__s32 irq, void *parg);
+-#else
+-__s32 Disp_lcdc_event_proc(void *parg);
+-#endif
+ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon);
+ __u32 Disp_get_screen_scan_mode(__disp_tv_mode_t tv_mode);
+ 
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 507380b..534c679 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -263,11 +263,7 @@ __s32 Scaler_3d_sw_para_to_reg(__u32 type, __u32 mode, __bool b_out_interlace)
+     return DIS_FAIL;
+ }
+ 
+-#ifdef __LINUX_OSAL__
+-__s32 Scaler_event_proc(__s32 irq, void *parg)
+-#else
+-__s32 Scaler_event_proc(void *parg)
+-#endif
++static irqreturn_t Scaler_event_proc(int irq, void *parg)
+ {
+     __u8 fe_intflags, be_intflags;
+     __u32 sel = (__u32)parg;
+@@ -305,21 +301,23 @@ __s32 Scaler_event_proc(void *parg)
+ 
+ __s32 Scaler_Init(__u32 sel)
+ {
++    irqreturn_t ret;
++
+     scaler_clk_init(sel);
+     DE_SCAL_EnableINT(sel,DE_WB_END_IE);
+ 
+     if(sel == 0)
+     {
+-        OSAL_RegISR(INTC_IRQNO_SCALER0,0,Scaler_event_proc, (void *)sel,0,0);
++	ret = request_irq(INTC_IRQNO_SCALER0, Scaler_event_proc, IRQF_DISABLED, "sunxi scaler0", (void *) sel);
+ #ifndef __LINUX_OSAL__
+-        OSAL_InterruptEnable(INTC_IRQNO_SCALER0);
++        enable_irq(INTC_IRQNO_SCALER0);
+ #endif
+     }
+     else if(sel == 1)
+     {
+-        OSAL_RegISR(INTC_IRQNO_SCALER1,0,Scaler_event_proc, (void *)sel,0,0);
++	ret = request_irq(INTC_IRQNO_SCALER1, Scaler_event_proc, IRQF_DISABLED, "sunxi scaler1", (void *) sel);
+ #ifndef __LINUX_OSAL__
+-        OSAL_InterruptEnable(INTC_IRQNO_SCALER1);
++        enable_irq(INTC_IRQNO_SCALER1);
+ #endif
+     }
+    	return DIS_SUCCESS;
+@@ -329,13 +327,13 @@ __s32 Scaler_Exit(__u32 sel)
+ {
+     if(sel == 0)
+     {
+-        OSAL_InterruptDisable(INTC_IRQNO_SCALER0);
+-        OSAL_UnRegISR(INTC_IRQNO_SCALER0,Scaler_event_proc,(void*)sel);
++        disable_irq(INTC_IRQNO_SCALER0);
++        free_irq(INTC_IRQNO_SCALER0, (void *) sel);
+     }
+     else if(sel == 1)
+     {
+-        OSAL_InterruptDisable(INTC_IRQNO_SCALER1);
+-        OSAL_UnRegISR(INTC_IRQNO_SCALER1,Scaler_event_proc,(void*)sel);
++        disable_irq(INTC_IRQNO_SCALER1);
++        free_irq(INTC_IRQNO_SCALER1, (void *) sel);
+     }
+ 
+     DE_SCAL_DisableINT(sel,DE_WB_END_IE);
+-- 
+1.8.0
+

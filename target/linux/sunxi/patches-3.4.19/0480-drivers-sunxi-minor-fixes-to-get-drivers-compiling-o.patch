@@ -1,0 +1,320 @@
+From e1731dd2169edbdc0da73470fee6e582c6715bcc Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 27 May 2012 21:25:29 +0200
+Subject: [PATCH 480/944] drivers: sunxi-*: minor fixes to get drivers
+ compiling on 3.3 (part 1)
+
+---
+ drivers/char/sun4i_g2d/g2d_driver.c           | 2 ++
+ drivers/gsensor/bma250.c                      | 2 ++
+ drivers/gsensor/mecs.c                        | 1 +
+ drivers/gsensor/mxc622x.c                     | 2 ++
+ drivers/misc/sun4i-gpio.c                     | 3 ++-
+ drivers/misc/sun4i-vibrator.c                 | 1 +
+ drivers/misc/sunxi-dbgreg.c                   | 1 -
+ drivers/power/axp_power/axp18-regu.c          | 2 +-
+ drivers/power/axp_power/axp19-regu.c          | 2 +-
+ drivers/power/axp_power/axp20-board.c         | 1 +
+ drivers/power/axp_power/axp20-regu.c          | 2 +-
+ drivers/power/axp_power/virtual20.c           | 1 +
+ drivers/power/axp_power/virtual20_dev.c       | 3 ++-
+ drivers/rtc/rtc-sun5i.c                       | 1 +
+ drivers/spi/spi_sunxi.c                       | 1 +
+ drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c | 1 +
+ drivers/video/sun4i/disp/dev_disp.c           | 1 +
+ drivers/video/sun4i/disp/dev_fb.c             | 1 +
+ drivers/video/sun4i/hdmi/dev_hdmi.c           | 1 +
+ drivers/video/sun4i/lcd/dev_lcd.c             | 1 +
+ drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c | 2 ++
+ drivers/video/sun5i/disp/dev_disp.c           | 1 +
+ drivers/video/sun5i/disp/dev_fb.c             | 1 +
+ drivers/video/sun5i/hdmi/dev_hdmi.c           | 1 +
+ drivers/video/sun5i/lcd/dev_lcd.c             | 1 +
+ 25 files changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/char/sun4i_g2d/g2d_driver.c b/drivers/char/sun4i_g2d/g2d_driver.c
+index 0826ff4..bffc996 100644
+--- a/drivers/char/sun4i_g2d/g2d_driver.c
++++ b/drivers/char/sun4i_g2d/g2d_driver.c
+@@ -1,3 +1,5 @@
++#include <linux/module.h>
++
+ #include"g2d_driver_i.h"
+ #include<linux/g2d_driver.h>
+ #include"g2d.h"
+diff --git a/drivers/gsensor/bma250.c b/drivers/gsensor/bma250.c
+index 7ebd756..b1a05db 100644
+--- a/drivers/gsensor/bma250.c
++++ b/drivers/gsensor/bma250.c
+@@ -24,7 +24,9 @@
+ #include <linux/mutex.h>
+ #include <linux/slab.h>
+ #include <linux/mutex.h>
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
++#endif
+ 
+ #include <mach/system.h>
+ #include <mach/hardware.h>
+diff --git a/drivers/gsensor/mecs.c b/drivers/gsensor/mecs.c
+index 78f21f7..71ae2e8 100644
+--- a/drivers/gsensor/mecs.c
++++ b/drivers/gsensor/mecs.c
+@@ -20,6 +20,7 @@
+  *
+  */
+ 
++#include <linux/module.h>
+ #include <linux/interrupt.h>
+ #include <linux/i2c.h>
+ #include <linux/slab.h>
+diff --git a/drivers/gsensor/mxc622x.c b/drivers/gsensor/mxc622x.c
+index f5e96c6..86da69a 100644
+--- a/drivers/gsensor/mxc622x.c
++++ b/drivers/gsensor/mxc622x.c
+@@ -41,7 +41,9 @@
+ #include <mach/sys_config.h>
+ #include "mxc622x.h"
+ 
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
++#endif
+ 
+ #define DEBUG			0
+ #define MAX_FAILURE_COUNT	3
+diff --git a/drivers/misc/sun4i-gpio.c b/drivers/misc/sun4i-gpio.c
+index da2e46a..370635e 100644
+--- a/drivers/misc/sun4i-gpio.c
++++ b/drivers/misc/sun4i-gpio.c
+@@ -16,11 +16,12 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/pm.h>
+-#include <linux/sysdev.h>
+ #include <linux/fs.h>
+ #include <linux/kernel.h>
+ #include <linux/slab.h>
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
++#endif
+ #include <linux/miscdevice.h>
+ #include <linux/device.h>
+ 
+diff --git a/drivers/misc/sun4i-vibrator.c b/drivers/misc/sun4i-vibrator.c
+index e16a4e5..5af8e43 100644
+--- a/drivers/misc/sun4i-vibrator.c
++++ b/drivers/misc/sun4i-vibrator.c
+@@ -17,6 +17,7 @@
+  * GNU General Public License for more details.
+  *
+  */
++#include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/err.h>
+diff --git a/drivers/misc/sunxi-dbgreg.c b/drivers/misc/sunxi-dbgreg.c
+index db24f3e..426d3e2 100644
+--- a/drivers/misc/sunxi-dbgreg.c
++++ b/drivers/misc/sunxi-dbgreg.c
+@@ -16,7 +16,6 @@
+ #include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/pm.h>
+-#include <linux/sysdev.h>
+ #include <linux/fs.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+diff --git a/drivers/power/axp_power/axp18-regu.c b/drivers/power/axp_power/axp18-regu.c
+index 88143d9..fa66ef8 100644
+--- a/drivers/power/axp_power/axp18-regu.c
++++ b/drivers/power/axp_power/axp18-regu.c
+@@ -393,7 +393,7 @@ static int __devinit axp_regulator_probe(struct platform_device *pdev)
+ 		ri->desc.n_voltages = ARRAY_SIZE(axp18_ldo5_data);
+ 	
+ 	rdev = regulator_register(&ri->desc, &pdev->dev,
+-				  pdev->dev.platform_data, ri);
++				  pdev->dev.platform_data, ri, NULL);
+ 	if (IS_ERR(rdev)) {
+ 		dev_err(&pdev->dev, "failed to register regulator %s\n",
+ 				ri->desc.name);
+diff --git a/drivers/power/axp_power/axp19-regu.c b/drivers/power/axp_power/axp19-regu.c
+index 13c289e..ff2139a 100644
+--- a/drivers/power/axp_power/axp19-regu.c
++++ b/drivers/power/axp_power/axp19-regu.c
+@@ -383,7 +383,7 @@ static int __devinit axp_regulator_probe(struct platform_device *pdev)
+ 		ri->desc.ops = &axp19_ldoio0_ops;
+ 	
+ 	rdev = regulator_register(&ri->desc, &pdev->dev,
+-				  pdev->dev.platform_data, ri);
++				  pdev->dev.platform_data, ri, NULL);
+ 	if (IS_ERR(rdev)) {
+ 		dev_err(&pdev->dev, "failed to register regulator %s\n",
+ 				ri->desc.name);
+diff --git a/drivers/power/axp_power/axp20-board.c b/drivers/power/axp_power/axp20-board.c
+index 0d6a0dd..1ea9cbd 100644
+--- a/drivers/power/axp_power/axp20-board.c
++++ b/drivers/power/axp_power/axp20-board.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+diff --git a/drivers/power/axp_power/axp20-regu.c b/drivers/power/axp_power/axp20-regu.c
+index 94e876c..e56c5f5 100644
+--- a/drivers/power/axp_power/axp20-regu.c
++++ b/drivers/power/axp_power/axp20-regu.c
+@@ -439,7 +439,7 @@ static int __devinit axp_regulator_probe(struct platform_device *pdev)
+ 
+ 
+ 	rdev = regulator_register(&ri->desc, &pdev->dev,
+-				  pdev->dev.platform_data, ri);
++				  pdev->dev.platform_data, ri, NULL);
+ 	if (IS_ERR(rdev)) {
+ 		dev_err(&pdev->dev, "failed to register regulator %s\n",
+ 				ri->desc.name);
+diff --git a/drivers/power/axp_power/virtual20.c b/drivers/power/axp_power/virtual20.c
+index d2d6e18..746ff96 100644
+--- a/drivers/power/axp_power/virtual20.c
++++ b/drivers/power/axp_power/virtual20.c
+@@ -11,6 +11,7 @@
+  * License, or (at your option) any later version.
+  */
+ 
++#include <linux/module.h>
+ #include <linux/err.h>
+ #include <linux/mutex.h>
+ #include <linux/platform_device.h>
+diff --git a/drivers/power/axp_power/virtual20_dev.c b/drivers/power/axp_power/virtual20_dev.c
+index eb1f35a..77a989d 100644
+--- a/drivers/power/axp_power/virtual20_dev.c
++++ b/drivers/power/axp_power/virtual20_dev.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/device.h>
+ #include <linux/platform_device.h>
+@@ -82,4 +83,4 @@ module_exit(virtual_exit);
+ 
+ MODULE_DESCRIPTION("Krosspower axp regulator test");
+ MODULE_AUTHOR("Donglu Zhang Krosspower");
+-MODULE_LICENSE("GPL");
+\ No newline at end of file
++MODULE_LICENSE("GPL");
+diff --git a/drivers/rtc/rtc-sun5i.c b/drivers/rtc/rtc-sun5i.c
+index 7df4bfd..4036591 100644
+--- a/drivers/rtc/rtc-sun5i.c
++++ b/drivers/rtc/rtc-sun5i.c
+@@ -14,6 +14,7 @@
+  *
+  */
+ 
++#include <linux/module.h>
+ #include <linux/i2c.h>
+ #include <linux/bcd.h>
+ #include <linux/rtc.h>
+diff --git a/drivers/spi/spi_sunxi.c b/drivers/spi/spi_sunxi.c
+index f3dcac6..c973279 100644
+--- a/drivers/spi/spi_sunxi.c
++++ b/drivers/spi/spi_sunxi.c
+@@ -13,6 +13,7 @@
+  * the License, or (at your option) any later version.
+  */
+ 
++#include <linux/module.h>
+ #include <linux/init.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
+index 67fe2e2..39f1751 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "disp_lcd.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun4i/disp/dev_disp.c b/drivers/video/sun4i/disp/dev_disp.c
+index 80aca13..bb7a4c7 100644
+--- a/drivers/video/sun4i/disp/dev_disp.c
++++ b/drivers/video/sun4i/disp/dev_disp.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_disp.h"
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+diff --git a/drivers/video/sun4i/disp/dev_fb.c b/drivers/video/sun4i/disp/dev_fb.c
+index 3d4f577..dc16018 100644
+--- a/drivers/video/sun4i/disp/dev_fb.c
++++ b/drivers/video/sun4i/disp/dev_fb.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "drv_disp_i.h"
+ #include "dev_disp.h"
+ 
+diff --git a/drivers/video/sun4i/hdmi/dev_hdmi.c b/drivers/video/sun4i/hdmi/dev_hdmi.c
+index f4879b3..ff32621 100644
+--- a/drivers/video/sun4i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun4i/hdmi/dev_hdmi.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_hdmi.h"
+ #include "drv_hdmi_i.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/dev_lcd.c b/drivers/video/sun4i/lcd/dev_lcd.c
+index 4d61c6f..48ac83a 100644
+--- a/drivers/video/sun4i/lcd/dev_lcd.c
++++ b/drivers/video/sun4i/lcd/dev_lcd.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_lcd.h"
+ 
+ static struct cdev *my_cdev;
+diff --git a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
+index 0784f08..7b58dcc 100644
+--- a/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
++++ b/drivers/video/sun5i/disp/de_bsp/de/disp_lcd.c
+@@ -1,3 +1,5 @@
++#include <linux/export.h>
++
+ #include "disp_lcd.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun5i/disp/dev_disp.c b/drivers/video/sun5i/disp/dev_disp.c
+index b0de7a5..df2a263 100644
+--- a/drivers/video/sun5i/disp/dev_disp.c
++++ b/drivers/video/sun5i/disp/dev_disp.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_disp.h"
+ 
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+diff --git a/drivers/video/sun5i/disp/dev_fb.c b/drivers/video/sun5i/disp/dev_fb.c
+index 9f91dcb..1b24157 100644
+--- a/drivers/video/sun5i/disp/dev_fb.c
++++ b/drivers/video/sun5i/disp/dev_fb.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "drv_disp_i.h"
+ #include "dev_disp.h"
+ 
+diff --git a/drivers/video/sun5i/hdmi/dev_hdmi.c b/drivers/video/sun5i/hdmi/dev_hdmi.c
+index aad05d5..1d9cd4c 100644
+--- a/drivers/video/sun5i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun5i/hdmi/dev_hdmi.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_hdmi.h"
+ #include "drv_hdmi_i.h"
+ 
+diff --git a/drivers/video/sun5i/lcd/dev_lcd.c b/drivers/video/sun5i/lcd/dev_lcd.c
+index 4d61c6f..48ac83a 100644
+--- a/drivers/video/sun5i/lcd/dev_lcd.c
++++ b/drivers/video/sun5i/lcd/dev_lcd.c
+@@ -1,3 +1,4 @@
++#include <linux/module.h>
+ #include "dev_lcd.h"
+ 
+ static struct cdev *my_cdev;
+-- 
+1.8.0
+

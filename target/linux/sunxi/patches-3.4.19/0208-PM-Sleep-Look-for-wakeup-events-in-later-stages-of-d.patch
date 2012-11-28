@@ -1,0 +1,51 @@
+From 52d136cc2cf6659ee247dbcc88c9e7bd7428ad06 Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Apr 2012 22:52:19 +0200
+Subject: [PATCH 208/944] PM / Sleep: Look for wakeup events in later stages
+ of device suspend
+
+Currently, the device suspend code in drivers/base/power/main.c
+only checks if there have been any wakeup events, and therefore the
+ongoing system transition to a sleep state should be aborted, during
+the first (i.e. "suspend") device suspend phase.  However, wakeup
+events may be reported later as well, so it's reasonable to look for
+them in the in the subsequent (i.e. "late suspend" and "suspend
+noirq") phases.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/power/main.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/drivers/base/power/main.c b/drivers/base/power/main.c
+index b462c0e..e0fb5b0 100644
+--- a/drivers/base/power/main.c
++++ b/drivers/base/power/main.c
+@@ -889,6 +889,11 @@ static int dpm_suspend_noirq(pm_message_t state)
+ 		if (!list_empty(&dev->power.entry))
+ 			list_move(&dev->power.entry, &dpm_noirq_list);
+ 		put_device(dev);
++
++		if (pm_wakeup_pending()) {
++			error = -EBUSY;
++			break;
++		}
+ 	}
+ 	mutex_unlock(&dpm_list_mtx);
+ 	if (error)
+@@ -962,6 +967,11 @@ static int dpm_suspend_late(pm_message_t state)
+ 		if (!list_empty(&dev->power.entry))
+ 			list_move(&dev->power.entry, &dpm_late_early_list);
+ 		put_device(dev);
++
++		if (pm_wakeup_pending()) {
++			error = -EBUSY;
++			break;
++		}
+ 	}
+ 	mutex_unlock(&dpm_list_mtx);
+ 	if (error)
+-- 
+1.8.0
+

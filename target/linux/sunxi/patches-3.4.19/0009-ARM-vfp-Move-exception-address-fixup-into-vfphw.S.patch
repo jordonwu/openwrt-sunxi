@@ -1,0 +1,43 @@
+From 0dbef5cd404e7d167ee5da71320ec31452cb13fd Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Thu, 27 Jan 2011 15:46:20 -0800
+Subject: [PATCH 009/944] ARM: vfp: Move exception address fixup into vfphw.S
+
+If the PC on the stack is updated in entry-armv.S,
+do_undefinstr can get called after the fixup.  do_undefinstr
+does its own fixup, and doing both causes the PC to point to
+half way through an instruction.
+
+Instead, do the fixup in do_vfp, where only the vfp code
+can get called.
+
+Change-Id: I6d966887adc8ed58d88bfe0cb3c0ba29213be488
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/vfp/entry.S | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/vfp/entry.S b/arch/arm/vfp/entry.S
+index 4fa9903..c1a9784 100644
+--- a/arch/arm/vfp/entry.S
++++ b/arch/arm/vfp/entry.S
+@@ -10,7 +10,7 @@
+  *
+  * Basic entry code, called from the kernel's undefined instruction trap.
+  *  r0  = faulted instruction
+- *  r5  = faulted PC+4
++ *  r2  = faulted PC+4
+  *  r9  = successful return
+  *  r10 = thread_info structure
+  *  lr  = failure return
+@@ -26,6 +26,7 @@ ENTRY(do_vfp)
+ 	str	r11, [r10, #TI_PREEMPT]
+ #endif
+ 	enable_irq
++	str	r2, [sp, #S_PC]		@ update regs->ARM_pc for Thumb 2 case
+  	ldr	r4, .LCvfp
+ 	ldr	r11, [r10, #TI_CPU]	@ CPU number
+ 	add	r10, r10, #TI_VFPSTATE	@ r10 = workspace
+-- 
+1.8.0
+

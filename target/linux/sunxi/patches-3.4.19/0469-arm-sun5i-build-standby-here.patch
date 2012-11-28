@@ -1,0 +1,167 @@
+From 21fe3a086673e71fca4f83bc8099517c4726023e Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 24 May 2012 10:59:32 +0200
+Subject: [PATCH 469/944] arm: sun5i: build standby here
+
+---
+ arch/arm/mach-sun5i/pm/Makefile            |  5 +++
+ arch/arm/mach-sun5i/pm/standby.S           |  2 +-
+ arch/arm/mach-sun5i/pm/standby/Makefile    | 59 +++++++++---------------------
+ arch/arm/mach-sun5i/pm/standby/standby.lds | 21 +++++++++++
+ arch/arm/mach-sun5i/pm/standby/standby.xn  | 21 -----------
+ 5 files changed, 45 insertions(+), 63 deletions(-)
+ create mode 100644 arch/arm/mach-sun5i/pm/standby/standby.lds
+ delete mode 100644 arch/arm/mach-sun5i/pm/standby/standby.xn
+
+diff --git a/arch/arm/mach-sun5i/pm/Makefile b/arch/arm/mach-sun5i/pm/Makefile
+index cbdc1d3..fa9f72c 100644
+--- a/arch/arm/mach-sun5i/pm/Makefile
++++ b/arch/arm/mach-sun5i/pm/Makefile
+@@ -1,3 +1,8 @@
++subdir		:= standby
+ 
+ obj-y		+= pm.o standby.o
+ 
++$(obj)/standby.o: $(obj)/standby/standby.bin
++
++$(obj)/standby/standby.bin: FORCE
++	$(Q)$(MAKE) $(build)=$(obj)/standby
+diff --git a/arch/arm/mach-sun5i/pm/standby.S b/arch/arm/mach-sun5i/pm/standby.S
+index 0aca885..0c20470 100644
+--- a/arch/arm/mach-sun5i/pm/standby.S
++++ b/arch/arm/mach-sun5i/pm/standby.S
+@@ -1,6 +1,6 @@
+ 	.globl	standby_bin_start
+ standby_bin_start:
+-	.incbin	"arch/arm/mach-sun5i/pm/standby/standby.code"
++	.incbin	"arch/arm/mach-sun5i/pm/standby/standby.bin"
+ 	.globl	standby_bin_end
+ standby_bin_end:
+ 	.align	2
+diff --git a/arch/arm/mach-sun5i/pm/standby/Makefile b/arch/arm/mach-sun5i/pm/standby/Makefile
+index 7e481dd..2cdb05e 100644
+--- a/arch/arm/mach-sun5i/pm/standby/Makefile
++++ b/arch/arm/mach-sun5i/pm/standby/Makefile
+@@ -1,47 +1,24 @@
+-#makefile for standby.bin
++always	:= standby.bin
++targets	:= standby.elf
+ 
+-INCLUDE   = -I. \
+-	-I$(KDIR)/include \
+-	-I$(KDIR)/arch/arm/mach-sun5i/include
++standby-y := common.o standby.o stack.o standby_clock.o \
++	dram/dram.o dram/dram_init.o \
++	standby_int.o standby_ir.o standby_key.o standby_power.o  \
++	standby_tmr.o standby_twi.o standby_usb.o standby_delay.o
+ 
+-OBJ = common.o standby.o stack.o standby_clock.o dram/dram.o dram/dram_init.o   \
+-      standby_int.o standby_ir.o standby_key.o standby_power.o  \
+-      standby_tmr.o standby_twi.o standby_usb.o standby_delay.o
++targets	+= $(standby-y)
++STANDBY_OBJS = $(addprefix $(obj)/,$(standby-y))
+ 
++LD_FILE = standby.lds
++KBUILD_CFLAGS := $(LINUXINCLUDE) -Os -g -march=armv7-a -mlittle-endian -c
++KBUILD_CFLAGS += -fno-unwind-tables -fno-asynchronous-unwind-tables
++KBUILD_AFLAGS := $(KBUILD_CFLAGS) -D__ASSEMBLY__
+ 
+-OUPUTFILE = standby
++LDFLAGS_standby.elf := -T
++OBJCOPYFLAGS_standby.bin := -O binary
+ 
+-LD_FILE = standby.xn
+-CC = $(CROSS_COMPILE)gcc
+-
+-CFLAGS = -Os -g -march=armv7-a -fno-unwind-tables -fno-asynchronous-unwind-tables -mlittle-endian  -c
+-
+-all:
+-	$(CC) $(INCLUDE) $(CFLAGS) common.c           -o common.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby.c          -o standby.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_clock.c    -o standby_clock.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_int.c      -o standby_int.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_ir.c       -o standby_ir.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_key.c      -o standby_key.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_power.c    -o standby_power.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_tmr.c      -o standby_tmr.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_twi.c      -o standby_twi.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_usb.c      -o standby_usb.o
+-	$(CC) $(INCLUDE) $(CFLAGS) standby_delay.S    -o standby_delay.o
+-	$(CC) $(INCLUDE) $(CFLAGS) dram/dram.c        -o dram/dram.o
+-	$(CC) $(INCLUDE) $(CFLAGS) dram/dram_init.c   -o dram/dram_init.o
+-	$(CC) $(INCLUDE) $(CFLAGS) stack.S            -o stack.o
+-
+-	$(CROSS_COMPILE)ld -T $(LD_FILE)  -EL  $(OBJ) -o $(OUPUTFILE).elf  -Map $(OUPUTFILE).map
+-	$(CROSS_COMPILE)objdump -D $(OUPUTFILE).elf > $(OUPUTFILE).lst
+-	$(CROSS_COMPILE)objcopy -O binary $(OUPUTFILE).elf $(OUPUTFILE).bin
+-
+-	rm -rf *.o ../*.o
+-
+-	cp standby.bin standby.code
+-
+-	@echo ----------------------------------------
+-	@echo well done!
+-clean:
+-	-rm *.o *.map *.lst *.bin *.elf *.exe dram/*.o
++$(obj)/standby.elf: $(src)/$(LD_FILE) $(STANDBY_OBJS) FORCE
++	$(call if_changed,ld)
+ 
++$(obj)/standby.bin: $(obj)/standby.elf FORCE
++	$(call if_changed,objcopy)
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby.lds b/arch/arm/mach-sun5i/pm/standby/standby.lds
+new file mode 100644
+index 0000000..73b8674
+--- /dev/null
++++ b/arch/arm/mach-sun5i/pm/standby/standby.lds
+@@ -0,0 +1,21 @@
++
++OUTPUT_ARCH(arm)
++ENTRY(main)
++
++SECTIONS
++{
++	__standby_start = . ;
++	.text 0xf0000000 :
++	{
++		arch/arm/mach-sun5i/pm/standby/standby.o(.text)
++		*(.text)
++	}
++	.rodata : { *(.rodata) }
++	.data   : { *(.data) }
++
++	__bss_start = . ;
++	.bss : { *(.sbss) *(.scommon) *(.bss) *(COMMON) }
++	__bss_end = .;
++	__standby_end = . ;
++}
++
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby.xn b/arch/arm/mach-sun5i/pm/standby/standby.xn
+deleted file mode 100644
+index 7696e8c..0000000
+--- a/arch/arm/mach-sun5i/pm/standby/standby.xn
++++ /dev/null
+@@ -1,21 +0,0 @@
+-
+-OUTPUT_ARCH(arm)
+-ENTRY(main)
+-
+-SECTIONS
+-{
+-	__standby_start = . ;
+-	.text 0xf0000000 :
+-	{
+-		standby.o(.text)
+-		*(.text)
+-	}
+-	.rodata : { *(.rodata) }
+-	.data   : { *(.data) }
+-
+-	__bss_start = . ;
+-	.bss : { *(.sbss) *(.scommon) *(.bss) *(COMMON) }
+-	__bss_end = .;
+-	__standby_end = . ;
+-}
+-
+-- 
+1.8.0
+

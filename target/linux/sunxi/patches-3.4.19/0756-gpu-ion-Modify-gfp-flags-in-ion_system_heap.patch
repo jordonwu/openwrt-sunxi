@@ -1,0 +1,70 @@
+From fddfe77af30cfbf5396dbdfa9d3f4fca260daa72 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Tue, 2 Oct 2012 22:43:41 -0700
+Subject: [PATCH 756/944] gpu: ion: Modify gfp flags in ion_system_heap
+
+When allocations larger than order 4 are made, use _GFP_NORETRY
+and __GFP_NO_KSWAPD so kswapd doesn't get kicked off to reclaim
+these larger chunks.  For smaller allocaitons, these are
+unnecessary, as the system should be able to reclaim these.
+
+Change-Id: I6b45cd1a595d25cc39622e3dbcc04d84fa1b7db8
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion_system_heap.c | 25 ++++++++++++++++++-------
+ 1 file changed, 18 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index a6a9322..31555fa 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -26,6 +26,11 @@
+ #include <linux/vmalloc.h>
+ #include "ion_priv.h"
+ 
++static unsigned int high_order_gfp_flags = (GFP_HIGHUSER | __GFP_ZERO |
++					    __GFP_NOWARN | __GFP_NORETRY |
++					    __GFP_NO_KSWAPD);
++static unsigned int low_order_gfp_flags  = (GFP_HIGHUSER | __GFP_ZERO |
++					 __GFP_NOWARN);
+ static const unsigned int orders[] = {8, 4, 0};
+ static const int num_orders = ARRAY_SIZE(orders);
+ static int order_to_index(unsigned int order)
+@@ -63,11 +68,15 @@ static struct page *alloc_buffer_page(struct ion_system_heap *heap,
+ 	struct ion_page_pool *pool = heap->pools[order_to_index(order)];
+ 	struct page *page;
+ 
+-	if (!cached)
++	if (!cached) {
+ 		page = ion_page_pool_alloc(pool);
+-	else
+-		page = alloc_pages(GFP_HIGHUSER | __GFP_ZERO |
+-				   __GFP_NOWARN | __GFP_NORETRY, order);
++	} else {
++		gfp_t gfp_flags = low_order_gfp_flags;
++
++		if (order > 4)
++			gfp_flags = high_order_gfp_flags;
++		page = alloc_pages(gfp_flags, order);
++	}
+ 	if (!page)
+ 		return 0;
+ 	if (split_pages)
+@@ -342,9 +351,11 @@ struct ion_heap *ion_system_heap_create(struct ion_platform_heap *unused)
+ 		goto err_alloc_pools;
+ 	for (i = 0; i < num_orders; i++) {
+ 		struct ion_page_pool *pool;
+-		pool = ion_page_pool_create(GFP_HIGHUSER | __GFP_ZERO |
+-					   __GFP_NOWARN | __GFP_NORETRY,
+-					   orders[i]);
++		gfp_t gfp_flags = low_order_gfp_flags;
++
++		if (orders[i] > 4)
++			gfp_flags = high_order_gfp_flags;
++		pool = ion_page_pool_create(gfp_flags, orders[i]);
+ 		if (!pool)
+ 			goto err_create_pool;
+ 		heap->pools[i] = pool;
+-- 
+1.8.0
+

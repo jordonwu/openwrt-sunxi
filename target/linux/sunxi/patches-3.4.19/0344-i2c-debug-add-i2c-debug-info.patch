@@ -1,0 +1,53 @@
+From 6673a45a3b30404eb35ac7bc3d649a5d7fb041ee Mon Sep 17 00:00:00 2001
+From: pannan <pannan@allwinnertech.com>
+Date: Thu, 17 Nov 2011 13:17:26 +0800
+Subject: [PATCH 344/944] i2c debug: add i2c debug info
+
+add SUN4I_IIC_PRINT_TRANSFER_INFO to memuconfig
+---
+ arch/arm/Kconfig           |  1 +
+ drivers/i2c/busses/Kconfig | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index a6308c3..96bb4a0 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -706,6 +706,7 @@ config ARCH_PICOXCELL
+ config ARCH_SUN4I
+ 	bool "AllWinner SUN4I Platform"
+ 	select CPU_V7
++    select ARM_AMBA
+ 	select HAVE_CLK
+ 	select CLKDEV_LOOKUP
+ 	select CLKSRC_MMIO
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 4dfe13e..883b2df 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -918,4 +918,22 @@ config SCx200_ACB
+ 	  This support is also available as a module.  If so, the module
+ 	  will be called scx200_acb.
+ 
++config SUN4I_IIC
++	tristate "SUN4I I2C bus driver"
++	depends on ARM_AMBA && ARCH_SUN4I
++	help
++	  "SUN4I i2c bus driver"
++	  
++config SUN4I_IIC_PRINT_TRANSFER_INFO
++	tristate "SUN4I_IIC_PRINT_TRANSFER_INFO"
++	depends on SUN4I_IIC
++	help
++	  "SUN4I i2c bus driver"
++
++config SUN4I_IIC_PRINT_TRANSFER_INFO_WITH_BUS_NUM
++	depends on SUN4I_IIC_PRINT_TRANSFER_INFO
++	int "bus num id(accepatable input:0,1,2)"  
++    ---help---                                  
++    default 2 
++      
+ endmenu
+-- 
+1.8.0
+

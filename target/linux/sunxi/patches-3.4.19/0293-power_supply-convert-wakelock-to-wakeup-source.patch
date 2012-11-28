@@ -1,0 +1,87 @@
+From 54de22971b7ae44aea9d568579fb38c08848f441 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Tue, 19 Jun 2012 18:04:30 -0700
+Subject: [PATCH 293/944] power_supply: convert wakelock to wakeup source
+
+And supply name will be used as wakeup source name.
+
+Change-Id: I53075491c6e1a4c66755afe8a40b7166cd8d6cb2
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/power_supply_core.c | 11 ++++++-----
+ include/linux/power_supply.h      |  2 --
+ 2 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/power/power_supply_core.c b/drivers/power/power_supply_core.c
+index f58d1805..773fca1 100644
+--- a/drivers/power/power_supply_core.c
++++ b/drivers/power/power_supply_core.c
+@@ -61,7 +61,7 @@ static void power_supply_changed_work(struct work_struct *work)
+ 		spin_lock_irqsave(&psy->changed_lock, flags);
+ 	}
+ 	if (!psy->changed)
+-		wake_unlock(&psy->work_wake_lock);
++		pm_relax(psy->dev);
+ 	spin_unlock_irqrestore(&psy->changed_lock, flags);
+ }
+ 
+@@ -73,7 +73,7 @@ void power_supply_changed(struct power_supply *psy)
+ 
+ 	spin_lock_irqsave(&psy->changed_lock, flags);
+ 	psy->changed = true;
+-	wake_lock(&psy->work_wake_lock);
++	pm_stay_awake(psy->dev);
+ 	spin_unlock_irqrestore(&psy->changed_lock, flags);
+ 	schedule_work(&psy->changed_work);
+ }
+@@ -215,7 +215,9 @@ int power_supply_register(struct device *parent, struct power_supply *psy)
+ 		goto device_add_failed;
+ 
+ 	spin_lock_init(&psy->changed_lock);
+-	wake_lock_init(&psy->work_wake_lock, WAKE_LOCK_SUSPEND, "power-supply");
++	rc = device_init_wakeup(dev, true);
++	if (rc)
++		goto wakeup_init_failed;
+ 
+ 	rc = power_supply_create_triggers(psy);
+ 	if (rc)
+@@ -226,7 +228,7 @@ int power_supply_register(struct device *parent, struct power_supply *psy)
+ 	goto success;
+ 
+ create_triggers_failed:
+-	wake_lock_destroy(&psy->work_wake_lock);
++wakeup_init_failed:
+ 	device_del(dev);
+ kobject_set_name_failed:
+ device_add_failed:
+@@ -241,7 +243,6 @@ void power_supply_unregister(struct power_supply *psy)
+ 	cancel_work_sync(&psy->changed_work);
+ 	sysfs_remove_link(&psy->dev->kobj, "powers");
+ 	power_supply_remove_triggers(psy);
+-	wake_lock_destroy(&psy->work_wake_lock);
+ 	device_unregister(psy->dev);
+ }
+ EXPORT_SYMBOL_GPL(power_supply_unregister);
+diff --git a/include/linux/power_supply.h b/include/linux/power_supply.h
+index e078bd7..847ac35 100644
+--- a/include/linux/power_supply.h
++++ b/include/linux/power_supply.h
+@@ -13,7 +13,6 @@
+ #ifndef __LINUX_POWER_SUPPLY_H__
+ #define __LINUX_POWER_SUPPLY_H__
+ 
+-#include <linux/wakelock.h>
+ #include <linux/workqueue.h>
+ #include <linux/leds.h>
+ 
+@@ -175,7 +174,6 @@ struct power_supply {
+ 	struct work_struct changed_work;
+ 	spinlock_t changed_lock;
+ 	bool changed;
+-	struct wake_lock work_wake_lock;
+ 
+ #ifdef CONFIG_LEDS_TRIGGERS
+ 	struct led_trigger *charging_full_trig;
+-- 
+1.8.0
+

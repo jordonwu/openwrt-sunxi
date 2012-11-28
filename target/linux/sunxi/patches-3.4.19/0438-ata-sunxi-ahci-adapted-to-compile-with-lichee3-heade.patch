@@ -1,0 +1,28 @@
+From 368faf6790209645e6045bbe611a6cf36b0a4d72 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 14 May 2012 15:32:16 +0200
+Subject: [PATCH 438/944] ata: sunxi-ahci: adapted to compile with lichee3
+ headers
+
+---
+ drivers/ata/sw_ahci_platform.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/ata/sw_ahci_platform.c b/drivers/ata/sw_ahci_platform.c
+index 6e3c6c8..a4579af 100644
+--- a/drivers/ata/sw_ahci_platform.c
++++ b/drivers/ata/sw_ahci_platform.c
+@@ -33,8 +33,8 @@
+ #include "ahci.h"
+ 
+ #include <linux/clk.h>
+-#include <mach/gpio_v2.h>
+-#include <mach/script_v2.h>
++#include <mach/sys_config.h>
++#include <mach/platform.h>
+ #include "sw_ahci_platform.h"
+ 
+ static struct scsi_host_template ahci_platform_sht = {
+-- 
+1.8.0
+

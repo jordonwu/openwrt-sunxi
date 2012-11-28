@@ -1,0 +1,42 @@
+From 266328fd18cd6dcbce4d0371c197f93ae6bc944a Mon Sep 17 00:00:00 2001
+From: Tushar Behera <tushar.behera@linaro.org>
+Date: Mon, 26 Mar 2012 17:00:24 +0530
+Subject: [PATCH 227/944] alarmtimer: Fix conflicting definitions of
+ alarmtimer_get_rtcdev
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Both the implementation in kernel/time/alarmtime.c have same definition.
+
+This fixes following compile-time error.
+
+kernel/time/alarmtimer.c:113:46: error: macro "alarmtimer_get_rtcdev" passed 1 arguments, but takes just 0
+kernel/time/alarmtimer.c:114:1: error: expected ‘=’, ‘,’, ‘;’, ‘asm’ or ‘__attribute__’ before ‘{’ token
+make[2]: *** [kernel/time/alarmtimer.o] Error 1
+
+Change-Id: Ib5eb4b3fb0cd5077d19cc4d91e823aa253779b4d
+Signed-off-by: Tushar Behera <tushar.behera@linaro.org>
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ include/linux/alarmtimer.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/include/linux/alarmtimer.h b/include/linux/alarmtimer.h
+index efbf678..96c5c24 100644
+--- a/include/linux/alarmtimer.h
++++ b/include/linux/alarmtimer.h
+@@ -77,10 +77,6 @@ static inline int alarmtimer_callback_running(struct alarm *timer)
+ 
+ 
+ /* Provide way to access the rtc device being used by alarmtimers */
+-#ifdef CONFIG_RTC_CLASS
+ struct rtc_device *alarmtimer_get_rtcdev(void);
+-#else
+-#define alarmtimer_get_rtcdev() (0)
+-#endif
+ 
+ #endif
+-- 
+1.8.0
+

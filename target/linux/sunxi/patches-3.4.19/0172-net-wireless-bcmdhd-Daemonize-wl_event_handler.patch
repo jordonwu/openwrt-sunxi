@@ -1,0 +1,89 @@
+From bc26ba27fa3e68b825dd5c52f85e81187cc01ccc Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Tue, 20 Mar 2012 09:54:44 -0700
+Subject: [PATCH 172/944] net: wireless: bcmdhd: Daemonize wl_event_handler
+
+Daemonizing makes thread (besides other things) NON-FREEZABLE, and it will not
+get fake signal on suspend to quite down_interruptible()
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c        | 19 -------------------
+ drivers/net/wireless/bcmdhd/include/linuxver.h | 17 +++++++++++++++++
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c      |  1 +
+ 3 files changed, 18 insertions(+), 19 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 0ef8ae5..1c8437b 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -376,25 +376,6 @@ uint dhd_radio_up = 1;
+ char iface_name[IFNAMSIZ] = {'\0'};
+ module_param_string(iface_name, iface_name, IFNAMSIZ, 0);
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+-#define DAEMONIZE(a) daemonize(a); \
+-	allow_signal(SIGKILL); \
+-	allow_signal(SIGTERM);
+-#else /* Linux 2.4 (w/o preemption patch) */
+-#define RAISE_RX_SOFTIRQ() \
+-	cpu_raise_softirq(smp_processor_id(), NET_RX_SOFTIRQ)
+-#define DAEMONIZE(a) daemonize(); \
+-	do { if (a) \
+-		strncpy(current->comm, a, MIN(sizeof(current->comm), (strlen(a) + 1))); \
+-	} while (0);
+-#endif /* LINUX_VERSION_CODE  */
+-
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
+-#define BLOCKABLE()	(!in_atomic())
+-#else
+-#define BLOCKABLE()	(!in_interrupt())
+-#endif
+-
+ /* The following are specific to the SDIO dongle */
+ 
+ /* IOCTL response timeout */
+diff --git a/drivers/net/wireless/bcmdhd/include/linuxver.h b/drivers/net/wireless/bcmdhd/include/linuxver.h
+index 058f2a7..b4f2120 100644
+--- a/drivers/net/wireless/bcmdhd/include/linuxver.h
++++ b/drivers/net/wireless/bcmdhd/include/linuxver.h
+@@ -512,7 +512,24 @@ typedef struct {
+ 	(tsk_ctl)->thr_pid = -1; \
+ }
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
++#define DAEMONIZE(a) daemonize(a); \
++	allow_signal(SIGKILL); \
++	allow_signal(SIGTERM);
++#else /* Linux 2.4 (w/o preemption patch) */
++#define RAISE_RX_SOFTIRQ() \
++	cpu_raise_softirq(smp_processor_id(), NET_RX_SOFTIRQ)
++#define DAEMONIZE(a) daemonize(); \
++	do { if (a) \
++		strncpy(current->comm, a, MIN(sizeof(current->comm), (strlen(a) + 1))); \
++	} while (0);
++#endif /* LINUX_VERSION_CODE  */
+ 
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0))
++#define BLOCKABLE()	(!in_atomic())
++#else
++#define BLOCKABLE()	(!in_interrupt())
++#endif
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31))
+ #define KILL_PROC(nr, sig) \
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index f7786ab..20bbb20 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -6390,6 +6390,7 @@ static s32 wl_event_handler(void *data)
+ 	tsk_ctl_t *tsk = (tsk_ctl_t *)data;
+ 
+ 	wl = (struct wl_priv *)tsk->parent;
++	DAEMONIZE("dhd_cfg80211_event");
+ 	complete(&tsk->completed);
+ 
+ 	while (down_interruptible (&tsk->sema) == 0) {
+-- 
+1.8.0
+

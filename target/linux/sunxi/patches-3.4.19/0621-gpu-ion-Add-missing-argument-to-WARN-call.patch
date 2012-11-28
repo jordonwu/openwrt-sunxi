@@ -1,0 +1,40 @@
+From e3b262e364ae1feeb8d26f46a79981659ae36c57 Mon Sep 17 00:00:00 2001
+From: Olav Haugan <ohaugan@codeaurora.org>
+Date: Thu, 19 Apr 2012 10:20:22 -0700
+Subject: [PATCH 621/944] gpu: ion: Add missing argument to WARN call
+
+The condition argument to the WARN call in ion_free and
+ion_share_dma_buf are missing. Add the argument to
+allow correct printing of warning message.
+
+Change-Id: I9b233992d5034f8780296cae6b42d77699f14cce
+Signed-off-by: Olav Haugan <ohaugan@codeaurora.org>
+---
+ drivers/gpu/ion/ion.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 6cf7dc3..1394c02 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -408,7 +408,7 @@ void ion_free(struct ion_client *client, struct ion_handle *handle)
+ 	mutex_unlock(&client->lock);
+ 
+ 	if (!valid_handle) {
+-		WARN("%s: invalid handle passed to free.\n", __func__);
++		WARN(1, "%s: invalid handle passed to free.\n", __func__);
+ 		return;
+ 	}
+ 	ion_handle_put(handle);
+@@ -906,7 +906,7 @@ int ion_share_dma_buf(struct ion_client *client, struct ion_handle *handle)
+ 	valid_handle = ion_handle_validate(client, handle);
+ 	mutex_unlock(&client->lock);
+ 	if (!valid_handle) {
+-		WARN("%s: invalid handle passed to share.\n", __func__);
++		WARN(1, "%s: invalid handle passed to share.\n", __func__);
+ 		return -EINVAL;
+ 	}
+ 
+-- 
+1.8.0
+

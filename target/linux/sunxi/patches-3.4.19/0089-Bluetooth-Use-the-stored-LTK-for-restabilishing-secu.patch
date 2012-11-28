@@ -1,0 +1,42 @@
+From b7d6cd72ce713a256406d47e798ea4797404d81e Mon Sep 17 00:00:00 2001
+From: Vinicius Costa Gomes <vinicius.gomes@openbossa.org>
+Date: Thu, 7 Jul 2011 18:59:41 -0300
+Subject: [PATCH 089/944] Bluetooth: Use the stored LTK for restabilishing
+ security
+
+Now that it's possible that the exchanged key is present in
+the link key list, we may be able to estabilish security with
+an already existing key, without need to perform any SMP
+procedure.
+
+Signed-off-by: Vinicius Costa Gomes <vinicius.gomes@openbossa.org>
+Signed-off-by: Gustavo F. Padovan <padovan@profusion.mobi>
+---
+ net/bluetooth/smp.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/net/bluetooth/smp.c b/net/bluetooth/smp.c
+index deb1198..afd9253 100644
+--- a/net/bluetooth/smp.c
++++ b/net/bluetooth/smp.c
+@@ -785,6 +785,17 @@ int smp_conn_security(struct l2cap_conn *conn, __u8 sec_level)
+ 
+ 	if (hcon->link_mode & HCI_LM_MASTER) {
+ 		struct smp_cmd_pairing cp;
++		struct link_key *key;
++
++		key = hci_find_link_key_type(hcon->hdev, conn->dst,
++							HCI_LK_SMP_LTK);
++		if (key) {
++			struct key_master_id *master = (void *) key->data;
++
++			hci_le_start_enc(hcon, master->ediv, master->rand,
++								key->val);
++			goto done;
++		}
+ 
+ 		build_pairing_cmd(conn, &cp, NULL, authreq);
+ 		smp->preq[0] = SMP_CMD_PAIRING_REQ;
+-- 
+1.8.0
+

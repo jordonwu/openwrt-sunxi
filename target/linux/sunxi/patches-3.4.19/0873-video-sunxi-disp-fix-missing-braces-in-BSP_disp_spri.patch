@@ -1,0 +1,29 @@
+From a5a5e0e6559813b23c94d2b2497943afd986c6a1 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Tue, 23 Oct 2012 22:10:02 +0200
+Subject: [PATCH 873/944] video:sunxi:disp: fix missing braces in
+ BSP_disp_sprite_open
+
+Once again found by sparse.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/disp_sprite.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 3bbc686..06962a5 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -349,7 +349,7 @@ __s32 BSP_disp_sprite_exit(__u32 sel)
+ 
+ __s32 BSP_disp_sprite_open(__u32 sel)
+ {
+-	if (!gsprite[sel].status & SPRITE_OPENED) {
++	if (!(gsprite[sel].status & SPRITE_OPENED)) {
+ 		DE_BE_Sprite_Enable(sel, TRUE);
+ 
+ 		gsprite[sel].enable = TRUE;
+-- 
+1.8.0
+

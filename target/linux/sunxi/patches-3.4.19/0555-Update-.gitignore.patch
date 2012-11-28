@@ -1,0 +1,25 @@
+From 07eebc7d0015aa7c96152d34f9f36d07852461d5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Thu, 14 Jun 2012 18:25:29 +0000
+Subject: [PATCH 555/944] Update .gitignore
+
+---
+ .gitignore | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.gitignore b/.gitignore
+index fe04c94..13a2523 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -90,7 +90,7 @@ output/
+ arch/arm/*/pm/standby/standby.code
+ arch/arm/*/pm/standby/standby.map
+ modules/example/*.symvers
+-modules/mali/*/*/*/*/*.symvers
++drivers/gpu/mali/mali/__malidrv_build_info.c
+ modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/Module.symvers
+ modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/Module.symvers
+ modules/wifi/nano-c047.12/kernel/ic/Module.symvers
+-- 
+1.8.0
+

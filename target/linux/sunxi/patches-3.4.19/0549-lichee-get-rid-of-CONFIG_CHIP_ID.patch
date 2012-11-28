@@ -1,0 +1,380 @@
+From a589b9541a11d1102a69ab8261d0841b98d890d5 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 13 Jun 2012 16:58:04 +0200
+Subject: [PATCH 549/944] lichee: get rid of CONFIG_CHIP_ID
+
+---
+ scripts/build_a12.sh         | 10 ++++------
+ scripts/build_a13.sh         | 10 ++++------
+ scripts/build_sun4i-lite.sh  | 18 ++++++++----------
+ scripts/build_sun4i.sh       | 22 ++++++++++------------
+ scripts/build_sun4i_crane.sh | 26 ++++++++++++--------------
+ scripts/build_sun5i.sh       | 10 ++++------
+ 6 files changed, 42 insertions(+), 54 deletions(-)
+
+diff --git a/scripts/build_a12.sh b/scripts/build_a12.sh
+index 5d3f0be..30e40a7 100755
+--- a/scripts/build_a12.sh
++++ b/scripts/build_a12.sh
+@@ -17,8 +17,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1125
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -100,19 +98,19 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl
+ }
+ 
+@@ -130,7 +128,7 @@ clean_kernel()
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+diff --git a/scripts/build_a13.sh b/scripts/build_a13.sh
+index 18d185c..0bc026d 100755
+--- a/scripts/build_a13.sh
++++ b/scripts/build_a13.sh
+@@ -17,8 +17,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1125
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -100,19 +98,19 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl
+ }
+ 
+@@ -130,7 +128,7 @@ clean_kernel()
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 5b5a27e..eda1092 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -23,8 +23,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1123
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -92,27 +90,27 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++		HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all install
+ 
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all
+ }
+ 
+@@ -135,15 +133,15 @@ clean_modules()
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++		HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ }
+ 
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index bdbf9e0..1a3f063 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -23,8 +23,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1123
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -100,30 +98,30 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++	HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all install
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl
+ 
+ }
+@@ -147,19 +145,19 @@ clean_modules()
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++	HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index bd7575e..76a8c7d 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -23,8 +23,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1123
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -95,37 +93,37 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
++		HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} all install
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all install
+ 
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        all
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl
+ 	#build bcm40181 sdio wifi module 5.90.125.69.2
+ 	make -C modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} OEM_ANDROID=1 dhd-cdc-sdmmc-gpl
+ }
+ 
+@@ -148,25 +146,25 @@ clean_modules()
+ 
+ 	#build swl-n20 sdio wifi module
+ 	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-	CONFIG_CHIP_ID=${CONFIG_CHIP_ID} HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
++		HOST=${CROSS_COMPILE} INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 
+ 	#build ar6302 sdio wifi module
+ 	make -C modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ 	#build ar6003 sdio wifi module
+ 	make -C modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host CROSS_COMPILE=${CROSS_COMPILE} \
+-	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} INSTALL_DIR=${LICHEE_MOD_DIR} \
++	        ARCH=arm KERNEL_DIR=${LICHEE_KDIR} INSTALL_DIR=${LICHEE_MOD_DIR} \
+ 	        clean
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ 	#build bcm40181 sdio wifi module 5.90.125.69.2
+ 	make -C modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+diff --git a/scripts/build_sun5i.sh b/scripts/build_sun5i.sh
+index a917313..6f9aab9 100755
+--- a/scripts/build_sun5i.sh
++++ b/scripts/build_sun5i.sh
+@@ -17,8 +17,6 @@ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+ LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+-CONFIG_CHIP_ID=1125
+-
+ update_kern_ver()
+ {
+ 	if [ -r include/generated/utsrelease.h ]; then
+@@ -100,19 +98,19 @@ build_modules()
+ 	update_kern_ver
+ 
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 
+ 	(
+ 	export LANG=en_US.UTF-8
+ 	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+-		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++		install
+ 	)
+ 
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} dhd-cdc-sdmmc-gpl
+ }
+ 
+@@ -130,7 +128,7 @@ clean_kernel()
+ 	#build usi-bmc4329 sdio wifi module
+ 	make -C modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/linux \
+ 			CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm LINUXVER=${KERNEL_VERSION} \
+-			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} CONFIG_CHIP_ID=${CONFIG_CHIP_ID} \
++			LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LINUXDIR=${LICHEE_KDIR} \
+ 			INSTALL_DIR=${LICHEE_MOD_DIR} clean
+ }
+ 
+-- 
+1.8.0
+

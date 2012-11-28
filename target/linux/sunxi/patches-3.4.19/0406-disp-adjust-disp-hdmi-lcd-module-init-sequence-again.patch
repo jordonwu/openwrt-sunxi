@@ -1,0 +1,41 @@
+From a9bf358f1b0ac22fd986c8efa220b31fd9d5e48c Mon Sep 17 00:00:00 2001
+From: danling <danling@allwinnertech.com>
+Date: Wed, 30 Nov 2011 18:17:31 +0800
+Subject: [PATCH 406/944] disp:adjust disp/hdmi/lcd module init sequence again
+
+---
+ drivers/video/Makefile              | 2 +-
+ drivers/video/sun4i/disp/dev_disp.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index 843c9f2..a71c05c 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -29,9 +29,9 @@ obj-$(CONFIG_FB_MACMODES)      += macmodes.o
+ obj-$(CONFIG_FB_DDC)           += fb_ddc.o
+ obj-$(CONFIG_FB_DEFERRED_IO)   += fb_defio.o
+ obj-$(CONFIG_FB_WMT_GE_ROPS)   += wmt_ge_rops.o
+-obj-$(CONFIG_LYCHEE_HDMI_SUN4I)   += sun4i/hdmi/
+ obj-$(CONFIG_LYCHEE_FB_SUN4I)     += sun4i/disp/
+ obj-$(CONFIG_LYCHEE_LCD_SUN4I)    += sun4i/lcd/
++obj-$(CONFIG_LYCHEE_HDMI_SUN4I)   += sun4i/hdmi/
+ 
+ # Hardware specific drivers go first
+ obj-$(CONFIG_FB_AMIGA)            += amifb.o c2p_planar.o
+diff --git a/drivers/video/sun4i/disp/dev_disp.c b/drivers/video/sun4i/disp/dev_disp.c
+index f743ddf..b16c0ed 100644
+--- a/drivers/video/sun4i/disp/dev_disp.c
++++ b/drivers/video/sun4i/disp/dev_disp.c
+@@ -2006,7 +2006,7 @@ EXPORT_SYMBOL(disp_set_hdmi_func);
+ EXPORT_SYMBOL(DRV_DISP_Init);
+ 
+ 
+-module_init(disp_module_init);
++late_initcall(disp_module_init);
+ module_exit(disp_module_exit);
+ 
+ MODULE_AUTHOR("danling_xiao");
+-- 
+1.8.0
+

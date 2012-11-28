@@ -1,0 +1,37 @@
+From 2c3e5cb08f29ba0e4b58c004d5f860db8e84fa8b Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Tue, 4 Sep 2012 15:29:09 -0700
+Subject: [PATCH 707/944] sync: improve timeout dumps
+
+Change-Id: I3b378d63c324c7b5862dd214f380b5e91131cc2a
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index 938cc52..1cc3e4e 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -575,6 +575,8 @@ int sync_fence_wait(struct sync_fence *fence, long timeout)
+ 		return fence->status;
+ 
+ 	if (fence->status == 0) {
++		pr_info("fence timeout on [%p] after %dms\n", fence,
++			jiffies_to_msecs(timeout));
+ 		sync_dump();
+ 		return -ETIME;
+ 	}
+@@ -848,7 +850,8 @@ static void sync_print_fence(struct seq_file *s, struct sync_fence *fence)
+ 	struct list_head *pos;
+ 	unsigned long flags;
+ 
+-	seq_printf(s, "%s: %s\n", fence->name, sync_status_str(fence->status));
++	seq_printf(s, "[%p] %s: %s\n", fence, fence->name,
++		   sync_status_str(fence->status));
+ 
+ 	list_for_each(pos, &fence->pt_list_head) {
+ 		struct sync_pt *pt =
+-- 
+1.8.0
+

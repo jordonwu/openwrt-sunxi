@@ -1,0 +1,97 @@
+From 3c1b040dcc66e0f17e757f30dae25d443b669f45 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 13 May 2012 11:55:01 +0200
+Subject: [PATCH 429/944] lichee: updated sun4i_defconfig and sun5i_defconfig
+
+---
+ arch/arm/configs/sun4i_defconfig | 11 +++++++++--
+ arch/arm/configs/sun5i_defconfig |  8 +++++++-
+ 2 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index e32c854..236f991 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -1,6 +1,6 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux/arm 3.0.8 Kernel Configuration
++# Linux/arm 3.0.31 Kernel Configuration
+ #
+ CONFIG_ARM=y
+ CONFIG_CHIP_ID=1123
+@@ -246,6 +246,7 @@ CONFIG_MMU=y
+ # CONFIG_ARCH_NUC93X is not set
+ # CONFIG_ARCH_TEGRA is not set
+ CONFIG_ARCH_SUN4I=y
++# CONFIG_ARCH_SUN5I is not set
+ # CONFIG_ARCH_PNX4008 is not set
+ # CONFIG_ARCH_PXA is not set
+ # CONFIG_ARCH_MSM is not set
+@@ -555,6 +556,7 @@ CONFIG_EXTRA_FIRMWARE=""
+ # CONFIG_DEBUG_DRIVER is not set
+ # CONFIG_DEBUG_DEVRES is not set
+ # CONFIG_SYS_HYPERVISOR is not set
++# CONFIG_SYNC is not set
+ CONFIG_CONNECTOR=y
+ CONFIG_PROC_EVENTS=y
+ # CONFIG_MTD is not set
+@@ -577,8 +579,8 @@ CONFIG_SUN4I_NANDFLASH=y
+ CONFIG_MISC_DEVICES=y
+ # CONFIG_AD525X_DPOT is not set
+ # CONFIG_SUN4I_VIBRATOR is not set
++# CONFIG_SUN4I_GPIO_UGLY is not set
+ CONFIG_SUNXI_DBGREG=m
+-CONFIG_ANDROID_PMEM=y
+ # CONFIG_INTEL_MID_PTI is not set
+ # CONFIG_ENCLOSURE_SERVICES is not set
+ # CONFIG_APDS9802ALS is not set
+@@ -1356,7 +1358,12 @@ CONFIG_USB_GADGET=y
+ # CONFIG_USB_GADGET_DEBUG_FS is not set
+ CONFIG_USB_GADGET_VBUS_DRAW=2
+ CONFIG_USB_GADGET_SELECTED=y
++# CONFIG_USB_GADGET_FUSB300 is not set
++# CONFIG_USB_GADGET_R8A66597 is not set
++# CONFIG_USB_GADGET_PXA_U2O is not set
++# CONFIG_USB_GADGET_M66592 is not set
+ CONFIG_USB_SW_SUN4I_UDC0=y
++# CONFIG_USB_GADGET_DUMMY_HCD is not set
+ CONFIG_USB_GADGET_DUALSPEED=y
+ # CONFIG_USB_ZERO is not set
+ # CONFIG_USB_AUDIO is not set
+diff --git a/arch/arm/configs/sun5i_defconfig b/arch/arm/configs/sun5i_defconfig
+index b7deda1..17c3028 100644
+--- a/arch/arm/configs/sun5i_defconfig
++++ b/arch/arm/configs/sun5i_defconfig
+@@ -1,6 +1,6 @@
+ #
+ # Automatically generated make config: don't edit
+-# Linux/arm 3.0.8 Kernel Configuration
++# Linux/arm 3.0.31 Kernel Configuration
+ #
+ CONFIG_ARM=y
+ CONFIG_CHIP_ID=1125
+@@ -532,6 +532,7 @@ CONFIG_EXTRA_FIRMWARE=""
+ # CONFIG_DEBUG_DRIVER is not set
+ # CONFIG_DEBUG_DEVRES is not set
+ # CONFIG_SYS_HYPERVISOR is not set
++# CONFIG_SYNC is not set
+ CONFIG_CONNECTOR=y
+ CONFIG_PROC_EVENTS=y
+ # CONFIG_MTD is not set
+@@ -1261,7 +1262,12 @@ CONFIG_USB_GADGET=y
+ # CONFIG_USB_GADGET_DEBUG_FS is not set
+ CONFIG_USB_GADGET_VBUS_DRAW=2
+ CONFIG_USB_GADGET_SELECTED=y
++# CONFIG_USB_GADGET_FUSB300 is not set
++# CONFIG_USB_GADGET_R8A66597 is not set
++# CONFIG_USB_GADGET_PXA_U2O is not set
++# CONFIG_USB_GADGET_M66592 is not set
+ CONFIG_USB_SW_SUN5I_UDC0=y
++# CONFIG_USB_GADGET_DUMMY_HCD is not set
+ CONFIG_USB_GADGET_DUALSPEED=y
+ # CONFIG_USB_ZERO is not set
+ # CONFIG_USB_AUDIO is not set
+-- 
+1.8.0
+

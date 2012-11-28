@@ -1,0 +1,1173 @@
+From cfe3fb33c84cad64bc822bdf0a3c21eb04c5087a Mon Sep 17 00:00:00 2001
+From: huangxin <huangxin@LServer.(none)>
+Date: Wed, 16 Nov 2011 14:53:28 +0800
+Subject: [PATCH 323/944] spdif:use the code style to modify the spdif code
+
+---
+ sound/soc/sun4i/spdif/sndspdif.c       |  62 ++++-----
+ sound/soc/sun4i/spdif/sndspdif.h       |  29 ++---
+ sound/soc/sun4i/spdif/sun4i_sndspdif.c | 109 +++++++---------
+ sound/soc/sun4i/spdif/sun4i_sndspdif.h |  26 ++--
+ sound/soc/sun4i/spdif/sun4i_spdif.c    | 232 ++++++++++++++-------------------
+ sound/soc/sun4i/spdif/sun4i_spdif.h    |  27 ++--
+ sound/soc/sun4i/spdif/sun4i_spdma.c    | 159 ++++++++++------------
+ sound/soc/sun4i/spdif/sun4i_spdma.h    |  27 ++--
+ 8 files changed, 297 insertions(+), 374 deletions(-)
+
+diff --git a/sound/soc/sun4i/spdif/sndspdif.c b/sound/soc/sun4i/spdif/sndspdif.c
+index 8bd5b1d..ce8d6f8 100644
+--- a/sound/soc/sun4i/spdif/sndspdif.c
++++ b/sound/soc/sun4i/spdif/sndspdif.c
+@@ -1,18 +1,17 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sndspdif.c   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
+-
++ * sound\soc\sun4i\spdif\sndspdif.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #include <linux/module.h>
+ #include <linux/delay.h>
+ #include <linux/slab.h>
+@@ -78,13 +77,13 @@ static int sndspdif_set_dai_fmt(struct snd_soc_dai *codec_dai,
+ 	return 0;
+ }
+ struct snd_soc_dai_ops sndspdif_dai_ops = {
+-		.startup = sndspdif_startup,
+-		.shutdown = sndspdif_shutdown,
+-		.hw_params = sndspdif_hw_params,
+-		.digital_mute = sndspdif_mute,
+-		.set_sysclk = sndspdif_set_dai_sysclk,
+-		.set_clkdiv = sndspdif_set_dai_clkdiv,
+-		.set_fmt = sndspdif_set_dai_fmt,
++	.startup = sndspdif_startup,
++	.shutdown = sndspdif_shutdown,
++	.hw_params = sndspdif_hw_params,
++	.digital_mute = sndspdif_mute,
++	.set_sysclk = sndspdif_set_dai_sysclk,
++	.set_clkdiv = sndspdif_set_dai_clkdiv,
++	.set_fmt = sndspdif_set_dai_fmt,
+ };
+ struct snd_soc_dai_driver sndspdif_dai = {
+ 	.name = "sndspdif",
+@@ -105,7 +104,6 @@ EXPORT_SYMBOL(sndspdif_dai);
+ static int sndspdif_soc_probe(struct snd_soc_codec *codec)
+ {
+ 	struct sndspdif_priv *sndspdif;
+-	printk("%s,%d\n",__func__, __LINE__);
+ 
+ 	sndspdif = kzalloc(sizeof(struct sndspdif_priv), GFP_KERNEL);
+ 	if(sndspdif == NULL){
+@@ -128,13 +126,12 @@ static int sndspdif_soc_remove(struct snd_soc_codec *codec)
+ }
+ 
+ static struct snd_soc_codec_driver soc_codec_dev_sndspdif = {
+-	.probe =        sndspdif_soc_probe,
+-	.remove =       sndspdif_soc_remove,
++	.probe 	=	sndspdif_soc_probe,
++	.remove =   sndspdif_soc_remove,
+ };
+ 
+ static int __devinit sndspdif_codec_probe(struct platform_device *pdev)
+ {
+-	printk("\n\n%s,%d\n",__func__, __LINE__);
+ 	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_sndspdif, &sndspdif_dai, 1);
+ }
+ 
+@@ -165,20 +162,18 @@ static int __init sndspdif_codec_init(void)
+ 	int ret = 0;
+ 
+ 	ret = script_parser_fetch("spdif_para","spdif_used", &spdif_used, sizeof(int));
+-	if (ret)
+-    {
++	if (ret) {
++		return -1;
+         printk("[SPDIF]sndspdif_init fetch spdif using configuration failed\n");
+     }
+ 
+-	if (spdif_used)
+-	{
+-		if((platform_device_register(&sndspdif_codec_device))<0)
++	if (spdif_used) {
++		if((err = platform_device_register(&sndspdif_codec_device)) < 0)
+ 			return err;
+ 
+ 		if ((err = platform_driver_register(&sndspdif_codec_driver)) < 0)
+ 			return err;
+-	}else
+-    {
++	} else {
+         printk("[SPDIF]sndspdif cannot find any using configuration for controllers, return directly!\n");
+         return 0;
+     }
+@@ -189,8 +184,7 @@ module_init(sndspdif_codec_init);
+ 
+ static void __exit sndspdif_codec_exit(void)
+ {
+-	if(spdif_used)
+-	{
++	if (spdif_used) {
+ 		spdif_used = 0;
+ 		platform_driver_unregister(&sndspdif_codec_driver);
+ 	}
+diff --git a/sound/soc/sun4i/spdif/sndspdif.h b/sound/soc/sun4i/spdif/sndspdif.h
+index 7102c1f..383b712 100644
+--- a/sound/soc/sun4i/spdif/sndspdif.h
++++ b/sound/soc/sun4i/spdif/sndspdif.h
+@@ -1,22 +1,19 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sndspdif.h   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sndspdif.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ 
+ #ifndef _SNDSPDIF_H
+ #define _SNDSPDIF_H
+ 
+-//extern struct snd_soc_dai sndspdif_dai;
+-//extern struct snd_soc_codec_device soc_codec_dev_sndspdif;
+-
+ #endif
+diff --git a/sound/soc/sun4i/spdif/sun4i_sndspdif.c b/sound/soc/sun4i/spdif/sun4i_sndspdif.c
+index e51345a..987687d 100644
+--- a/sound/soc/sun4i/spdif/sun4i_sndspdif.c
++++ b/sound/soc/sun4i/spdif/sun4i_sndspdif.c
+@@ -1,22 +1,21 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i-sndspdif.c   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_sndspdif.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ 
+ #include <linux/module.h>
+ #include <linux/clk.h>
+ #include <linux/mutex.h>
+-//#include <linux/gpio.h>
+ 
+ #include <sound/pcm.h>
+ #include <sound/soc.h>
+@@ -30,7 +29,6 @@
+ 
+ #include "sndspdif.h"
+ 
+-
+ static int spdif_used = 0;
+ static struct clk *xtal;
+ static int clk_users;
+@@ -50,15 +48,11 @@ static int sun4i_sndspdif_startup(struct snd_pcm_substream *substream)
+ 	#ifdef ENFORCE_RATES
+ 		struct snd_pcm_runtime *runtime = substream->runtime;;
+ 	#endif
+-	mutex_lock(&clk_lock);
+-	mutex_unlock(&clk_lock);
+ 	if (!ret) {
+ 	#ifdef ENFORCE_RATES
+-		ret = snd_pcm_hw_constraint_list(runtime, 0,
+-						 SNDRV_PCM_HW_PARAM_RATE,
+-						 &hw_constraints_rates);
++		ret = snd_pcm_hw_constraint_list(runtime, 0, SNDRV_PCM_HW_PARAM_RATE, &hw_constraints_rates);
+ 		if (ret < 0)
+-
++			return ret;
+ 	#endif
+ 	}
+ 	return ret;
+@@ -71,26 +65,26 @@ static void sun4i_sndspdif_shutdown(struct snd_pcm_substream *substream)
+ 	if (clk_users == 0) {
+ 		clk_put(xtal);
+ 		xtal = NULL;
+-}
++	}
+ 	mutex_unlock(&clk_lock);
+ }
+ 
+ typedef struct __MCLK_SET_INF
+ {
+-    __u32       samp_rate;      // sample rate
+-    __u16       mult_fs;        // multiply of smaple rate
++    __u32   samp_rate;      // sample rate
++	__u16 	mult_fs;        // multiply of smaple rate
+ 
+-    __u8        clk_div;        // mpll division
+-    __u8        mpll;           // select mpll, 0 - 24.576 Mhz, 1 - 22.5792 Mhz
++    __u8    clk_div;        // mpll division
++    __u8    mpll;           // select mpll, 0 - 24.576 Mhz, 1 - 22.5792 Mhz
+ 
+ } __mclk_set_inf;
+ 
+ 
+ typedef struct __BCLK_SET_INF
+ {
+-    __u8        bitpersamp;     // bits per sample
+-    __u8        clk_div;        // clock division
+-    __u16       mult_fs;        // multiplay of sample rate
++    __u8    bitpersamp;     // bits per sample
++    __u8    clk_div;        // clock division
++    __u16   mult_fs;        // multiplay of sample rate
+ 
+ } __bclk_set_inf;
+ 
+@@ -152,14 +146,12 @@ static s32 get_clock_divder(u32 sample_rate, u32 sample_width, u32 * mclk_div, u
+ {
+ 	u32 i, j, ret = -EINVAL;
+ 
+-	for(i=0; i< 100; i++)
+-	{
+-		 if((MCLK_INF[i].samp_rate == sample_rate) && ((MCLK_INF[i].mult_fs == 256) || (MCLK_INF[i].mult_fs == 128)))
+-		 {
+-			  for(j=0; j<ARRAY_SIZE(BCLK_INF); j++)
+-			  {
+-					if((BCLK_INF[j].bitpersamp == sample_width) && (BCLK_INF[j].mult_fs == MCLK_INF[i].mult_fs))
+-					{
++	for(i=0; i< 100; i++) {
++		 if((MCLK_INF[i].samp_rate == sample_rate) &&
++		 	((MCLK_INF[i].mult_fs == 256) || (MCLK_INF[i].mult_fs == 128))) {
++			  for(j=0; j<ARRAY_SIZE(BCLK_INF); j++) {
++					if((BCLK_INF[j].bitpersamp == sample_width) &&
++						(BCLK_INF[j].mult_fs == MCLK_INF[i].mult_fs)) {
+ 						 *mclk_div = MCLK_INF[i].clk_div;
+ 						 *mpll = MCLK_INF[i].mpll;
+ 						 *bclk_div = BCLK_INF[j].clk_div;
+@@ -221,25 +213,25 @@ static int sun4i_sndspdif_hw_params(struct snd_pcm_substream *substream,
+ }
+ 
+ static struct snd_soc_ops sun4i_sndspdif_ops = {
+-	.startup = sun4i_sndspdif_startup,
+-	.shutdown = sun4i_sndspdif_shutdown,
+-	.hw_params = sun4i_sndspdif_hw_params,
++	.startup 	= sun4i_sndspdif_startup,
++	.shutdown 	= sun4i_sndspdif_shutdown,
++	.hw_params 	= sun4i_sndspdif_hw_params,
+ };
+ 
+ static struct snd_soc_dai_link sun4i_sndspdif_dai_link = {
+-	.name = "SPDIF",
+-	.stream_name = "SUN4I-SPDIF",
+-	.cpu_dai_name = "sun4i-spdif.0",
++	.name 			= "SPDIF",
++	.stream_name 	= "SUN4I-SPDIF",
++	.cpu_dai_name 	= "sun4i-spdif.0",
+ 	.codec_dai_name = "sndspdif",
+-	.platform_name = "sun4i-spdif-pcm-audio.0",
+-	.codec_name = "sun4i-spdif-codec.0",
+-	.ops = &sun4i_sndspdif_ops,
++	.platform_name 	= "sun4i-spdif-pcm-audio.0",
++	.codec_name 	= "sun4i-spdif-codec.0",
++	.ops 			= &sun4i_sndspdif_ops,
+ };
+ 
+ static struct snd_soc_card snd_soc_sun4i_sndspdif = {
+-	.name = "sun4i-sndspdif",
+-	.dai_link = &sun4i_sndspdif_dai_link,
+-	.num_links = 1,
++	.name 		= "sun4i-sndspdif",
++	.dai_link 	= &sun4i_sndspdif_dai_link,
++	.num_links 	= 1,
+ };
+ 
+ static struct platform_device *sun4i_sndspdif_device;
+@@ -250,13 +242,11 @@ static int __init sun4i_sndspdif_init(void)
+ 	int ret2;
+ 
+ 	ret2 = script_parser_fetch("spdif_para","spdif_used", &spdif_used, sizeof(int));
+-	if (ret2)
+-    {
++	if (ret2) {
+         printk("[SPDIF]sun4i_sndspdif_init fetch spdif using configuration failed\n");
+     }
+ 
+-    if (spdif_used)
+-    {
++    if (spdif_used) {
+ 		sun4i_sndspdif_device = platform_device_alloc("soc-audio", 1);
+ 
+ 		if(!sun4i_sndspdif_device)
+@@ -265,27 +255,20 @@ static int __init sun4i_sndspdif_init(void)
+ 		platform_set_drvdata(sun4i_sndspdif_device, &snd_soc_sun4i_sndspdif);
+ 
+ 		ret = platform_device_add(sun4i_sndspdif_device);
+-		printk("\n\n%s,%d\n", __func__, __LINE__);
+-
+-		if(ret){
+-			printk("%s,%d\n", __func__, __LINE__);
++		if (ret) {
+ 			platform_device_put(sun4i_sndspdif_device);
+ 		}
+-	}else
+-	{
++	} else {
+ 		printk("[SPDIF]sun4i_sndspdif cannot find any using configuration for controllers, return directly!\n");
+         return 0;
+ 	}
+ 
+-
+-
+ 	return ret;
+ }
+ 
+ static void __exit sun4i_sndspdif_exit(void)
+ {
+-	if(spdif_used)
+-	{
++	if (spdif_used) {
+ 		spdif_used = 0;
+ 		platform_device_unregister(sun4i_sndspdif_device);
+ 	}
+diff --git a/sound/soc/sun4i/spdif/sun4i_sndspdif.h b/sound/soc/sun4i/spdif/sun4i_sndspdif.h
+index af2133e..7e40629 100644
+--- a/sound/soc/sun4i/spdif/sun4i_sndspdif.h
++++ b/sound/soc/sun4i/spdif/sun4i_sndspdif.h
+@@ -1,17 +1,17 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i-sndspdif.h   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_sndspdif.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #ifndef SUN4I_SNDSPDIF_H_
+ #define SUN4I_SNDSPDIF_H_
+ 
+diff --git a/sound/soc/sun4i/spdif/sun4i_spdif.c b/sound/soc/sun4i/spdif/sun4i_spdif.c
+index da208c8..830d23a 100644
+--- a/sound/soc/sun4i/spdif/sun4i_spdif.c
++++ b/sound/soc/sun4i/spdif/sun4i_spdif.c
+@@ -1,17 +1,17 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i-spdif.c   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_spdif.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -69,37 +69,34 @@ static struct clk *spdif_apbclk, *spdif_pll2clk, *spdif_pllx8, *spdif_moduleclk;
+ void sun4i_snd_txctrl(struct snd_pcm_substream *substream, int on)
+ {
+ 	u32 reg_val;
+-	//printk("[SPDIF] substream->runtime->channels = %d\n", substream->runtime->channels);
+ 
+-		if(substream->runtime->channels == 1)
+-		{
+-			reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+-			reg_val |= SUN4I_SPDIF_TXCFG_SINGLEMOD;
+-			writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+-		}
++	if (substream->runtime->channels == 1) {
++		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
++		reg_val |= SUN4I_SPDIF_TXCFG_SINGLEMOD;
++		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
++	}
+ 
+-	//printk("[SPDIF] 0x01c21004 = %#x, line= %d\n", *(volatile int*)0xF1C21004, __LINE__);
+-		//soft reset SPDIF
+-		writel(0x1, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	//soft reset SPDIF
++	writel(0x1, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 
+-		//MCLK OUTPUT enable
+-		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+-		reg_val |= SUN4I_SPDIF_CTL_MCLKOUTEN;
+-		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	//MCLK OUTPUT enable
++	reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	reg_val |= SUN4I_SPDIF_CTL_MCLKOUTEN;
++	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 
+-		//flush TX FIFO
+-		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_FCTL);
+-		reg_val |= SUN4I_SPDIF_FCTL_FTX;
+-		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_FCTL);
++	//flush TX FIFO
++	reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_FCTL);
++	reg_val |= SUN4I_SPDIF_FCTL_FTX;
++	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_FCTL);
+ 
+-		//clear interrupt status
+-		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_ISTA);
+-		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_ISTA);
++	//clear interrupt status
++	reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_ISTA);
++	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_ISTA);
+ 
+-		//clear TX counter
+-		writel(0, sun4i_spdif.regs + SUN4I_SPDIF_TXCNT);
++	//clear TX counter
++	writel(0, sun4i_spdif.regs + SUN4I_SPDIF_TXCNT);
+ 
+-	if(on){
++	if (on) {
+ 		//SPDIF TX ENBALE
+ 		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+ 		reg_val |= SUN4I_SPDIF_TXCFG_TXEN;
+@@ -114,8 +111,7 @@ void sun4i_snd_txctrl(struct snd_pcm_substream *substream, int on)
+ 		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 		reg_val |= SUN4I_SPDIF_CTL_GEN;
+ 		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+-
+-	}else{
++	} else {
+ 		//SPDIF TX DISABALE
+ 		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+ 		reg_val &= ~SUN4I_SPDIF_TXCFG_TXEN;
+@@ -150,10 +146,8 @@ static int sun4i_spdif_set_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
+ 	reg_val &= ~SUN4I_SPDIF_TXCFG_SINGLEMOD;
+ 	reg_val |= SUN4I_SPDIF_TXCFG_ASS;
+ 	reg_val &= ~SUN4I_SPDIF_TXCFG_NONAUDIO;
+-//	reg_val |= SUN4I_SPDIF_TXCFG_NONAUDIO;
+ 	reg_val |= SUN4I_SPDIF_TXCFG_FMT16BIT;
+ 	reg_val |= SUN4I_SPDIF_TXCFG_CHSTMODE;
+-//	reg_val &= ~SUN4I_SPDIF_TXCFG_CHSTMODE;
+ 	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+ 
+ 	reg_val = 0;
+@@ -164,8 +158,7 @@ static int sun4i_spdif_set_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
+ 	reg_val |= SUN4I_SPDIF_FCTL_RXOM(3);
+ 	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_FCTL);
+ 
+-	if(!fmt) //PCM
+-	{
++	if (!fmt) {//PCM
+ 		reg_val = 0;
+ 		reg_val |= (SUN4I_SPDIF_TXCHSTA0_CHNUM(2));
+ 		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCHSTA0);
+@@ -173,8 +166,7 @@ static int sun4i_spdif_set_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
+ 		reg_val = 0;
+ 		reg_val |= (SUN4I_SPDIF_TXCHSTA1_SAMWORDLEN(1));
+ 		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCHSTA1);
+-	}else  //non PCM
+-	{
++	} else {  //non PCM
+ 		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+ 		reg_val |= SUN4I_SPDIF_TXCFG_NONAUDIO;
+ 		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+@@ -218,30 +210,23 @@ static int sun4i_spdif_trigger(struct snd_pcm_substream *substream,
+ 	struct sun4i_dma_params *dma_data =
+ 					snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
+ 
+-//	printk("[SPDIF]Entered %s\n", __func__);
+ 	switch (cmd) {
+ 		case SNDRV_PCM_TRIGGER_START:
+ 		case SNDRV_PCM_TRIGGER_RESUME:
+ 		case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+-			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
+-				{
+-					sun4i_snd_rxctrl(1);
+-				}
+-			else
+-				{
+-					sun4i_snd_txctrl(substream, 1);
+-				}
++			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
++				sun4i_snd_rxctrl(1);
++			} else {
++				sun4i_snd_txctrl(substream, 1);
++			}
+ 			sw_dma_ctrl(dma_data->channel, SW_DMAOP_STARTED);
+ 			break;
+ 		case SNDRV_PCM_TRIGGER_STOP:
+ 		case SNDRV_PCM_TRIGGER_SUSPEND:
+ 		case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+-			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
+-			{
++			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
+ 				sun4i_snd_rxctrl(0);
+-			}
+-			else
+-			{
++			} else {
+ 			  sun4i_snd_txctrl(substream, 0);
+ 			}
+ 			break;
+@@ -257,12 +242,9 @@ static int sun4i_spdif_trigger(struct snd_pcm_substream *substream,
+ static int sun4i_spdif_set_sysclk(struct snd_soc_dai *cpu_dai, int clk_id,
+                                  unsigned int freq, int dir)
+ {
+-	if (!freq)
+-	{
++	if (!freq) {
+ 		clk_set_rate(spdif_pll2clk, 24576000);
+-	}
+-	else
+-	{
++	} else {
+ 		clk_set_rate(spdif_pll2clk, 22579200);
+ 	}
+ 
+@@ -281,13 +263,13 @@ static int sun4i_spdif_set_clkdiv(struct snd_soc_dai *cpu_dai, int div_id, int d
+ 	reg_val &= ~(SUN4I_SPDIF_TXCHSTA1_ORISAMFREQ(0xf));
+   	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCHSTA1);
+ 
+-			switch(div_id){
++	switch(div_id) {
+ 		case SUN4I_DIV_MCLK:
+-			{
+-				reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+-				reg_val &= ~SUN4I_SPDIF_TXCFG_TXRATIO(0x1F);
+-				reg_val |= SUN4I_SPDIF_TXCFG_TXRATIO(div-1);
+-				writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
++		{
++			reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
++			reg_val &= ~SUN4I_SPDIF_TXCFG_TXRATIO(0x1F);
++			reg_val |= SUN4I_SPDIF_TXCFG_TXRATIO(div-1);
++			writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCFG);
+ 
+ 			if(clk_get_rate(spdif_pll2clk) == 24576000)
+ 			{
+@@ -358,8 +340,7 @@ static int sun4i_spdif_set_clkdiv(struct snd_soc_dai *cpu_dai, int div_id, int d
+ 						writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCHSTA1);
+ 						break;
+ 				}
+-			}else  //22.5792MHz
+-			{
++			}else{  //22.5792MHz
+ 				switch(div)
+ 				{
+ 					//22.05khz
+@@ -415,14 +396,12 @@ static int sun4i_spdif_set_clkdiv(struct snd_soc_dai *cpu_dai, int div_id, int d
+ 						reg_val |= (SUN4I_SPDIF_TXCHSTA1_ORISAMFREQ(0));
+ 						writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_TXCHSTA1);
+ 						break;
+-					}
+-			}
+-
+-
++				}
+ 			}
+-			  break;
++		}
++		break;
+ 		case SUN4I_DIV_BCLK:
+-				break;
++		break;
+ 
+ 		default:
+ 			return -EINVAL;
+@@ -468,63 +447,60 @@ static void spdifregrestore(void)
+ 
+ //#ifdef CONFIG_PM
+ static int sun4i_spdif_suspend(struct snd_soc_dai *cpu_dai)
+-	{
+-		u32 reg_val;
+-		printk("[SPDIF]Enter %s\n", __func__);
++{
++	u32 reg_val;
++	printk("[SPDIF]Enter %s\n", __func__);
+ 
+-		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+-		reg_val &= ~SUN4I_SPDIF_CTL_GEN;
+-		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	reg_val &= ~SUN4I_SPDIF_CTL_GEN;
++	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 
+-		spdifregsave();
++	spdifregsave();
+ 
+-		//disable the module clock
+-		clk_disable(spdif_moduleclk);
++	//disable the module clock
++	clk_disable(spdif_moduleclk);
+ 
+-		clk_disable(spdif_apbclk);
++	clk_disable(spdif_apbclk);
+ 
+-		//printk("[SPDIF]PLL2 0x01c20008 = %#x\n", *(volatile int*)0xF1C20008);
+-		printk("[SPDIF]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
+-		printk("[SPDIF]SPECIAL CLK 0x01c200C0 = %#x, line= %d\n", *(volatile int*)0xF1C200C0, __LINE__);
++	printk("[SPDIF]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
++	printk("[SPDIF]SPECIAL CLK 0x01c200C0 = %#x, line= %d\n", *(volatile int*)0xF1C200C0, __LINE__);
+ 
+-		return 0;
+-	}
++	return 0;
++}
+ 
+ static int sun4i_spdif_resume(struct snd_soc_dai *cpu_dai)
+-	{
+-		u32 reg_val;
+-		printk("[SPDIF]Enter %s\n", __func__);
++{
++	u32 reg_val;
++	printk("[SPDIF]Enter %s\n", __func__);
+ 
+-		//disable the module clock
+-		clk_enable(spdif_apbclk);
++	//disable the module clock
++	clk_enable(spdif_apbclk);
+ 
+-		//enable the module clock
+-		clk_enable(spdif_moduleclk);
++	//enable the module clock
++	clk_enable(spdif_moduleclk);
+ 
+-		spdifregrestore();
++	spdifregrestore();
+ 
+-		reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+-		reg_val |= SUN4I_SPDIF_CTL_GEN;
+-		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	reg_val = readl(sun4i_spdif.regs + SUN4I_SPDIF_CTL);
++	reg_val |= SUN4I_SPDIF_CTL_GEN;
++	writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 
+-		//printk("[SPDIF]PLL2 0x01c20008 = %#x\n", *(volatile int*)0xF1C20008);
+-		printk("[SPDIF]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
+-		printk("[SPDIF]SPECIAL CLK 0x01c200C0 = %#x, line = %d\n", *(volatile int*)0xF1C200C0, __LINE__);
++	//printk("[SPDIF]PLL2 0x01c20008 = %#x\n", *(volatile int*)0xF1C20008);
++	printk("[SPDIF]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
++	printk("[SPDIF]SPECIAL CLK 0x01c200C0 = %#x, line = %d\n", *(volatile int*)0xF1C200C0, __LINE__);
+ 
+-		return 0;
+-	}
++	return 0;
++}
+ 
+ #define SUN4I_SPDIF_RATES (SNDRV_PCM_RATE_8000_192000 | SNDRV_PCM_RATE_KNOT)
+ static struct snd_soc_dai_ops sun4i_spdif_dai_ops = {
+-		.trigger 		= sun4i_spdif_trigger,
+-		.hw_params 	= sun4i_spdif_hw_params,
+-		.set_fmt 		= sun4i_spdif_set_fmt,
+-		.set_clkdiv = sun4i_spdif_set_clkdiv,
+-		.set_sysclk = sun4i_spdif_set_sysclk,
++	.trigger 		= sun4i_spdif_trigger,
++	.hw_params 	= sun4i_spdif_hw_params,
++	.set_fmt 		= sun4i_spdif_set_fmt,
++	.set_clkdiv = sun4i_spdif_set_clkdiv,
++	.set_sysclk = sun4i_spdif_set_sysclk,
+ };
+ static struct snd_soc_dai_driver sun4i_spdif_dai = {
+-//	.name 		= "sun4i-spdif",
+-//	.id 			= 0,
+ 	.probe 		= sun4i_spdif_dai_probe,
+ 	.suspend 	= sun4i_spdif_suspend,
+ 	.resume 	= sun4i_spdif_resume,
+@@ -549,10 +525,8 @@ static int __devinit sun4i_spdif_dev_probe(struct platform_device *pdev)
+ 	int ret = 0;
+ 
+ 	sun4i_spdif.regs = ioremap(SUN4I_SPDIFBASE, 0x100);
+-		if(sun4i_spdif.regs == NULL)
+-			return -ENXIO;
+-
+-
++	if(sun4i_spdif.regs == NULL)
++		return -ENXIO;
+ 
+ 		//spdif apbclk
+ 		spdif_apbclk = clk_get(NULL, "apb_spdif");
+@@ -572,12 +546,10 @@ static int __devinit sun4i_spdif_dev_probe(struct platform_device *pdev)
+ 			printk("try to set parent of spdif_moduleclk to spdif_pll2ck failed! line = %d\n",__LINE__);
+ 		}
+ 
+-
+ 		if(clk_set_rate(spdif_moduleclk, 24576000/8)){
+ 			printk("set spdif_moduleclk clock freq to 24576000 failed! line = %d\n", __LINE__);
+ 		}
+ 
+-
+ 		if(-1 == clk_enable(spdif_moduleclk)){
+ 			printk("open spdif_moduleclk failed! line = %d\n", __LINE__);
+ 		}
+@@ -588,18 +560,15 @@ static int __devinit sun4i_spdif_dev_probe(struct platform_device *pdev)
+ 		writel(reg_val, sun4i_spdif.regs + SUN4I_SPDIF_CTL);
+ 
+ 		ret = snd_soc_register_dai(&pdev->dev, &sun4i_spdif_dai);
+-		//	sun4i_snd_txctrl(0);
+-		//	sun4i_snd_rxctrl(0);
+ 
+-			iounmap(sun4i_spdif.ioregs);
++		iounmap(sun4i_spdif.ioregs);
+ 
+ 	return 0;
+ }
+ 
+ static int __devexit sun4i_spdif_dev_remove(struct platform_device *pdev)
+ {
+-	if(spdif_used)
+-	{
++	if (spdif_used) {
+ 		spdif_used = 0;
+ 		//release the module clock
+ 		clk_disable(spdif_moduleclk);
+@@ -640,13 +609,11 @@ static int __init sun4i_spdif_init(void)
+ 	int ret;
+ 
+ 	ret = script_parser_fetch("spdif_para","spdif_used", &spdif_used, sizeof(int));
+-	if (ret)
+-    {
++	if (ret) {
+         printk("[SPDIF]sun4i_spdif_init fetch spdif using configuration failed\n");
+     }
+ 
+- 	if (spdif_used)
+-	{
++ 	if (spdif_used) {
+ 		spdif_handle = gpio_request_ex("spdif_para", NULL);
+ 
+ 		if((platform_device_register(&sun4i_spdif_device))<0)
+@@ -655,8 +622,7 @@ static int __init sun4i_spdif_init(void)
+ 		if ((err = platform_driver_register(&sun4i_spdif_driver)) < 0)
+ 			return err;
+ 
+-	}else
+-    {
++	} else {
+         printk("[SPDIF]sun4i-spdif cannot find any using configuration for controllers, return directly!\n");
+         return 0;
+     }
+diff --git a/sound/soc/sun4i/spdif/sun4i_spdif.h b/sound/soc/sun4i/spdif/sun4i_spdif.h
+index a96813c..3d69aac 100644
+--- a/sound/soc/sun4i/spdif/sun4i_spdif.h
++++ b/sound/soc/sun4i/spdif/sun4i_spdif.h
+@@ -1,17 +1,17 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i_spdif.h   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_spdif.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ 
+ #ifndef SUN4I_SPDIF_H_
+ #define SUN4I_SPDIF_H_
+@@ -154,7 +154,6 @@ struct sun4i_spdif_info {
+ extern struct sun4i_spdif_info sun4i_spdif;
+ 
+ unsigned int sun4i_spdif_get_clockrate(void);
+-//extern struct snd_soc_dai sun4i_spdif_dai;
+ 
+ extern void sun4i_snd_txctrl(struct snd_pcm_substream *substream, int on);
+ extern void sun4i_snd_rxctrl(int on);
+diff --git a/sound/soc/sun4i/spdif/sun4i_spdma.c b/sound/soc/sun4i/spdif/sun4i_spdma.c
+index 93f2874..338933a 100644
+--- a/sound/soc/sun4i/spdif/sun4i_spdma.c
++++ b/sound/soc/sun4i/spdif/sun4i_spdma.c
+@@ -1,17 +1,18 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i-spdma.c   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_spdma.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
+ 
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -29,7 +30,6 @@
+ #include <mach/hardware.h>
+ #include <mach/dma.h>
+ 
+-
+ #include "sun4i_spdif.h"
+ #include "sun4i_spdma.h"
+ 
+@@ -76,24 +76,20 @@ static void sun4i_pcm_enqueue(struct snd_pcm_substream *substream)
+ 	unsigned long len = prtd->dma_period;
+ 
+   	limit = prtd->dma_limit;
+-  	while(prtd->dma_loaded < limit)
+-	{
++  	while(prtd->dma_loaded < limit){
+ 		if((pos + len) > prtd->dma_end){
+ 			len  = prtd->dma_end - pos;
+-			//	printk("[SPDIF]%s: corrected dma len %ld\n", __func__, len);
+ 		}
+ 
+-	ret = sw_dma_enqueue(prtd->params->channel, substream, __bus_to_virt(pos),  len);
+-	if(ret == 0){
+-		prtd->dma_loaded++;
+-		pos += prtd->dma_period;
+-		if(pos >= prtd->dma_end)
+-			pos = prtd->dma_start;
+-	}else
+-	{
+-		break;
+-	  }
+-
++		ret = sw_dma_enqueue(prtd->params->channel, substream, __bus_to_virt(pos),  len);
++		if (ret == 0) {
++			prtd->dma_loaded++;
++			pos += prtd->dma_period;
++			if(pos >= prtd->dma_end)
++				pos = prtd->dma_start;
++		} else {
++			break;
++		  }
+ 	}
+ 	prtd->dma_pos = pos;
+ }
+@@ -102,24 +98,23 @@ static void sun4i_audio_buffdone(struct sw_dma_chan *channel,
+ 		                                  void *dev_id, int size,
+ 		                                  enum sw_dma_buffresult result)
+ {
+-		struct sun4i_runtime_data *prtd;
+-		struct snd_pcm_substream *substream = dev_id;
+-
+-		if (result == SW_RES_ABORT || result == SW_RES_ERR)
+-			return;
+-
+-		prtd = substream->runtime->private_data;
+-			if (substream)
+-			{
+-				snd_pcm_period_elapsed(substream);
+-			}
+-
+-		spin_lock(&prtd->lock);
+-		{
+-			prtd->dma_loaded--;
+-			sun4i_pcm_enqueue(substream);
++	struct sun4i_runtime_data *prtd;
++	struct snd_pcm_substream *substream = dev_id;
++
++	if (result == SW_RES_ABORT || result == SW_RES_ERR)
++		return;
++
++	prtd = substream->runtime->private_data;
++		if (substream) {
++			snd_pcm_period_elapsed(substream);
+ 		}
+-		spin_unlock(&prtd->lock);
++
++	spin_lock(&prtd->lock);
++	{
++		prtd->dma_loaded--;
++		sun4i_pcm_enqueue(substream);
++	}
++	spin_unlock(&prtd->lock);
+ }
+ 
+ static int sun4i_pcm_hw_params(struct snd_pcm_substream *substream,
+@@ -187,37 +182,35 @@ static int sun4i_pcm_prepare(struct snd_pcm_substream *substream)
+ 	int ret = 0;
+ 
+ 	spdif_dma_conf = kmalloc(sizeof(struct dma_hw_conf), GFP_KERNEL);
+-	if (!spdif_dma_conf)
+-	{
++	if (!spdif_dma_conf) {
+ 	   ret =  - ENOMEM;
+ 	   return ret;
+ 	}
+ 	if (!prtd->params)
+ 		return 0;
+ 
+-   if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK){
+-			  	spdif_dma_conf->drqsrc_type  = DRQ_TYPE_SDRAM;
+-				spdif_dma_conf->drqdst_type  = DRQ_TYPE_SPDIF;
+-				spdif_dma_conf->xfer_type    = DMAXFER_D_BHALF_S_BHALF;
+-				spdif_dma_conf->address_type = DMAADDRT_D_FIX_S_INC;
+-				spdif_dma_conf->dir          = SW_DMA_WDEV;
+-				spdif_dma_conf->reload       = 0;
+-				spdif_dma_conf->hf_irq       = SW_DMA_IRQ_FULL;
+-				spdif_dma_conf->from         = prtd->dma_start;
+-				spdif_dma_conf->to           = prtd->params->dma_addr;
+-			 	ret = sw_dma_config(prtd->params->channel,spdif_dma_conf);
+-	}
+-   else {
+-			 	spdif_dma_conf->drqsrc_type  = DRQ_TYPE_SDRAM;
+-				spdif_dma_conf->drqdst_type  = DRQ_TYPE_SPDIF;
+-				spdif_dma_conf->xfer_type    = DMAXFER_D_BWORD_S_BWORD;
+-				spdif_dma_conf->address_type = DMAADDRT_D_INC_S_FIX;
+-				spdif_dma_conf->dir          = SW_DMA_RDEV;
+-				spdif_dma_conf->reload       = 1;
+-				spdif_dma_conf->hf_irq       = SW_DMA_IRQ_FULL|SW_DMA_IRQ_HALF;
+-				spdif_dma_conf->from         = prtd->params->dma_addr;
+-				spdif_dma_conf->to           = prtd->dma_start;
+-			  	sw_dma_config(prtd->params->channel,spdif_dma_conf);
++   	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		spdif_dma_conf->drqsrc_type  = DRQ_TYPE_SDRAM;
++		spdif_dma_conf->drqdst_type  = DRQ_TYPE_SPDIF;
++		spdif_dma_conf->xfer_type    = DMAXFER_D_BHALF_S_BHALF;
++		spdif_dma_conf->address_type = DMAADDRT_D_FIX_S_INC;
++		spdif_dma_conf->dir          = SW_DMA_WDEV;
++		spdif_dma_conf->reload       = 0;
++		spdif_dma_conf->hf_irq       = SW_DMA_IRQ_FULL;
++		spdif_dma_conf->from         = prtd->dma_start;
++		spdif_dma_conf->to           = prtd->params->dma_addr;
++		ret = sw_dma_config(prtd->params->channel,spdif_dma_conf);
++	} else {
++		spdif_dma_conf->drqsrc_type  = DRQ_TYPE_SDRAM;
++		spdif_dma_conf->drqdst_type  = DRQ_TYPE_SPDIF;
++		spdif_dma_conf->xfer_type    = DMAXFER_D_BWORD_S_BWORD;
++		spdif_dma_conf->address_type = DMAADDRT_D_INC_S_FIX;
++		spdif_dma_conf->dir          = SW_DMA_RDEV;
++		spdif_dma_conf->reload       = 1;
++		spdif_dma_conf->hf_irq       = SW_DMA_IRQ_FULL|SW_DMA_IRQ_HALF;
++		spdif_dma_conf->from         = prtd->params->dma_addr;
++		spdif_dma_conf->to           = prtd->dma_start;
++		sw_dma_config(prtd->params->channel,spdif_dma_conf);
+    	}
+ 	/* flush the DMA channel */
+ 	sw_dma_ctrl(prtd->params->channel, SW_DMAOP_FLUSH);
+@@ -240,10 +233,6 @@ static int sun4i_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ 	case SNDRV_PCM_TRIGGER_START:
+ 	case SNDRV_PCM_TRIGGER_RESUME:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
+-	//	spin_lock(&prtd->lock);
+-	//	prtd->dma_loaded--;
+-	//	sun4i_pcm_enqueue(substream);
+-	//	spin_unlock(&prtd->lock);
+ 		printk("[SPDIF] dma trigger start\n");
+ 		sw_dma_ctrl(prtd->params->channel, SW_DMAOP_START);
+ 		break;
+@@ -251,7 +240,6 @@ static int sun4i_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+ 	case SNDRV_PCM_TRIGGER_SUSPEND:
+ 	case SNDRV_PCM_TRIGGER_STOP:
+ 	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
+-      //  printk("[SPDIF] dma trigger stop\n");
+ 		sw_dma_ctrl(prtd->params->channel, SW_DMAOP_STOP);
+ 		break;
+ 
+@@ -274,10 +262,9 @@ static snd_pcm_uframes_t sun4i_pcm_pointer(struct snd_pcm_substream *substream)
+ 	spin_lock(&prtd->lock);
+ 	sw_dma_getcurposition(DMACH_NSPDIF, (dma_addr_t*)&dmasrc, (dma_addr_t*)&dmadst);
+ 
+-	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE){
+ 		res = dmadst - prtd->dma_start;
+-	else
+-	{
++	} else {
+ 		offset = bytes_to_frames(runtime, dmasrc + prtd->dma_period - runtime->dma_addr);
+ 	}
+ 	spin_unlock(&prtd->lock);
+@@ -326,15 +313,15 @@ static int sun4i_pcm_mmap(struct snd_pcm_substream *substream,
+ }
+ 
+ static struct snd_pcm_ops sun4i_pcm_ops = {
+-	.open				= sun4i_pcm_open,
++	.open			= sun4i_pcm_open,
+ 	.close			= sun4i_pcm_close,
+ 	.ioctl			= snd_pcm_lib_ioctl,
+-	.hw_params	= sun4i_pcm_hw_params,
++	.hw_params		= sun4i_pcm_hw_params,
+ 	.hw_free		= sun4i_pcm_hw_free,
+ 	.prepare		= sun4i_pcm_prepare,
+ 	.trigger		= sun4i_pcm_trigger,
+ 	.pointer		= sun4i_pcm_pointer,
+-	.mmap				= sun4i_pcm_mmap,
++	.mmap			= sun4i_pcm_mmap,
+ };
+ 
+ static int sun4i_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
+@@ -405,14 +392,13 @@ static int sun4i_pcm_new(struct snd_card *card,
+ }
+ 
+ static struct snd_soc_platform_driver sun4i_soc_platform = {
+-		.ops  =    &sun4i_pcm_ops,
+-		.pcm_new	=		 sun4i_pcm_new,
+-		.pcm_free	=		 sun4i_pcm_free_dma_buffers,
++	.ops  		=   &sun4i_pcm_ops,
++	.pcm_new	=	sun4i_pcm_new,
++	.pcm_free	=	sun4i_pcm_free_dma_buffers,
+ };
+ 
+ static int __devinit sun4i_spdif_pcm_probe(struct platform_device *pdev)
+ {
+-	printk("\n\n%s,%d\n",__func__, __LINE__);
+ 	return snd_soc_register_platform(&pdev->dev, &sun4i_soc_platform);
+ }
+ 
+@@ -440,8 +426,7 @@ static struct platform_driver sun4i_spdif_pcm_driver = {
+ static int __init sun4i_soc_platform_spdif_init(void)
+ {
+ 	int err = 0;
+-	printk("\n\n %s,%d\n", __func__, __LINE__);
+-	if((platform_device_register(&sun4i_spdif_pcm_device))<0)
++	if((err = platform_device_register(&sun4i_spdif_pcm_device)) < 0)
+ 		return err;
+ 
+ 	if ((err = platform_driver_register(&sun4i_spdif_pcm_driver)) < 0)
+diff --git a/sound/soc/sun4i/spdif/sun4i_spdma.h b/sound/soc/sun4i/spdif/sun4i_spdma.h
+index 3feb3eb..ca0e7e5 100644
+--- a/sound/soc/sun4i/spdif/sun4i_spdma.h
++++ b/sound/soc/sun4i/spdif/sun4i_spdma.h
+@@ -1,17 +1,17 @@
+ /*
+-********************************************************************************************************
+-*                          SUN4I----HDMI AUDIO
+-*                   (c) Copyright 2002-2004, All winners Co,Ld.
+-*                          All Right Reserved
+-*
+-* FileName: sun4i-spdma.h   author:chenpailin  date:2011-07-19
+-* Description:
+-* Others:
+-* History:
+-*   <author>      <time>      <version>   <desc>
+-*   chenpailin   2011-07-19     1.0      modify this module
+-********************************************************************************************************
+-*/
++ * sound\soc\sun4i\spdif\sun4i_spdma.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * chenpailin <chenpailin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #ifndef SUN4I_SPDMA_H_
+ #define SUN4I_SPDMA_H_
+ 
+@@ -33,7 +33,6 @@ enum sun4idma_buffresult {
+ 	SUN4I_RES_ABORT
+ };
+ /* platform data */
+-//extern struct snd_soc_platform sun4i_soc_platform;
+ extern int sw_dma_enqueue(unsigned int channel, void *id,
+ 			dma_addr_t data, int size);
+ 
+-- 
+1.8.0
+

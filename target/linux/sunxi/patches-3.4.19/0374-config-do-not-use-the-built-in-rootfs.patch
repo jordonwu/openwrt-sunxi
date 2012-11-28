@@ -1,0 +1,36 @@
+From 2386a8d60d66547609214d74a9ba62f261e291c8 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Thu, 24 Nov 2011 15:04:14 +0800
+Subject: [PATCH 374/944] config: do not use the built-in rootfs
+
+now we put in the android style boot.img
+---
+ arch/arm/configs/sun4i_defconfig | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 63f3b9c..d959aaa 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -95,16 +95,14 @@ CONFIG_NET_NS=y
+ # CONFIG_SYSFS_DEPRECATED is not set
+ CONFIG_RELAY=y
+ CONFIG_BLK_DEV_INITRD=y
+-CONFIG_INITRAMFS_SOURCE="rootfs/rootfs.cpio.gz"
+-CONFIG_INITRAMFS_ROOT_UID=0
+-CONFIG_INITRAMFS_ROOT_GID=0
++CONFIG_INITRAMFS_SOURCE=""
+ CONFIG_RD_GZIP=y
+ CONFIG_RD_BZIP2=y
+ CONFIG_RD_LZMA=y
+ CONFIG_RD_XZ=y
+ CONFIG_RD_LZO=y
+ # CONFIG_INITRAMFS_COMPRESSION_NONE is not set
+-CONFIG_INITRAMFS_COMPRESSION_GZIP=y
++# CONFIG_INITRAMFS_COMPRESSION_GZIP is not set
+ # CONFIG_INITRAMFS_COMPRESSION_BZIP2 is not set
+ # CONFIG_INITRAMFS_COMPRESSION_LZMA is not set
+ # CONFIG_INITRAMFS_COMPRESSION_XZ is not set
+-- 
+1.8.0
+

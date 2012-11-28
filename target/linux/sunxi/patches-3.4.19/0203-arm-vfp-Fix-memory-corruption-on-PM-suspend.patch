@@ -1,0 +1,46 @@
+From 67c2bbb6252bcbc5b2bf0790c372c10f02877788 Mon Sep 17 00:00:00 2001
+From: Ido Yariv <ido@wizery.com>
+Date: Sat, 14 Apr 2012 23:20:30 +0300
+Subject: [PATCH 203/944] arm: vfp: Fix memory corruption on PM suspend
+
+Commit 36af2a47 ("ARM: vfp: Always save VFP state in vfp_pm_suspend")
+introduced a potential use-after-free bug. On SMP systems,
+vfp_current_hw_state might hold dangling pointers in case a task which
+used the VFP last migrates to another CPU and then exits. If
+vfp_pm_suspend is called while vfp_current_hw_state still holds a
+pointer to the freed thread_info, that memory location will be written,
+potentially overwriting a new object allocated there.
+
+The original problem is only relevant to UP systems in which the VFP
+state is stored lazily.
+
+Fix this by only storing the VFP state on UP systems, and avoid doing so
+on SMP ones.
+
+Change-Id: I8f7026eb735b340fcef4cf12fbd12b9a0ea08d3f
+Signed-off-by: Ido Yariv <ido@wizery.com>
+Signed-off-by: Eyal Shapira <eyal@wizery.com>
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/vfp/vfpmodule.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/vfp/vfpmodule.c b/arch/arm/vfp/vfpmodule.c
+index d600ff3..a163c4b 100644
+--- a/arch/arm/vfp/vfpmodule.c
++++ b/arch/arm/vfp/vfpmodule.c
+@@ -452,9 +452,11 @@ static int vfp_pm_suspend(void)
+ 		/* disable, just in case */
+ 		fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_EN);
+ 	} else if (vfp_current_hw_state[ti->cpu]) {
++#ifndef CONFIG_SMP
+ 		fmxr(FPEXC, fpexc | FPEXC_EN);
+ 		vfp_save_state(vfp_current_hw_state[ti->cpu], fpexc);
+ 		fmxr(FPEXC, fpexc);
++#endif
+ 	}
+ 
+ 	/* clear any information we had about last context state */
+-- 
+1.8.0
+

@@ -1,0 +1,27 @@
+From 711b47e50d79eec2386e5438e5b8a31509943ced Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 7 Nov 2012 23:08:13 +0000
+Subject: [PATCH 932/944] gpu: mali: disable profiling if !CONFIG_TRACEPOINTS
+
+---
+ drivers/gpu/mali/Makefile | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/gpu/mali/Makefile b/drivers/gpu/mali/Makefile
+index 8e90fe7..7b0d100 100644
+--- a/drivers/gpu/mali/Makefile
++++ b/drivers/gpu/mali/Makefile
+@@ -5,6 +5,10 @@ USING_UMP:=1
+ USING_PMM:=1
+ BUILD:=release
+ TARGET_PLATFORM:=mali400-pmu
++ifneq ($(CONFIG_TRACEPOINTS),y)
++USING_PROFILING:=0
++export USING_PROFILING
++endif
+ export CONFIG USING_MMU USING_UMP USING_PMM BUILD TARGET_PLATFORM
+ 
+ obj-$(CONFIG_MALI) += ump/ mali/
+-- 
+1.8.0
+

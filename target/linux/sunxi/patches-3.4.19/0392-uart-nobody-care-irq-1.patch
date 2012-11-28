@@ -1,0 +1,26 @@
+From 7ff60d48bf5873a580e77b624f9b08539b2cb04d Mon Sep 17 00:00:00 2001
+From: benn <benn@allwinnertech.com>
+Date: Mon, 28 Nov 2011 17:16:19 +0800
+Subject: [PATCH 392/944] uart: nobody care irq 1
+
+FIXME: uart initializing problem
+---
+ arch/arm/mach-sun4i/core.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index 1f1a71b..c1de505 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -103,6 +103,8 @@ static void __init sw_core_fixup(struct machine_desc *desc,
+ 
+ 	size = DRAMC_get_dram_size();
+ 
++	early_printk("DRAM: %d", size);
++
+ 	if (size <= 512) {
+ 		mi->nr_banks = 1;
+ 		mi->bank[0].start = 0x40000000;
+-- 
+1.8.0
+

@@ -1,0 +1,195 @@
+From 2090bebd69b1f3a16ea1cd9266a89c201ba02728 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 11 Jul 2012 17:39:51 -0700
+Subject: [PATCH 529/944] net: wireless: bcmdhd: Update wiphy bands on country
+ and band change
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c    | 17 ++++++++++++-
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c  | 39 ++++++++++++++++++++----------
+ drivers/net/wireless/bcmdhd/wldev_common.c | 29 ++++++++++++----------
+ drivers/net/wireless/bcmdhd/wldev_common.h |  1 +
+ 4 files changed, 59 insertions(+), 27 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 9396be1..2799e68 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -4914,8 +4914,23 @@ void dhd_bus_country_set(struct net_device *dev, wl_country_t *cspec)
+ {
+ 	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
+ 
+-	if (dhd && dhd->pub.up)
++	if (dhd && dhd->pub.up) {
+ 		memcpy(&dhd->pub.dhd_cspec, cspec, sizeof(wl_country_t));
++#ifdef WL_CFG80211
++		wl_update_wiphybands(NULL);
++#endif
++	}
++}
++
++void dhd_bus_band_set(struct net_device *dev, uint band)
++{
++	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
++
++	if (dhd && dhd->pub.up) {
++#ifdef WL_CFG80211
++		wl_update_wiphybands(NULL);
++#endif
++	}
+ }
+ 
+ void dhd_net_if_lock(struct net_device *dev)
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index f1d1df9..955aedd 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -8002,7 +8002,6 @@ static int wl_construct_reginfo(struct wl_priv *wl, s32 bw_cap)
+ #if LINUX_VERSION_CODE == KERNEL_VERSION(2, 6, 38) && !defined(WL_COMPAT_WIRELESS)
+ 			band_chan_arr[index].center_freq =
+ 				ieee80211_channel_to_frequency(channel);
+-			(void)band;
+ #else
+ 			band_chan_arr[index].center_freq =
+ 				ieee80211_channel_to_frequency(channel, band);
+@@ -8068,18 +8067,23 @@ s32 wl_update_wiphybands(struct wl_priv *wl)
+ 	s32 err = 0;
+ 	s32 index = 0;
+ 	s32 nmode = 0;
++	bool rollback_lock = false;
+ 	s32 bw_cap = 0;
+ 	s32 cur_band = -1;
+-	if (wl == NULL)
++
++	if (wl == NULL) {
+ 		wl = wlcfg_drv_priv;
++		mutex_lock(&wl->usr_sync);
++		rollback_lock = true;
++	}
+ 	dev = wl_to_prmry_ndev(wl);
+ 
+ 	memset(bandlist, 0, sizeof(bandlist));
+ 	err = wldev_ioctl(dev, WLC_GET_BANDLIST, bandlist,
+ 		sizeof(bandlist), false);
+ 	if (unlikely(err)) {
+-		WL_ERR(("error (%d)\n", err));
+-		return err;
++		WL_ERR(("error read bandlist (%d)\n", err));
++		goto end_bands;
+ 	}
+ 	wiphy = wl_to_wiphy(wl);
+ 	wiphy->bands[IEEE80211_BAND_2GHZ] = &__wl_band_2ghz;
+@@ -8089,24 +8093,29 @@ s32 wl_update_wiphybands(struct wl_priv *wl)
+ 		sizeof(s32), false);
+ 	if (unlikely(err)) {
+ 		WL_ERR(("error (%d)\n", err));
+-		return err;
++		goto end_bands;
+ 	}
+ 
+ 	err = wldev_iovar_getint(dev, "nmode", &nmode);
+-	if (err) {
+-		return err;
+-	}
+-
+-	err = wldev_iovar_getint(dev, "mimo_bw_cap", &bw_cap);
+-	if (err) {
+-		return err;
++	if (unlikely(err)) {
++		WL_ERR(("error reading nmode (%d)\n", err));
++	} else {
++		/* For nmodeonly  check bw cap */
++		err = wldev_iovar_getint(dev, "mimo_bw_cap", &bw_cap);
++		if (unlikely(err)) {
++			WL_ERR(("error get mimo_bw_cap (%d)\n", err));
++		}
+ 	}
+ 
+ 	err = wl_construct_reginfo(wl, bw_cap);
+ 	if (err) {
+ 		WL_ERR(("wl_construct_reginfo() fails err=%d\n", err));
+-		return err;
++		if (err != BCME_UNSUPPORTED)
++			goto end_bands;
++		/* Ignore error if "chanspecs" command is not supported */
++		err = 0;
+ 	}
++
+ 	if ((cur_band == WLC_BAND_2G) ||
+ 		(cur_band == WLC_BAND_5G)) {
+ 		bandlist[0] = 1;
+@@ -8142,6 +8151,10 @@ s32 wl_update_wiphybands(struct wl_priv *wl)
+ 	}
+ 
+ 	wiphy_apply_custom_regulatory(wiphy, &brcm_regdom);
++
++end_bands:
++	if (rollback_lock)
++		mutex_unlock(&wl->usr_sync);
+ 	return err;
+ }
+ 
+diff --git a/drivers/net/wireless/bcmdhd/wldev_common.c b/drivers/net/wireless/bcmdhd/wldev_common.c
+index 67a19d6..c964552 100644
+--- a/drivers/net/wireless/bcmdhd/wldev_common.c
++++ b/drivers/net/wireless/bcmdhd/wldev_common.c
+@@ -328,6 +328,8 @@ int wldev_set_band(
+ 
+ 	if ((band == WLC_BAND_AUTO) || (band == WLC_BAND_5G) || (band == WLC_BAND_2G)) {
+ 		error = wldev_ioctl(dev, WLC_SET_BAND, &band, sizeof(band), 1);
++		if (!error)
++			dhd_bus_band_set(dev, band);
+ 	}
+ 	return error;
+ }
+@@ -357,20 +359,21 @@ int wldev_set_country(
+ 				__FUNCTION__, error));
+ 			return error;
+ 		}
+-	}
+-	cspec.rev = -1;
+-	memcpy(cspec.country_abbrev, country_code, WLC_CNTRY_BUF_SZ);
+-	memcpy(cspec.ccode, country_code, WLC_CNTRY_BUF_SZ);
+-	get_customized_country_code((char *)&cspec.country_abbrev, &cspec);
+-	error = wldev_iovar_setbuf(dev, "country", &cspec, sizeof(cspec),
+-		smbuf, sizeof(smbuf), NULL);
+-	if (error < 0) {
+-		WLDEV_ERROR(("%s: set country for %s as %s rev %d failed\n",
++
++		cspec.rev = -1;
++		memcpy(cspec.country_abbrev, country_code, WLC_CNTRY_BUF_SZ);
++		memcpy(cspec.ccode, country_code, WLC_CNTRY_BUF_SZ);
++		get_customized_country_code((char *)&cspec.country_abbrev, &cspec);
++		error = wldev_iovar_setbuf(dev, "country", &cspec, sizeof(cspec),
++			smbuf, sizeof(smbuf), NULL);
++		if (error < 0) {
++			WLDEV_ERROR(("%s: set country for %s as %s rev %d failed\n",
++				__FUNCTION__, country_code, cspec.ccode, cspec.rev));
++			return error;
++		}
++		dhd_bus_country_set(dev, &cspec);
++		WLDEV_ERROR(("%s: set country for %s as %s rev %d\n",
+ 			__FUNCTION__, country_code, cspec.ccode, cspec.rev));
+-		return error;
+ 	}
+-	dhd_bus_country_set(dev, &cspec);
+-	WLDEV_ERROR(("%s: set country for %s as %s rev %d\n",
+-		__FUNCTION__, country_code, cspec.ccode, cspec.rev));
+ 	return 0;
+ }
+diff --git a/drivers/net/wireless/bcmdhd/wldev_common.h b/drivers/net/wireless/bcmdhd/wldev_common.h
+index 344db0f..49652af 100644
+--- a/drivers/net/wireless/bcmdhd/wldev_common.h
++++ b/drivers/net/wireless/bcmdhd/wldev_common.h
+@@ -86,6 +86,7 @@ s32 wldev_iovar_setint_bsscfg(
+ extern void get_customized_country_code(char *country_iso_code, wl_country_t *cspec);
+ extern void dhd_bus_country_set(struct net_device *dev, wl_country_t *cspec);
+ extern int wldev_set_country(struct net_device *dev, char *country_code);
++extern void dhd_bus_band_set(struct net_device *dev, uint band);
+ extern int net_os_wake_lock(struct net_device *dev);
+ extern int net_os_wake_unlock(struct net_device *dev);
+ extern int net_os_wake_lock_timeout(struct net_device *dev);
+-- 
+1.8.0
+

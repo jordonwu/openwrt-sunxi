@@ -1,0 +1,37 @@
+From e9638ed06d4827c7bf77d6e21c5d9a669292f37a Mon Sep 17 00:00:00 2001
+From: David Kozub <zub@linux.fjfi.cvut.cz>
+Date: Mon, 8 Oct 2012 23:52:10 +0200
+Subject: [PATCH 781/944] drivers: make dependency of axp_power/* on INPUT
+ explicit
+
+---
+ drivers/power/axp_power/Kconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/power/axp_power/Kconfig b/drivers/power/axp_power/Kconfig
+index d6683e4..56b1248 100644
+--- a/drivers/power/axp_power/Kconfig
++++ b/drivers/power/axp_power/Kconfig
+@@ -13,16 +13,19 @@ choice
+ 
+ config AW_AXP18
+ 	bool "AXP18 driver"
++	select INPUT
+ 	---help---
+ 	  AXP18 driver
+ 
+ config AW_AXP19
+ 	bool "AXP19 driver"
++	select INPUT
+ 	---help---
+ 	  AXP19 driver
+ 
+ config AW_AXP20
+ 	bool "AXP20 driver"
++	select INPUT
+ 	---help---
+ 	  AXP20 driver
+ 
+-- 
+1.8.0
+

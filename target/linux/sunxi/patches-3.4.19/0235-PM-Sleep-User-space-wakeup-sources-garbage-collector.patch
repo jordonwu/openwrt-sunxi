@@ -1,0 +1,194 @@
+From 4e585d25e120f1eae0a3a8bf8f6ebc7692afec18 Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 5 May 2012 21:57:28 +0200
+Subject: [PATCH 235/944] PM / Sleep: User space wakeup sources garbage
+ collector Kconfig option
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Make it possible to configure out the user space wakeup sources
+garbage collector for debugging and default Android builds.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Arve Hjønnevåg <arve@android.com>
+---
+ kernel/power/Kconfig    |   5 +++
+ kernel/power/wakelock.c | 101 +++++++++++++++++++++++++++++-------------------
+ 2 files changed, 67 insertions(+), 39 deletions(-)
+
+diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
+index 08783ed..8f9b4eb 100644
+--- a/kernel/power/Kconfig
++++ b/kernel/power/Kconfig
+@@ -125,6 +125,11 @@ config PM_WAKELOCKS_LIMIT
+ 	default 100
+ 	depends on PM_WAKELOCKS
+ 
++config PM_WAKELOCKS_GC
++	bool "Garbage collector for user space wakeup sources"
++	depends on PM_WAKELOCKS
++	default y
++
+ config PM_RUNTIME
+ 	bool "Run-time PM core functionality"
+ 	depends on !IA64_HP_SIM
+diff --git a/kernel/power/wakelock.c b/kernel/power/wakelock.c
+index dc34b9d3b..c8fba33 100644
+--- a/kernel/power/wakelock.c
++++ b/kernel/power/wakelock.c
+@@ -17,21 +17,18 @@
+ #include <linux/rbtree.h>
+ #include <linux/slab.h>
+ 
+-#define WL_GC_COUNT_MAX	100
+-#define WL_GC_TIME_SEC	300
+-
+ static DEFINE_MUTEX(wakelocks_lock);
+ 
+ struct wakelock {
+ 	char			*name;
+ 	struct rb_node		node;
+ 	struct wakeup_source	ws;
++#ifdef CONFIG_PM_WAKELOCKS_GC
+ 	struct list_head	lru;
++#endif
+ };
+ 
+ static struct rb_root wakelocks_tree = RB_ROOT;
+-static LIST_HEAD(wakelocks_lru_list);
+-static unsigned int wakelocks_gc_count;
+ 
+ ssize_t pm_show_wakelocks(char *buf, bool show_active)
+ {
+@@ -79,6 +76,61 @@ static inline void increment_wakelocks_number(void) {}
+ static inline void decrement_wakelocks_number(void) {}
+ #endif /* CONFIG_PM_WAKELOCKS_LIMIT */
+ 
++#ifdef CONFIG_PM_WAKELOCKS_GC
++#define WL_GC_COUNT_MAX	100
++#define WL_GC_TIME_SEC	300
++
++static LIST_HEAD(wakelocks_lru_list);
++static unsigned int wakelocks_gc_count;
++
++static inline void wakelocks_lru_add(struct wakelock *wl)
++{
++	list_add(&wl->lru, &wakelocks_lru_list);
++}
++
++static inline void wakelocks_lru_most_recent(struct wakelock *wl)
++{
++	list_move(&wl->lru, &wakelocks_lru_list);
++}
++
++static void wakelocks_gc(void)
++{
++	struct wakelock *wl, *aux;
++	ktime_t now;
++
++	if (++wakelocks_gc_count <= WL_GC_COUNT_MAX)
++		return;
++
++	now = ktime_get();
++	list_for_each_entry_safe_reverse(wl, aux, &wakelocks_lru_list, lru) {
++		u64 idle_time_ns;
++		bool active;
++
++		spin_lock_irq(&wl->ws.lock);
++		idle_time_ns = ktime_to_ns(ktime_sub(now, wl->ws.last_time));
++		active = wl->ws.active;
++		spin_unlock_irq(&wl->ws.lock);
++
++		if (idle_time_ns < ((u64)WL_GC_TIME_SEC * NSEC_PER_SEC))
++			break;
++
++		if (!active) {
++			wakeup_source_remove(&wl->ws);
++			rb_erase(&wl->node, &wakelocks_tree);
++			list_del(&wl->lru);
++			kfree(wl->name);
++			kfree(wl);
++			decrement_wakelocks_number();
++		}
++	}
++	wakelocks_gc_count = 0;
++}
++#else /* !CONFIG_PM_WAKELOCKS_GC */
++static inline void wakelocks_lru_add(struct wakelock *wl) {}
++static inline void wakelocks_lru_most_recent(struct wakelock *wl) {}
++static inline void wakelocks_gc(void) {}
++#endif /* !CONFIG_PM_WAKELOCKS_GC */
++
+ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
+ 					    bool add_if_not_found)
+ {
+@@ -123,7 +175,7 @@ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
+ 	wakeup_source_add(&wl->ws);
+ 	rb_link_node(&wl->node, parent, node);
+ 	rb_insert_color(&wl->node, &wakelocks_tree);
+-	list_add(&wl->lru, &wakelocks_lru_list);
++	wakelocks_lru_add(wl);
+ 	increment_wakelocks_number();
+ 	return wl;
+ }
+@@ -166,42 +218,13 @@ int pm_wake_lock(const char *buf)
+ 		__pm_stay_awake(&wl->ws);
+ 	}
+ 
+-	list_move(&wl->lru, &wakelocks_lru_list);
++	wakelocks_lru_most_recent(wl);
+ 
+  out:
+ 	mutex_unlock(&wakelocks_lock);
+ 	return ret;
+ }
+ 
+-static void wakelocks_gc(void)
+-{
+-	struct wakelock *wl, *aux;
+-	ktime_t now = ktime_get();
+-
+-	list_for_each_entry_safe_reverse(wl, aux, &wakelocks_lru_list, lru) {
+-		u64 idle_time_ns;
+-		bool active;
+-
+-		spin_lock_irq(&wl->ws.lock);
+-		idle_time_ns = ktime_to_ns(ktime_sub(now, wl->ws.last_time));
+-		active = wl->ws.active;
+-		spin_unlock_irq(&wl->ws.lock);
+-
+-		if (idle_time_ns < ((u64)WL_GC_TIME_SEC * NSEC_PER_SEC))
+-			break;
+-
+-		if (!active) {
+-			wakeup_source_remove(&wl->ws);
+-			rb_erase(&wl->node, &wakelocks_tree);
+-			list_del(&wl->lru);
+-			kfree(wl->name);
+-			kfree(wl);
+-			decrement_wakelocks_number();
+-		}
+-	}
+-	wakelocks_gc_count = 0;
+-}
+-
+ int pm_wake_unlock(const char *buf)
+ {
+ 	struct wakelock *wl;
+@@ -226,9 +249,9 @@ int pm_wake_unlock(const char *buf)
+ 		goto out;
+ 	}
+ 	__pm_relax(&wl->ws);
+-	list_move(&wl->lru, &wakelocks_lru_list);
+-	if (++wakelocks_gc_count > WL_GC_COUNT_MAX)
+-		wakelocks_gc();
++
++	wakelocks_lru_most_recent(wl);
++	wakelocks_gc();
+ 
+  out:
+ 	mutex_unlock(&wakelocks_lock);
+-- 
+1.8.0
+

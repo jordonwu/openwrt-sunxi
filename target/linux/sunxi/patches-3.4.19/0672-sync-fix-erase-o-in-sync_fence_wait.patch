@@ -1,0 +1,27 @@
+From b033d86c307f1eb85d567f8cea51530230d2f169 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Tue, 21 Aug 2012 18:43:21 -0700
+Subject: [PATCH 672/944] sync: fix erase-o in sync_fence_wait
+
+Change-Id: I189707cf658a9f1f2943515c891b43961994e774
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index fcf8632..7028b49 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -567,7 +567,7 @@ int sync_fence_wait(struct sync_fence *fence, long timeout)
+ 		err = wait_event_interruptible_timeout(fence->wq,
+ 						       fence->status != 0,
+ 						       timeout);
+-	} else if (timeout < 0{
++	} else if (timeout < 0) {
+ 		err = wait_event_interruptible(fence->wq, fence->status != 0);
+ 	}
+ 
+-- 
+1.8.0
+

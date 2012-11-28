@@ -1,0 +1,6069 @@
+From ec2fbbffb14a38b1f2d37d8a26a4640d01d0dbcc Mon Sep 17 00:00:00 2001
+From: Andrey Panov <rockford@yandex.ru>
+Date: Tue, 16 Oct 2012 22:20:54 +0400
+Subject: [PATCH 817/944] usb: sunxi: unify ehci and ohci drivers
+
+* unify ehci sun4i/sun5i drivers into ehci-sunxi
+* unify ohci sun4i/sun5i drivers into ohci-sunxi
+* rename files to match Linux naming style.
+
+Signed-off-by: Aliaksei Katovich <aliaksei.katovich@gmail.com>
+---
+ drivers/usb/host/ehci-hcd.c     |   4 +-
+ drivers/usb/host/ehci-sunxi.c   | 912 +++++++++++++++++++++++++++++++++++++++
+ drivers/usb/host/ehci_sun4i.c   | 912 ---------------------------------------
+ drivers/usb/host/ehci_sun5i.c   | 918 ----------------------------------------
+ drivers/usb/host/ohci-hcd.c     |   4 +-
+ drivers/usb/host/ohci-sunxi.c   | 799 ++++++++++++++++++++++++++++++++++
+ drivers/usb/host/ohci_sun4i.c   | 799 ----------------------------------
+ drivers/usb/host/ohci_sun5i.c   | 799 ----------------------------------
+ drivers/usb/host/sw_hci_sun4i.c |   2 +-
+ drivers/usb/host/sw_hci_sun4i.h | 258 -----------
+ drivers/usb/host/sw_hci_sun5i.c |   2 +-
+ drivers/usb/host/sw_hci_sun5i.h | 258 -----------
+ drivers/usb/host/sw_hci_sunxi.h | 258 +++++++++++
+ 13 files changed, 1975 insertions(+), 3950 deletions(-)
+ create mode 100644 drivers/usb/host/ehci-sunxi.c
+ delete mode 100644 drivers/usb/host/ehci_sun4i.c
+ delete mode 100644 drivers/usb/host/ehci_sun5i.c
+ create mode 100644 drivers/usb/host/ohci-sunxi.c
+ delete mode 100644 drivers/usb/host/ohci_sun4i.c
+ delete mode 100644 drivers/usb/host/ohci_sun5i.c
+ delete mode 100644 drivers/usb/host/sw_hci_sun4i.h
+ delete mode 100644 drivers/usb/host/sw_hci_sun5i.h
+ create mode 100644 drivers/usb/host/sw_hci_sunxi.h
+
+diff --git a/drivers/usb/host/ehci-hcd.c b/drivers/usb/host/ehci-hcd.c
+index 23eae3f..6e73980 100644
+--- a/drivers/usb/host/ehci-hcd.c
++++ b/drivers/usb/host/ehci-hcd.c
+@@ -1283,12 +1283,12 @@ MODULE_LICENSE ("GPL");
+ #endif
+ 
+ #ifdef CONFIG_USB_SW_SUN4I_HCI
+-#include "ehci_sun4i.c"
++#include "ehci-sunxi.c"
+ #define	PLATFORM_DRIVER		sw_ehci_hcd_driver
+ #endif
+ 
+ #ifdef CONFIG_USB_SW_SUN5I_HCI
+-#include "ehci_sun5i.c"
++#include "ehci-sunxi.c"
+ #define	PLATFORM_DRIVER		sw_ehci_hcd_driver
+ #endif
+ 
+diff --git a/drivers/usb/host/ehci-sunxi.c b/drivers/usb/host/ehci-sunxi.c
+new file mode 100644
+index 0000000..3e6b660
+--- /dev/null
++++ b/drivers/usb/host/ehci-sunxi.c
+@@ -0,0 +1,912 @@
++/*
++ * drivers/usb/host/ehci-sunxi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++*************************************************************************************
++*                         			      Linux
++*					           USB Host Controller Driver
++*
++*				        (c) Copyright 2006-2010, All winners Co,Ld.
++*							       All Rights Reserved
++*
++* File Name 	: ehci_sunxi.c
++*
++* Author 		: javen
++*
++* Description 	: SoftWinner EHCI Driver
++*
++* Notes         :
++*
++* History 		:
++*      <author>    		<time>       	<version >    		<desc>
++*    yangnaitian      2011-5-24            1.0          create this file
++*    javen            2011-6-26            1.1          add suspend and resume
++*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
++*
++*************************************************************************************
++*/
++
++#include <linux/platform_device.h>
++#include <linux/time.h>
++#include <linux/timer.h>
++
++#include <plat/sys_config.h>
++#include <linux/clk.h>
++
++#include  <mach/clock.h>
++#include "sw_hci_sunxi.h"
++
++/*.......................................................................................*/
++//                               全局信息定义
++/*.......................................................................................*/
++
++//#define  SW_USB_EHCI_DEBUG
++
++#define  SW_EHCI_NAME				"sw-ehci"
++static const char ehci_name[] 		= SW_EHCI_NAME;
++
++static struct sw_hci_hcd *g_sw_ehci[3];
++static u32 ehci_first_probe[3] = {1, 1, 1};
++
++/*.......................................................................................*/
++//                                      函数区
++/*.......................................................................................*/
++
++extern int usb_disabled(void);
++int sw_usb_disable_ehci(__u32 usbc_no);
++int sw_usb_enable_ehci(__u32 usbc_no);
++
++void print_ehci_info(struct sw_hci_hcd *sw_ehci)
++{
++    DMSG_INFO("----------print_ehci_info---------\n");
++	DMSG_INFO("hci_name             = %s\n", sw_ehci->hci_name);
++	DMSG_INFO("irq_no               = %d\n", sw_ehci->irq_no);
++	DMSG_INFO("usbc_no              = %d\n", sw_ehci->usbc_no);
++
++	DMSG_INFO("usb_vbase            = 0x%p\n", sw_ehci->usb_vbase);
++	DMSG_INFO("sram_vbase           = 0x%p\n", sw_ehci->sram_vbase);
++	DMSG_INFO("clock_vbase          = 0x%p\n", sw_ehci->clock_vbase);
++	DMSG_INFO("sdram_vbase          = 0x%p\n", sw_ehci->sdram_vbase);
++
++	DMSG_INFO("clock: AHB(0x%x), USB(0x%x)\n",
++	          (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
++              (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc));
++
++	DMSG_INFO("USB: 0x%x\n",(u32)USBC_Readl(sw_ehci->usb_vbase + SW_USB_PMU_IRQ_ENABLE));
++	DMSG_INFO("DRAM: USB1(0x%x), USB2(0x%x)\n",
++	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
++	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
++
++	DMSG_INFO("----------------------------------\n");
++}
++
++/*
++*******************************************************************************
++*                     sw_hcd_board_set_vbus
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_hcd_board_set_vbus(struct sw_hci_hcd *sw_ehci, int is_on)
++{
++	sw_ehci->set_power(sw_ehci, is_on);
++
++	return;
++}
++
++/*
++*******************************************************************************
++*                     open_ehci_clock
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int open_ehci_clock(struct sw_hci_hcd *sw_ehci)
++{
++	return sw_ehci->open_clock(sw_ehci, 0);
++}
++
++/*
++*******************************************************************************
++*                     close_ehci_clock
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int close_ehci_clock(struct sw_hci_hcd *sw_ehci)
++{
++	return sw_ehci->close_clock(sw_ehci, 0);
++}
++
++/*
++*******************************************************************************
++*                     sw_ehci_port_configure
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_ehci_port_configure(struct sw_hci_hcd *sw_ehci, u32 enable)
++{
++	sw_ehci->port_configure(sw_ehci, enable);
++
++	return;
++}
++
++/*
++*******************************************************************************
++*                     sw_get_io_resource
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
++{
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_release_io_resource
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
++{
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_start_ehci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_start_ehci(struct sw_hci_hcd *sw_ehci)
++{
++  	open_ehci_clock(sw_ehci);
++	sw_ehci->usb_passby(sw_ehci, 1);
++	sw_ehci_port_configure(sw_ehci, 1);
++	sw_hcd_board_set_vbus(sw_ehci, 1);
++
++	return;
++}
++
++/*
++*******************************************************************************
++*                     sw_stop_ehci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_stop_ehci(struct sw_hci_hcd *sw_ehci)
++{
++	sw_hcd_board_set_vbus(sw_ehci, 0);
++	sw_ehci_port_configure(sw_ehci, 0);
++	sw_ehci->usb_passby(sw_ehci, 0);
++	close_ehci_clock(sw_ehci);
++
++	return;
++}
++
++/*
++*******************************************************************************
++*                     sw_ehci_setup
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ehci_setup(struct usb_hcd *hcd)
++{
++	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
++	int ret = ehci_init(hcd);
++
++	ehci->need_io_watchdog = 0;
++
++	return ret;
++}
++
++static const struct hc_driver sw_ehci_hc_driver = {
++	.description			= hcd_name,
++	.product_desc			= "SW USB2.0 'Enhanced' Host Controller (EHCI) Driver",
++	.hcd_priv_size			= sizeof(struct ehci_hcd),
++
++	 /*
++	 * generic hardware linkage
++	 */
++	 .irq					=  ehci_irq,
++	 .flags					=  HCD_MEMORY | HCD_USB2,
++
++	/*
++	 * basic lifecycle operations
++	 *
++	 * FIXME -- ehci_init() doesn't do enough here.
++	 * See ehci-ppc-soc for a complete implementation.
++	 */
++	.reset					= sw_ehci_setup,
++	.start					= ehci_run,
++	.stop					= ehci_stop,
++	.shutdown				= ehci_shutdown,
++
++	/*
++	 * managing i/o requests and associated device resources
++	 */
++	.urb_enqueue			= ehci_urb_enqueue,
++	.urb_dequeue			= ehci_urb_dequeue,
++	.endpoint_disable		= ehci_endpoint_disable,
++	.endpoint_reset			= ehci_endpoint_reset,
++
++	/*
++	 * scheduling support
++	 */
++	.get_frame_number		= ehci_get_frame,
++
++	/*
++	 * root hub support
++	 */
++	.hub_status_data		= ehci_hub_status_data,
++	.hub_control			= ehci_hub_control,
++	.bus_suspend			= ehci_bus_suspend,
++	.bus_resume				= ehci_bus_resume,
++	.relinquish_port		= ehci_relinquish_port,
++	.port_handed_over		= ehci_port_handed_over,
++
++	.clear_tt_buffer_complete	= ehci_clear_tt_buffer_complete,
++};
++
++/*
++*******************************************************************************
++*                     sw_ehci_hcd_probe
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ehci_hcd_probe(struct platform_device *pdev)
++{
++	struct usb_hcd 	*hcd 	= NULL;
++	struct ehci_hcd *ehci	= NULL;
++	struct sw_hci_hcd *sw_ehci = NULL;
++	int ret = 0;
++
++	if(pdev == NULL){
++		DMSG_PANIC("ERR: Argment is invaild\n");
++		return -1;
++	}
++
++	/* if usb is disabled, can not probe */
++	if (usb_disabled()) {
++		DMSG_PANIC("ERR: usb hcd is disabled\n");
++		return -ENODEV;
++	}
++
++	sw_ehci = pdev->dev.platform_data;
++	if(!sw_ehci){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		ret = -ENOMEM;
++		goto ERR1;
++	}
++
++	sw_ehci->pdev = pdev;
++	g_sw_ehci[sw_ehci->usbc_no] = sw_ehci;
++
++	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
++		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
++
++	/* get io resource */
++	sw_get_io_resource(pdev, sw_ehci);
++	sw_ehci->ehci_base 			= sw_ehci->usb_vbase + SW_USB_EHCI_BASE_OFFSET;
++	sw_ehci->ehci_reg_length 	= SW_USB_EHCI_LEN;
++
++	/* creat a usb_hcd for the ehci controller */
++	hcd = usb_create_hcd(&sw_ehci_hc_driver, &pdev->dev, ehci_name);
++	if (!hcd){
++		DMSG_PANIC("ERR: usb_create_hcd failed\n");
++		ret = -ENOMEM;
++		goto ERR2;
++	}
++
++  	hcd->rsrc_start = (u32)sw_ehci->ehci_base;
++	hcd->rsrc_len 	= sw_ehci->ehci_reg_length;
++	hcd->regs 		= sw_ehci->ehci_base;
++	sw_ehci->hcd    = hcd;
++
++	/* echi start to work */
++	sw_start_ehci(sw_ehci);
++
++	ehci = hcd_to_ehci(hcd);
++	ehci->caps = hcd->regs;
++	ehci->regs = hcd->regs + HC_LENGTH(ehci, readl(&ehci->caps->hc_capbase));
++
++	/* cache this readonly data, minimize chip reads */
++	ehci->hcs_params = readl(&ehci->caps->hcs_params);
++
++	ret = usb_add_hcd(hcd, sw_ehci->irq_no, IRQF_DISABLED | IRQF_SHARED);
++	if (ret != 0) {
++		DMSG_PANIC("ERR: usb_add_hcd failed\n");
++		ret = -ENOMEM;
++		goto ERR3;
++	}
++
++	platform_set_drvdata(pdev, hcd);
++
++#ifdef  SW_USB_EHCI_DEBUG
++	DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
++		      sw_ehci->hci_name,
++		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
++		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc),
++		      (u32)USBC_Readl(sw_ehci->usb_vbase + 0x800),
++		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
++		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
++#endif
++
++    sw_ehci->probe = 1;
++
++    /* Disable ehci, when driver probe */
++    if(sw_ehci->host_init_state == 0){
++        if(ehci_first_probe[sw_ehci->usbc_no]){
++            sw_usb_disable_ehci(sw_ehci->usbc_no);
++            ehci_first_probe[sw_ehci->usbc_no]--;
++        }
++    }
++
++	return 0;
++
++ERR3:
++    usb_put_hcd(hcd);
++
++ERR2:
++	sw_ehci->hcd = NULL;
++	g_sw_ehci[sw_ehci->usbc_no] = NULL;
++
++ERR1:
++
++	return ret;
++}
++
++/*
++*******************************************************************************
++*                     sw_ehci_hcd_remove
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ehci_hcd_remove(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = NULL;
++	struct sw_hci_hcd *sw_ehci = NULL;
++
++	if(pdev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return -1;
++	}
++
++	hcd = platform_get_drvdata(pdev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return -1;
++	}
++
++	sw_ehci = pdev->dev.platform_data;
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return -1;
++	}
++
++	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
++		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
++
++	usb_remove_hcd(hcd);
++
++	sw_release_io_resource(pdev, sw_ehci);
++
++	usb_put_hcd(hcd);
++
++	sw_stop_ehci(sw_ehci);
++    sw_ehci->probe = 0;
++
++	sw_ehci->hcd = NULL;
++
++    if(sw_ehci->host_init_state){
++    	g_sw_ehci[sw_ehci->usbc_no] = NULL;
++    }
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_ehci_hcd_shutdown
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++void sw_ehci_hcd_shutdown(struct platform_device* pdev)
++{
++	struct sw_hci_hcd *sw_ehci = NULL;
++
++	if(pdev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return;
++	}
++
++	sw_ehci = pdev->dev.platform_data;
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return;
++	}
++
++	if(sw_ehci->probe == 0){
++		DMSG_PANIC("ERR: sw_ehci is disable, need not shutdown\n");
++		return;
++	}
++
++ 	DMSG_INFO("[%s]: ehci shutdown start\n", sw_ehci->hci_name);
++
++    usb_hcd_platform_shutdown(pdev);
++
++    sw_stop_ehci(sw_ehci);
++
++ 	DMSG_INFO("[%s]: ehci shutdown end\n", sw_ehci->hci_name);
++
++    return ;
++}
++
++#ifdef CONFIG_PM
++
++/*
++*******************************************************************************
++*                     sw_ehci_hcd_suspend
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ehci_hcd_suspend(struct device *dev)
++{
++	struct sw_hci_hcd *sw_ehci = NULL;
++	struct usb_hcd *hcd = NULL;
++	struct ehci_hcd *ehci = NULL;
++	unsigned long flags = 0;
++
++	if(dev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return 0;
++	}
++
++	hcd = dev_get_drvdata(dev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return 0;
++	}
++
++	sw_ehci = dev->platform_data;
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return 0;
++	}
++
++	if(sw_ehci->probe == 0){
++		DMSG_PANIC("ERR: sw_ehci is disable, can not suspend\n");
++		return 0;
++	}
++
++	ehci = hcd_to_ehci(hcd);
++	if(ehci == NULL){
++		DMSG_PANIC("ERR: ehci is null\n");
++		return 0;
++	}
++
++ 	DMSG_INFO("[%s]: sw_ehci_hcd_suspend\n", sw_ehci->hci_name);
++
++	spin_lock_irqsave(&ehci->lock, flags);
++	ehci_prepare_ports_for_controller_suspend(ehci, device_may_wakeup(dev));
++	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
++	(void)ehci_readl(ehci, &ehci->regs->intr_enable);
++
++	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
++
++	sw_stop_ehci(sw_ehci);
++	spin_unlock_irqrestore(&ehci->lock, flags);
++
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_ehci_hcd_resume
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ehci_hcd_resume(struct device *dev)
++{
++	struct sw_hci_hcd *sw_ehci = NULL;
++	struct usb_hcd *hcd = NULL;
++	struct ehci_hcd *ehci = NULL;
++
++	if(dev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return 0;
++	}
++
++	hcd = dev_get_drvdata(dev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return 0;
++	}
++
++	sw_ehci = dev->platform_data;
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return 0;
++	}
++
++	if(sw_ehci->probe == 0){
++		DMSG_PANIC("ERR: sw_ehci is disable, can not resume\n");
++		return 0;
++	}
++
++	ehci = hcd_to_ehci(hcd);
++	if(ehci == NULL){
++		DMSG_PANIC("ERR: ehci is null\n");
++		return 0;
++	}
++
++ 	DMSG_INFO("[%s]: sw_ehci_hcd_resume\n", sw_ehci->hci_name);
++
++	sw_start_ehci(sw_ehci);
++
++	/* Mark hardware accessible again as we are out of D3 state by now */
++	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
++
++	if (ehci_readl(ehci, &ehci->regs->configured_flag) == FLAG_CF) {
++		int	mask = INTR_MASK;
++
++		ehci_prepare_ports_for_controller_resume(ehci);
++
++		if (!hcd->self.root_hub->do_remote_wakeup){
++			mask &= ~STS_PCD;
++		}
++
++		ehci_writel(ehci, mask, &ehci->regs->intr_enable);
++		ehci_readl(ehci, &ehci->regs->intr_enable);
++
++		return 0;
++	}
++
++ 	DMSG_INFO("[%s]: lost power, restarting\n", sw_ehci->hci_name);
++
++	usb_root_hub_lost_power(hcd->self.root_hub);
++
++	/* Else reset, to cope with power loss or flush-to-storage
++	 * style "resume" having let BIOS kick in during reboot.
++	 */
++	(void) ehci_halt(ehci);
++	(void) ehci_reset(ehci);
++
++	/* emptying the schedule aborts any urbs */
++	spin_lock_irq(&ehci->lock);
++	if (ehci->reclaim)
++		end_unlink_async(ehci);
++	ehci_work(ehci);
++	spin_unlock_irq(&ehci->lock);
++
++	ehci_writel(ehci, ehci->command, &ehci->regs->command);
++	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
++	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
++
++	/* here we "know" root ports should always stay powered */
++	ehci_port_power(ehci, 1);
++
++	hcd->state = HC_STATE_SUSPENDED;
++
++	return 0;
++
++}
++
++static const struct dev_pm_ops  aw_ehci_pmops = {
++	.suspend	= sw_ehci_hcd_suspend,
++	.resume		= sw_ehci_hcd_resume,
++};
++
++#define SW_EHCI_PMOPS 	&aw_ehci_pmops
++
++#else
++
++#define SW_EHCI_PMOPS 	NULL
++
++#endif
++
++static struct platform_driver sw_ehci_hcd_driver ={
++  .probe  	= sw_ehci_hcd_probe,
++  .remove	= sw_ehci_hcd_remove,
++  .shutdown = sw_ehci_hcd_shutdown,
++  .driver = {
++		.name	= ehci_name,
++		.owner	= THIS_MODULE,
++		.pm		= SW_EHCI_PMOPS,
++  	}
++};
++
++/*
++*******************************************************************************
++*                     sw_usb_disable_ehci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++int sw_usb_disable_ehci(__u32 usbc_no)
++{
++	struct sw_hci_hcd *sw_ehci = NULL;
++
++	if(usbc_no != 1 && usbc_no != 2){
++		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
++		return -1;
++	}
++
++	sw_ehci = g_sw_ehci[usbc_no];
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return -1;
++	}
++
++	if(sw_ehci->host_init_state){
++		DMSG_PANIC("ERR: not support sw_usb_disable_ehci\n");
++		return -1;
++	}
++
++	if(sw_ehci->probe == 0){
++		DMSG_PANIC("ERR: sw_ehci is disable, can not disable again\n");
++		return -1;
++	}
++
++	sw_ehci->probe = 0;
++
++	DMSG_INFO("[%s]: sw_usb_disable_ehci\n", sw_ehci->hci_name);
++
++    sw_ehci_hcd_remove(sw_ehci->pdev);
++
++	return 0;
++}
++EXPORT_SYMBOL(sw_usb_disable_ehci);
++
++/*
++*******************************************************************************
++*                     sw_usb_enable_ehci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++int sw_usb_enable_ehci(__u32 usbc_no)
++{
++	struct sw_hci_hcd *sw_ehci = NULL;
++
++	if(usbc_no != 1 && usbc_no != 2){
++		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
++		return -1;
++	}
++
++	sw_ehci = g_sw_ehci[usbc_no];
++	if(sw_ehci == NULL){
++		DMSG_PANIC("ERR: sw_ehci is null\n");
++		return -1;
++	}
++
++	if(sw_ehci->host_init_state){
++		DMSG_PANIC("ERR: not support sw_usb_enable_ehci\n");
++		return -1;
++	}
++
++	if(sw_ehci->probe == 1){
++		DMSG_PANIC("ERR: sw_ehci is already enable, can not enable again\n");
++		return -1;
++	}
++
++	sw_ehci->probe = 1;
++
++	DMSG_INFO("[%s]: sw_usb_enable_ehci\n", sw_ehci->hci_name);
++
++    sw_ehci_hcd_probe(sw_ehci->pdev);
++
++	return 0;
++}
++EXPORT_SYMBOL(sw_usb_enable_ehci);
++
++
+diff --git a/drivers/usb/host/ehci_sun4i.c b/drivers/usb/host/ehci_sun4i.c
+deleted file mode 100644
+index 4dee960..0000000
+--- a/drivers/usb/host/ehci_sun4i.c
++++ /dev/null
+@@ -1,912 +0,0 @@
+-/*
+- * drivers/usb/host/ehci_sun4i.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: ehci_sun4i.c
+-*
+-* Author 		: javen
+-*
+-* Description 	: SoftWinner EHCI Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*    javen            2011-6-26            1.1          add suspend and resume
+-*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
+-*
+-*************************************************************************************
+-*/
+-
+-#include <linux/platform_device.h>
+-#include <linux/time.h>
+-#include <linux/timer.h>
+-
+-#include <plat/sys_config.h>
+-#include <linux/clk.h>
+-
+-#include  <mach/clock.h>
+-#include "sw_hci_sun4i.h"
+-
+-/*.......................................................................................*/
+-//                               全局信息定义
+-/*.......................................................................................*/
+-
+-//#define  SW_USB_EHCI_DEBUG
+-
+-#define  SW_EHCI_NAME				"sw-ehci"
+-static const char ehci_name[] 		= SW_EHCI_NAME;
+-
+-static struct sw_hci_hcd *g_sw_ehci[3];
+-static u32 ehci_first_probe[3] = {1, 1, 1};
+-
+-/*.......................................................................................*/
+-//                                      函数区
+-/*.......................................................................................*/
+-
+-extern int usb_disabled(void);
+-int sw_usb_disable_ehci(__u32 usbc_no);
+-int sw_usb_enable_ehci(__u32 usbc_no);
+-
+-void print_ehci_info(struct sw_hci_hcd *sw_ehci)
+-{
+-    DMSG_INFO("----------print_ehci_info---------\n");
+-	DMSG_INFO("hci_name             = %s\n", sw_ehci->hci_name);
+-	DMSG_INFO("irq_no               = %d\n", sw_ehci->irq_no);
+-	DMSG_INFO("usbc_no              = %d\n", sw_ehci->usbc_no);
+-
+-	DMSG_INFO("usb_vbase            = 0x%p\n", sw_ehci->usb_vbase);
+-	DMSG_INFO("sram_vbase           = 0x%p\n", sw_ehci->sram_vbase);
+-	DMSG_INFO("clock_vbase          = 0x%p\n", sw_ehci->clock_vbase);
+-	DMSG_INFO("sdram_vbase          = 0x%p\n", sw_ehci->sdram_vbase);
+-
+-	DMSG_INFO("clock: AHB(0x%x), USB(0x%x)\n",
+-	          (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
+-              (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc));
+-
+-	DMSG_INFO("USB: 0x%x\n",(u32)USBC_Readl(sw_ehci->usb_vbase + SW_USB_PMU_IRQ_ENABLE));
+-	DMSG_INFO("DRAM: USB1(0x%x), USB2(0x%x)\n",
+-	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-
+-	DMSG_INFO("----------------------------------\n");
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_hcd_board_set_vbus
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_hcd_board_set_vbus(struct sw_hci_hcd *sw_ehci, int is_on)
+-{
+-	sw_ehci->set_power(sw_ehci, is_on);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     open_ehci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int open_ehci_clock(struct sw_hci_hcd *sw_ehci)
+-{
+-	return sw_ehci->open_clock(sw_ehci, 0);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     close_ehci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int close_ehci_clock(struct sw_hci_hcd *sw_ehci)
+-{
+-	return sw_ehci->close_clock(sw_ehci, 0);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_port_configure
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_ehci_port_configure(struct sw_hci_hcd *sw_ehci, u32 enable)
+-{
+-	sw_ehci->port_configure(sw_ehci, enable);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_get_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_release_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_start_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_start_ehci(struct sw_hci_hcd *sw_ehci)
+-{
+-  	open_ehci_clock(sw_ehci);
+-	sw_ehci->usb_passby(sw_ehci, 1);
+-	sw_ehci_port_configure(sw_ehci, 1);
+-	sw_hcd_board_set_vbus(sw_ehci, 1);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_stop_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_stop_ehci(struct sw_hci_hcd *sw_ehci)
+-{
+-	sw_hcd_board_set_vbus(sw_ehci, 0);
+-	sw_ehci_port_configure(sw_ehci, 0);
+-	sw_ehci->usb_passby(sw_ehci, 0);
+-	close_ehci_clock(sw_ehci);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_setup
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_setup(struct usb_hcd *hcd)
+-{
+-	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+-	int ret = ehci_init(hcd);
+-
+-	ehci->need_io_watchdog = 0;
+-
+-	return ret;
+-}
+-
+-static const struct hc_driver sw_ehci_hc_driver = {
+-	.description			= hcd_name,
+-	.product_desc			= "SW USB2.0 'Enhanced' Host Controller (EHCI) Driver",
+-	.hcd_priv_size			= sizeof(struct ehci_hcd),
+-
+-	 /*
+-	 * generic hardware linkage
+-	 */
+-	 .irq					=  ehci_irq,
+-	 .flags					=  HCD_MEMORY | HCD_USB2,
+-
+-	/*
+-	 * basic lifecycle operations
+-	 *
+-	 * FIXME -- ehci_init() doesn't do enough here.
+-	 * See ehci-ppc-soc for a complete implementation.
+-	 */
+-	.reset					= sw_ehci_setup,
+-	.start					= ehci_run,
+-	.stop					= ehci_stop,
+-	.shutdown				= ehci_shutdown,
+-
+-	/*
+-	 * managing i/o requests and associated device resources
+-	 */
+-	.urb_enqueue			= ehci_urb_enqueue,
+-	.urb_dequeue			= ehci_urb_dequeue,
+-	.endpoint_disable		= ehci_endpoint_disable,
+-	.endpoint_reset			= ehci_endpoint_reset,
+-
+-	/*
+-	 * scheduling support
+-	 */
+-	.get_frame_number		= ehci_get_frame,
+-
+-	/*
+-	 * root hub support
+-	 */
+-	.hub_status_data		= ehci_hub_status_data,
+-	.hub_control			= ehci_hub_control,
+-	.bus_suspend			= ehci_bus_suspend,
+-	.bus_resume				= ehci_bus_resume,
+-	.relinquish_port		= ehci_relinquish_port,
+-	.port_handed_over		= ehci_port_handed_over,
+-
+-	.clear_tt_buffer_complete	= ehci_clear_tt_buffer_complete,
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_probe
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_probe(struct platform_device *pdev)
+-{
+-	struct usb_hcd 	*hcd 	= NULL;
+-	struct ehci_hcd *ehci	= NULL;
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	int ret = 0;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invaild\n");
+-		return -1;
+-	}
+-
+-	/* if usb is disabled, can not probe */
+-	if (usb_disabled()) {
+-		DMSG_PANIC("ERR: usb hcd is disabled\n");
+-		return -ENODEV;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(!sw_ehci){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		ret = -ENOMEM;
+-		goto ERR1;
+-	}
+-
+-	sw_ehci->pdev = pdev;
+-	g_sw_ehci[sw_ehci->usbc_no] = sw_ehci;
+-
+-	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
+-		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
+-
+-	/* get io resource */
+-	sw_get_io_resource(pdev, sw_ehci);
+-	sw_ehci->ehci_base 			= sw_ehci->usb_vbase + SW_USB_EHCI_BASE_OFFSET;
+-	sw_ehci->ehci_reg_length 	= SW_USB_EHCI_LEN;
+-
+-	/* creat a usb_hcd for the ehci controller */
+-	hcd = usb_create_hcd(&sw_ehci_hc_driver, &pdev->dev, ehci_name);
+-	if (!hcd){
+-		DMSG_PANIC("ERR: usb_create_hcd failed\n");
+-		ret = -ENOMEM;
+-		goto ERR2;
+-	}
+-
+-  	hcd->rsrc_start = (u32)sw_ehci->ehci_base;
+-	hcd->rsrc_len 	= sw_ehci->ehci_reg_length;
+-	hcd->regs 		= sw_ehci->ehci_base;
+-	sw_ehci->hcd    = hcd;
+-
+-	/* echi start to work */
+-	sw_start_ehci(sw_ehci);
+-
+-	ehci = hcd_to_ehci(hcd);
+-	ehci->caps = hcd->regs;
+-	ehci->regs = hcd->regs + HC_LENGTH(ehci, readl(&ehci->caps->hc_capbase));
+-
+-	/* cache this readonly data, minimize chip reads */
+-	ehci->hcs_params = readl(&ehci->caps->hcs_params);
+-
+-	ret = usb_add_hcd(hcd, sw_ehci->irq_no, IRQF_DISABLED | IRQF_SHARED);
+-	if (ret != 0) {
+-		DMSG_PANIC("ERR: usb_add_hcd failed\n");
+-		ret = -ENOMEM;
+-		goto ERR3;
+-	}
+-
+-	platform_set_drvdata(pdev, hcd);
+-
+-#ifdef  SW_USB_EHCI_DEBUG
+-	DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
+-		      sw_ehci->hci_name,
+-		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
+-		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc),
+-		      (u32)USBC_Readl(sw_ehci->usb_vbase + 0x800),
+-		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-#endif
+-
+-    sw_ehci->probe = 1;
+-
+-    /* Disable ehci, when driver probe */
+-    if(sw_ehci->host_init_state == 0){
+-        if(ehci_first_probe[sw_ehci->usbc_no]){
+-            sw_usb_disable_ehci(sw_ehci->usbc_no);
+-            ehci_first_probe[sw_ehci->usbc_no]--;
+-        }
+-    }
+-
+-	return 0;
+-
+-ERR3:
+-    usb_put_hcd(hcd);
+-
+-ERR2:
+-	sw_ehci->hcd = NULL;
+-	g_sw_ehci[sw_ehci->usbc_no] = NULL;
+-
+-ERR1:
+-
+-	return ret;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_remove
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_remove(struct platform_device *pdev)
+-{
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return -1;
+-	}
+-
+-	hcd = platform_get_drvdata(pdev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return -1;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
+-		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
+-
+-	usb_remove_hcd(hcd);
+-
+-	sw_release_io_resource(pdev, sw_ehci);
+-
+-	usb_put_hcd(hcd);
+-
+-	sw_stop_ehci(sw_ehci);
+-    sw_ehci->probe = 0;
+-
+-	sw_ehci->hcd = NULL;
+-
+-    if(sw_ehci->host_init_state){
+-    	g_sw_ehci[sw_ehci->usbc_no] = NULL;
+-    }
+-
+-	platform_set_drvdata(pdev, NULL);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_shutdown
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void sw_ehci_hcd_shutdown(struct platform_device* pdev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, need not shutdown\n");
+-		return;
+-	}
+-
+- 	DMSG_INFO("[%s]: ehci shutdown start\n", sw_ehci->hci_name);
+-
+-    usb_hcd_platform_shutdown(pdev);
+-
+-    sw_stop_ehci(sw_ehci);
+-
+- 	DMSG_INFO("[%s]: ehci shutdown end\n", sw_ehci->hci_name);
+-
+-    return ;
+-}
+-
+-#ifdef CONFIG_PM
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_suspend
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_suspend(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-	struct ehci_hcd *ehci = NULL;
+-	unsigned long flags = 0;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ehci = dev->platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not suspend\n");
+-		return 0;
+-	}
+-
+-	ehci = hcd_to_ehci(hcd);
+-	if(ehci == NULL){
+-		DMSG_PANIC("ERR: ehci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ehci_hcd_suspend\n", sw_ehci->hci_name);
+-
+-	spin_lock_irqsave(&ehci->lock, flags);
+-	ehci_prepare_ports_for_controller_suspend(ehci, device_may_wakeup(dev));
+-	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
+-	(void)ehci_readl(ehci, &ehci->regs->intr_enable);
+-
+-	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-	sw_stop_ehci(sw_ehci);
+-	spin_unlock_irqrestore(&ehci->lock, flags);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_resume
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_resume(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-	struct ehci_hcd *ehci = NULL;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ehci = dev->platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not resume\n");
+-		return 0;
+-	}
+-
+-	ehci = hcd_to_ehci(hcd);
+-	if(ehci == NULL){
+-		DMSG_PANIC("ERR: ehci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ehci_hcd_resume\n", sw_ehci->hci_name);
+-
+-	sw_start_ehci(sw_ehci);
+-
+-	/* Mark hardware accessible again as we are out of D3 state by now */
+-	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-	if (ehci_readl(ehci, &ehci->regs->configured_flag) == FLAG_CF) {
+-		int	mask = INTR_MASK;
+-
+-		ehci_prepare_ports_for_controller_resume(ehci);
+-
+-		if (!hcd->self.root_hub->do_remote_wakeup){
+-			mask &= ~STS_PCD;
+-		}
+-
+-		ehci_writel(ehci, mask, &ehci->regs->intr_enable);
+-		ehci_readl(ehci, &ehci->regs->intr_enable);
+-
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: lost power, restarting\n", sw_ehci->hci_name);
+-
+-	usb_root_hub_lost_power(hcd->self.root_hub);
+-
+-	/* Else reset, to cope with power loss or flush-to-storage
+-	 * style "resume" having let BIOS kick in during reboot.
+-	 */
+-	(void) ehci_halt(ehci);
+-	(void) ehci_reset(ehci);
+-
+-	/* emptying the schedule aborts any urbs */
+-	spin_lock_irq(&ehci->lock);
+-	if (ehci->reclaim)
+-		end_unlink_async(ehci);
+-	ehci_work(ehci);
+-	spin_unlock_irq(&ehci->lock);
+-
+-	ehci_writel(ehci, ehci->command, &ehci->regs->command);
+-	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
+-	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
+-
+-	/* here we "know" root ports should always stay powered */
+-	ehci_port_power(ehci, 1);
+-
+-	hcd->state = HC_STATE_SUSPENDED;
+-
+-	return 0;
+-
+-}
+-
+-static const struct dev_pm_ops  aw_ehci_pmops = {
+-	.suspend	= sw_ehci_hcd_suspend,
+-	.resume		= sw_ehci_hcd_resume,
+-};
+-
+-#define SW_EHCI_PMOPS 	&aw_ehci_pmops
+-
+-#else
+-
+-#define SW_EHCI_PMOPS 	NULL
+-
+-#endif
+-
+-static struct platform_driver sw_ehci_hcd_driver ={
+-  .probe  	= sw_ehci_hcd_probe,
+-  .remove	= sw_ehci_hcd_remove,
+-  .shutdown = sw_ehci_hcd_shutdown,
+-  .driver = {
+-		.name	= ehci_name,
+-		.owner	= THIS_MODULE,
+-		.pm		= SW_EHCI_PMOPS,
+-  	}
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_disable_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_disable_ehci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ehci = g_sw_ehci[usbc_no];
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_disable_ehci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not disable again\n");
+-		return -1;
+-	}
+-
+-	sw_ehci->probe = 0;
+-
+-	DMSG_INFO("[%s]: sw_usb_disable_ehci\n", sw_ehci->hci_name);
+-
+-    sw_ehci_hcd_remove(sw_ehci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_disable_ehci);
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_enable_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_enable_ehci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ehci = g_sw_ehci[usbc_no];
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_enable_ehci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->probe == 1){
+-		DMSG_PANIC("ERR: sw_ehci is already enable, can not enable again\n");
+-		return -1;
+-	}
+-
+-	sw_ehci->probe = 1;
+-
+-	DMSG_INFO("[%s]: sw_usb_enable_ehci\n", sw_ehci->hci_name);
+-
+-    sw_ehci_hcd_probe(sw_ehci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_enable_ehci);
+-
+-
+diff --git a/drivers/usb/host/ehci_sun5i.c b/drivers/usb/host/ehci_sun5i.c
+deleted file mode 100644
+index 9809b2e..0000000
+--- a/drivers/usb/host/ehci_sun5i.c
++++ /dev/null
+@@ -1,918 +0,0 @@
+-/*
+- * drivers/usb/host/ehci_sun5i.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: ehci_sun5i.c
+-*
+-* Author 		: javen
+-*
+-* Description 	: SoftWinner EHCI Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*    javen            2011-6-26            1.1          add suspend and resume
+-*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
+-*
+-*************************************************************************************
+-*/
+-
+-#include <linux/platform_device.h>
+-#include <linux/time.h>
+-#include <linux/timer.h>
+-
+-#include <plat/sys_config.h>
+-#include <linux/clk.h>
+-
+-#include  <mach/clock.h>
+-#include "sw_hci_sun5i.h"
+-
+-/*.......................................................................................*/
+-//                               全局信息定义
+-/*.......................................................................................*/
+-
+-//#define  SW_USB_EHCI_DEBUG
+-
+-#define  SW_EHCI_NAME				"sw-ehci"
+-static const char ehci_name[] 		= SW_EHCI_NAME;
+-
+-static struct sw_hci_hcd *g_sw_ehci[3];
+-static u32 ehci_first_probe[3] = {1, 1, 1};
+-
+-/*.......................................................................................*/
+-//                                      函数区
+-/*.......................................................................................*/
+-
+-extern int usb_disabled(void);
+-int sw_usb_disable_ehci(__u32 usbc_no);
+-int sw_usb_enable_ehci(__u32 usbc_no);
+-
+-void print_ehci_info(struct sw_hci_hcd *sw_ehci)
+-{
+-    DMSG_INFO("----------print_ehci_info---------\n");
+-	DMSG_INFO("hci_name             = %s\n", sw_ehci->hci_name);
+-	DMSG_INFO("irq_no               = %d\n", sw_ehci->irq_no);
+-	DMSG_INFO("usbc_no              = %d\n", sw_ehci->usbc_no);
+-
+-	DMSG_INFO("usb_vbase            = 0x%p\n", sw_ehci->usb_vbase);
+-	DMSG_INFO("sram_vbase           = 0x%p\n", sw_ehci->sram_vbase);
+-	DMSG_INFO("clock_vbase          = 0x%p\n", sw_ehci->clock_vbase);
+-	DMSG_INFO("sdram_vbase          = 0x%p\n", sw_ehci->sdram_vbase);
+-
+-	DMSG_INFO("clock: AHB(0x%x), USB(0x%x)\n",
+-	          (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
+-              (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc));
+-
+-	DMSG_INFO("USB: 0x%x\n",(u32)USBC_Readl(sw_ehci->usb_vbase + SW_USB_PMU_IRQ_ENABLE));
+-	DMSG_INFO("DRAM: USB1(0x%x), USB2(0x%x)\n",
+-	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-	          (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-
+-	DMSG_INFO("----------------------------------\n");
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_hcd_board_set_vbus
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_hcd_board_set_vbus(struct sw_hci_hcd *sw_ehci, int is_on)
+-{
+-	sw_ehci->set_power(sw_ehci, is_on);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     open_ehci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int open_ehci_clock(struct sw_hci_hcd *sw_ehci)
+-{
+-	return sw_ehci->open_clock(sw_ehci, 0);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     close_ehci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int close_ehci_clock(struct sw_hci_hcd *sw_ehci)
+-{
+-	return sw_ehci->close_clock(sw_ehci, 0);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_port_configure
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_ehci_port_configure(struct sw_hci_hcd *sw_ehci, u32 enable)
+-{
+-	sw_ehci->port_configure(sw_ehci, enable);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_get_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_release_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ehci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_start_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_start_ehci(struct sw_hci_hcd *sw_ehci)
+-{
+-  	open_ehci_clock(sw_ehci);
+-	sw_ehci->usb_passby(sw_ehci, 1);
+-	sw_ehci_port_configure(sw_ehci, 1);
+-	sw_hcd_board_set_vbus(sw_ehci, 1);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_stop_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_stop_ehci(struct sw_hci_hcd *sw_ehci)
+-{
+-	sw_hcd_board_set_vbus(sw_ehci, 0);
+-	sw_ehci_port_configure(sw_ehci, 0);
+-	sw_ehci->usb_passby(sw_ehci, 0);
+-	close_ehci_clock(sw_ehci);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_setup
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_setup(struct usb_hcd *hcd)
+-{
+-	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
+-	int ret = ehci_init(hcd);
+-
+-	ehci->need_io_watchdog = 0;
+-
+-	return ret;
+-}
+-
+-static const struct hc_driver sw_ehci_hc_driver = {
+-	.description			= hcd_name,
+-	.product_desc			= "SW USB2.0 'Enhanced' Host Controller (EHCI) Driver",
+-	.hcd_priv_size			= sizeof(struct ehci_hcd),
+-
+-	 /*
+-	 * generic hardware linkage
+-	 */
+-	 .irq					=  ehci_irq,
+-	 .flags					=  HCD_MEMORY | HCD_USB2,
+-
+-	/*
+-	 * basic lifecycle operations
+-	 *
+-	 * FIXME -- ehci_init() doesn't do enough here.
+-	 * See ehci-ppc-soc for a complete implementation.
+-	 */
+-	.reset					= sw_ehci_setup,
+-	.start					= ehci_run,
+-	.stop					= ehci_stop,
+-	.shutdown				= ehci_shutdown,
+-
+-	/*
+-	 * managing i/o requests and associated device resources
+-	 */
+-	.urb_enqueue			= ehci_urb_enqueue,
+-	.urb_dequeue			= ehci_urb_dequeue,
+-	.endpoint_disable		= ehci_endpoint_disable,
+-	.endpoint_reset			= ehci_endpoint_reset,
+-
+-	/*
+-	 * scheduling support
+-	 */
+-	.get_frame_number		= ehci_get_frame,
+-
+-	/*
+-	 * root hub support
+-	 */
+-	.hub_status_data		= ehci_hub_status_data,
+-	.hub_control			= ehci_hub_control,
+-	.bus_suspend			= ehci_bus_suspend,
+-	.bus_resume				= ehci_bus_resume,
+-	.relinquish_port		= ehci_relinquish_port,
+-	.port_handed_over		= ehci_port_handed_over,
+-
+-	.clear_tt_buffer_complete	= ehci_clear_tt_buffer_complete,
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_probe
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_probe(struct platform_device *pdev)
+-{
+-	struct usb_hcd 	*hcd 	= NULL;
+-	struct ehci_hcd *ehci	= NULL;
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	int ret = 0;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invaild\n");
+-		return -1;
+-	}
+-
+-	/* if usb is disabled, can not probe */
+-	if (usb_disabled()) {
+-		DMSG_PANIC("ERR: usb hcd is disabled\n");
+-		return -ENODEV;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(!sw_ehci){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		ret = -ENOMEM;
+-		goto ERR1;
+-	}
+-
+-	sw_ehci->pdev = pdev;
+-	g_sw_ehci[sw_ehci->usbc_no] = sw_ehci;
+-
+-	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
+-		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
+-
+-	/* get io resource */
+-	sw_get_io_resource(pdev, sw_ehci);
+-	sw_ehci->ehci_base 			= sw_ehci->usb_vbase + SW_USB_EHCI_BASE_OFFSET;
+-	sw_ehci->ehci_reg_length 	= SW_USB_EHCI_LEN;
+-
+-	/* creat a usb_hcd for the ehci controller */
+-	hcd = usb_create_hcd(&sw_ehci_hc_driver, &pdev->dev, ehci_name);
+-	if (!hcd){
+-		DMSG_PANIC("ERR: usb_create_hcd failed\n");
+-		ret = -ENOMEM;
+-		goto ERR2;
+-	}
+-
+-  	hcd->rsrc_start = (u32)sw_ehci->ehci_base;
+-	hcd->rsrc_len 	= sw_ehci->ehci_reg_length;
+-	hcd->regs 		= sw_ehci->ehci_base;
+-	sw_ehci->hcd    = hcd;
+-
+-	/* echi start to work */
+-	sw_start_ehci(sw_ehci);
+-
+-	ehci = hcd_to_ehci(hcd);
+-	ehci->caps = hcd->regs;
+-	ehci->regs = hcd->regs + HC_LENGTH(ehci, readl(&ehci->caps->hc_capbase));
+-
+-	/* cache this readonly data, minimize chip reads */
+-	ehci->hcs_params = readl(&ehci->caps->hcs_params);
+-
+-	ret = usb_add_hcd(hcd, sw_ehci->irq_no, IRQF_DISABLED | IRQF_SHARED);
+-	if (ret != 0) {
+-		DMSG_PANIC("ERR: usb_add_hcd failed\n");
+-		ret = -ENOMEM;
+-		goto ERR3;
+-	}
+-
+-	platform_set_drvdata(pdev, hcd);
+-
+-#ifdef  SW_USB_EHCI_DEBUG
+-	DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
+-		      sw_ehci->hci_name,
+-		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0x60),
+-		      (u32)USBC_Readl(sw_ehci->clock_vbase + 0xcc),
+-		      (u32)USBC_Readl(sw_ehci->usb_vbase + 0x800),
+-		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-		      (u32)USBC_Readl(sw_ehci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-#endif
+-
+-    sw_ehci->probe = 1;
+-
+-    /* Disable ehci, when driver probe */
+-    if(sw_ehci->host_init_state == 0){
+-        if(ehci_first_probe[sw_ehci->usbc_no]){
+-            sw_usb_disable_ehci(sw_ehci->usbc_no);
+-            ehci_first_probe[sw_ehci->usbc_no]--;
+-        }
+-    }
+-
+-	return 0;
+-
+-ERR3:
+-    usb_put_hcd(hcd);
+-
+-ERR2:
+-	sw_ehci->hcd = NULL;
+-	g_sw_ehci[sw_ehci->usbc_no] = NULL;
+-
+-ERR1:
+-
+-	return ret;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_remove
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_remove(struct platform_device *pdev)
+-{
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return -1;
+-	}
+-
+-	hcd = platform_get_drvdata(pdev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return -1;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ehci: 0x%p\n",
+-		      ehci_name, sw_ehci->usbc_no, pdev->name, pdev->id, sw_ehci);
+-
+-	usb_remove_hcd(hcd);
+-
+-	sw_release_io_resource(pdev, sw_ehci);
+-
+-	usb_put_hcd(hcd);
+-
+-	sw_stop_ehci(sw_ehci);
+-    sw_ehci->probe = 0;
+-
+-	sw_ehci->hcd = NULL;
+-
+-    if(sw_ehci->host_init_state){
+-    	g_sw_ehci[sw_ehci->usbc_no] = NULL;
+-    }
+-
+-	platform_set_drvdata(pdev, NULL);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_shutdown
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void sw_ehci_hcd_shutdown(struct platform_device* pdev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return;
+-	}
+-
+-	sw_ehci = pdev->dev.platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, need not shutdown\n");
+-		return;
+-	}
+-
+- 	DMSG_INFO("[%s]: ehci shutdown start\n", sw_ehci->hci_name);
+-
+-    usb_hcd_platform_shutdown(pdev);
+-
+-    sw_stop_ehci(sw_ehci);
+-
+- 	DMSG_INFO("[%s]: ehci shutdown end\n", sw_ehci->hci_name);
+-
+-    return ;
+-}
+-
+-#ifdef CONFIG_PM
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_suspend
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_suspend(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-	struct ehci_hcd *ehci = NULL;
+-	unsigned long flags = 0;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ehci = dev->platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not suspend\n");
+-		return 0;
+-	}
+-
+-	ehci = hcd_to_ehci(hcd);
+-	if(ehci == NULL){
+-		DMSG_PANIC("ERR: ehci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ehci_hcd_suspend\n", sw_ehci->hci_name);
+-
+-	spin_lock_irqsave(&ehci->lock, flags);
+-	ehci_prepare_ports_for_controller_suspend(ehci, device_may_wakeup(dev));
+-	ehci_writel(ehci, 0, &ehci->regs->intr_enable);
+-	(void)ehci_readl(ehci, &ehci->regs->intr_enable);
+-
+-	clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-	spin_unlock_irqrestore(&ehci->lock, flags);
+-
+-	sw_stop_ehci(sw_ehci);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ehci_hcd_resume
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ehci_hcd_resume(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-	struct ehci_hcd *ehci = NULL;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ehci = dev->platform_data;
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not resume\n");
+-		return 0;
+-	}
+-
+-	ehci = hcd_to_ehci(hcd);
+-	if(ehci == NULL){
+-		DMSG_PANIC("ERR: ehci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ehci_hcd_resume\n", sw_ehci->hci_name);
+-
+-	sw_start_ehci(sw_ehci);
+-
+-	/* Mark hardware accessible again as we are out of D3 state by now */
+-	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-	if (ehci_readl(ehci, &ehci->regs->configured_flag) == FLAG_CF) {
+-		int	mask = INTR_MASK;
+-
+-		ehci_prepare_ports_for_controller_resume(ehci);
+-
+-		if (!hcd->self.root_hub->do_remote_wakeup){
+-			mask &= ~STS_PCD;
+-		}
+-
+-		ehci_writel(ehci, mask, &ehci->regs->intr_enable);
+-		ehci_readl(ehci, &ehci->regs->intr_enable);
+-
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: lost power, restarting\n", sw_ehci->hci_name);
+-
+-	usb_root_hub_lost_power(hcd->self.root_hub);
+-
+-	/* Else reset, to cope with power loss or flush-to-storage
+-	 * style "resume" having let BIOS kick in during reboot.
+-	 */
+-	(void) ehci_halt(ehci);
+-	(void) ehci_reset(ehci);
+-
+-	/* emptying the schedule aborts any urbs */
+-	spin_lock_irq(&ehci->lock);
+-	if (ehci->reclaim)
+-		end_unlink_async(ehci);
+-	ehci_work(ehci);
+-	spin_unlock_irq(&ehci->lock);
+-
+-	ehci_writel(ehci, ehci->command, &ehci->regs->command);
+-	ehci_writel(ehci, FLAG_CF, &ehci->regs->configured_flag);
+-	ehci_readl(ehci, &ehci->regs->command);	/* unblock posted writes */
+-
+-	/* here we "know" root ports should always stay powered */
+-	ehci_port_power(ehci, 1);
+-
+-	hcd->state = HC_STATE_SUSPENDED;
+-
+-	return 0;
+-
+-}
+-
+-static const struct dev_pm_ops  aw_ehci_pmops = {
+-	.suspend	= sw_ehci_hcd_suspend,
+-	.resume		= sw_ehci_hcd_resume,
+-};
+-
+-#define SW_EHCI_PMOPS 	&aw_ehci_pmops
+-
+-#else
+-
+-#define SW_EHCI_PMOPS 	NULL
+-
+-#endif
+-
+-static struct platform_driver sw_ehci_hcd_driver ={
+-  .probe  	= sw_ehci_hcd_probe,
+-  .remove	= sw_ehci_hcd_remove,
+-  .shutdown = sw_ehci_hcd_shutdown,
+-  .driver = {
+-		.name	= ehci_name,
+-		.owner	= THIS_MODULE,
+-		.pm		= SW_EHCI_PMOPS,
+-  	}
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_disable_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_disable_ehci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ehci = g_sw_ehci[usbc_no];
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_disable_ehci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ehci is disable, can not disable again\n");
+-		return -1;
+-	}
+-
+-	sw_ehci->probe = 0;
+-
+-	DMSG_INFO("[%s]: sw_usb_disable_ehci\n", sw_ehci->hci_name);
+-
+-    sw_ehci_hcd_remove(sw_ehci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_disable_ehci);
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_enable_ehci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_enable_ehci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ehci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ehci = g_sw_ehci[usbc_no];
+-	if(sw_ehci == NULL){
+-		DMSG_PANIC("ERR: sw_ehci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_enable_ehci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_enable_ehci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ehci->probe == 1){
+-		DMSG_PANIC("ERR: sw_ehci is already enable, can not enable again\n");
+-		return -1;
+-	}
+-
+-	sw_ehci->probe = 1;
+-
+-	DMSG_INFO("[%s]: sw_usb_enable_ehci\n", sw_ehci->hci_name);
+-
+-    sw_ehci_hcd_probe(sw_ehci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_enable_ehci);
+-
+-
+diff --git a/drivers/usb/host/ohci-hcd.c b/drivers/usb/host/ohci-hcd.c
+index f5cd6b3..cc71377 100644
+--- a/drivers/usb/host/ohci-hcd.c
++++ b/drivers/usb/host/ohci-hcd.c
+@@ -1149,12 +1149,12 @@ MODULE_LICENSE ("GPL");
+ #endif
+ 
+ #ifdef CONFIG_USB_SW_SUN4I_HCI
+-#include "ohci_sun4i.c"
++#include "ohci-sunxi.c"
+ #define	PLATFORM_DRIVER		sw_ohci_hcd_driver
+ #endif
+ 
+ #ifdef CONFIG_USB_SW_SUN5I_HCI
+-#include "ohci_sun5i.c"
++#include "ohci-sunxi.c"
+ #define PLATFORM_DRIVER         sw_ohci_hcd_driver
+ #endif
+ 
+diff --git a/drivers/usb/host/ohci-sunxi.c b/drivers/usb/host/ohci-sunxi.c
+new file mode 100644
+index 0000000..6145842
+--- /dev/null
++++ b/drivers/usb/host/ohci-sunxi.c
+@@ -0,0 +1,799 @@
++/*
++ * drivers/usb/host/ohci-sunxi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++*************************************************************************************
++*                         			      Linux
++*					           USB Host Controller Driver
++*
++*				        (c) Copyright 2006-2010, All winners Co,Ld.
++*							       All Rights Reserved
++*
++* File Name 	: ohci_sunxi.c
++*
++* Author 		: javen
++*
++* Description 	: OHCI Driver
++*
++* Notes         :
++*
++* History 		:
++*      <author>    		<time>       	<version >    		<desc>
++*    yangnaitian      2011-5-24            1.0          create this file
++*    javen            2011-6-26            1.1          add suspend and resume
++*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
++*
++*************************************************************************************
++*/
++
++#include <linux/platform_device.h>
++#include <linux/signal.h>
++
++#include <linux/time.h>
++#include <linux/timer.h>
++
++#include <plat/sys_config.h>
++#include <linux/clk.h>
++
++#include  <mach/clock.h>
++#include "sw_hci_sunxi.h"
++
++/*.......................................................................................*/
++//                               全局信息定义
++/*.......................................................................................*/
++
++//#define  SW_USB_OHCI_DEBUG
++
++#define   SW_OHCI_NAME    "sw-ohci"
++static const char ohci_name[]       = SW_OHCI_NAME;
++
++static struct sw_hci_hcd *g_sw_ohci[3];
++static u32 ohci_first_probe[3] = {1, 1, 1};
++
++/*.......................................................................................*/
++//                                      函数区
++/*.......................................................................................*/
++
++extern int usb_disabled(void);
++int sw_usb_disable_ohci(__u32 usbc_no);
++int sw_usb_enable_ohci(__u32 usbc_no);
++
++/*
++*******************************************************************************
++*                     open_ohci_clock
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int open_ohci_clock(struct sw_hci_hcd *sw_ohci)
++{
++	return sw_ohci->open_clock(sw_ohci, 1);
++}
++
++/*
++*******************************************************************************
++*                     close_ohci_clock
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int close_ohci_clock(struct sw_hci_hcd *sw_ohci)
++{
++	return sw_ohci->close_clock(sw_ohci, 1);
++}
++
++/*
++*******************************************************************************
++*                     sw_get_io_resource
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
++{
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_release_io_resource
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
++{
++	return 0;
++}
++
++
++/*
++*******************************************************************************
++*                     sw_start_ohc
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_start_ohc(struct sw_hci_hcd *sw_ohci)
++{
++  	open_ohci_clock(sw_ohci);
++
++    sw_ohci->port_configure(sw_ohci, 1);
++    sw_ohci->usb_passby(sw_ohci, 1);
++    sw_ohci->set_power(sw_ohci, 1);
++
++	return;
++}
++
++/*
++*******************************************************************************
++*                     sw_stop_ohc
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static void sw_stop_ohc(struct sw_hci_hcd *sw_ohci)
++{
++    sw_ohci->set_power(sw_ohci, 0);
++    sw_ohci->usb_passby(sw_ohci, 0);
++    sw_ohci->port_configure(sw_ohci, 0);
++
++	close_ohci_clock(sw_ohci);
++
++    return;
++}
++
++
++/*
++*******************************************************************************
++*                     sw_ohci_start
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int __devinit sw_ohci_start(struct usb_hcd *hcd)
++{
++	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
++	int ret;
++
++	if ((ret = ohci_init(ohci)) < 0)
++		return ret;
++
++	if ((ret = ohci_run(ohci)) < 0) {
++		DMSG_PANIC("can't start %s", hcd->self.bus_name);
++		ohci_stop(hcd);
++		return ret;
++	}
++
++	return 0;
++}
++
++static const struct hc_driver sw_ohci_hc_driver ={
++	.description        = hcd_name,
++	.product_desc       = "SW USB2.0 'Open' Host Controller (OHCI) Driver",
++	.hcd_priv_size      = sizeof(struct ohci_hcd),
++
++	/*
++	 * generic hardware linkage
++	 */
++	.irq                = ohci_irq,
++	.flags              = HCD_USB11 | HCD_MEMORY,
++
++	/*
++	 * basic lifecycle operations
++	 */
++	.start              = sw_ohci_start,
++	.stop               = ohci_stop,
++	.shutdown           = ohci_shutdown,
++
++	/*
++	 * managing i/o requests and associated device resources
++	 */
++	.urb_enqueue        = ohci_urb_enqueue,
++	.urb_dequeue        = ohci_urb_dequeue,
++	.endpoint_disable   = ohci_endpoint_disable,
++
++	/*
++	 * scheduling support
++	 */
++	.get_frame_number   = ohci_get_frame,
++
++	/*
++	 * root hub support
++	 */
++	.hub_status_data    = ohci_hub_status_data,
++	.hub_control        = ohci_hub_control,
++
++#ifdef	CONFIG_PM
++	.bus_suspend        = ohci_bus_suspend,
++	.bus_resume         = ohci_bus_resume,
++#endif
++	.start_port_reset   = ohci_start_port_reset,
++};
++
++/*
++*******************************************************************************
++*                     sw_ohci_hcd_probe
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++
++static int sw_ohci_hcd_probe(struct platform_device *pdev)
++{
++	int ret;
++	struct usb_hcd *hcd = NULL;
++	struct sw_hci_hcd *sw_ohci = NULL;
++
++	if(pdev == NULL){
++	    DMSG_PANIC("ERR: Argment is invaild\n");
++	    return -1;
++    }
++
++    /* if usb is disabled, can not probe */
++    if (usb_disabled()){
++        DMSG_PANIC("ERR: usb hcd is disabled\n");
++        return -ENODEV;
++    }
++
++	sw_ohci = pdev->dev.platform_data;
++	if(!sw_ohci){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		ret = -ENOMEM;
++		goto ERR1;
++	}
++
++	sw_ohci->pdev = pdev;
++	g_sw_ohci[sw_ohci->usbc_no] = sw_ohci;
++
++	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
++		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
++
++	/* get io resource */
++	sw_get_io_resource(pdev, sw_ohci);
++	sw_ohci->ohci_base 			= sw_ohci->usb_vbase + SW_USB_OHCI_BASE_OFFSET;
++	sw_ohci->ohci_reg_length 	= SW_USB_OHCI_LEN;
++
++    /*creat a usb_hcd for the ohci controller*/
++	hcd = usb_create_hcd(&sw_ohci_hc_driver, &pdev->dev, ohci_name);
++	if(!hcd){
++        DMSG_PANIC("ERR: usb_ohci_create_hcd failed\n");
++        ret = -ENOMEM;
++		goto ERR2;
++	}
++
++  	hcd->rsrc_start = (u32)sw_ohci->ohci_base;
++	hcd->rsrc_len 	= sw_ohci->ohci_reg_length;
++	hcd->regs 		= sw_ohci->ohci_base;
++	sw_ohci->hcd    = hcd;
++
++	/* ochi start to work */
++	sw_start_ohc(sw_ohci);
++
++    ohci_hcd_init(hcd_to_ohci(hcd));
++
++    ret = usb_add_hcd(hcd, sw_ohci->irq_no, IRQF_DISABLED | IRQF_SHARED);
++    if(ret != 0){
++        DMSG_PANIC("ERR: usb_add_hcd failed\n");
++        ret = -ENOMEM;
++        goto ERR3;
++    }
++
++    platform_set_drvdata(pdev, hcd);
++
++#ifdef  SW_USB_OHCI_DEBUG
++    DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
++              sw_ohci->hci_name,
++              (u32)USBC_Readl(sw_ohci->clock_vbase + 0x60),
++              (u32)USBC_Readl(sw_ohci->clock_vbase + 0xcc),
++              (u32)USBC_Readl(sw_ohci->usb_vbase + 0x800),
++              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
++              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
++#endif
++
++	sw_ohci->probe = 1;
++
++    /* Disable ohci, when driver probe */
++    if(sw_ohci->host_init_state == 0){
++        if(ohci_first_probe[sw_ohci->usbc_no]){
++            sw_usb_disable_ohci(sw_ohci->usbc_no);
++            ohci_first_probe[sw_ohci->usbc_no]--;
++        }
++    }
++
++    return 0;
++
++ERR3:
++	usb_put_hcd(hcd);
++
++ERR2:
++	sw_ohci->hcd = NULL;
++	g_sw_ohci[sw_ohci->usbc_no] = NULL;
++
++ERR1:
++
++    return ret;
++}
++
++/*
++*******************************************************************************
++*                     sw_ohci_hcd_remove
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++
++static int sw_ohci_hcd_remove(struct platform_device *pdev)
++{
++	struct usb_hcd *hcd = NULL;
++	struct sw_hci_hcd *sw_ohci = NULL;
++
++	if(pdev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return -1;
++	}
++
++	hcd = platform_get_drvdata(pdev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return -1;
++	}
++
++	sw_ohci = pdev->dev.platform_data;
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return -1;
++	}
++
++	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
++		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
++
++	usb_remove_hcd(hcd);
++
++	sw_stop_ohc(sw_ohci);
++	sw_ohci->probe = 0;
++
++	usb_put_hcd(hcd);
++
++	sw_release_io_resource(pdev, sw_ohci);
++
++	sw_ohci->hcd = NULL;
++
++    if(sw_ohci->host_init_state){
++	    g_sw_ohci[sw_ohci->usbc_no] = NULL;
++	}
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++/*
++*******************************************************************************
++*                     sw_ohci_hcd_shutdown
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++void sw_ohci_hcd_shutdown(struct platform_device* pdev)
++{
++	struct sw_hci_hcd *sw_ohci = NULL;
++
++	sw_ohci = pdev->dev.platform_data;
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return ;
++	}
++
++	if(sw_ohci->probe == 0){
++    	DMSG_PANIC("ERR: sw_ohci is disable, need not shutdown\n");
++    	return ;
++	}
++
++ 	DMSG_INFO("[%s]: ohci shutdown start\n", sw_ohci->hci_name);
++
++    usb_hcd_platform_shutdown(pdev);
++
++    sw_stop_ohc(sw_ohci);
++
++ 	DMSG_INFO("[%s]: ohci shutdown end\n", sw_ohci->hci_name);
++
++    return;
++}
++
++#ifdef CONFIG_PM
++
++/*
++*******************************************************************************
++*                     sw_ohci_hcd_suspend
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++static int sw_ohci_hcd_suspend(struct device *dev)
++{
++	struct sw_hci_hcd *sw_ohci  = NULL;
++	struct usb_hcd *hcd         = NULL;
++	struct ohci_hcd	*ohci       = NULL;
++	unsigned long flags         = 0;
++	int rc                      = 0;
++
++	if(dev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return 0;
++	}
++
++	hcd = dev_get_drvdata(dev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return 0;
++	}
++
++	sw_ohci = dev->platform_data;
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return 0;
++	}
++
++	if(sw_ohci->probe == 0){
++		DMSG_PANIC("ERR: sw_ohci is disable, can not suspend\n");
++		return 0;
++	}
++
++	ohci = hcd_to_ohci(hcd);
++	if(ohci == NULL){
++		DMSG_PANIC("ERR: ohci is null\n");
++		return 0;
++	}
++
++ 	DMSG_INFO("[%s]: sw_ohci_hcd_suspend\n", sw_ohci->hci_name);
++
++	/* Root hub was already suspended. Disable irq emission and
++	 * mark HW unaccessible, bail out if RH has been resumed. Use
++	 * the spinlock to properly synchronize with possible pending
++	 * RH suspend or resume activity.
++	 *
++	 * This is still racy as hcd->state is manipulated outside of
++	 * any locks =P But that will be a different fix.
++	 */
++	spin_lock_irqsave(&ohci->lock, flags);
++
++    ohci_writel(ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
++    (void)ohci_readl(ohci, &ohci->regs->intrdisable);
++
++    clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
++
++    spin_unlock_irqrestore(&ohci->lock, flags);
++
++    sw_stop_ohc(sw_ohci);
++
++    return rc;
++}
++
++/*
++*******************************************************************************
++*                     sw_ohci_hcd_resume
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++
++static int sw_ohci_hcd_resume(struct device *dev)
++{
++	struct sw_hci_hcd *sw_ohci = NULL;
++	struct usb_hcd *hcd = NULL;
++
++	if(dev == NULL){
++		DMSG_PANIC("ERR: Argment is invalid\n");
++		return 0;
++	}
++
++	hcd = dev_get_drvdata(dev);
++	if(hcd == NULL){
++		DMSG_PANIC("ERR: hcd is null\n");
++		return 0;
++	}
++
++	sw_ohci = dev->platform_data;
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return 0;
++	}
++
++	if(sw_ohci->probe == 0){
++		DMSG_PANIC("ERR: sw_ohci is disable, can not resume\n");
++		return 0;
++	}
++
++ 	DMSG_INFO("[%s]: sw_ohci_hcd_resume\n", sw_ohci->hci_name);
++
++	sw_start_ohc(sw_ohci);
++
++	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
++	ohci_finish_controller_resume(hcd);
++
++    return 0;
++}
++
++static const struct dev_pm_ops sw_ohci_pmops = {
++	.suspend	= sw_ohci_hcd_suspend,
++	.resume		= sw_ohci_hcd_resume,
++};
++
++#define SW_OHCI_PMOPS  &sw_ohci_pmops
++
++#else
++
++#define SW_OHCI_PMOPS NULL
++
++#endif
++
++static struct platform_driver sw_ohci_hcd_driver = {
++	.probe		= sw_ohci_hcd_probe,
++	.remove		= sw_ohci_hcd_remove,
++	.shutdown	= sw_ohci_hcd_shutdown,
++	.driver		= {
++		.name	= ohci_name,
++		.owner	= THIS_MODULE,
++		.pm	    = SW_OHCI_PMOPS,
++	},
++};
++
++/*
++*******************************************************************************
++*                     sw_usb_disable_ohci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++int sw_usb_disable_ohci(__u32 usbc_no)
++{
++	struct sw_hci_hcd *sw_ohci = NULL;
++
++	if(usbc_no != 1 && usbc_no != 2){
++		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
++		return -1;
++	}
++
++	sw_ohci = g_sw_ohci[usbc_no];
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return -1;
++	}
++
++	if(sw_ohci->host_init_state){
++		DMSG_PANIC("ERR: not support sw_usb_disable_ohci\n");
++		return -1;
++	}
++
++	if(sw_ohci->probe == 0){
++		DMSG_PANIC("ERR: sw_ohci is disable, can not disable again\n");
++		return -1;
++	}
++
++	sw_ohci->probe = 0;
++
++	DMSG_INFO("[%s]: sw_usb_disable_ohci\n", sw_ohci->hci_name);
++
++	sw_ohci_hcd_remove(sw_ohci->pdev);
++
++	return 0;
++}
++EXPORT_SYMBOL(sw_usb_disable_ohci);
++
++/*
++*******************************************************************************
++*                     sw_usb_enable_ohci
++*
++* Description:
++*    void
++*
++* Parameters:
++*    void
++*
++* Return value:
++*    void
++*
++* note:
++*    void
++*
++*******************************************************************************
++*/
++int sw_usb_enable_ohci(__u32 usbc_no)
++{
++	struct sw_hci_hcd *sw_ohci = NULL;
++
++	if(usbc_no != 1 && usbc_no != 2){
++		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
++		return -1;
++	}
++
++	sw_ohci = g_sw_ohci[usbc_no];
++	if(sw_ohci == NULL){
++		DMSG_PANIC("ERR: sw_ohci is null\n");
++		return -1;
++	}
++
++	if(sw_ohci->host_init_state){
++		DMSG_PANIC("ERR: not support sw_usb_enable_ohci\n");
++		return -1;
++	}
++
++	if(sw_ohci->probe == 1){
++		DMSG_PANIC("ERR: sw_ohci is already enable, can not enable again\n");
++		return -1;
++	}
++
++	sw_ohci->probe = 1;
++
++	DMSG_INFO("[%s]: sw_usb_enable_ohci\n", sw_ohci->hci_name);
++
++	sw_ohci_hcd_probe(sw_ohci->pdev);
++
++	return 0;
++}
++EXPORT_SYMBOL(sw_usb_enable_ohci);
++
++
+diff --git a/drivers/usb/host/ohci_sun4i.c b/drivers/usb/host/ohci_sun4i.c
+deleted file mode 100644
+index 2f84531..0000000
+--- a/drivers/usb/host/ohci_sun4i.c
++++ /dev/null
+@@ -1,799 +0,0 @@
+-/*
+- * drivers/usb/host/ohci_sun4i.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: ohci_sun4i.c
+-*
+-* Author 		: javen
+-*
+-* Description 	: OHCI Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*    javen            2011-6-26            1.1          add suspend and resume
+-*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
+-*
+-*************************************************************************************
+-*/
+-
+-#include <linux/platform_device.h>
+-#include <linux/signal.h>
+-
+-#include <linux/time.h>
+-#include <linux/timer.h>
+-
+-#include <plat/sys_config.h>
+-#include <linux/clk.h>
+-
+-#include  <mach/clock.h>
+-#include "sw_hci_sun4i.h"
+-
+-/*.......................................................................................*/
+-//                               全局信息定义
+-/*.......................................................................................*/
+-
+-//#define  SW_USB_OHCI_DEBUG
+-
+-#define   SW_OHCI_NAME    "sw-ohci"
+-static const char ohci_name[]       = SW_OHCI_NAME;
+-
+-static struct sw_hci_hcd *g_sw_ohci[3];
+-static u32 ohci_first_probe[3] = {1, 1, 1};
+-
+-/*.......................................................................................*/
+-//                                      函数区
+-/*.......................................................................................*/
+-
+-extern int usb_disabled(void);
+-int sw_usb_disable_ohci(__u32 usbc_no);
+-int sw_usb_enable_ohci(__u32 usbc_no);
+-
+-/*
+-*******************************************************************************
+-*                     open_ohci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int open_ohci_clock(struct sw_hci_hcd *sw_ohci)
+-{
+-	return sw_ohci->open_clock(sw_ohci, 1);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     close_ohci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int close_ohci_clock(struct sw_hci_hcd *sw_ohci)
+-{
+-	return sw_ohci->close_clock(sw_ohci, 1);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_get_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_release_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
+-{
+-	return 0;
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     sw_start_ohc
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_start_ohc(struct sw_hci_hcd *sw_ohci)
+-{
+-  	open_ohci_clock(sw_ohci);
+-
+-    sw_ohci->port_configure(sw_ohci, 1);
+-    sw_ohci->usb_passby(sw_ohci, 1);
+-    sw_ohci->set_power(sw_ohci, 1);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_stop_ohc
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_stop_ohc(struct sw_hci_hcd *sw_ohci)
+-{
+-    sw_ohci->set_power(sw_ohci, 0);
+-    sw_ohci->usb_passby(sw_ohci, 0);
+-    sw_ohci->port_configure(sw_ohci, 0);
+-
+-	close_ohci_clock(sw_ohci);
+-
+-    return;
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_start
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int __devinit sw_ohci_start(struct usb_hcd *hcd)
+-{
+-	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
+-	int ret;
+-
+-	if ((ret = ohci_init(ohci)) < 0)
+-		return ret;
+-
+-	if ((ret = ohci_run(ohci)) < 0) {
+-		DMSG_PANIC("can't start %s", hcd->self.bus_name);
+-		ohci_stop(hcd);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static const struct hc_driver sw_ohci_hc_driver ={
+-	.description        = hcd_name,
+-	.product_desc       = "SW USB2.0 'Open' Host Controller (OHCI) Driver",
+-	.hcd_priv_size      = sizeof(struct ohci_hcd),
+-
+-	/*
+-	 * generic hardware linkage
+-	 */
+-	.irq                = ohci_irq,
+-	.flags              = HCD_USB11 | HCD_MEMORY,
+-
+-	/*
+-	 * basic lifecycle operations
+-	 */
+-	.start              = sw_ohci_start,
+-	.stop               = ohci_stop,
+-	.shutdown           = ohci_shutdown,
+-
+-	/*
+-	 * managing i/o requests and associated device resources
+-	 */
+-	.urb_enqueue        = ohci_urb_enqueue,
+-	.urb_dequeue        = ohci_urb_dequeue,
+-	.endpoint_disable   = ohci_endpoint_disable,
+-
+-	/*
+-	 * scheduling support
+-	 */
+-	.get_frame_number   = ohci_get_frame,
+-
+-	/*
+-	 * root hub support
+-	 */
+-	.hub_status_data    = ohci_hub_status_data,
+-	.hub_control        = ohci_hub_control,
+-
+-#ifdef	CONFIG_PM
+-	.bus_suspend        = ohci_bus_suspend,
+-	.bus_resume         = ohci_bus_resume,
+-#endif
+-	.start_port_reset   = ohci_start_port_reset,
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_probe
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_probe(struct platform_device *pdev)
+-{
+-	int ret;
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(pdev == NULL){
+-	    DMSG_PANIC("ERR: Argment is invaild\n");
+-	    return -1;
+-    }
+-
+-    /* if usb is disabled, can not probe */
+-    if (usb_disabled()){
+-        DMSG_PANIC("ERR: usb hcd is disabled\n");
+-        return -ENODEV;
+-    }
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(!sw_ohci){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		ret = -ENOMEM;
+-		goto ERR1;
+-	}
+-
+-	sw_ohci->pdev = pdev;
+-	g_sw_ohci[sw_ohci->usbc_no] = sw_ohci;
+-
+-	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
+-		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
+-
+-	/* get io resource */
+-	sw_get_io_resource(pdev, sw_ohci);
+-	sw_ohci->ohci_base 			= sw_ohci->usb_vbase + SW_USB_OHCI_BASE_OFFSET;
+-	sw_ohci->ohci_reg_length 	= SW_USB_OHCI_LEN;
+-
+-    /*creat a usb_hcd for the ohci controller*/
+-	hcd = usb_create_hcd(&sw_ohci_hc_driver, &pdev->dev, ohci_name);
+-	if(!hcd){
+-        DMSG_PANIC("ERR: usb_ohci_create_hcd failed\n");
+-        ret = -ENOMEM;
+-		goto ERR2;
+-	}
+-
+-  	hcd->rsrc_start = (u32)sw_ohci->ohci_base;
+-	hcd->rsrc_len 	= sw_ohci->ohci_reg_length;
+-	hcd->regs 		= sw_ohci->ohci_base;
+-	sw_ohci->hcd    = hcd;
+-
+-	/* ochi start to work */
+-	sw_start_ohc(sw_ohci);
+-
+-    ohci_hcd_init(hcd_to_ohci(hcd));
+-
+-    ret = usb_add_hcd(hcd, sw_ohci->irq_no, IRQF_DISABLED | IRQF_SHARED);
+-    if(ret != 0){
+-        DMSG_PANIC("ERR: usb_add_hcd failed\n");
+-        ret = -ENOMEM;
+-        goto ERR3;
+-    }
+-
+-    platform_set_drvdata(pdev, hcd);
+-
+-#ifdef  SW_USB_OHCI_DEBUG
+-    DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
+-              sw_ohci->hci_name,
+-              (u32)USBC_Readl(sw_ohci->clock_vbase + 0x60),
+-              (u32)USBC_Readl(sw_ohci->clock_vbase + 0xcc),
+-              (u32)USBC_Readl(sw_ohci->usb_vbase + 0x800),
+-              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-#endif
+-
+-	sw_ohci->probe = 1;
+-
+-    /* Disable ohci, when driver probe */
+-    if(sw_ohci->host_init_state == 0){
+-        if(ohci_first_probe[sw_ohci->usbc_no]){
+-            sw_usb_disable_ohci(sw_ohci->usbc_no);
+-            ohci_first_probe[sw_ohci->usbc_no]--;
+-        }
+-    }
+-
+-    return 0;
+-
+-ERR3:
+-	usb_put_hcd(hcd);
+-
+-ERR2:
+-	sw_ohci->hcd = NULL;
+-	g_sw_ohci[sw_ohci->usbc_no] = NULL;
+-
+-ERR1:
+-
+-    return ret;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_remove
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_remove(struct platform_device *pdev)
+-{
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return -1;
+-	}
+-
+-	hcd = platform_get_drvdata(pdev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return -1;
+-	}
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
+-		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
+-
+-	usb_remove_hcd(hcd);
+-
+-	sw_stop_ohc(sw_ohci);
+-	sw_ohci->probe = 0;
+-
+-	usb_put_hcd(hcd);
+-
+-	sw_release_io_resource(pdev, sw_ohci);
+-
+-	sw_ohci->hcd = NULL;
+-
+-    if(sw_ohci->host_init_state){
+-	    g_sw_ohci[sw_ohci->usbc_no] = NULL;
+-	}
+-
+-	platform_set_drvdata(pdev, NULL);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_shutdown
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void sw_ohci_hcd_shutdown(struct platform_device* pdev)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return ;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-    	DMSG_PANIC("ERR: sw_ohci is disable, need not shutdown\n");
+-    	return ;
+-	}
+-
+- 	DMSG_INFO("[%s]: ohci shutdown start\n", sw_ohci->hci_name);
+-
+-    usb_hcd_platform_shutdown(pdev);
+-
+-    sw_stop_ohc(sw_ohci);
+-
+- 	DMSG_INFO("[%s]: ohci shutdown end\n", sw_ohci->hci_name);
+-
+-    return;
+-}
+-
+-#ifdef CONFIG_PM
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_suspend
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ohci_hcd_suspend(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ohci  = NULL;
+-	struct usb_hcd *hcd         = NULL;
+-	struct ohci_hcd	*ohci       = NULL;
+-	unsigned long flags         = 0;
+-	int rc                      = 0;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ohci = dev->platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not suspend\n");
+-		return 0;
+-	}
+-
+-	ohci = hcd_to_ohci(hcd);
+-	if(ohci == NULL){
+-		DMSG_PANIC("ERR: ohci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ohci_hcd_suspend\n", sw_ohci->hci_name);
+-
+-	/* Root hub was already suspended. Disable irq emission and
+-	 * mark HW unaccessible, bail out if RH has been resumed. Use
+-	 * the spinlock to properly synchronize with possible pending
+-	 * RH suspend or resume activity.
+-	 *
+-	 * This is still racy as hcd->state is manipulated outside of
+-	 * any locks =P But that will be a different fix.
+-	 */
+-	spin_lock_irqsave(&ohci->lock, flags);
+-
+-    ohci_writel(ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
+-    (void)ohci_readl(ohci, &ohci->regs->intrdisable);
+-
+-    clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-    spin_unlock_irqrestore(&ohci->lock, flags);
+-
+-    sw_stop_ohc(sw_ohci);
+-
+-    return rc;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_resume
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_resume(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ohci = dev->platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not resume\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ohci_hcd_resume\n", sw_ohci->hci_name);
+-
+-	sw_start_ohc(sw_ohci);
+-
+-	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-	ohci_finish_controller_resume(hcd);
+-
+-    return 0;
+-}
+-
+-static const struct dev_pm_ops sw_ohci_pmops = {
+-	.suspend	= sw_ohci_hcd_suspend,
+-	.resume		= sw_ohci_hcd_resume,
+-};
+-
+-#define SW_OHCI_PMOPS  &sw_ohci_pmops
+-
+-#else
+-
+-#define SW_OHCI_PMOPS NULL
+-
+-#endif
+-
+-static struct platform_driver sw_ohci_hcd_driver = {
+-	.probe		= sw_ohci_hcd_probe,
+-	.remove		= sw_ohci_hcd_remove,
+-	.shutdown	= sw_ohci_hcd_shutdown,
+-	.driver		= {
+-		.name	= ohci_name,
+-		.owner	= THIS_MODULE,
+-		.pm	    = SW_OHCI_PMOPS,
+-	},
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_disable_ohci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_disable_ohci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ohci = g_sw_ohci[usbc_no];
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_disable_ohci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not disable again\n");
+-		return -1;
+-	}
+-
+-	sw_ohci->probe = 0;
+-
+-	DMSG_INFO("[%s]: sw_usb_disable_ohci\n", sw_ohci->hci_name);
+-
+-	sw_ohci_hcd_remove(sw_ohci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_disable_ohci);
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_enable_ohci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_enable_ohci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ohci = g_sw_ohci[usbc_no];
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_enable_ohci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->probe == 1){
+-		DMSG_PANIC("ERR: sw_ohci is already enable, can not enable again\n");
+-		return -1;
+-	}
+-
+-	sw_ohci->probe = 1;
+-
+-	DMSG_INFO("[%s]: sw_usb_enable_ohci\n", sw_ohci->hci_name);
+-
+-	sw_ohci_hcd_probe(sw_ohci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_enable_ohci);
+-
+-
+diff --git a/drivers/usb/host/ohci_sun5i.c b/drivers/usb/host/ohci_sun5i.c
+deleted file mode 100644
+index 1133a6e8..0000000
+--- a/drivers/usb/host/ohci_sun5i.c
++++ /dev/null
+@@ -1,799 +0,0 @@
+-/*
+- * drivers/usb/host/ohci_sun5i.c
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: ohci_sun5i.c
+-*
+-* Author 		: javen
+-*
+-* Description 	: OHCI Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*    javen            2011-6-26            1.1          add suspend and resume
+-*    javen            2011-7-18            1.2          时钟开关和供电开关从驱动移出来
+-*
+-*************************************************************************************
+-*/
+-
+-#include <linux/platform_device.h>
+-#include <linux/signal.h>
+-
+-#include <linux/time.h>
+-#include <linux/timer.h>
+-
+-#include <plat/sys_config.h>
+-#include <linux/clk.h>
+-
+-#include  <mach/clock.h>
+-#include "sw_hci_sun5i.h"
+-
+-/*.......................................................................................*/
+-//                               全局信息定义
+-/*.......................................................................................*/
+-
+-//#define  SW_USB_OHCI_DEBUG
+-
+-#define   SW_OHCI_NAME    "sw-ohci"
+-static const char ohci_name[]       = SW_OHCI_NAME;
+-
+-static struct sw_hci_hcd *g_sw_ohci[3];
+-static u32 ohci_first_probe[3] = {1, 1, 1};
+-
+-/*.......................................................................................*/
+-//                                      函数区
+-/*.......................................................................................*/
+-
+-extern int usb_disabled(void);
+-int sw_usb_disable_ohci(__u32 usbc_no);
+-int sw_usb_enable_ohci(__u32 usbc_no);
+-
+-/*
+-*******************************************************************************
+-*                     open_ohci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int open_ohci_clock(struct sw_hci_hcd *sw_ohci)
+-{
+-	return sw_ohci->open_clock(sw_ohci, 1);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     close_ohci_clock
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int close_ohci_clock(struct sw_hci_hcd *sw_ohci)
+-{
+-	return sw_ohci->close_clock(sw_ohci, 1);
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_get_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_get_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_release_io_resource
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_release_io_resource(struct platform_device *pdev, struct sw_hci_hcd *sw_ohci)
+-{
+-	return 0;
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     sw_start_ohc
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_start_ohc(struct sw_hci_hcd *sw_ohci)
+-{
+-  	open_ohci_clock(sw_ohci);
+-
+-    sw_ohci->port_configure(sw_ohci, 1);
+-    sw_ohci->usb_passby(sw_ohci, 1);
+-    sw_ohci->set_power(sw_ohci, 1);
+-
+-	return;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_stop_ohc
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static void sw_stop_ohc(struct sw_hci_hcd *sw_ohci)
+-{
+-    sw_ohci->set_power(sw_ohci, 0);
+-    sw_ohci->usb_passby(sw_ohci, 0);
+-    sw_ohci->port_configure(sw_ohci, 0);
+-
+-	close_ohci_clock(sw_ohci);
+-
+-    return;
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_start
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int __devinit sw_ohci_start(struct usb_hcd *hcd)
+-{
+-	struct ohci_hcd	*ohci = hcd_to_ohci(hcd);
+-	int ret;
+-
+-	if ((ret = ohci_init(ohci)) < 0)
+-		return ret;
+-
+-	if ((ret = ohci_run(ohci)) < 0) {
+-		DMSG_PANIC("can't start %s", hcd->self.bus_name);
+-		ohci_stop(hcd);
+-		return ret;
+-	}
+-
+-	return 0;
+-}
+-
+-static const struct hc_driver sw_ohci_hc_driver ={
+-	.description        = hcd_name,
+-	.product_desc       = "SW USB2.0 'Open' Host Controller (OHCI) Driver",
+-	.hcd_priv_size      = sizeof(struct ohci_hcd),
+-
+-	/*
+-	 * generic hardware linkage
+-	 */
+-	.irq                = ohci_irq,
+-	.flags              = HCD_USB11 | HCD_MEMORY,
+-
+-	/*
+-	 * basic lifecycle operations
+-	 */
+-	.start              = sw_ohci_start,
+-	.stop               = ohci_stop,
+-	.shutdown           = ohci_shutdown,
+-
+-	/*
+-	 * managing i/o requests and associated device resources
+-	 */
+-	.urb_enqueue        = ohci_urb_enqueue,
+-	.urb_dequeue        = ohci_urb_dequeue,
+-	.endpoint_disable   = ohci_endpoint_disable,
+-
+-	/*
+-	 * scheduling support
+-	 */
+-	.get_frame_number   = ohci_get_frame,
+-
+-	/*
+-	 * root hub support
+-	 */
+-	.hub_status_data    = ohci_hub_status_data,
+-	.hub_control        = ohci_hub_control,
+-
+-#ifdef	CONFIG_PM
+-	.bus_suspend        = ohci_bus_suspend,
+-	.bus_resume         = ohci_bus_resume,
+-#endif
+-	.start_port_reset   = ohci_start_port_reset,
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_probe
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_probe(struct platform_device *pdev)
+-{
+-	int ret;
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(pdev == NULL){
+-	    DMSG_PANIC("ERR: Argment is invaild\n");
+-	    return -1;
+-    }
+-
+-    /* if usb is disabled, can not probe */
+-    if (usb_disabled()){
+-        DMSG_PANIC("ERR: usb hcd is disabled\n");
+-        return -ENODEV;
+-    }
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(!sw_ohci){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		ret = -ENOMEM;
+-		goto ERR1;
+-	}
+-
+-	sw_ohci->pdev = pdev;
+-	g_sw_ohci[sw_ohci->usbc_no] = sw_ohci;
+-
+-	DMSG_INFO("[%s%d]: probe, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
+-		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
+-
+-	/* get io resource */
+-	sw_get_io_resource(pdev, sw_ohci);
+-	sw_ohci->ohci_base 			= sw_ohci->usb_vbase + SW_USB_OHCI_BASE_OFFSET;
+-	sw_ohci->ohci_reg_length 	= SW_USB_OHCI_LEN;
+-
+-    /*creat a usb_hcd for the ohci controller*/
+-	hcd = usb_create_hcd(&sw_ohci_hc_driver, &pdev->dev, ohci_name);
+-	if(!hcd){
+-        DMSG_PANIC("ERR: usb_ohci_create_hcd failed\n");
+-        ret = -ENOMEM;
+-		goto ERR2;
+-	}
+-
+-  	hcd->rsrc_start = (u32)sw_ohci->ohci_base;
+-	hcd->rsrc_len 	= sw_ohci->ohci_reg_length;
+-	hcd->regs 		= sw_ohci->ohci_base;
+-	sw_ohci->hcd    = hcd;
+-
+-	/* ochi start to work */
+-	sw_start_ohc(sw_ohci);
+-
+-    ohci_hcd_init(hcd_to_ohci(hcd));
+-
+-    ret = usb_add_hcd(hcd, sw_ohci->irq_no, IRQF_DISABLED | IRQF_SHARED);
+-    if(ret != 0){
+-        DMSG_PANIC("ERR: usb_add_hcd failed\n");
+-        ret = -ENOMEM;
+-        goto ERR3;
+-    }
+-
+-    platform_set_drvdata(pdev, hcd);
+-
+-#ifdef  SW_USB_OHCI_DEBUG
+-    DMSG_INFO("[%s]: probe, clock: 0x60(0x%x), 0xcc(0x%x); usb: 0x800(0x%x), dram:(0x%x, 0x%x)\n",
+-              sw_ohci->hci_name,
+-              (u32)USBC_Readl(sw_ohci->clock_vbase + 0x60),
+-              (u32)USBC_Readl(sw_ohci->clock_vbase + 0xcc),
+-              (u32)USBC_Readl(sw_ohci->usb_vbase + 0x800),
+-              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB1),
+-              (u32)USBC_Readl(sw_ohci->sdram_vbase + SW_SDRAM_REG_HPCR_USB2));
+-#endif
+-
+-	sw_ohci->probe = 1;
+-
+-    /* Disable ohci, when driver probe */
+-    if(sw_ohci->host_init_state == 0){
+-        if(ohci_first_probe[sw_ohci->usbc_no]){
+-            sw_usb_disable_ohci(sw_ohci->usbc_no);
+-            ohci_first_probe[sw_ohci->usbc_no]--;
+-        }
+-    }
+-
+-    return 0;
+-
+-ERR3:
+-	usb_put_hcd(hcd);
+-
+-ERR2:
+-	sw_ohci->hcd = NULL;
+-	g_sw_ohci[sw_ohci->usbc_no] = NULL;
+-
+-ERR1:
+-
+-    return ret;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_remove
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_remove(struct platform_device *pdev)
+-{
+-	struct usb_hcd *hcd = NULL;
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(pdev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return -1;
+-	}
+-
+-	hcd = platform_get_drvdata(pdev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return -1;
+-	}
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	DMSG_INFO("[%s%d]: remove, pdev->name: %s, pdev->id: %d, sw_ohci: 0x%p\n",
+-		      ohci_name, sw_ohci->usbc_no, pdev->name, pdev->id, sw_ohci);
+-
+-	usb_remove_hcd(hcd);
+-
+-	sw_stop_ohc(sw_ohci);
+-	sw_ohci->probe = 0;
+-
+-	usb_put_hcd(hcd);
+-
+-	sw_release_io_resource(pdev, sw_ohci);
+-
+-	sw_ohci->hcd = NULL;
+-
+-    if(sw_ohci->host_init_state){
+-	    g_sw_ohci[sw_ohci->usbc_no] = NULL;
+-	}
+-
+-	platform_set_drvdata(pdev, NULL);
+-
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_shutdown
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void sw_ohci_hcd_shutdown(struct platform_device* pdev)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	sw_ohci = pdev->dev.platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return ;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-    	DMSG_PANIC("ERR: sw_ohci is disable, need not shutdown\n");
+-    	return ;
+-	}
+-
+- 	DMSG_INFO("[%s]: ohci shutdown start\n", sw_ohci->hci_name);
+-
+-    usb_hcd_platform_shutdown(pdev);
+-
+-    sw_stop_ohc(sw_ohci);
+-
+- 	DMSG_INFO("[%s]: ohci shutdown end\n", sw_ohci->hci_name);
+-
+-    return;
+-}
+-
+-#ifdef CONFIG_PM
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_suspend
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-static int sw_ohci_hcd_suspend(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ohci  = NULL;
+-	struct usb_hcd *hcd         = NULL;
+-	struct ohci_hcd	*ohci       = NULL;
+-	unsigned long flags         = 0;
+-	int rc                      = 0;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ohci = dev->platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not suspend\n");
+-		return 0;
+-	}
+-
+-	ohci = hcd_to_ohci(hcd);
+-	if(ohci == NULL){
+-		DMSG_PANIC("ERR: ohci is null\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ohci_hcd_suspend\n", sw_ohci->hci_name);
+-
+-	/* Root hub was already suspended. Disable irq emission and
+-	 * mark HW unaccessible, bail out if RH has been resumed. Use
+-	 * the spinlock to properly synchronize with possible pending
+-	 * RH suspend or resume activity.
+-	 *
+-	 * This is still racy as hcd->state is manipulated outside of
+-	 * any locks =P But that will be a different fix.
+-	 */
+-	spin_lock_irqsave(&ohci->lock, flags);
+-
+-    ohci_writel(ohci, OHCI_INTR_MIE, &ohci->regs->intrdisable);
+-    (void)ohci_readl(ohci, &ohci->regs->intrdisable);
+-
+-    clear_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-
+-    spin_unlock_irqrestore(&ohci->lock, flags);
+-
+-    sw_stop_ohc(sw_ohci);
+-
+-    return rc;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     sw_ohci_hcd_resume
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-
+-static int sw_ohci_hcd_resume(struct device *dev)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-	struct usb_hcd *hcd = NULL;
+-
+-	if(dev == NULL){
+-		DMSG_PANIC("ERR: Argment is invalid\n");
+-		return 0;
+-	}
+-
+-	hcd = dev_get_drvdata(dev);
+-	if(hcd == NULL){
+-		DMSG_PANIC("ERR: hcd is null\n");
+-		return 0;
+-	}
+-
+-	sw_ohci = dev->platform_data;
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return 0;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not resume\n");
+-		return 0;
+-	}
+-
+- 	DMSG_INFO("[%s]: sw_ohci_hcd_resume\n", sw_ohci->hci_name);
+-
+-	sw_start_ohc(sw_ohci);
+-
+-	set_bit(HCD_FLAG_HW_ACCESSIBLE, &hcd->flags);
+-	ohci_finish_controller_resume(hcd);
+-
+-    return 0;
+-}
+-
+-static const struct dev_pm_ops sw_ohci_pmops = {
+-	.suspend	= sw_ohci_hcd_suspend,
+-	.resume		= sw_ohci_hcd_resume,
+-};
+-
+-#define SW_OHCI_PMOPS  &sw_ohci_pmops
+-
+-#else
+-
+-#define SW_OHCI_PMOPS NULL
+-
+-#endif
+-
+-static struct platform_driver sw_ohci_hcd_driver = {
+-	.probe		= sw_ohci_hcd_probe,
+-	.remove		= sw_ohci_hcd_remove,
+-	.shutdown	= sw_ohci_hcd_shutdown,
+-	.driver		= {
+-		.name	= ohci_name,
+-		.owner	= THIS_MODULE,
+-		.pm	    = SW_OHCI_PMOPS,
+-	},
+-};
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_disable_ohci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_disable_ohci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ohci = g_sw_ohci[usbc_no];
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_disable_ohci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->probe == 0){
+-		DMSG_PANIC("ERR: sw_ohci is disable, can not disable again\n");
+-		return -1;
+-	}
+-
+-	sw_ohci->probe = 0;
+-
+-	DMSG_INFO("[%s]: sw_usb_disable_ohci\n", sw_ohci->hci_name);
+-
+-	sw_ohci_hcd_remove(sw_ohci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_disable_ohci);
+-
+-/*
+-*******************************************************************************
+-*                     sw_usb_enable_ohci
+-*
+-* Description:
+-*    void
+-*
+-* Parameters:
+-*    void
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-int sw_usb_enable_ohci(__u32 usbc_no)
+-{
+-	struct sw_hci_hcd *sw_ohci = NULL;
+-
+-	if(usbc_no != 1 && usbc_no != 2){
+-		DMSG_PANIC("ERR:Argmen invalid. usbc_no(%d)\n", usbc_no);
+-		return -1;
+-	}
+-
+-	sw_ohci = g_sw_ohci[usbc_no];
+-	if(sw_ohci == NULL){
+-		DMSG_PANIC("ERR: sw_ohci is null\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->host_init_state){
+-		DMSG_PANIC("ERR: not support sw_usb_enable_ohci\n");
+-		return -1;
+-	}
+-
+-	if(sw_ohci->probe == 1){
+-		DMSG_PANIC("ERR: sw_ohci is already enable, can not enable again\n");
+-		return -1;
+-	}
+-
+-	sw_ohci->probe = 1;
+-
+-	DMSG_INFO("[%s]: sw_usb_enable_ohci\n", sw_ohci->hci_name);
+-
+-	sw_ohci_hcd_probe(sw_ohci->pdev);
+-
+-	return 0;
+-}
+-EXPORT_SYMBOL(sw_usb_enable_ohci);
+-
+-
+diff --git a/drivers/usb/host/sw_hci_sun4i.c b/drivers/usb/host/sw_hci_sun4i.c
+index a94e7cf..863ac5a 100644
+--- a/drivers/usb/host/sw_hci_sun4i.c
++++ b/drivers/usb/host/sw_hci_sun4i.c
+@@ -73,7 +73,7 @@
+ #include  <mach/clock.h>
+ #include <plat/sys_config.h>
+ 
+-#include  "sw_hci_sun4i.h"
++#include  "sw_hci_sunxi.h"
+ 
+ static char* usbc_name[3] 			= {"usbc0", "usbc1", "usbc2"};
+ static char* usbc_ahb_ehci_name[3]  = {"", "ahb_ehci0", "ahb_ehci1"};
+diff --git a/drivers/usb/host/sw_hci_sun4i.h b/drivers/usb/host/sw_hci_sun4i.h
+deleted file mode 100644
+index 72f98ba..0000000
+--- a/drivers/usb/host/sw_hci_sun4i.h
++++ /dev/null
+@@ -1,258 +0,0 @@
+-/*
+- * drivers/usb/host/sw_hci_sun4i.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: sw_hci_sun4i.h
+-*
+-* Author 		: yangnaitian
+-*
+-* Description 	: Include file for AW1623 HCI Host Controller Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*
+-*************************************************************************************
+-*/
+-
+-#ifndef __SW_HCI_SUN4I_H__
+-#define __SW_HCI_SUN4I_H__
+-
+-#include <linux/delay.h>
+-#include <linux/types.h>
+-
+-#include <linux/io.h>
+-#include <linux/irq.h>
+-
+-#define  DMSG_PRINT(stuff...)		printk(stuff)
+-#define  DMSG_ERR(...)        		(DMSG_PRINT("WRN:L%d(%s):", __LINE__, __FILE__), DMSG_PRINT(__VA_ARGS__))
+-
+-#if 0
+-    #define DMSG_DEBUG         		DMSG_PRINT
+-#else
+-    #define DMSG_DEBUG(...)
+-#endif
+-
+-#if 1
+-    #define DMSG_INFO         		DMSG_PRINT
+-#else
+-    #define DMSG_INFO(...)
+-#endif
+-
+-#if	1
+-    #define DMSG_PANIC        		DMSG_ERR
+-#else
+-    #define DMSG_PANIC(...)
+-#endif
+-
+-
+-//---------------------------------------------------------------
+-//  宏 定义
+-//---------------------------------------------------------------
+-#define  USBC_Readb(reg)	                    (*(volatile unsigned char *)(reg))
+-#define  USBC_Readw(reg)	                    (*(volatile unsigned short *)(reg))
+-#define  USBC_Readl(reg)	                    (*(volatile unsigned long *)(reg))
+-
+-#define  USBC_Writeb(value, reg)                (*(volatile unsigned char *)(reg) = (value))
+-#define  USBC_Writew(value, reg)	            (*(volatile unsigned short *)(reg) = (value))
+-#define  USBC_Writel(value, reg)	            (*(volatile unsigned long *)(reg) = (value))
+-
+-#define  USBC_REG_test_bit_b(bp, reg)         	(USBC_Readb(reg) & (1 << (bp)))
+-#define  USBC_REG_test_bit_w(bp, reg)   	    (USBC_Readw(reg) & (1 << (bp)))
+-#define  USBC_REG_test_bit_l(bp, reg)   	    (USBC_Readl(reg) & (1 << (bp)))
+-
+-#define  USBC_REG_set_bit_b(bp, reg) 			(USBC_Writeb((USBC_Readb(reg) | (1 << (bp))) , (reg)))
+-#define  USBC_REG_set_bit_w(bp, reg) 	 		(USBC_Writew((USBC_Readw(reg) | (1 << (bp))) , (reg)))
+-#define  USBC_REG_set_bit_l(bp, reg) 	 		(USBC_Writel((USBC_Readl(reg) | (1 << (bp))) , (reg)))
+-
+-#define  USBC_REG_clear_bit_b(bp, reg)	 	 	(USBC_Writeb((USBC_Readb(reg) & (~ (1 << (bp)))) , (reg)))
+-#define  USBC_REG_clear_bit_w(bp, reg)	 	 	(USBC_Writew((USBC_Readw(reg) & (~ (1 << (bp)))) , (reg)))
+-#define  USBC_REG_clear_bit_l(bp, reg)	 	 	(USBC_Writel((USBC_Readl(reg) & (~ (1 << (bp)))) , (reg)))
+-
+-//---------------------------------------------------------------
+-//
+-//---------------------------------------------------------------
+-#define SW_SRAM_BASE		0x01c00000
+-#define SW_SRAM_BASE_LEN	0x100
+-#define SW_GPIO_BASE		0x01c20800
+-#define SW_GPIO_BASE_LEN	0x100
+-
+-//-----------------------------------------------------------------------
+-//   USB register
+-//-----------------------------------------------------------------------
+-
+-#define SW_USB1_BASE				0x01c14000
+-#define SW_USB2_BASE				0x01c1c000
+-
+-#define SW_USB_EHCI_BASE_OFFSET		0x00
+-#define SW_USB_OHCI_BASE_OFFSET		0x400
+-#define SW_USB_EHCI_LEN      		0x58
+-#define SW_USB_OHCI_LEN      		0x58
+-
+-#define SW_USB_PMU_IRQ_ENABLE		0x800
+-
+-/*
+-#define SW_USB_EHCI0_BASE     			(SW_USB1_BASE + SW_USB_EHCI_BASE_OFFSET)
+-#define SW_USB_EHCI0_LEN      			0x58
+-
+-#define SW_USB_OHCI0_BASE     			(SW_USB1_BASE + SW_USB_OHCI_BASE_OFFSET)
+-#define SW_USB_OHCI0_LEN      			0x58
+-
+-#define SW_USB_EHCI1_BASE     			(SW_USB2_BASE + SW_USB_EHCI_BASE_OFFSET)
+-#define SW_USB_EHCI1_LEN      			0x58
+-
+-#define SW_USB_OHCI1_BASE     			(SW_USB2_BASE + SW_USB_OHCI_BASE_OFFSET)
+-#define SW_USB_OHCI1_LEN      			0x58
+-*/
+-
+-//-----------------------------------------------------------------------
+-//   CCMU register
+-//-----------------------------------------------------------------------
+-
+-#define SW_CCMU_BASE                		0x01c20000
+-#define SW_CCMU_BASE_LEN					0x100
+-
+-#define SW_CCMU_REG_AHB_GATING_REG0     	0x60
+-#define SW_CCMU_REG_USB_CLK_REG   			0xCC
+-
+-/* ABH Gating Reg0 */
+-#define SW_CCMU_BP_AHB_GATING_USBC2       	2
+-#define SW_CCMU_BP_AHB_GATING_USBC1       	1
+-
+-/* usb clock reg */
+-#define SW_CCMU_BP_USB_CLK_GATING_USBPHY	8
+-#define SW_CCMU_BP_USB_CLK_GATING_OHCI1		7
+-#define SW_CCMU_BP_USB_CLK_GATING_OHCI0		6
+-#define SW_CCMU_BP_USB_CLK_48M_SEL			4
+-#define SW_CCMU_BP_USB_CLK_USBPHY2_RST		2
+-#define SW_CCMU_BP_USB_CLK_USBPHY1_RST		1
+-#define SW_CCMU_BP_USB_CLK_USBPHY0_RST		0
+-
+-//-----------------------------------------------------------------------
+-//   interrupt register
+-//-----------------------------------------------------------------------
+-#define SW_INT_SRC_EHCI0            		39
+-#define SW_INT_SRC_OHCI0                    64
+-#define SW_INT_SRC_EHCI1            		40
+-#define SW_INT_SRC_OHCI1                    65
+-
+-//-----------------------------------------------------------------------
+-//   SDRAM Control register
+-//-----------------------------------------------------------------------
+-
+-//#define SW_HCI0_PASS_BY_BASE     0x01c14800
+-//#define SW_HCI0_PASS_BY_BASE_LEN 4
+-
+-#define SW_SDRAM_BASE               		0x01c01000
+-#define SW_SDRAM_BASE_LEN					0x100
+-
+-#define SW_SDRAM_REG_HPCR_USB1				(0x250 + ((1 << 2) * 4))
+-#define SW_SDRAM_REG_HPCR_USB2				(0x250 + ((1 << 2) * 5))
+-
+-/* HPCR */
+-#define SW_SDRAM_BP_HPCR_READ_CNT_EN		31
+-#define SW_SDRAM_BP_HPCR_RWRITE_CNT_EN		30
+-#define SW_SDRAM_BP_HPCR_COMMAND_NUM		8
+-#define SW_SDRAM_BP_HPCR_WAIT_STATE			4
+-#define SW_SDRAM_BP_HPCR_PRIORITY_LEVEL		2
+-#define SW_SDRAM_BP_HPCR_ACCESS_EN			0
+-
+-
+-struct sw_hci_hcd{
+-	__u32 usbc_no;						/* usb controller number */
+-	__u32 irq_no;						/* interrupt number 	*/
+-	char hci_name[32];                  /* hci name             */
+-
+-	struct resource	*usb_base_res;   	/* USB  resources 		*/
+-	struct resource	*usb_base_req;   	/* USB  resources 		*/
+-	void __iomem	*usb_vbase;			/* USB  base address 	*/
+-
+-	void __iomem	* ehci_base;
+-	__u32 ehci_reg_length;
+-	void __iomem	* ohci_base;
+-	__u32 ohci_reg_length;
+-
+-	struct resource	*sram_base_res;   	/* SRAM resources 		*/
+-	struct resource	*sram_base_req;   	/* SRAM resources 		*/
+-	void __iomem	*sram_vbase;		/* SRAM base address 	*/
+-	__u32 sram_reg_start;
+-	__u32 sram_reg_length;
+-
+-	struct resource	*clock_base_res;   	/* clock resources 		*/
+-	struct resource	*clock_base_req;   	/* clock resources 		*/
+-	void __iomem	*clock_vbase;		/* clock base address 	*/
+-	__u32 clock_reg_start;
+-	__u32 clock_reg_length;
+-
+-	struct resource	*gpio_base_res;   	/* gpio resources 		*/
+-	struct resource	*gpio_base_req;   	/* gpio resources 		*/
+-	void __iomem	*gpio_vbase;		/* gpio base address 	*/
+-	__u32 gpio_reg_start;
+-	__u32 gpio_reg_length;
+-
+-	struct resource	*sdram_base_res;   	/* sdram resources 		*/
+-	struct resource	*sdram_base_req;   	/* sdram resources 		*/
+-	void __iomem	*sdram_vbase;		/* sdram base address 	*/
+-	__u32 sdram_reg_start;
+-	__u32 sdram_reg_length;
+-
+-	struct platform_device *pdev;
+-	struct usb_hcd *hcd;
+-
+-	struct clk	*sie_clk;				/* SIE clock handle 	*/
+-	struct clk	*phy_gate;				/* PHY clock handle 	*/
+-	struct clk	*phy_reset;				/* PHY reset handle 	*/
+-	struct clk	*ohci_gate;			    /* ohci clock handle 	*/
+-	__u32 clk_is_open;					/* is usb clock open 	*/
+-
+-
+-	u32 drv_vbus_Handle;
+-	user_gpio_set_t drv_vbus_gpio_set;
+-	__u32 power_flag;                   /* flag. 是否供电       */
+-
+-    __u32 used;                         /* flag. 控制器是否被使用 */
+-	__u32 probe;                        /* 控制器初始化 */
+-	__u32 host_init_state;				/* usb 控制器的初始化状态。0 : 不工作. 1 : 工作 */
+-
+-	int (* open_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
+-	int (* close_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
+-    void (* set_power)(struct sw_hci_hcd *sw_hci, int is_on);
+-	void (* port_configure)(struct sw_hci_hcd *sw_hci, u32 enable);
+-	void (* usb_passby)(struct sw_hci_hcd *sw_hci, u32 enable);
+-};
+-
+-
+-
+-#endif   //__SW_HCI_SUN4I_H__
+-
+-
+-
+-
+diff --git a/drivers/usb/host/sw_hci_sun5i.c b/drivers/usb/host/sw_hci_sun5i.c
+index 0433302..f415fe5 100644
+--- a/drivers/usb/host/sw_hci_sun5i.c
++++ b/drivers/usb/host/sw_hci_sun5i.c
+@@ -73,7 +73,7 @@
+ #include  <mach/clock.h>
+ #include <plat/sys_config.h>
+ 
+-#include  "sw_hci_sun5i.h"
++#include  "sw_hci_sunxi.h"
+ 
+ static char* usbc_name[3] 			= {"usbc0", "usbc1", "usbc2"};
+ static char* usbc_ahb_ehci_name[3]  = {"", "ahb_ehci0", "ahb_ehci1"};
+diff --git a/drivers/usb/host/sw_hci_sun5i.h b/drivers/usb/host/sw_hci_sun5i.h
+deleted file mode 100644
+index 6cb0d75..0000000
+--- a/drivers/usb/host/sw_hci_sun5i.h
++++ /dev/null
+@@ -1,258 +0,0 @@
+-/*
+- * drivers/usb/host/sw_hci_sun5i.h
+- *
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-/*
+-*************************************************************************************
+-*                         			      Linux
+-*					           USB Host Controller Driver
+-*
+-*				        (c) Copyright 2006-2010, All winners Co,Ld.
+-*							       All Rights Reserved
+-*
+-* File Name 	: sw_hci_sun5i.h
+-*
+-* Author 		: yangnaitian
+-*
+-* Description 	: Include file for AW1623 HCI Host Controller Driver
+-*
+-* Notes         :
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*    yangnaitian      2011-5-24            1.0          create this file
+-*
+-*************************************************************************************
+-*/
+-
+-#ifndef __SW_HCI_SUN5I_H__
+-#define __SW_HCI_SUN5I_H__
+-
+-#include <linux/delay.h>
+-#include <linux/types.h>
+-
+-#include <linux/io.h>
+-#include <linux/irq.h>
+-
+-#define  DMSG_PRINT(stuff...)		printk(stuff)
+-#define  DMSG_ERR(...)        		(DMSG_PRINT("WRN:L%d(%s):", __LINE__, __FILE__), DMSG_PRINT(__VA_ARGS__))
+-
+-#if 1
+-    #define DMSG_DEBUG         		DMSG_PRINT
+-#else
+-    #define DMSG_DEBUG(...)
+-#endif
+-
+-#if 1
+-    #define DMSG_INFO         		DMSG_PRINT
+-#else
+-    #define DMSG_INFO(...)
+-#endif
+-
+-#if	1
+-    #define DMSG_PANIC        		DMSG_ERR
+-#else
+-    #define DMSG_PANIC(...)
+-#endif
+-
+-
+-//---------------------------------------------------------------
+-//  宏 定义
+-//---------------------------------------------------------------
+-#define  USBC_Readb(reg)	                    (*(volatile unsigned char *)(reg))
+-#define  USBC_Readw(reg)	                    (*(volatile unsigned short *)(reg))
+-#define  USBC_Readl(reg)	                    (*(volatile unsigned long *)(reg))
+-
+-#define  USBC_Writeb(value, reg)                (*(volatile unsigned char *)(reg) = (value))
+-#define  USBC_Writew(value, reg)	            (*(volatile unsigned short *)(reg) = (value))
+-#define  USBC_Writel(value, reg)	            (*(volatile unsigned long *)(reg) = (value))
+-
+-#define  USBC_REG_test_bit_b(bp, reg)         	(USBC_Readb(reg) & (1 << (bp)))
+-#define  USBC_REG_test_bit_w(bp, reg)   	    (USBC_Readw(reg) & (1 << (bp)))
+-#define  USBC_REG_test_bit_l(bp, reg)   	    (USBC_Readl(reg) & (1 << (bp)))
+-
+-#define  USBC_REG_set_bit_b(bp, reg) 			(USBC_Writeb((USBC_Readb(reg) | (1 << (bp))) , (reg)))
+-#define  USBC_REG_set_bit_w(bp, reg) 	 		(USBC_Writew((USBC_Readw(reg) | (1 << (bp))) , (reg)))
+-#define  USBC_REG_set_bit_l(bp, reg) 	 		(USBC_Writel((USBC_Readl(reg) | (1 << (bp))) , (reg)))
+-
+-#define  USBC_REG_clear_bit_b(bp, reg)	 	 	(USBC_Writeb((USBC_Readb(reg) & (~ (1 << (bp)))) , (reg)))
+-#define  USBC_REG_clear_bit_w(bp, reg)	 	 	(USBC_Writew((USBC_Readw(reg) & (~ (1 << (bp)))) , (reg)))
+-#define  USBC_REG_clear_bit_l(bp, reg)	 	 	(USBC_Writel((USBC_Readl(reg) & (~ (1 << (bp)))) , (reg)))
+-
+-//---------------------------------------------------------------
+-//
+-//---------------------------------------------------------------
+-#define SW_SRAM_BASE		0x01c00000
+-#define SW_SRAM_BASE_LEN	0x100
+-#define SW_GPIO_BASE		0x01c20800
+-#define SW_GPIO_BASE_LEN	0x100
+-
+-//-----------------------------------------------------------------------
+-//   USB register
+-//-----------------------------------------------------------------------
+-
+-#define SW_USB1_BASE				0x01c14000
+-#define SW_USB2_BASE				0x01c1c000
+-
+-#define SW_USB_EHCI_BASE_OFFSET		0x00
+-#define SW_USB_OHCI_BASE_OFFSET		0x400
+-#define SW_USB_EHCI_LEN      		0x58
+-#define SW_USB_OHCI_LEN      		0x58
+-
+-#define SW_USB_PMU_IRQ_ENABLE		0x800
+-
+-/*
+-#define SW_USB_EHCI0_BASE     			(SW_USB1_BASE + SW_USB_EHCI_BASE_OFFSET)
+-#define SW_USB_EHCI0_LEN      			0x58
+-
+-#define SW_USB_OHCI0_BASE     			(SW_USB1_BASE + SW_USB_OHCI_BASE_OFFSET)
+-#define SW_USB_OHCI0_LEN      			0x58
+-
+-#define SW_USB_EHCI1_BASE     			(SW_USB2_BASE + SW_USB_EHCI_BASE_OFFSET)
+-#define SW_USB_EHCI1_LEN      			0x58
+-
+-#define SW_USB_OHCI1_BASE     			(SW_USB2_BASE + SW_USB_OHCI_BASE_OFFSET)
+-#define SW_USB_OHCI1_LEN      			0x58
+-*/
+-
+-//-----------------------------------------------------------------------
+-//   CCMU register
+-//-----------------------------------------------------------------------
+-
+-#define SW_CCMU_BASE                		0x01c20000
+-#define SW_CCMU_BASE_LEN					0x100
+-
+-#define SW_CCMU_REG_AHB_GATING_REG0     	0x60
+-#define SW_CCMU_REG_USB_CLK_REG   			0xCC
+-
+-/* ABH Gating Reg0 */
+-#define SW_CCMU_BP_AHB_GATING_USBC2       	2
+-#define SW_CCMU_BP_AHB_GATING_USBC1       	1
+-
+-/* usb clock reg */
+-#define SW_CCMU_BP_USB_CLK_GATING_USBPHY	8
+-#define SW_CCMU_BP_USB_CLK_GATING_OHCI1		7
+-#define SW_CCMU_BP_USB_CLK_GATING_OHCI0		6
+-#define SW_CCMU_BP_USB_CLK_48M_SEL			4
+-#define SW_CCMU_BP_USB_CLK_USBPHY2_RST		2
+-#define SW_CCMU_BP_USB_CLK_USBPHY1_RST		1
+-#define SW_CCMU_BP_USB_CLK_USBPHY0_RST		0
+-
+-//-----------------------------------------------------------------------
+-//   interrupt register
+-//-----------------------------------------------------------------------
+-#define SW_INT_SRC_EHCI0            		39
+-#define SW_INT_SRC_OHCI0                    64
+-#define SW_INT_SRC_EHCI1            		40
+-#define SW_INT_SRC_OHCI1                    65
+-
+-//-----------------------------------------------------------------------
+-//   SDRAM Control register
+-//-----------------------------------------------------------------------
+-
+-//#define SW_HCI0_PASS_BY_BASE     0x01c14800
+-//#define SW_HCI0_PASS_BY_BASE_LEN 4
+-
+-#define SW_SDRAM_BASE               		0x01c01000
+-#define SW_SDRAM_BASE_LEN					0x100
+-
+-#define SW_SDRAM_REG_HPCR_USB1				(0x250 + ((1 << 2) * 4))
+-#define SW_SDRAM_REG_HPCR_USB2				(0x250 + ((1 << 2) * 5))
+-
+-/* HPCR */
+-#define SW_SDRAM_BP_HPCR_READ_CNT_EN		31
+-#define SW_SDRAM_BP_HPCR_RWRITE_CNT_EN		30
+-#define SW_SDRAM_BP_HPCR_COMMAND_NUM		8
+-#define SW_SDRAM_BP_HPCR_WAIT_STATE			4
+-#define SW_SDRAM_BP_HPCR_PRIORITY_LEVEL		2
+-#define SW_SDRAM_BP_HPCR_ACCESS_EN			0
+-
+-
+-struct sw_hci_hcd{
+-	__u32 usbc_no;						/* usb controller number */
+-	__u32 irq_no;						/* interrupt number 	*/
+-	char hci_name[32];                  /* hci name             */
+-
+-	struct resource	*usb_base_res;   	/* USB  resources 		*/
+-	struct resource	*usb_base_req;   	/* USB  resources 		*/
+-	void __iomem	*usb_vbase;			/* USB  base address 	*/
+-
+-	void __iomem	* ehci_base;
+-	__u32 ehci_reg_length;
+-	void __iomem	* ohci_base;
+-	__u32 ohci_reg_length;
+-
+-	struct resource	*sram_base_res;   	/* SRAM resources 		*/
+-	struct resource	*sram_base_req;   	/* SRAM resources 		*/
+-	void __iomem	*sram_vbase;		/* SRAM base address 	*/
+-	__u32 sram_reg_start;
+-	__u32 sram_reg_length;
+-
+-	struct resource	*clock_base_res;   	/* clock resources 		*/
+-	struct resource	*clock_base_req;   	/* clock resources 		*/
+-	void __iomem	*clock_vbase;		/* clock base address 	*/
+-	__u32 clock_reg_start;
+-	__u32 clock_reg_length;
+-
+-	struct resource	*gpio_base_res;   	/* gpio resources 		*/
+-	struct resource	*gpio_base_req;   	/* gpio resources 		*/
+-	void __iomem	*gpio_vbase;		/* gpio base address 	*/
+-	__u32 gpio_reg_start;
+-	__u32 gpio_reg_length;
+-
+-	struct resource	*sdram_base_res;   	/* sdram resources 		*/
+-	struct resource	*sdram_base_req;   	/* sdram resources 		*/
+-	void __iomem	*sdram_vbase;		/* sdram base address 	*/
+-	__u32 sdram_reg_start;
+-	__u32 sdram_reg_length;
+-
+-	struct platform_device *pdev;
+-	struct usb_hcd *hcd;
+-
+-	struct clk	*sie_clk;				/* SIE clock handle 	*/
+-	struct clk	*phy_gate;				/* PHY clock handle 	*/
+-	struct clk	*phy_reset;				/* PHY reset handle 	*/
+-	struct clk	*ohci_gate;			    /* ohci clock handle 	*/
+-	__u32 clk_is_open;					/* is usb clock open 	*/
+-
+-
+-	u32 drv_vbus_Handle;
+-	user_gpio_set_t drv_vbus_gpio_set;
+-	__u32 power_flag;                   /* flag. 是否供电       */
+-
+-    __u32 used;                         /* flag. 控制器是否被使用 */
+-	__u32 probe;                        /* 控制器初始化 */
+-	__u32 host_init_state;				/* usb 控制器的初始化状态。0 : 不工作. 1 : 工作 */
+-
+-	int (* open_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
+-	int (* close_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
+-    void (* set_power)(struct sw_hci_hcd *sw_hci, int is_on);
+-	void (* port_configure)(struct sw_hci_hcd *sw_hci, u32 enable);
+-	void (* usb_passby)(struct sw_hci_hcd *sw_hci, u32 enable);
+-};
+-
+-
+-
+-#endif   //__SW_HCI_SUN5I_H__
+-
+-
+-
+-
+diff --git a/drivers/usb/host/sw_hci_sunxi.h b/drivers/usb/host/sw_hci_sunxi.h
+new file mode 100644
+index 0000000..9801512
+--- /dev/null
++++ b/drivers/usb/host/sw_hci_sunxi.h
+@@ -0,0 +1,258 @@
++/*
++ * drivers/usb/host/sw_hci_sunxi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
++*************************************************************************************
++*                         			      Linux
++*					           USB Host Controller Driver
++*
++*				        (c) Copyright 2006-2010, All winners Co,Ld.
++*							       All Rights Reserved
++*
++* File Name 	: sw_hci_sunxi.h
++*
++* Author 		: yangnaitian
++*
++* Description 	: Include file for AW1623 HCI Host Controller Driver
++*
++* Notes         :
++*
++* History 		:
++*      <author>    		<time>       	<version >    		<desc>
++*    yangnaitian      2011-5-24            1.0          create this file
++*
++*************************************************************************************
++*/
++
++#ifndef __SW_HCI_SUNXI_H__
++#define __SW_HCI_SUNXI_H__
++
++#include <linux/delay.h>
++#include <linux/types.h>
++
++#include <linux/io.h>
++#include <linux/irq.h>
++
++#define  DMSG_PRINT(stuff...)		printk(stuff)
++#define  DMSG_ERR(...)        		(DMSG_PRINT("WRN:L%d(%s):", __LINE__, __FILE__), DMSG_PRINT(__VA_ARGS__))
++
++#if 0
++    #define DMSG_DEBUG         		DMSG_PRINT
++#else
++    #define DMSG_DEBUG(...)
++#endif
++
++#if 1
++    #define DMSG_INFO         		DMSG_PRINT
++#else
++    #define DMSG_INFO(...)
++#endif
++
++#if	1
++    #define DMSG_PANIC        		DMSG_ERR
++#else
++    #define DMSG_PANIC(...)
++#endif
++
++
++//---------------------------------------------------------------
++//  宏 定义
++//---------------------------------------------------------------
++#define  USBC_Readb(reg)	                    (*(volatile unsigned char *)(reg))
++#define  USBC_Readw(reg)	                    (*(volatile unsigned short *)(reg))
++#define  USBC_Readl(reg)	                    (*(volatile unsigned long *)(reg))
++
++#define  USBC_Writeb(value, reg)                (*(volatile unsigned char *)(reg) = (value))
++#define  USBC_Writew(value, reg)	            (*(volatile unsigned short *)(reg) = (value))
++#define  USBC_Writel(value, reg)	            (*(volatile unsigned long *)(reg) = (value))
++
++#define  USBC_REG_test_bit_b(bp, reg)         	(USBC_Readb(reg) & (1 << (bp)))
++#define  USBC_REG_test_bit_w(bp, reg)   	    (USBC_Readw(reg) & (1 << (bp)))
++#define  USBC_REG_test_bit_l(bp, reg)   	    (USBC_Readl(reg) & (1 << (bp)))
++
++#define  USBC_REG_set_bit_b(bp, reg) 			(USBC_Writeb((USBC_Readb(reg) | (1 << (bp))) , (reg)))
++#define  USBC_REG_set_bit_w(bp, reg) 	 		(USBC_Writew((USBC_Readw(reg) | (1 << (bp))) , (reg)))
++#define  USBC_REG_set_bit_l(bp, reg) 	 		(USBC_Writel((USBC_Readl(reg) | (1 << (bp))) , (reg)))
++
++#define  USBC_REG_clear_bit_b(bp, reg)	 	 	(USBC_Writeb((USBC_Readb(reg) & (~ (1 << (bp)))) , (reg)))
++#define  USBC_REG_clear_bit_w(bp, reg)	 	 	(USBC_Writew((USBC_Readw(reg) & (~ (1 << (bp)))) , (reg)))
++#define  USBC_REG_clear_bit_l(bp, reg)	 	 	(USBC_Writel((USBC_Readl(reg) & (~ (1 << (bp)))) , (reg)))
++
++//---------------------------------------------------------------
++//
++//---------------------------------------------------------------
++#define SW_SRAM_BASE		0x01c00000
++#define SW_SRAM_BASE_LEN	0x100
++#define SW_GPIO_BASE		0x01c20800
++#define SW_GPIO_BASE_LEN	0x100
++
++//-----------------------------------------------------------------------
++//   USB register
++//-----------------------------------------------------------------------
++
++#define SW_USB1_BASE				0x01c14000
++#define SW_USB2_BASE				0x01c1c000
++
++#define SW_USB_EHCI_BASE_OFFSET		0x00
++#define SW_USB_OHCI_BASE_OFFSET		0x400
++#define SW_USB_EHCI_LEN      		0x58
++#define SW_USB_OHCI_LEN      		0x58
++
++#define SW_USB_PMU_IRQ_ENABLE		0x800
++
++/*
++#define SW_USB_EHCI0_BASE     			(SW_USB1_BASE + SW_USB_EHCI_BASE_OFFSET)
++#define SW_USB_EHCI0_LEN      			0x58
++
++#define SW_USB_OHCI0_BASE     			(SW_USB1_BASE + SW_USB_OHCI_BASE_OFFSET)
++#define SW_USB_OHCI0_LEN      			0x58
++
++#define SW_USB_EHCI1_BASE     			(SW_USB2_BASE + SW_USB_EHCI_BASE_OFFSET)
++#define SW_USB_EHCI1_LEN      			0x58
++
++#define SW_USB_OHCI1_BASE     			(SW_USB2_BASE + SW_USB_OHCI_BASE_OFFSET)
++#define SW_USB_OHCI1_LEN      			0x58
++*/
++
++//-----------------------------------------------------------------------
++//   CCMU register
++//-----------------------------------------------------------------------
++
++#define SW_CCMU_BASE                		0x01c20000
++#define SW_CCMU_BASE_LEN					0x100
++
++#define SW_CCMU_REG_AHB_GATING_REG0     	0x60
++#define SW_CCMU_REG_USB_CLK_REG   			0xCC
++
++/* ABH Gating Reg0 */
++#define SW_CCMU_BP_AHB_GATING_USBC2       	2
++#define SW_CCMU_BP_AHB_GATING_USBC1       	1
++
++/* usb clock reg */
++#define SW_CCMU_BP_USB_CLK_GATING_USBPHY	8
++#define SW_CCMU_BP_USB_CLK_GATING_OHCI1		7
++#define SW_CCMU_BP_USB_CLK_GATING_OHCI0		6
++#define SW_CCMU_BP_USB_CLK_48M_SEL			4
++#define SW_CCMU_BP_USB_CLK_USBPHY2_RST		2
++#define SW_CCMU_BP_USB_CLK_USBPHY1_RST		1
++#define SW_CCMU_BP_USB_CLK_USBPHY0_RST		0
++
++//-----------------------------------------------------------------------
++//   interrupt register
++//-----------------------------------------------------------------------
++#define SW_INT_SRC_EHCI0            		39
++#define SW_INT_SRC_OHCI0                    64
++#define SW_INT_SRC_EHCI1            		40
++#define SW_INT_SRC_OHCI1                    65
++
++//-----------------------------------------------------------------------
++//   SDRAM Control register
++//-----------------------------------------------------------------------
++
++//#define SW_HCI0_PASS_BY_BASE     0x01c14800
++//#define SW_HCI0_PASS_BY_BASE_LEN 4
++
++#define SW_SDRAM_BASE               		0x01c01000
++#define SW_SDRAM_BASE_LEN					0x100
++
++#define SW_SDRAM_REG_HPCR_USB1				(0x250 + ((1 << 2) * 4))
++#define SW_SDRAM_REG_HPCR_USB2				(0x250 + ((1 << 2) * 5))
++
++/* HPCR */
++#define SW_SDRAM_BP_HPCR_READ_CNT_EN		31
++#define SW_SDRAM_BP_HPCR_RWRITE_CNT_EN		30
++#define SW_SDRAM_BP_HPCR_COMMAND_NUM		8
++#define SW_SDRAM_BP_HPCR_WAIT_STATE			4
++#define SW_SDRAM_BP_HPCR_PRIORITY_LEVEL		2
++#define SW_SDRAM_BP_HPCR_ACCESS_EN			0
++
++
++struct sw_hci_hcd{
++	__u32 usbc_no;						/* usb controller number */
++	__u32 irq_no;						/* interrupt number 	*/
++	char hci_name[32];                  /* hci name             */
++
++	struct resource	*usb_base_res;   	/* USB  resources 		*/
++	struct resource	*usb_base_req;   	/* USB  resources 		*/
++	void __iomem	*usb_vbase;			/* USB  base address 	*/
++
++	void __iomem	* ehci_base;
++	__u32 ehci_reg_length;
++	void __iomem	* ohci_base;
++	__u32 ohci_reg_length;
++
++	struct resource	*sram_base_res;   	/* SRAM resources 		*/
++	struct resource	*sram_base_req;   	/* SRAM resources 		*/
++	void __iomem	*sram_vbase;		/* SRAM base address 	*/
++	__u32 sram_reg_start;
++	__u32 sram_reg_length;
++
++	struct resource	*clock_base_res;   	/* clock resources 		*/
++	struct resource	*clock_base_req;   	/* clock resources 		*/
++	void __iomem	*clock_vbase;		/* clock base address 	*/
++	__u32 clock_reg_start;
++	__u32 clock_reg_length;
++
++	struct resource	*gpio_base_res;   	/* gpio resources 		*/
++	struct resource	*gpio_base_req;   	/* gpio resources 		*/
++	void __iomem	*gpio_vbase;		/* gpio base address 	*/
++	__u32 gpio_reg_start;
++	__u32 gpio_reg_length;
++
++	struct resource	*sdram_base_res;   	/* sdram resources 		*/
++	struct resource	*sdram_base_req;   	/* sdram resources 		*/
++	void __iomem	*sdram_vbase;		/* sdram base address 	*/
++	__u32 sdram_reg_start;
++	__u32 sdram_reg_length;
++
++	struct platform_device *pdev;
++	struct usb_hcd *hcd;
++
++	struct clk	*sie_clk;				/* SIE clock handle 	*/
++	struct clk	*phy_gate;				/* PHY clock handle 	*/
++	struct clk	*phy_reset;				/* PHY reset handle 	*/
++	struct clk	*ohci_gate;			    /* ohci clock handle 	*/
++	__u32 clk_is_open;					/* is usb clock open 	*/
++
++
++	u32 drv_vbus_Handle;
++	user_gpio_set_t drv_vbus_gpio_set;
++	__u32 power_flag;                   /* flag. 是否供电       */
++
++    __u32 used;                         /* flag. 控制器是否被使用 */
++	__u32 probe;                        /* 控制器初始化 */
++	__u32 host_init_state;				/* usb 控制器的初始化状态。0 : 不工作. 1 : 工作 */
++
++	int (* open_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
++	int (* close_clock)(struct sw_hci_hcd *sw_hci, u32 ohci);
++    void (* set_power)(struct sw_hci_hcd *sw_hci, int is_on);
++	void (* port_configure)(struct sw_hci_hcd *sw_hci, u32 enable);
++	void (* usb_passby)(struct sw_hci_hcd *sw_hci, u32 enable);
++};
++
++
++
++#endif   //__SW_HCI_SUNXI_H__
++
++
++
++
+-- 
+1.8.0
+

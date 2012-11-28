@@ -1,0 +1,31 @@
+From bd0ac3f403ed2340aed15423406aabfd57e59430 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 28 Oct 2011 10:35:37 -0700
+Subject: [PATCH 126/944] net: wireless: Skip connect warning for
+ CONFIG_CFG80211_ALLOW_RECONNECT
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/wireless/sme.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/net/wireless/sme.c b/net/wireless/sme.c
+index 60998fd..bbbed73 100644
+--- a/net/wireless/sme.c
++++ b/net/wireless/sme.c
+@@ -772,9 +772,11 @@ int __cfg80211_connect(struct cfg80211_registered_device *rdev,
+ #ifndef CONFIG_CFG80211_ALLOW_RECONNECT
+ 	if (wdev->sme_state != CFG80211_SME_IDLE)
+ 		return -EALREADY;
+-#endif
+ 
+ 	if (WARN_ON(wdev->connect_keys)) {
++#else
++	if (wdev->connect_keys) {
++#endif
+ 		kfree(wdev->connect_keys);
+ 		wdev->connect_keys = NULL;
+ 	}
+-- 
+1.8.0
+

@@ -1,0 +1,50 @@
+From 11f463fe1ec5152c97c76e763be9f167ebb683df Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Sun, 30 Sep 2012 14:53:27 -0700
+Subject: [PATCH 752/944] gpu: ion: use vmalloc to allocate page array to map
+ kernel
+
+When ion_map_kernel is execute the system must allocate
+an array large enough to hold a pointer to each page in
+the buffer.  If the buffer is very large and the system
+memory has become very fragmented, there may not be
+sufficient high order allocations available from kmalloc.
+Use vmalloc instead.
+
+Change-Id: I5fabf79be6cfd158f7805bfca6267a60c4708582
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion_system_heap.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index 7b44192..86e2eab 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -174,10 +174,12 @@ void *ion_system_heap_map_kernel(struct ion_heap *heap,
+ 	pgprot_t pgprot;
+ 	struct sg_table *table = buffer->priv_virt;
+ 	int npages = PAGE_ALIGN(buffer->size) / PAGE_SIZE;
+-	struct page **pages = kzalloc(sizeof(struct page *) * npages,
+-				     GFP_KERNEL);
++	struct page **pages = vmalloc(sizeof(struct page *) * npages);
+ 	struct page **tmp = pages;
+ 
++	if (!pages)
++		return 0;
++
+ 	if (buffer->flags & ION_FLAG_CACHED)
+ 		pgprot = PAGE_KERNEL;
+ 	else
+@@ -192,7 +194,7 @@ void *ion_system_heap_map_kernel(struct ion_heap *heap,
+ 		}
+ 	}
+ 	vaddr = vmap(pages, npages, VM_MAP, pgprot);
+-	kfree(pages);
++	vfree(pages);
+ 
+ 	return vaddr;
+ }
+-- 
+1.8.0
+

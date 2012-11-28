@@ -1,0 +1,87 @@
+From 60af1066913162c5dd13fad3b872a67b1eb7da0f Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Apr 2012 22:52:34 +0200
+Subject: [PATCH 209/944] PM / Sleep: Use wait queue to signal "no wakeup
+ events in progress"
+
+The current wakeup source deactivation code doesn't do anything when
+the counter of wakeup events in progress goes down to zero, which
+requires pm_get_wakeup_count() to poll that counter periodically.
+Although this reduces the average time it takes to deactivate a
+wakeup source, it also may lead to a substantial amount of unnecessary
+polling if there are extended periods of wakeup activity.  Thus it
+seems reasonable to use a wait queue for signaling the "no wakeup
+events in progress" condition and remove the polling.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: mark gross <markgross@thegnar.org>
+Acked-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/base/power/wakeup.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/base/power/wakeup.c b/drivers/base/power/wakeup.c
+index 2a3e581..92f220d 100644
+--- a/drivers/base/power/wakeup.c
++++ b/drivers/base/power/wakeup.c
+@@ -17,8 +17,6 @@
+ 
+ #include "power.h"
+ 
+-#define TIMEOUT		100
+-
+ /*
+  * If set, the suspend/hibernate code will abort transitions to a sleep state
+  * if wakeup events are registered during or immediately before the transition.
+@@ -52,6 +50,8 @@ static void pm_wakeup_timer_fn(unsigned long data);
+ 
+ static LIST_HEAD(wakeup_sources);
+ 
++static DECLARE_WAIT_QUEUE_HEAD(wakeup_count_wait_queue);
++
+ /**
+  * wakeup_source_prepare - Prepare a new wakeup source for initialization.
+  * @ws: Wakeup source to prepare.
+@@ -442,6 +442,7 @@ EXPORT_SYMBOL_GPL(pm_stay_awake);
+  */
+ static void wakeup_source_deactivate(struct wakeup_source *ws)
+ {
++	unsigned int cnt, inpr;
+ 	ktime_t duration;
+ 	ktime_t now;
+ 
+@@ -476,6 +477,10 @@ static void wakeup_source_deactivate(struct wakeup_source *ws)
+ 	 * couter of wakeup events in progress simultaneously.
+ 	 */
+ 	atomic_add(MAX_IN_PROGRESS, &combined_event_count);
++
++	split_counters(&cnt, &inpr);
++	if (!inpr && waitqueue_active(&wakeup_count_wait_queue))
++		wake_up(&wakeup_count_wait_queue);
+ }
+ 
+ /**
+@@ -667,14 +672,19 @@ bool pm_wakeup_pending(void)
+ bool pm_get_wakeup_count(unsigned int *count)
+ {
+ 	unsigned int cnt, inpr;
++	DEFINE_WAIT(wait);
+ 
+ 	for (;;) {
++		prepare_to_wait(&wakeup_count_wait_queue, &wait,
++				TASK_INTERRUPTIBLE);
+ 		split_counters(&cnt, &inpr);
+ 		if (inpr == 0 || signal_pending(current))
+ 			break;
+ 		pm_wakeup_update_hit_counts();
+-		schedule_timeout_interruptible(msecs_to_jiffies(TIMEOUT));
++
++		schedule();
+ 	}
++	finish_wait(&wakeup_count_wait_queue, &wait);
+ 
+ 	split_counters(&cnt, &inpr);
+ 	*count = cnt;
+-- 
+1.8.0
+

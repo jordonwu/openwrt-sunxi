@@ -1,0 +1,89 @@
+From 707af39aa13670daa3bfd2f3aab29ba53c9835f6 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 24 Oct 2012 01:37:47 +0200
+Subject: [PATCH 871/944] video:sunxi:disp: hack around fb_info->screen_base
+ being iomem
+
+We should not be using fb_info->screen_base for accounting tbh.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/dev_disp.c | 16 ++++++++--------
+ drivers/video/sunxi/disp/dev_fb.c   |  4 ++--
+ 2 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 18a876a..30937d2 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -178,7 +178,7 @@ void disp_free(void *p)
+ 	/* look for the node which po__s32 this memory block */
+ 	ptr = &boot_heap_head;
+ 	while (ptr && ptr->next) {
+-		if (ptr->next->address == (__u32) p)
++		if (((void *) ptr->next->address) == p)
+ 			break;	/* find the node which need to be release */
+ 		ptr = ptr->next;
+ 	}
+@@ -318,7 +318,7 @@ disp_mem_request(int sel, __u32 size)
+ 	unsigned map_size = 0;
+ 	struct page *page;
+ 
+-	if (g_disp_mm[sel].info_base != 0)
++	if (g_disp_mm[sel].info_base != NULL)
+ 		return -EINVAL;
+ 
+ 	g_disp_mm[sel].mem_len = size;
+@@ -327,7 +327,7 @@ disp_mem_request(int sel, __u32 size)
+ 	page = alloc_pages(GFP_KERNEL, get_order(map_size));
+ 	if (page != NULL) {
+ 		g_disp_mm[sel].info_base = page_address(page);
+-		if (g_disp_mm[sel].info_base == 0) {
++		if (g_disp_mm[sel].info_base == NULL) {
+ 			free_pages((unsigned long)(page), get_order(map_size));
+ 			__wrn("page_address fail!\n");
+ 			return -ENOMEM;
+@@ -344,13 +344,13 @@ disp_mem_request(int sel, __u32 size)
+ 		return -ENOMEM;
+ 	}
+ #else
+-	__u32 ret = 0;
++	void *ret;
+ 
+-	ret = (__u32) disp_malloc(size);
+-	if (ret != 0) {
+-		g_disp_mm[sel].info_base = (void *)ret;
++	ret = disp_malloc(size);
++	if (ret) {
++		g_disp_mm[sel].info_base = ret;
+ 		g_disp_mm[sel].mem_start =
+-		    virt_to_phys(g_disp_mm[sel].info_base);
++			virt_to_phys(g_disp_mm[sel].info_base);
+ 		memset(g_disp_mm[sel].info_base, 0, size);
+ 		__inf("pa=0x%08lx va=0x%p size:0x%x\n",
+ 		      g_disp_mm[sel].mem_start, g_disp_mm[sel].info_base, size);
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 364913b..d30f260 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -337,7 +337,7 @@ static int __init Fb_map_video_memory(struct fb_info *info)
+ #else
+ 	info->screen_base = (char __iomem *)disp_malloc(info->fix.smem_len);
+ 	info->fix.smem_start = (unsigned long)__pa(info->screen_base);
+-	memset(info->screen_base, 0, info->fix.smem_len);
++	memset_io(info->screen_base, 0, info->fix.smem_len);
+ 
+ 	__inf("Fb_map_video_memory, pa=0x%08lx size:0x%x\n",
+ 	      info->fix.smem_start, info->fix.smem_len);
+@@ -353,7 +353,7 @@ static inline void Fb_unmap_video_memory(struct fb_info *info)
+ 
+ 	free_pages((unsigned long)info->screen_base, get_order(map_size));
+ #else
+-	disp_free((void *)info->screen_base);
++	disp_free((void __kernel __force *) info->screen_base);
+ #endif
+ }
+ 
+-- 
+1.8.0
+

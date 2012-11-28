@@ -1,0 +1,47 @@
+From 8dc2e8705c309cf5c097b10eb26f9cf10ac9612b Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 20 Jun 2012 13:29:51 +0200
+Subject: [PATCH 552/944] sunxi: set official machine types
+
+---
+ arch/arm/kernel/head.S    | 4 ++--
+ arch/arm/tools/mach-types | 6 +++---
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
+index 6fee45d..a982535 100644
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -96,13 +96,13 @@ ENTRY(stext)
+ 	b	_real_start
+ 
+ #if defined(CONFIG_ARCH_SUN3I)
+-1:	.long 0xf37
++1:	.long 0x1094
+ 	.long 0x81000000
+ #elif defined(CONFIG_ARCH_SUN4I)
+ 1:	.long 0x1008
+ 	.long 0x81000000
+ #elif defined(CONFIG_ARCH_SUN5I)
+-1:      .long 0xf35
++1:      .long 0x102A
+         .long 0x81000000
+ #else
+ #error "unsupport chip"
+diff --git a/arch/arm/tools/mach-types b/arch/arm/tools/mach-types
+index 3196a82..e6af5b9 100644
+--- a/arch/arm/tools/mach-types
++++ b/arch/arm/tools/mach-types
+@@ -1170,6 +1170,6 @@ pov2			MACH_POV2		POV2			3889
+ ipod_touch_2g		MACH_IPOD_TOUCH_2G	IPOD_TOUCH_2G		3890
+ da850_pqab		MACH_DA850_PQAB		DA850_PQAB		3891
+ sun4i			MACH_SUN4I		SUN4I			4104
+-sun5i                   MACH_SUN5I              SUN5I                   3893
+-sun6i                   MACH_SUN6I              SUN6I                   3894
+-sun3i                   MACH_SUN3I              SUN3I                   3895
++sun5i			MACH_SUN5I		SUN5I			4138
++sun6i			MACH_SUN6I		SUN6I			4137
++sun3i			MACH_SUN3I		SUN3I			4244
+-- 
+1.8.0
+

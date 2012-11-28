@@ -1,0 +1,1549 @@
+From 2c8ed4130c3be07bea1522d4c704732db1024f13 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 26 Oct 2012 11:01:00 +0200
+Subject: [PATCH 840/944] video:sunxi:disp: unify iep dependant codepaths
+
+This means everything related to interlacing and de_flicker and
+such, quite a bit in the end.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ .../video/sunxi/disp/de_bsp_sun4i/bsp_display.h    |  22 ++-
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c |  74 ++++++++-
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h |   2 +
+ .../sunxi/disp/de_bsp_sun4i/de/disp_display.c      |  14 ++
+ .../sunxi/disp/de_bsp_sun4i/de/disp_display.h      |  14 ++
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_event.c  |  50 ++++++-
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c   |   4 +
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c    |  43 ++++--
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h    |   3 +
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c |  20 +++
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c |  15 ++
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c    |   4 +
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_video.c  |  10 +-
+ .../video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c |   9 ++
+ .../sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h    |   5 +
+ .../video/sunxi/disp/de_bsp_sun5i/bsp_display.h    |  20 ++-
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c | 166 +++++++++++++++++++++
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h |   4 +-
+ .../sunxi/disp/de_bsp_sun5i/de/disp_display.c      |   9 ++
+ .../sunxi/disp/de_bsp_sun5i/de/disp_display.h      |  16 +-
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_event.c  |   6 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c   |   4 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c    |  48 ++++--
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h    |   2 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c |  20 +++
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c |  18 ++-
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c    |   4 +
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_video.c  |  10 ++
+ .../video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c |   3 +-
+ .../sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h    |   9 ++
+ 30 files changed, 596 insertions(+), 32 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+index 4de8e45..02c21da 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+@@ -110,6 +110,9 @@ typedef struct
+ 	__u32 base_sdram;
+ 	__u32 base_ccmu;
+ 	__u32 base_pwm;
++#ifdef CONFIG_ARCH_SUN5I
++	__u32 base_iep;
++#endif
+ 
+ 	void (*tve_interrup) (__u32 sel);
+ 	__s32 (*hdmi_set_mode)(__disp_tv_mode_t mode);
+@@ -151,13 +154,18 @@ extern __s32 BSP_disp_set_saturation(__u32 sel, __u32 saturation);
+ extern __s32 BSP_disp_get_saturation(__u32 sel);
+ extern __s32 BSP_disp_set_hue(__u32 sel, __u32 hue);
+ extern __s32 BSP_disp_get_hue(__u32 sel);
++#ifdef CONFIG_ARCH_SUN4I
+ extern __s32 BSP_disp_enhance_enable(__u32 sel, __bool enable);
+ extern __s32 BSP_disp_get_enhance_enable(__u32 sel);
++#endif
+ extern __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para);
+ extern __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size);
++#ifdef CONFIG_ARCH_SUN4I
+ extern __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type);
+ extern __s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en);
+-
++#else
++extern __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en);
++#endif
+ extern __s32 BSP_disp_layer_request(__u32 sel, __disp_layer_work_mode_t mode);
+ extern __s32 BSP_disp_layer_release(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_layer_open(__u32 sel, __u32 hid);
+@@ -231,7 +239,11 @@ extern __s32 BSP_disp_lcd_close_after(__u32 sel);
+ extern __lcd_flow_t * BSP_disp_lcd_get_close_flow(__u32 sel);
+ extern __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode);
+ extern __s32 BSP_disp_set_gamma_table(__u32 sel, __u32 *gamtbl_addr,__u32 gamtbl_size);
++#ifdef CONFIG_ARCH_SUN4I
+ extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __disp_lcd_bright_t  bright);
++#else
++extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32  bright, __u32 from_iep);
++#endif
+ extern __s32 BSP_disp_lcd_get_bright(__u32 sel);
+ extern __s32 BSP_disp_lcd_set_src(__u32 sel, __disp_lcdc_src_t src);
+ extern __s32 LCD_PWM_EN(__u32 sel, __bool b_en);
+@@ -302,6 +314,14 @@ extern __s32 BSP_disp_sprite_block_close(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,__disp_sprite_block_para_t *para);
+ extern __s32 BSP_disp_sprite_block_get_para(__u32 sel, __u32 hid,__disp_sprite_block_para_t *para);
+ 
++#ifdef CONFIG_ARCH_SUN5I
++extern __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en);
++extern __s32 BSP_disp_iep_get_deflicker_enable(__u32 sel);
++extern __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en);
++extern __s32 BSP_disp_iep_get_drc_enable(__u32 sel);
++extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)	;
++#endif
++
+ #ifdef __LINUX_OSAL__
+ __s32 Display_set_fb_timming(__u32 sel);
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+index ef2bc6e..2ec02c3 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+@@ -34,6 +34,9 @@ __s32 Image_init(__u32 sel)
+ 	DE_BE_Reg_Init(sel);
+ 
+     BSP_disp_sprite_init(sel);
++#ifdef CONFIG_ARCH_SUN5I
++    BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_LCD,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     Image_open(sel);
+ 
+@@ -73,8 +76,13 @@ __s32 Image_close(__u32 sel)
+ __s32 BSP_disp_set_bright(__u32 sel, __u32 bright)
+ {
+     gdisp.screen[sel].bright = bright;
++
++#ifdef CONFIG_ARCH_SUN4I
+    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
+             gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
++   BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -87,8 +95,13 @@ __s32 BSP_disp_get_bright(__u32 sel)
+ __s32 BSP_disp_set_contrast(__u32 sel, __u32 contrast)
+ {
+     gdisp.screen[sel].contrast = contrast;
++
++#ifdef CONFIG_ARCH_SUN4I
+    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
+             gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
++   BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -101,8 +114,13 @@ __s32 BSP_disp_get_contrast(__u32 sel)
+ __s32 BSP_disp_set_saturation(__u32 sel, __u32 saturation)
+ {
+     gdisp.screen[sel].saturation = saturation;
++
++#ifdef CONFIG_ARCH_SUN4I
+    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
+             gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
++   BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -115,8 +133,13 @@ __s32 BSP_disp_get_saturation(__u32 sel)
+ __s32 BSP_disp_set_hue(__u32 sel, __u32 hue)
+ {
+     gdisp.screen[sel].hue = hue;
++
++#ifdef CONFIG_ARCH_SUN4I
+    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
+             gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
++   BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -126,6 +149,7 @@ __s32 BSP_disp_get_hue(__u32 sel)
+     return gdisp.screen[sel].hue;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ __s32 BSP_disp_enhance_enable(__u32 sel, __bool enable)
+ {
+     gdisp.screen[sel].enhance_en = enable;
+@@ -140,7 +164,7 @@ __s32 BSP_disp_get_enhance_enable(__u32 sel)
+ {
+     return gdisp.screen[sel].enhance_en;
+ }
+-
++#endif /* CONFIG_ARCH_SUN4I */
+ 
+ __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
+ {
+@@ -152,6 +176,7 @@ __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
+     return DIS_SUCCESS;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+ {
+     __disp_color_range_t out_color_range = DISP_COLOR_RANGE_0_255;
+@@ -208,7 +233,52 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+ 
+     return DIS_SUCCESS;
+ }
++#else
++__s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
++{
++    __disp_color_range_t out_color_range = DISP_COLOR_RANGE_0_255;
++    __u32 out_csc = 0;//out_csc: 0:rgb  1:yuv  2:igb
+ 
++    if(out_type == DISP_OUTPUT_TYPE_HDMI)
++    {
++        __s32 ret = 0;
++        __s32 value = 0;
++
++        out_color_range = DISP_COLOR_RANGE_16_255;
++
++        ret = OSAL_Script_FetchParser_Data("disp_init", "screen0_out_color_range", &value, 1);
++        if(ret < 0)
++        {
++            DE_INF("fetch script data disp_init.screen0_out_color_range fail\n");
++        }
++        else
++        {
++            out_color_range = value;
++            DE_INF("screen0_out_color_range = %d\n", value);
++        }
++        out_csc = 0;
++    }
++    else if(out_type == DISP_OUTPUT_TYPE_LCD)
++    {
++        out_csc = 0;
++    }
++    else if(out_type == DISP_OUTPUT_TYPE_TV)
++    {
++        out_csc = 1;
++    }
++
++    if(drc_en)
++    {
++        out_csc = 2;
++    }
++
++    DE_BE_Set_Enhance(sel, out_csc, out_color_range, gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++
++    return DIS_SUCCESS;
++}
++#endif /* CONFIG_ARCH_SUN4I */
++
++#ifdef CONFIG_ARCH_SUN4I
+ __s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en)
+ {
+ 	if(b_en)
+@@ -271,4 +341,4 @@ __s32 Disp_set_out_interlace(__u32 sel)
+ 
+ 	return DIS_SUCCESS;
+ }
+-
++#endif /* CONFIG_ARCH_SUN4I */
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
+index 1598b0f..9d7107b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
+@@ -39,6 +39,8 @@ __s32 Image_init(__u32 sel);
+ __s32 Image_exit(__u32 sel);
+ __s32 Image_open(__u32 sel);
+ __s32 Image_close(__u32 sel);
++#ifdef CONFIG_ARCH_SUN4I
+ __s32 Disp_set_out_interlace(__u32 sel);
++#endif
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+index 9a2406e..d2e94b7 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+@@ -60,6 +60,10 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+         gdisp.scaler[screen_id].hue = 50;
+ 
+         gdisp.screen[screen_id].lcd_bright = 192;
++
++#ifdef CONFIG_ARCH_SUN5I
++	gdisp.screen[screen_id].lcd_bright_dimming = 256;
++#endif
+     }
+     memcpy(&gdisp.init_para,para,sizeof(__disp_bsp_init_para));
+     memset(g_video,0,sizeof(g_video));
+@@ -72,6 +76,9 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     LCDC_set_reg_base(1,para->base_lcdc1);
+     TVE_set_reg_base(0, para->base_tvec0);
+     TVE_set_reg_base(1, para->base_tvec1);
++#ifdef CONFIG_ARCH_SUN5I
++    DE_IEP_Set_Reg_Base(0, para->base_iep);
++#endif
+ 
+ 	disp_pll_init();
+ 
+@@ -85,6 +92,10 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     Disp_TVEC_Init(1);
+     Display_Hdmi_Init();
+ 
++#ifdef CONFIG_ARCH_SUN5I
++	Disp_iep_init(0);
++#endif
++
+     return DIS_SUCCESS;
+ }
+ 
+@@ -103,6 +114,9 @@ __s32 BSP_disp_exit(__u32 mode)
+         Disp_TVEC_Exit(0);
+         Disp_TVEC_Exit(1);
+         Display_Hdmi_Exit();
++#ifdef CONFIG_ARCH_SUN5I
++        Disp_iep_exit(0);
++#endif
+     }
+     else if(mode == DISP_EXIT_MODE_CLEAN_PARTLY)
+     {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+index 59c982d..60ee974 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+@@ -28,6 +28,10 @@
+ #include "disp_scaler.h"
+ #include "disp_video.h"
+ 
++#ifdef CONFIG_ARCH_SUN5I
++#include "../../disp_iep.h"
++#endif
++
+ #define IMAGE_USED              0x00000004
+ #define IMAGE_USED_MASK         (~(IMAGE_USED))
+ #define YUV_CH_USED             0x00000010
+@@ -102,11 +106,17 @@ typedef struct
+     __u32                   contrast;
+     __u32                   saturation;
+     __u32                   hue;
++#ifdef CONFIG_ARCH_SUN4I
+     __bool                  enhance_en;
++#endif
+     __u32                   max_layers;
+     __layer_man_t           layer_manage[4];
+     __bool                  bout_yuv;
++#ifdef CONFIG_ARCH_SUN4I
+     __u32                   de_flicker_status;
++#else
++    __u32                   iep_status;
++#endif
+ 
+     __u32                   image_output_type;//see macro definition IMAGE_OUTPUT_XXX above, it can be lcd only /lcd+scaler/ scaler only
+     __u32                   out_scaler_index;
+@@ -124,8 +134,12 @@ typedef struct
+ 	__u32	                pll_use_status;	//lcdc0/lcdc1 using which video pll(0 or 1)
+ 
+ 	__u32                   lcd_bright;
++#ifdef CONFIG_ARCH_SUN5I
++	__u32                   lcd_bright_dimming;	//IEP-drc backlight dimming rate: 0 -256 (256: no dimming; 0: the most dimming)
++#else
+ 	__disp_color_range_t    out_color_range;
+ 	__csc_t                out_csc;
++#endif
+ 
+ 	__disp_lcd_cfg_t        lcd_cfg;
+     __hdle                  gpio_hdl[4];
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
+index 0cc1f13..53d2c1e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
+@@ -67,6 +67,10 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+ 		return ;
+ 	}
+ 
++#ifdef CONFIG_ARCH_SUN5I
++	IEP_Operation_In_Vblanking(sel, tcon_index);
++#endif
++
+     if(gdisp.screen[sel].LCD_CPUIF_ISR)
+     {
+     	(*gdisp.screen[sel].LCD_CPUIF_ISR)();
+@@ -88,7 +92,51 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+                 Scaler_close(i);
+                 gdisp.scaler[i].b_close = FALSE;
+             }
+-        }
++
++#ifdef CONFIG_ARCH_SUN5I
++            if(gdisp.scaler[i].coef_change == TRUE)
++            {
++		__scal_src_size_t in_size;
++		__scal_out_size_t out_size;
++		__scal_src_type_t in_type;
++		__scal_out_type_t out_type;
++		__scal_scan_mod_t in_scan;
++		__scal_scan_mod_t out_scan;
++                __disp_scaler_t * scaler;
++
++                scaler = &(gdisp.scaler[sel]);
++
++		in_scan.field = FALSE;
++		in_scan.bottom = FALSE;
++
++		in_type.fmt= Scaler_sw_para_to_reg(0,scaler->in_fb.format);
++		in_type.mod= Scaler_sw_para_to_reg(1,scaler->in_fb.mode);
++		in_type.ps= Scaler_sw_para_to_reg(2,(__u8)scaler->in_fb.seq);
++		in_type.byte_seq = 0;
++		in_type.sample_method = 0;
++
++		in_size.src_width = scaler->in_fb.size.width;
++		in_size.src_height = scaler->in_fb.size.height;
++		in_size.x_off = scaler->src_win.x;
++		in_size.y_off = scaler->src_win.y;
++		in_size.scal_width = scaler->src_win.width;
++		in_size.scal_height = scaler->src_win.height;
++
++		out_scan.field = (gdisp.screen[sel].iep_status & DE_FLICKER_USED)?FALSE: gdisp.screen[sel].b_out_interlace;
++
++		out_type.byte_seq = scaler->out_fb.seq;
++		out_type.fmt = scaler->out_fb.format;
++
++		out_size.width = scaler->out_size.width;
++		out_size.height = scaler->out_size.height;
++
++                DE_SCAL_Set_Scaling_Coef(sel, &in_scan, &in_size, &in_type, &out_scan, &out_size, &out_type, scaler->smooth_mode);
++
++                gdisp.scaler[i].coef_change = FALSE;
++            }
++#endif
++
++	}
+         DE_BE_Cfg_Ready(sel);
+ 		gdisp.screen[sel].have_cfg_reg = TRUE;
+     }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+index 93548af..74b75c4 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+@@ -59,7 +59,11 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+ 		Image_open(sel);//set image normal channel start bit , because every de_clk_off( )will reset this bit
+     	disp_clk_cfg(sel,DISP_OUTPUT_TYPE_HDMI, tv_mod);
+ 
++#ifdef CONFIG_ARCH_SUN4I
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_HDMI);
++#else
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_HDMI, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+     	DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+     	DE_BE_Output_Select(sel, sel);
+ 
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+index cf78b64..814f984 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+@@ -1682,7 +1682,11 @@ __s32 BSP_disp_lcd_open_before(__u32 sel)
+     {
+         TCON1_cfg_ex(sel,(__panel_para_t*)&gpanel_info[sel]);
+     }
++#ifdef CONFIG_ARCH_SUN4I
+     BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_LCD);
++#else
++    BSP_disp_set_output_csc(sel,DISP_OUTPUT_TYPE_LCD,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+     DE_BE_set_display_size(sel, gpanel_info[sel].lcd_x, gpanel_info[sel].lcd_y);
+     DE_BE_Output_Select(sel, sel);
+ 
+@@ -1699,6 +1703,9 @@ __s32 BSP_disp_lcd_open_after(__u32 sel)
+     gdisp.screen[sel].status |= LCD_ON;
+     gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_LCD;
+     Lcd_Panel_Parameter_Check(sel);
++#ifdef CONFIG_ARCH_SUN5I
++    Disp_drc_enable(sel, TRUE);
++#endif
+ #ifdef __LINUX_OSAL__
+     Display_set_fb_timming(sel);
+ #endif
+@@ -1714,6 +1721,9 @@ __s32 BSP_disp_lcd_close_befor(__u32 sel)
+ {
+ 	close_flow[sel].func_num = 0;
+ 	lcd_panel_fun[sel].cfg_close_flow(sel);
++#ifdef CONFIG_ARCH_SUN5I
++	Disp_drc_enable(sel, 2);	//must close immediately, cause vbi may not come
++#endif
+ 
+ 	gdisp.screen[sel].status &= LCD_OFF;
+ 	gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+@@ -1751,31 +1761,46 @@ __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode)
+     return DIS_SUCCESS;
+ }
+ 
+-//setting:  0,       1,      2,....  14,   15
+-//pol==0:  0,       2,      3,....  15,   16
+-//pol==1: 16,    14,    13, ...   1,   0
+-__s32 BSP_disp_lcd_set_bright(__u32 sel, __u32  bright)
++/*
++ * sun4i: 0-16
++ * sun5i: 0-256
++ */
++__s32 BSP_disp_lcd_set_bright(__u32 sel, __u32  bright
++#ifdef CONFIG_ARCH_SUN5I
++			      , __u32 from_iep
++#endif
++)
+ {
+     __u32 duty_ns;
+ 
+     if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
+     {
++#ifdef CONFIG_ARCH_SUN4I
+         if(bright != 0)
+         {
+             bright += 1;
+         }
++#endif
+ 
++#ifdef CONFIG_ARCH_SUN4I
+         if(gpanel_info[sel].lcd_pwm_pol == 0)
+-        {
+             duty_ns = (bright * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
+-        }
+         else
+-        {
+             duty_ns = ((256 - bright) * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
+-        }
++#else
++        if(gpanel_info[sel].lcd_pwm_pol == 0)
++            duty_ns = (bright * gdisp.screen[sel].lcd_bright_dimming * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns / 256 + 128) / 256;
++        else
++            duty_ns = ((256- bright * gdisp.screen[sel].lcd_bright_dimming/256 ) * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
++#endif
++
+         pwm_set_duty_ns(gpanel_info[sel].lcd_pwm_ch, duty_ns);
+     }
+-    gdisp.screen[sel].lcd_bright = bright;
++
++#ifdef CONFIG_ARCH_SUN5I
++    if(!from_iep)
++#endif
++	    gdisp.screen[sel].lcd_bright = bright;
+ 
+     return DIS_SUCCESS;
+ }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
+index 8230965..6182bda 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
+@@ -25,6 +25,9 @@
+ 
+ #include "disp_display_i.h"
+ 
++#ifdef CONFIG_ARCH_SUN5I
++extern __panel_para_t		gpanel_info[2];
++#endif
+ 
+ __s32 Disp_lcdc_init(__u32 sel);
+ __s32 Disp_lcdc_exit(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+index e31e4c2..e4d6f37 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+@@ -484,7 +484,11 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)//keep the source windo
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[screen_index].iep_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -593,7 +597,11 @@ __s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t *size)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	DE_SCAL_Set_Scaling_Factor(sel, &in_scan, &in_size, &in_type, &out_scan, &out_size, &out_type);
+ 	if(scaler->enhance_en == TRUE)
+@@ -656,7 +664,11 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -767,7 +779,11 @@ __s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[screen_index].iep_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -898,7 +914,11 @@ __s32 BSP_disp_scaler_set_smooth(__u32 sel, __disp_video_smooth_t  mode)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	DE_SCAL_Set_Scaling_Coef(sel, &in_scan, &in_size, &in_type, &out_scan, &out_size, &out_type, scaler->smooth_mode);
+     scaler->b_reg_change = TRUE;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+index 54b2c77..e562931 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+@@ -219,7 +219,11 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         tve_clk_on(sel);
+         lcdc_clk_on(sel);
+ 
++#ifdef CONFIG_ARCH_SUN4I
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_TV);
++#else
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_TV,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+         DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+         DE_BE_Output_Select(sel, sel);
+ 
+@@ -231,6 +235,9 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         Disp_TVEC_Open(sel);
+ 
+         Disp_Switch_Dram_Mode(DISP_OUTPUT_TYPE_TV, tv_mod);
++#ifdef CONFIG_ARCH_SUN5I
++	Disp_de_flicker_enable(sel, TRUE);
++#endif
+ #ifdef __LINUX_OSAL__
+         {
+             user_gpio_set_t  gpio_info[1];
+@@ -262,7 +269,10 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_TV;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+         Disp_set_out_interlace(sel);
++#endif
++
+ #ifdef __LINUX_OSAL__
+         Display_set_fb_timming(sel);
+ #endif
+@@ -282,6 +292,9 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         tve_clk_off(sel);
+         image_clk_off(sel);
+         lcdc_clk_off(sel);
++#ifdef CONFIG_ARCH_SUN5I
++	Disp_de_flicker_enable(sel, 2);	//must close immediately, because vbi may not come
++#endif
+ 
+ #ifdef __LINUX_OSAL__
+         {
+@@ -315,7 +328,9 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 		gdisp.screen[sel].pll_use_status &= ((gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED)? VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK);
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ 		Disp_set_out_interlace(sel);
++#endif
+     }
+     return DIS_SUCCESS;
+ }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
+index 30da851..2ddd80c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
+@@ -57,7 +57,11 @@ __s32 BSP_disp_vga_open(__u32 sel)
+     	disp_clk_cfg(sel,DISP_OUTPUT_TYPE_VGA, vga_mode);
+     	Disp_lcdc_pin_cfg(sel, DISP_OUTPUT_TYPE_VGA, 1);
+ 
++#ifdef CONFIG_ARCH_SUN4I
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_VGA);
++#else
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_VGA, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+         DE_BE_set_display_size(sel, vga_mode_to_width(vga_mode), vga_mode_to_height(vga_mode));
+         DE_BE_Output_Select(sel, sel);
+     	TCON1_set_vga_mode(sel,vga_mode);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+index a12f7c6..b5a63fe 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+@@ -167,11 +167,13 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+ 
+     	if(g_video[sel][id].video_cur.interlace == TRUE)
+     	{
++#ifdef CONFIG_ARCH_SUN4I
+     	    if((!(gdisp.screen[sel].de_flicker_status & DE_FLICKER_USED)) &&
+     	        (scaler->in_fb.format == DISP_FORMAT_YUV420 && scaler->in_fb.mode == DISP_MOD_MB_UV_COMBINED))
+-    	    {
+     		    g_video[sel][id].dit_enable = TRUE;
+-    		}
++#else
++		g_video[sel][id].dit_enable = FALSE;
++#endif
+ 
+             g_video[sel][id].fetch_field = FALSE;
+         	if(g_video[sel][id].display_cnt == 0)
+@@ -251,7 +253,11 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     	in_scan.field = g_video[sel][id].fetch_field;
+     	in_scan.bottom = g_video[sel][id].fetch_bot;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+     	out_scan.field = (gdisp.screen[sel].de_flicker_status & DE_FLICKER_USED)?0: gdisp.screen[sel].b_out_interlace;
++#else
++	out_scan.field = (gdisp.screen[sel].iep_status == DE_FLICKER_USED)?0: gdisp.screen[sel].b_out_interlace;
++#endif
+ 
+     	if(scaler->out_fb.cs_mode > DISP_VXYCC)
+     	{
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+index d278e70..42e0530 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+@@ -1014,6 +1014,15 @@ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable)
+     return 0;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN5I
++__s32 DE_BE_output_csc_enable(__u32 sel, __bool enable)
++{
++	DE_BE_WUINT32(sel, DE_BE_MODE_CTL_OFF,(DE_BE_RUINT32(sel, DE_BE_MODE_CTL_OFF)&(~(1<<5))) | (enable<<5));
++
++    return 0;
++}
++#endif
++
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable)
+ {
+ 	DE_BE_WUINT32(sel, DE_BE_MODE_CTL_OFF,(DE_BE_RUINT32(sel, DE_BE_MODE_CTL_OFF)&(~(1<<28))) | (enable<<28));
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+index 1aa7f5c..1322a95 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+@@ -73,11 +73,13 @@ typedef enum
+    DE_N64PIXELS
+ }de_pixels_num_t;
+ 
++#ifdef CONFIG_ARCH_SUN4I
+ typedef enum {
+ 	DE_RGB,
+ 	DE_YUV_TV,
+ 	DE_YUV_HDMI
+ }__csc_t;
++#endif
+ 
+ typedef enum __SCAL_PS
+ {
+@@ -363,6 +365,9 @@ __s32 DE_BE_set_display_size(__u32 sel, __u32 width, __u32 height);
+ __s32 DE_BE_get_display_width(__u32 sel);
+ __s32 DE_BE_get_display_height(__u32 sel);
+ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable);
++#ifdef CONFIG_ARCH_SUN5I
++__s32 DE_BE_output_csc_enable(__u32 sel, __bool enable);
++#endif
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable);
+ __s32 DE_BE_Format_To_Bpp(__u32 sel, __u8 format);
+ __u32 DE_BE_Offset_To_Addr(__u32 src_addr,__u32 width,__u32 x,__u32 y,__u32 bpp);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+index f043661..f6105ed 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+@@ -110,7 +110,9 @@ typedef struct
+ 	__u32 base_sdram;
+ 	__u32 base_ccmu;
+ 	__u32 base_pwm;
++#ifdef CONFIG_ARCH_SUN5I
+ 	__u32 base_iep;
++#endif
+ 
+ 	void (*tve_interrup) (__u32 sel);
+ 	__s32 (*hdmi_set_mode)(__disp_tv_mode_t mode);
+@@ -152,11 +154,18 @@ extern __s32 BSP_disp_set_saturation(__u32 sel, __u32 saturation);
+ extern __s32 BSP_disp_get_saturation(__u32 sel);
+ extern __s32 BSP_disp_set_hue(__u32 sel, __u32 hue);
+ extern __s32 BSP_disp_get_hue(__u32 sel);
++#ifdef CONFIG_ARCH_SUN4I
++extern __s32 BSP_disp_enhance_enable(__u32 sel, __bool enable);
++extern __s32 BSP_disp_get_enhance_enable(__u32 sel);
++#endif
+ extern __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para);
+ extern __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size);
+-extern __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en);
++#ifdef CONFIG_ARCH_SUN4I
++extern __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type);
+ extern __s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en);
+-
++#else
++extern __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en);
++#endif
+ extern __s32 BSP_disp_layer_request(__u32 sel, __disp_layer_work_mode_t mode);
+ extern __s32 BSP_disp_layer_release(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_layer_open(__u32 sel, __u32 hid);
+@@ -230,7 +239,11 @@ extern __s32 BSP_disp_lcd_close_after(__u32 sel);
+ extern __lcd_flow_t * BSP_disp_lcd_get_close_flow(__u32 sel);
+ extern __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode);
+ extern __s32 BSP_disp_set_gamma_table(__u32 sel, __u32 *gamtbl_addr,__u32 gamtbl_size);
++#ifdef CONFIG_ARCH_SUN4I
++extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __disp_lcd_bright_t  bright);
++#else
+ extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32  bright, __u32 from_iep);
++#endif
+ extern __s32 BSP_disp_lcd_get_bright(__u32 sel);
+ extern __s32 BSP_disp_lcd_set_src(__u32 sel, __disp_lcdc_src_t src);
+ extern __s32 LCD_PWM_EN(__u32 sel, __bool b_en);
+@@ -302,11 +315,14 @@ extern __s32 BSP_disp_sprite_block_close(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,__disp_sprite_block_para_t *para);
+ extern __s32 BSP_disp_sprite_block_get_para(__u32 sel, __u32 hid,__disp_sprite_block_para_t *para);
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ extern __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en);
+ extern __s32 BSP_disp_iep_get_deflicker_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en);
+ extern __s32 BSP_disp_iep_get_drc_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)	;
++#endif
++
+ #ifdef __LINUX_OSAL__
+ __s32 Display_set_fb_timming(__u32 sel);
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
+index d56ab0e..0698dc1 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
+@@ -34,7 +34,9 @@ __s32 Image_init(__u32 sel)
+ 	DE_BE_Reg_Init(sel);
+ 
+     BSP_disp_sprite_init(sel);
++#ifdef CONFIG_ARCH_SUN5I
+     BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_LCD,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     Image_open(sel);
+ 
+@@ -74,7 +76,13 @@ __s32 Image_close(__u32 sel)
+ __s32 BSP_disp_set_bright(__u32 sel, __u32 bright)
+ {
+     gdisp.screen[sel].bright = bright;
++
++#ifdef CONFIG_ARCH_SUN4I
++    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
++            gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
+     BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -87,7 +95,13 @@ __s32 BSP_disp_get_bright(__u32 sel)
+ __s32 BSP_disp_set_contrast(__u32 sel, __u32 contrast)
+ {
+     gdisp.screen[sel].contrast = contrast;
++
++#ifdef CONFIG_ARCH_SUN4I
++    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
++            gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
+     BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -100,7 +114,13 @@ __s32 BSP_disp_get_contrast(__u32 sel)
+ __s32 BSP_disp_set_saturation(__u32 sel, __u32 saturation)
+ {
+     gdisp.screen[sel].saturation = saturation;
++
++#ifdef CONFIG_ARCH_SUN4I
++    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
++            gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
+     BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -113,7 +133,13 @@ __s32 BSP_disp_get_saturation(__u32 sel)
+ __s32 BSP_disp_set_hue(__u32 sel, __u32 hue)
+ {
+     gdisp.screen[sel].hue = hue;
++
++#ifdef CONFIG_ARCH_SUN4I
++    DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
++            gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++#else
+     BSP_disp_set_output_csc(sel, gdisp.screen[sel].output_type, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+ 
+     return DIS_SUCCESS;
+ }
+@@ -123,6 +149,22 @@ __s32 BSP_disp_get_hue(__u32 sel)
+     return gdisp.screen[sel].hue;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN4I
++__s32 BSP_disp_enhance_enable(__u32 sel, __bool enable)
++{
++    gdisp.screen[sel].enhance_en = enable;
++
++   DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, gdisp.screen[sel].enhance_en,
++            gdisp.screen[sel].bright, gdisp.screen[sel].contrast, gdisp.screen[sel].saturation, gdisp.screen[sel].hue);
++
++    return DIS_SUCCESS;
++}
++
++__s32 BSP_disp_get_enhance_enable(__u32 sel)
++{
++    return gdisp.screen[sel].enhance_en;
++}
++#endif /* CONFIG_ARCH_SUN4I */
+ 
+ __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
+ {
+@@ -134,6 +176,64 @@ __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
+     return DIS_SUCCESS;
+ }
+ 
++#ifdef CONFIG_ARCH_SUN4I
++__s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
++{
++    __disp_color_range_t out_color_range = DISP_COLOR_RANGE_0_255;
++	__csc_t out_csc = DE_RGB;
++    __u32 enhance_en, bright, contrast, saturation, hue;
++
++    enhance_en = gdisp.screen[sel].enhance_en;
++    bright = gdisp.screen[sel].bright;
++    contrast = gdisp.screen[sel].contrast;
++    saturation = gdisp.screen[sel].saturation;
++    hue = gdisp.screen[sel].hue;
++
++    if(type == DISP_OUTPUT_TYPE_HDMI)
++    {
++        __s32 ret = 0;
++        __s32 value = 0;
++
++        out_color_range = DISP_COLOR_RANGE_16_255;
++		out_csc = DE_YUV_HDMI;
++
++        ret = OSAL_Script_FetchParser_Data("disp_init", "screen0_out_color_range", &value, 1);
++        if(ret < 0)
++        {
++            DE_INF("fetch script data disp_init.screen0_out_color_range fail\n");
++        }
++        else
++        {
++            out_color_range = value;
++            DE_INF("screen0_out_color_range = %d\n", value);
++        }
++    }
++    else if(type == DISP_OUTPUT_TYPE_TV)
++    {
++		out_csc = DE_YUV_TV;
++    }
++
++    else if(type == DISP_OUTPUT_TYPE_LCD)
++    {
++        if(enhance_en == 0)
++        {
++            enhance_en = 1;
++
++            bright = 50;
++            contrast = 50;
++            saturation = 57;
++            hue = 50;
++        }
++    }
++
++   gdisp.screen[sel].out_color_range = out_color_range;
++   gdisp.screen[sel].out_csc = out_csc;
++
++   DE_BE_Set_Enhance_ex(sel, gdisp.screen[sel].out_csc, gdisp.screen[sel].out_color_range, enhance_en, bright, contrast, saturation, hue);
++
++    return DIS_SUCCESS;
++}
++#else
+ __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
+ {
+     __disp_color_range_t out_color_range = DISP_COLOR_RANGE_0_255;
+@@ -176,3 +276,69 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
+ 
+     return DIS_SUCCESS;
+ }
++#endif /* CONFIG_ARCH_SUN4I */
++
++#ifdef CONFIG_ARCH_SUN4I
++__s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en)
++{
++	if(b_en)
++	{
++		gdisp.screen[sel].de_flicker_status |= DE_FLICKER_REQUIRED;
++	}
++	else
++	{
++		gdisp.screen[sel].de_flicker_status &= DE_FLICKER_REQUIRED_MASK;
++	}
++	Disp_set_out_interlace(sel);
++	return DIS_SUCCESS;
++}
++
++__s32 Disp_set_out_interlace(__u32 sel)
++{
++	__u32 i;
++	__bool b_cvbs_out = 0;
++
++	if(gdisp.screen[sel].output_type==DISP_OUTPUT_TYPE_TV &&
++	    (gdisp.screen[sel].tv_mode==DISP_TV_MOD_PAL || gdisp.screen[sel].tv_mode==DISP_TV_MOD_PAL_M ||
++	    gdisp.screen[sel].tv_mode==DISP_TV_MOD_PAL_NC || gdisp.screen[sel].tv_mode==DISP_TV_MOD_NTSC))
++	{
++	    b_cvbs_out = 1;
++	}
++
++    gdisp.screen[sel].de_flicker_status |= DE_FLICKER_REQUIRED;
++
++    BSP_disp_cfg_start(sel);
++
++	if((gdisp.screen[sel].de_flicker_status & DE_FLICKER_REQUIRED) && b_cvbs_out)	//when output device is cvbs
++	{
++		DE_BE_deflicker_enable(sel, TRUE);
++        for(i=0; i<2; i++)
++        {
++            if((gdisp.scaler[i].status & SCALER_USED) && (gdisp.scaler[i].screen_index == sel))
++            {
++				Scaler_Set_Outitl(i, FALSE);
++				gdisp.scaler[i].b_reg_change = TRUE;
++			}
++		}
++		gdisp.screen[sel].de_flicker_status |= DE_FLICKER_USED;
++	}
++	else
++	{
++	    DE_BE_deflicker_enable(sel, FALSE);
++        for(i=0; i<2; i++)
++        {
++            if((gdisp.scaler[i].status & SCALER_USED) && (gdisp.scaler[i].screen_index == sel))
++		{
++			Scaler_Set_Outitl(i, gdisp.screen[sel].b_out_interlace);
++			gdisp.scaler[i].b_reg_change = TRUE;
++		}
++	}
++	gdisp.screen[sel].de_flicker_status &= DE_FLICKER_USED_MASK;
++    }
++	DE_BE_Set_Outitl_enable(sel, gdisp.screen[sel].b_out_interlace);
++
++    BSP_disp_cfg_finish(sel);
++
++	return DIS_SUCCESS;
++}
++#endif /* CONFIG_ARCH_SUN4I */
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
+index a357f83..9d7107b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
+@@ -39,6 +39,8 @@ __s32 Image_init(__u32 sel);
+ __s32 Image_exit(__u32 sel);
+ __s32 Image_open(__u32 sel);
+ __s32 Image_close(__u32 sel);
+-__s32 Disp_de_flicker_enable(__u32 sel, __u32 enable );
++#ifdef CONFIG_ARCH_SUN4I
++__s32 Disp_set_out_interlace(__u32 sel);
++#endif
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+index 4791323..bb88a2e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+@@ -61,7 +61,9 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+ 
+         gdisp.screen[screen_id].lcd_bright = 192;
+ 
++#ifdef CONFIG_ARCH_SUN5I
+         gdisp.screen[screen_id].lcd_bright_dimming = 256;
++#endif
+     }
+     memcpy(&gdisp.init_para,para,sizeof(__disp_bsp_init_para));
+     memset(g_video,0,sizeof(g_video));
+@@ -74,7 +76,9 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     //LCDC_set_reg_base(1,para->base_lcdc1);
+     TVE_set_reg_base(0, para->base_tvec0);
+     //TVE_set_reg_base(1, para->base_tvec1);
++#ifdef CONFIG_ARCH_SUN5I
+     DE_IEP_Set_Reg_Base(0, para->base_iep);
++#endif
+ 
+     BSP_disp_close_lcd_backlight(0);
+ 
+@@ -90,7 +94,10 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+     //Disp_TVEC_Init(1);
+     Display_Hdmi_Init();
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ 	Disp_iep_init(0);
++#endif
++
+     return DIS_SUCCESS;
+ }
+ 
+@@ -109,7 +116,9 @@ __s32 BSP_disp_exit(__u32 mode)
+         Disp_TVEC_Exit(0);
+         //Disp_TVEC_Exit(1);
+         Display_Hdmi_Exit();
++#ifdef CONFIG_ARCH_SUN5I
+         Disp_iep_exit(0);
++#endif
+     }
+     else if(mode == DISP_EXIT_MODE_CLEAN_PARTLY)
+     {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+index 0343fb2..42b3f2b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+@@ -27,8 +27,10 @@
+ #include "disp_layer.h"
+ #include "disp_scaler.h"
+ #include "disp_video.h"
+-#include "../../disp_iep.h"
+ 
++#ifdef CONFIG_ARCH_SUN5I
++#include "../../disp_iep.h"
++#endif
+ 
+ #define IMAGE_USED              0x00000004
+ #define IMAGE_USED_MASK         (~(IMAGE_USED))
+@@ -104,9 +106,16 @@ typedef struct
+     __u32                   contrast;
+     __u32                   saturation;
+     __u32                   hue;
++#ifdef CONFIG_ARCH_SUN4I
++    __bool                  enhance_en;
++#endif
+     __u32                   max_layers;
+     __layer_man_t           layer_manage[4];
++#ifdef CONFIG_ARCH_SUN4I
++    __u32                   de_flicker_status;
++#else
+     __u32                   iep_status;
++#endif
+ 
+     __u32                   image_output_type;//see macro definition IMAGE_OUTPUT_XXX above, it can be lcd only /lcd+scaler/ scaler only
+     __u32                   out_scaler_index;
+@@ -124,7 +133,12 @@ typedef struct
+ 	__u32	                pll_use_status;	//lcdc0/lcdc1 using which video pll(0 or 1)
+ 
+ 	__u32                   lcd_bright;
++#ifdef CONFIG_ARCH_SUN5I
+ 	__u32                   lcd_bright_dimming;	//IEP-drc backlight dimming rate: 0 -256 (256: no dimming; 0: the most dimming)
++#else
++	__disp_color_range_t    out_color_range;
++	__csc_t                out_csc;
++#endif
+ 
+ 	__disp_lcd_cfg_t        lcd_cfg;
+     __hdle                  gpio_hdl[4];
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
+index 672769e..014cbf3 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
+@@ -67,7 +67,9 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+ 		return ;
+ 	}
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ 	IEP_Operation_In_Vblanking(sel, tcon_index);
++#endif
+ 
+     if(gdisp.screen[sel].LCD_CPUIF_ISR)
+     {
+@@ -90,6 +92,8 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+                 Scaler_close(i);
+                 gdisp.scaler[i].b_close = FALSE;
+             }
++
++#ifdef CONFIG_ARCH_SUN5I
+             if(gdisp.scaler[i].coef_change == TRUE)
+             {
+             	__scal_src_size_t in_size;
+@@ -130,6 +134,8 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+ 
+                 gdisp.scaler[i].coef_change = FALSE;
+             }
++#endif
++
+         }
+         DE_BE_Cfg_Ready(sel);
+ 		gdisp.screen[sel].have_cfg_reg = TRUE;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+index 4cb3c9b..8921b96 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+@@ -60,7 +60,11 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+ 		Image_open(sel);//set image normal channel start bit , because every de_clk_off( )will reset this bit
+     	disp_clk_cfg(sel,DISP_OUTPUT_TYPE_HDMI, tv_mod);
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_HDMI);
++#else
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_HDMI, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+     	DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+     	DE_BE_Output_Select(sel, sel);
+     	DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+index 989de4f..93fda3f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+@@ -1677,7 +1677,11 @@ __s32 BSP_disp_lcd_open_before(__u32 sel)
+     {
+         TCON1_cfg_ex(sel,(__panel_para_t*)&gpanel_info[sel]);
+     }
++#ifdef CONFIG_ARCH_SUN4I
++    BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_LCD);
++#else
+     BSP_disp_set_output_csc(sel,DISP_OUTPUT_TYPE_LCD,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+     DE_BE_set_display_size(sel, gpanel_info[sel].lcd_x, gpanel_info[sel].lcd_y);
+     DE_BE_Output_Select(sel, sel);
+ 
+@@ -1694,7 +1698,9 @@ __s32 BSP_disp_lcd_open_after(__u32 sel)
+     gdisp.screen[sel].status |= LCD_ON;
+     gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_LCD;
+     Lcd_Panel_Parameter_Check(sel);
++#ifdef CONFIG_ARCH_SUN5I
+     Disp_drc_enable(sel, TRUE);
++#endif
+ #ifdef __LINUX_OSAL__
+     Display_set_fb_timming(sel);
+ #endif
+@@ -1710,7 +1716,9 @@ __s32 BSP_disp_lcd_close_befor(__u32 sel)
+ {
+ 	close_flow[sel].func_num = 0;
+ 	lcd_panel_fun[sel].cfg_close_flow(sel);
++#ifdef CONFIG_ARCH_SUN5I
+ 	Disp_drc_enable(sel, 2);	//must close immediately, cause vbi may not come
++#endif
+ 
+ 	gdisp.screen[sel].status &= LCD_OFF;
+ 	gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+@@ -1748,29 +1756,47 @@ __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode)
+     return DIS_SUCCESS;
+ }
+ 
+-//setting:  0,       1,      2,....  255,   256
+-//pol==0:  0,       1,      2,....  255,   256
+-//pol==1: 256,    255,    254, ...   1,   0
+-__s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright, __u32 from_iep)
++/*
++ * sun4i: 0-16
++ * sun5i: 0-256
++ */
++__s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright
++#ifdef CONFIG_ARCH_SUN5I
++			      , __u32 from_iep
++#endif
++)
+ {
+     __u32 duty_ns;
+ 
+     if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
+     {
+-        if(gpanel_info[sel].lcd_pwm_pol == 0)
++#ifdef CONFIG_ARCH_SUN4I
++        if(bright != 0)
+         {
+-            duty_ns = (bright * gdisp.screen[sel].lcd_bright_dimming * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns / 256 + 128) / 256;
++            bright += 1;
+         }
++#endif
++
++#ifdef CONFIG_ARCH_SUN4I
++        if(gpanel_info[sel].lcd_pwm_pol == 0)
++            duty_ns = (bright * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
++        else
++            duty_ns = ((256 - bright) * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
++#else
++        if(gpanel_info[sel].lcd_pwm_pol == 0)
++            duty_ns = (bright * gdisp.screen[sel].lcd_bright_dimming * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns / 256 + 128) / 256;
+         else
+-        {
+             duty_ns = ((256- bright * gdisp.screen[sel].lcd_bright_dimming/256 ) * gdisp.pwm[gpanel_info[sel].lcd_pwm_ch].period_ns + 128) / 256;
+-        }
++#endif
++
+         pwm_set_duty_ns(gpanel_info[sel].lcd_pwm_ch, duty_ns);
+     }
++
++#ifdef CONFIG_ARCH_SUN5I
+     if(!from_iep)
+-    {
+-    gdisp.screen[sel].lcd_bright = bright;
+-	}
++#endif
++	    gdisp.screen[sel].lcd_bright = bright;
++
+     return DIS_SUCCESS;
+ }
+ 
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
+index 0400726..6182bda 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
+@@ -25,7 +25,9 @@
+ 
+ #include "disp_display_i.h"
+ 
++#ifdef CONFIG_ARCH_SUN5I
+ extern __panel_para_t		gpanel_info[2];
++#endif
+ 
+ __s32 Disp_lcdc_init(__u32 sel);
+ __s32 Disp_lcdc_exit(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+index 656fc81..f28674b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+@@ -485,7 +485,11 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)//keep the source windo
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
+ 	out_scan.field = (gdisp.screen[screen_index].iep_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -594,7 +598,11 @@ __s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t *size)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
+ 	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	DE_SCAL_Set_Scaling_Factor(sel, &in_scan, &in_size, &in_type, &out_scan, &out_size, &out_type);
+ 	if(scaler->enhance_en == TRUE)
+@@ -657,7 +665,11 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
+ 	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -768,7 +780,11 @@ __s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
+ 	out_scan.field = (gdisp.screen[screen_index].iep_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	if(scaler->in_fb.cs_mode > DISP_VXYCC)
+ 	{
+@@ -899,7 +915,11 @@ __s32 BSP_disp_scaler_set_smooth(__u32 sel, __disp_video_smooth_t  mode)
+ 	in_scan.field = FALSE;
+ 	in_scan.bottom = FALSE;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[screen_index].de_flicker_status & DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#else
+ 	out_scan.field = (gdisp.screen[screen_index].iep_status == DE_FLICKER_USED)?FALSE: gdisp.screen[screen_index].b_out_interlace;
++#endif
+ 
+ 	gdisp.scaler[sel].coef_change = 1;
+     scaler->b_reg_change = TRUE;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+index 21cab37..88b0122 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+@@ -220,7 +220,11 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         tve_clk_on(sel);
+         lcdc_clk_on(sel);
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_TV);
++#else
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_TV,gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+         DE_BE_set_display_size(sel, tv_mode_to_width(tv_mod), tv_mode_to_height(tv_mod));
+         DE_BE_Output_Select(sel, sel);
+ 		DE_BE_Set_Outitl_enable(sel, Disp_get_screen_scan_mode(tv_mod));
+@@ -248,7 +252,9 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         Disp_TVEC_Open(sel);
+ 
+         Disp_Switch_Dram_Mode(DISP_OUTPUT_TYPE_TV, tv_mod);
++#ifdef CONFIG_ARCH_SUN5I
+         Disp_de_flicker_enable(sel, TRUE);
++#endif
+ #ifdef __LINUX_OSAL__
+         {
+             user_gpio_set_t  gpio_info[1];
+@@ -279,6 +285,11 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         gdisp.screen[sel].status |= TV_ON;
+         gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_TV;
++
++#ifdef CONFIG_ARCH_SUN4I
++	Disp_set_out_interlace(sel);
++#endif
++
+ #ifdef __LINUX_OSAL__
+         Display_set_fb_timming(sel);
+ #endif
+@@ -300,7 +311,9 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         tve_clk_off(sel);
+         image_clk_off(sel);
+         lcdc_clk_off(sel);
++#ifdef CONFIG_ARCH_SUN5I
+         Disp_de_flicker_enable(sel, 2);	//must close immediately, because vbi may not come
++#endif
+ 		DE_BE_Set_Outitl_enable(sel, FALSE);
+         for(scaler_index=0; scaler_index<2; scaler_index++)
+         {
+@@ -340,6 +353,10 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 		gdisp.screen[sel].pll_use_status &= ((gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED)? VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK);
++
++#ifdef CONFIG_ARCH_SUN4I
++		Disp_set_out_interlace(sel);
++#endif
+     }
+     return DIS_SUCCESS;
+ }
+@@ -374,7 +391,6 @@ __s32 BSP_disp_tv_get_interface(__u32 sel)
+     {
+         dac[i] = TVE_get_dac_status(i);
+         if(dac[i]>1)
+-
+     {
+             DE_WRN("dac %d short to ground\n", i);
+             dac[i] = 0;
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
+index 8750af4..2b8f6b9 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
+@@ -57,7 +57,11 @@ __s32 BSP_disp_vga_open(__u32 sel)
+     	disp_clk_cfg(sel,DISP_OUTPUT_TYPE_VGA, vga_mode);
+     	Disp_lcdc_pin_cfg(sel, DISP_OUTPUT_TYPE_VGA, 1);
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_VGA);
++#else
+         BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_VGA, gdisp.screen[sel].iep_status&DRC_USED);
++#endif
+         DE_BE_set_display_size(sel, vga_mode_to_width(vga_mode), vga_mode_to_height(vga_mode));
+         DE_BE_Output_Select(sel, sel);
+     	TCON1_set_vga_mode(sel,vga_mode);
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+index 4a88702..24c9e6a 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+@@ -67,7 +67,13 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+ 
+     	if(g_video[sel][id].video_cur.interlace == TRUE)
+     	{
++#ifdef CONFIG_ARCH_SUN4I
++	    if((!(gdisp.screen[sel].de_flicker_status & DE_FLICKER_USED)) &&
++	        (scaler->in_fb.format == DISP_FORMAT_YUV420 && scaler->in_fb.mode == DISP_MOD_MB_UV_COMBINED))
++		    g_video[sel][id].dit_enable = TRUE;
++#else
+     		g_video[sel][id].dit_enable = FALSE;
++#endif
+ 
+             g_video[sel][id].fetch_field = TRUE;
+         	if(g_video[sel][id].display_cnt == 0)
+@@ -153,7 +159,11 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+     	in_scan.field = g_video[sel][id].fetch_field;
+     	in_scan.bottom = g_video[sel][id].fetch_bot;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++	out_scan.field = (gdisp.screen[sel].de_flicker_status & DE_FLICKER_USED)?0: gdisp.screen[sel].b_out_interlace;
++#else
+     	out_scan.field = (gdisp.screen[sel].iep_status == DE_FLICKER_USED)?0: gdisp.screen[sel].b_out_interlace;
++#endif
+ 
+     	if(scaler->out_fb.cs_mode > DISP_VXYCC)
+     	{
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
+index 59c61c3..de2b2a7 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
+@@ -607,13 +607,14 @@ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable)
+     return 0;
+ }
+ 
+-
++#ifdef CONFIG_ARCH_SUN5I
+ __s32 DE_BE_output_csc_enable(__u32 sel, __bool enable)
+ {
+ 	DE_BE_WUINT32(sel, DE_BE_MODE_CTL_OFF,(DE_BE_RUINT32(sel, DE_BE_MODE_CTL_OFF)&(~(1<<5))) | (enable<<5));
+ 
+     return 0;
+ }
++#endif
+ 
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable)
+ {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+index 14b2363..a9b4e30 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+@@ -73,6 +73,13 @@ typedef enum
+    DE_N64PIXELS
+ }de_pixels_num_t;
+ 
++#ifdef CONFIG_ARCH_SUN4I
++typedef enum {
++	DE_RGB,
++	DE_YUV_TV,
++	DE_YUV_HDMI
++}__csc_t;
++#endif
+ 
+ typedef enum __SCAL_PS
+ {
+@@ -359,7 +366,9 @@ __s32 DE_BE_set_display_size(__u32 sel, __u32 width, __u32 height);
+ __s32 DE_BE_get_display_width(__u32 sel);
+ __s32 DE_BE_get_display_height(__u32 sel);
+ __s32 DE_BE_deflicker_enable(__u32 sel, __bool enable);
++#ifdef CONFIG_ARCH_SUN5I
+ __s32 DE_BE_output_csc_enable(__u32 sel, __bool enable);
++#endif
+ __s32 DE_BE_Set_Outitl_enable(__u32 sel, __bool enable);
+ 
+ //__s32 DE_BE_Output_Cfg_Csc_Coeff(__u32 sel, __u8 cs_mode);
+-- 
+1.8.0
+

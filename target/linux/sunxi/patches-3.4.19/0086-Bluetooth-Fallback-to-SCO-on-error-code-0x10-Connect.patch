@@ -1,0 +1,46 @@
+From 6bbc2b2c13d95836e3d7a16cbd3c0b67df3db3a3 Mon Sep 17 00:00:00 2001
+From: Nick Pelly <npelly@google.com>
+Date: Tue, 22 Sep 2009 15:19:46 -0700
+Subject: [PATCH 086/944] Bluetooth: Fallback to SCO on error code 0x10
+ (Connection Accept Timeout).
+
+This is to support the Motorola HF850 carkit which reports the error code 0x10
+for an eSCO attempt, even though it advertises eSCO support. Here is the
+hcidump:
+
+2009-09-22 15:40:24.492391 < HCI Command: Setup Synchronous Connection
+(0x01|0x0028) plen 17
+    handle 1 voice setting 0x0060
+2009-09-22 15:40:24.493002 > HCI Event: Command Status (0x0f) plen 4
+    Setup Synchronous Connection (0x01|0x0028) status 0x00 ncmd 1
+2009-09-22 15:40:30.594869 > HCI Event: Synchronous Connect Complete (0x2c)
+plen 17
+    status 0x10 handle 257 bdaddr 00:50:CD:20:C6:84 type eSCO
+    Error: Connection Accept Timeout Exceeded
+
+With this patch we will retry with a SCO connection, which succeeds.
+
+Unfortunately the Moto HF850 also takes 5 seconds to return the error for the
+eSCO attempt, so it will still take 5 seconds to fallback to SCO with this
+patch.
+
+Signed-off-by: Nick Pelly <npelly@google.com>
+---
+ net/bluetooth/hci_event.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/net/bluetooth/hci_event.c b/net/bluetooth/hci_event.c
+index b375310..c7d3574 100644
+--- a/net/bluetooth/hci_event.c
++++ b/net/bluetooth/hci_event.c
+@@ -2919,6 +2919,7 @@ static inline void hci_sync_conn_complete_evt(struct hci_dev *hdev, struct sk_bu
+ 		hci_conn_add_sysfs(conn);
+ 		break;
+ 
++	case 0x10:	/* Connection Accept Timeout */
+ 	case 0x11:	/* Unsupported Feature or Parameter Value */
+ 	case 0x1c:	/* SCO interval rejected */
+ 	case 0x1a:	/* Unsupported Remote Feature */
+-- 
+1.8.0
+

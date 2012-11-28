@@ -1,0 +1,28 @@
+From 2ccc409884d5e3d64f40d54befb4cd60d0b2c9ab Mon Sep 17 00:00:00 2001
+From: mhban <mhban@samsung.com>
+Date: Wed, 8 Jun 2011 09:13:15 +0000
+Subject: [PATCH 011/944] printk: do not handle non-sleepable notification in
+ console_cpu_notify
+
+- CPU_DYING should not be handled in sleepable context
+
+Signed-off-by: Minho Ban <mhban@samsung.com>
+---
+ kernel/printk.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/kernel/printk.c b/kernel/printk.c
+index b663c2c..50b1ecb 100644
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -1161,7 +1161,6 @@ static int __cpuinit console_cpu_notify(struct notifier_block *self,
+ 	switch (action) {
+ 	case CPU_ONLINE:
+ 	case CPU_DEAD:
+-	case CPU_DYING:
+ 	case CPU_DOWN_FAILED:
+ 	case CPU_UP_CANCELED:
+ 		console_lock();
+-- 
+1.8.0
+

@@ -1,0 +1,40 @@
+From 907a272c1e9c591734f52fb05961314ef0942c1c Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 23:16:42 +0100
+Subject: [PATCH 923/944] Documentation:sunxi:disp_version: handle missing
+ versioning
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ Documentation/sunxi/disp/disp_version.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/Documentation/sunxi/disp/disp_version.c b/Documentation/sunxi/disp/disp_version.c
+index cb93ef4..2704782 100644
+--- a/Documentation/sunxi/disp/disp_version.c
++++ b/Documentation/sunxi/disp/disp_version.c
+@@ -32,14 +32,16 @@ main(int argc, char *argv[])
+ 
+ 	tmp = SUNXI_DISP_VERSION;
+ 	ret = ioctl(fd, DISP_CMD_VERSION, &tmp);
+-	if (ret < 0) {
++	if (ret == -1) {
++		printf("Warning: kernel sunxi disp driver does not support "
++		       "versioning.\n");
++	} else if (ret < 0) {
+ 		fprintf(stderr, "Error: ioctl(VERSION) failed: %s\n",
+ 			strerror(-ret));
+ 		return ret;
+-	}
+-
+-	printf("disp kernel module version is %d.%d\n",
+-	       ret >> 16, ret & 0xFFFF);
++	} else
++		printf("sunxi disp kernel module version is %d.%d\n",
++		       ret >> 16, ret & 0xFFFF);
+ 
+ 	tmp = 0;
+ 	ret = ioctl(fd, DISP_CMD_SCN_GET_WIDTH, &tmp);
+-- 
+1.8.0
+

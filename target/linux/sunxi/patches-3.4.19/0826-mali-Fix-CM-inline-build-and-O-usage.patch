@@ -1,0 +1,106 @@
+From fc3da7620621ad91945a122fac43fc3e8a480ea4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Fri, 17 Aug 2012 05:42:12 +0000
+Subject: [PATCH 826/944] mali: Fix CM inline build and O= usage
+
+---
+ drivers/gpu/mali/mali/Kbuild | 21 +++++----------------
+ drivers/gpu/mali/ump/Kbuild  | 17 +++--------------
+ 2 files changed, 8 insertions(+), 30 deletions(-)
+
+diff --git a/drivers/gpu/mali/mali/Kbuild b/drivers/gpu/mali/mali/Kbuild
+index 115a5e5..5e2c79e 100644
+--- a/drivers/gpu/mali/mali/Kbuild
++++ b/drivers/gpu/mali/mali/Kbuild
+@@ -41,13 +41,13 @@ DRIVER_DIR=$(src)
+ # The ARM proprietary product will only include the license/proprietary directory
+ # The GPL product will only include the license/gpl directory
+ 
+-ifeq ($(wildcard $(DRIVER_DIR)/linux/license/gpl/*),)
+-ccflags-y += -I$(DRIVER_DIR)/linux/license/proprietary
++ifeq ($(wildcard $(PWD)/$(DRIVER_DIR)/linux/license/gpl/*),)
++ccflags-y += -I$(PWD)/$(DRIVER_DIR)/linux/license/proprietary
+ # Disable profiling for proprietary
+ override USING_PROFILING := 0
+ $(warning "USING_PROFILING not supported, disabling.")
+ else
+-ccflags-y += -I$(DRIVER_DIR)/linux/license/gpl
++ccflags-y += -I$(PWD)/$(DRIVER_DIR)/linux/license/gpl
+ endif
+ 
+ 
+@@ -69,7 +69,7 @@ endif
+ MALI_RELEASE_NAME=$(shell cat $(DRIVER_DIR)/.version 2> /dev/null)
+ 
+ # Check if a Mali Core sub module should be enabled, true or false returned
+-submodule_enabled = $(shell gcc $(DEFINES) -E $1/arch/config.h | grep type | grep -c $(2))
++submodule_enabled = $(shell gcc $(DEFINES) -E $(PWD)/$(DRIVER_DIR)/arch/config.h | grep type | grep -c $(2))
+ 
+ OSKFILES = \
+ 	$(OSKOS)/mali_osk_atomics.c \
+@@ -108,17 +108,6 @@ else
+ SVN_REV := $(MALI_RELEASE_NAME)-r$(SVN_REV)
+ endif
+ 
+-# Validate selected config
+-ifneq ($(shell [ -d $(DRIVER_DIR)/arch-$(CONFIG) ] && [ -f $(DRIVER_DIR)/arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+-$(warning Current directory is $(shell pwd))
+-$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+-else
+-# Link arch to the selected arch-config directory
+-$(shell [ -L $(DRIVER_DIR)/arch ] && rm $(DRIVER_DIR)/arch)
+-$(shell ln -sf arch-$(CONFIG) $(DRIVER_DIR)/arch)
+-$(shell touch $(DRIVER_DIR)/arch/config.h)
+-endif
+-
+ # Set up our defines, which will be passed to gcc
+ DEFINES += -DUSING_OS_MEMORY=$(USING_OS_MEMORY)
+ DEFINES += -DUSING_MMU=1
+@@ -262,7 +251,7 @@ obj-$(CONFIG_MALI400) := mali.o
+ VERSION_STRINGS :=
+ VERSION_STRINGS += CONFIG=$(CONFIG)
+ VERSION_STRINGS += USING_OS_MEMORY=$(USING_OS_MEMORY)
+-VERSION_STRINGS += API_VERSION=$(shell cd $(DRIVER_DIR); grep "\#define _MALI_API_VERSION" $(FILES_PREFIX)include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
++VERSION_STRINGS += API_VERSION=$(shell cd $(DRIVER_DIR); grep "\#define _MALI_API_VERSION" $(PWD)/$(DRIVER_DIR)/include/linux/mali/mali_utgard_uk_types.h | cut -d' ' -f 3 )
+ VERSION_STRINGS += REPO_URL=$(shell cd $(DRIVER_DIR); (svn info || git svn info || echo 'URL: $(MALI_RELEASE_NAME)') 2>/dev/null | grep '^URL: ' | cut -d: -f2- | cut -b2-)
+ VERSION_STRINGS += REVISION=$(SVN_REV)
+ VERSION_STRINGS += CHANGED_REVISION=$(shell cd $(DRIVER_DIR); (svn info || git svn info || echo 'Last Changed Rev: $(MALI_RELEASE_NAME)') 2>/dev/null | grep '^Last Changed Rev: ' | cut -d: -f2- | cut -b2-)
+diff --git a/drivers/gpu/mali/ump/Kbuild b/drivers/gpu/mali/ump/Kbuild
+index ef6657f..4116312 100644
+--- a/drivers/gpu/mali/ump/Kbuild
++++ b/drivers/gpu/mali/ump/Kbuild
+@@ -12,17 +12,6 @@
+ # Change this to use a different config.h
+ CONFIG ?= os_memory_64m
+ 
+-# Validate selected config
+-ifneq ($(shell [ -d $(src)/arch-$(CONFIG) ] && [ -f  $(src)/arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+-$(warning Current directory is $(src))
+-$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+-else
+-# Link arch to the selected arch-config directory
+-$(shell [ -L $(src)/arch ] && rm $(src)/arch)
+-$(shell ln -sf arch-$(CONFIG) $(src)/arch)
+-$(shell touch $(src)/arch/config.h)
+-endif
+-
+ UDD_FILE_PREFIX = ../mali/
+ 
+ # Get subversion revision number, fall back to 0000 if no svn info is available
+@@ -39,10 +28,10 @@ ccflags-$(CONFIG_UMP_DEBUG) += -DDEBUG
+ # The ARM proprietary product will only include the license/proprietary directory
+ # The GPL product will only include the license/gpl directory
+ 
+-ifeq ($(wildcard $(src)/linux/license/gpl/*),)
+-ccflags-y += -I$(src)/linux/license/proprietary
++ifeq ($(wildcard $(PWD)/$(src)/linux/license/gpl/*),)
++ccflags-y += -I$(PWD)/$(src)/linux/license/proprietary
+ else
+-ccflags-y += -I$(src)/linux/license/gpl
++ccflags-y += -I$(PWD)/$(src)/linux/license/gpl
+ endif
+ 
+ ump-y = common/ump_kernel_common.o \
+-- 
+1.8.0
+

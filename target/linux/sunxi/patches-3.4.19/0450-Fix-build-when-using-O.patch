@@ -1,0 +1,66 @@
+From 1dce0db62c2661250d3432e7511231fa0b8d2274 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Sat, 19 May 2012 16:20:29 +0000
+Subject: [PATCH 450/944] Fix build when using O=
+
+Fixes issue #21 on amery/linux-allwinner
+---
+ arch/arm/mach-sun4i/clock/Makefile           | 10 ++--------
+ arch/arm/mach-sun4i/clock/ccmu/Makefile      |  5 +++++
+ arch/arm/mach-sun4i/pm/standby/Makefile      |  2 ++
+ arch/arm/mach-sun4i/pm/standby/dram/Makefile |  1 +
+ 4 files changed, 10 insertions(+), 8 deletions(-)
+ create mode 100644 arch/arm/mach-sun4i/clock/ccmu/Makefile
+ create mode 100644 arch/arm/mach-sun4i/pm/standby/dram/Makefile
+
+diff --git a/arch/arm/mach-sun4i/clock/Makefile b/arch/arm/mach-sun4i/clock/Makefile
+index 4c4db8e8..81d1da3 100644
+--- a/arch/arm/mach-sun4i/clock/Makefile
++++ b/arch/arm/mach-sun4i/clock/Makefile
+@@ -1,10 +1,4 @@
+-
+-
+-obj-y += ccmu/ccm_mod_clk.o \
+-         ccmu/ccm_sys_clk.o \
+-         ccmu/ccm.o \
+-         ccmu/pll_cfg_tbl.o \
+-         ccmu/ccu_dbg.o \
+-         clock.o \
++obj-y += ccmu/
++obj-y += clock.o \
+          aw_clocksrc.o
+ 
+diff --git a/arch/arm/mach-sun4i/clock/ccmu/Makefile b/arch/arm/mach-sun4i/clock/ccmu/Makefile
+new file mode 100644
+index 0000000..ca34f89
+--- /dev/null
++++ b/arch/arm/mach-sun4i/clock/ccmu/Makefile
+@@ -0,0 +1,5 @@
++obj-y += ccm_mod_clk.o \
++         ccm_sys_clk.o \
++         ccm.o \
++         pll_cfg_tbl.o \
++         ccu_dbg.o \
+diff --git a/arch/arm/mach-sun4i/pm/standby/Makefile b/arch/arm/mach-sun4i/pm/standby/Makefile
+index 7b6780d..3a4a500 100644
+--- a/arch/arm/mach-sun4i/pm/standby/Makefile
++++ b/arch/arm/mach-sun4i/pm/standby/Makefile
+@@ -1,6 +1,8 @@
+ always	:= standby.bin
+ targets := standby.elf
+ 
++obj-y += dram/
++
+ standby-y := common.o standby.o stack.o standby_clock.o \
+ 	     dram/dram.o dram/dram_init.o \
+ 	     standby_int.o standby_ir.o standby_key.o standby_power.o \
+diff --git a/arch/arm/mach-sun4i/pm/standby/dram/Makefile b/arch/arm/mach-sun4i/pm/standby/dram/Makefile
+new file mode 100644
+index 0000000..f7b870e
+--- /dev/null
++++ b/arch/arm/mach-sun4i/pm/standby/dram/Makefile
+@@ -0,0 +1 @@
++obj-y += dram.o dram_init.o
+-- 
+1.8.0
+

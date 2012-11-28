@@ -1,0 +1,40 @@
+From bdb140910259206c7b011d1ffc52ed75efd44f06 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Wed, 8 Aug 2012 13:44:11 -0700
+Subject: [PATCH 640/944] sw_sync: Fix error paths
+
+Check the return value of get_unused_fd to make sure a valid
+file descriptor is returned.
+
+Make sure to call put_unused_fd even if an error occurs before
+the fd can be used.
+
+Change-Id: Ibbf55caebc2f8ee6a03f298eb0ae0189c7d10b5c
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/base/sw_sync.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/base/sw_sync.c b/drivers/base/sw_sync.c
+index 935769c..65d78d4 100644
+--- a/drivers/base/sw_sync.c
++++ b/drivers/base/sw_sync.c
+@@ -169,8 +169,13 @@ long sw_sync_ioctl_create_fence(struct sw_sync_timeline *obj, unsigned long arg)
+ 	struct sync_fence *fence;
+ 	struct sw_sync_create_fence_data data;
+ 
+-	if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
+-		return -EFAULT;
++	if (fd < 0)
++		return fd;
++
++	if (copy_from_user(&data, (void __user *)arg, sizeof(data))) {
++		err = -EFAULT;
++		goto err;
++	}
+ 
+ 	pt = sw_sync_pt_create(obj, data.value);
+ 	if (pt == NULL) {
+-- 
+1.8.0
+

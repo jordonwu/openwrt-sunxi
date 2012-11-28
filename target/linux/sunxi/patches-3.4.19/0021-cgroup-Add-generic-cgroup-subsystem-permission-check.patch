@@ -1,0 +1,154 @@
+From 4a12178d3dd5b06a215076c60dc7cb124d711373 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Tue, 12 Jul 2011 19:53:24 -0700
+Subject: [PATCH 021/944] cgroup: Add generic cgroup subsystem permission
+ checks
+
+Rather than using explicit euid == 0 checks when trying to move
+tasks into a cgroup via CFS, move permission checks into each
+specific cgroup subsystem. If a subsystem does not specify a
+'allow_attach' handler, then we fall back to doing our checks
+the old way.
+
+Use the 'allow_attach' handler for the 'cpu' cgroup to allow
+non-root processes to add arbitrary processes to a 'cpu' cgroup
+if it has the CAP_SYS_NICE capability set.
+
+This version of the patch adds a 'allow_attach' handler instead
+of reusing the 'can_attach' handler.  If the 'can_attach' handler
+is reused, a new cgroup that implements 'can_attach' but not
+the permission checks could end up with no permission checks
+at all.
+
+Change-Id: Icfa950aa9321d1ceba362061d32dc7dfa2c64f0c
+Original-Author: San Mehat <san@google.com>
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ Documentation/cgroups/cgroups.txt |  9 +++++++++
+ include/linux/cgroup.h            |  1 +
+ kernel/cgroup.c                   | 33 ++++++++++++++++++++++++++++++---
+ kernel/sched/core.c               | 18 ++++++++++++++++++
+ 4 files changed, 58 insertions(+), 3 deletions(-)
+
+diff --git a/Documentation/cgroups/cgroups.txt b/Documentation/cgroups/cgroups.txt
+index 8e74980..594ff17 100644
+--- a/Documentation/cgroups/cgroups.txt
++++ b/Documentation/cgroups/cgroups.txt
+@@ -592,6 +592,15 @@ there are not tasks in the cgroup. If pre_destroy() returns error code,
+ rmdir() will fail with it. From this behavior, pre_destroy() can be
+ called multiple times against a cgroup.
+ 
++int allow_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
++(cgroup_mutex held by caller)
++
++Called prior to moving a task into a cgroup; if the subsystem
++returns an error, this will abort the attach operation.  Used
++to extend the permission checks - if all subsystems in a cgroup
++return 0, the attach will be allowed to proceed, even if the
++default permission check (root or same user) fails.
++
+ int can_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
+ (cgroup_mutex held by caller)
+ 
+diff --git a/include/linux/cgroup.h b/include/linux/cgroup.h
+index bb627e0..a2ed0cd 100644
+--- a/include/linux/cgroup.h
++++ b/include/linux/cgroup.h
+@@ -447,6 +447,7 @@ struct cgroup_subsys {
+ 	struct cgroup_subsys_state *(*create)(struct cgroup *cgrp);
+ 	int (*pre_destroy)(struct cgroup *cgrp);
+ 	void (*destroy)(struct cgroup *cgrp);
++	int (*allow_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
+ 	int (*can_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
+ 	void (*cancel_attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
+ 	void (*attach)(struct cgroup *cgrp, struct cgroup_taskset *tset);
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index 0de8160..0d4bff5 100644
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -2119,6 +2119,24 @@ out_free_group_list:
+ 	return retval;
+ }
+ 
++static int cgroup_allow_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
++{
++	struct cgroup_subsys *ss;
++	int ret;
++
++	for_each_subsys(cgrp->root, ss) {
++		if (ss->allow_attach) {
++			ret = ss->allow_attach(cgrp, tset);
++			if (ret)
++				return ret;
++		} else {
++			return -EACCES;
++		}
++	}
++
++	return 0;
++}
++
+ /*
+  * Find the task_struct of the task to attach by vpid and pass it along to the
+  * function to attach either it or all tasks in its threadgroup. Will lock
+@@ -2150,9 +2168,18 @@ retry_find_task:
+ 		if (cred->euid &&
+ 		    cred->euid != tcred->uid &&
+ 		    cred->euid != tcred->suid) {
+-			rcu_read_unlock();
+-			ret = -EACCES;
+-			goto out_unlock_cgroup;
++			/*
++			 * if the default permission check fails, give each
++			 * cgroup a chance to extend the permission check
++			 */
++			struct cgroup_taskset tset = { };
++			tset.single.task = tsk;
++			tset.single.cgrp = cgrp;
++			ret = cgroup_allow_attach(cgrp, &tset);
++			if (ret) {
++				rcu_read_unlock();
++				goto out_unlock_cgroup;
++			}
+ 		}
+ 	} else
+ 		tsk = current;
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 819719b..6a084db 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -7633,6 +7633,23 @@ static void cpu_cgroup_destroy(struct cgroup *cgrp)
+ 	sched_destroy_group(tg);
+ }
+ 
++static int
++cpu_cgroup_allow_attach(struct cgroup *cgrp, struct cgroup_taskset *tset)
++{
++	const struct cred *cred = current_cred(), *tcred;
++	struct task_struct *task;
++
++	cgroup_taskset_for_each(task, cgrp, tset) {
++		tcred = __task_cred(task);
++
++		if ((current != task) && !capable(CAP_SYS_NICE) &&
++		    cred->euid != tcred->uid && cred->euid != tcred->suid)
++			return -EACCES;
++	}
++
++	return 0;
++}
++
+ static int cpu_cgroup_can_attach(struct cgroup *cgrp,
+ 				 struct cgroup_taskset *tset)
+ {
+@@ -7994,6 +8011,7 @@ struct cgroup_subsys cpu_cgroup_subsys = {
+ 	.destroy	= cpu_cgroup_destroy,
+ 	.can_attach	= cpu_cgroup_can_attach,
+ 	.attach		= cpu_cgroup_attach,
++	.allow_attach	= cpu_cgroup_allow_attach,
+ 	.exit		= cpu_cgroup_exit,
+ 	.populate	= cpu_cgroup_populate,
+ 	.subsys_id	= cpu_cgroup_subsys_id,
+-- 
+1.8.0
+

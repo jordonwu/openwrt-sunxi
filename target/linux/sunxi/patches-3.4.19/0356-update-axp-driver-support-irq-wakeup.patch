@@ -1,0 +1,55 @@
+From f26984df94be2d697716f87237de67460dd5abc2 Mon Sep 17 00:00:00 2001
+From: kevin <kevin@allwinnertech.com>
+Date: Fri, 18 Nov 2011 14:59:11 +0800
+Subject: [PATCH 356/944] update axp driver, support irq wakeup
+
+---
+ drivers/power/axp_power/axp-mfd.c    | 17 +++++++++++------
+ drivers/power/axp_power/axp20-sply.c |  2 ++
+ 2 files changed, 13 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/power/axp_power/axp-mfd.c b/drivers/power/axp_power/axp-mfd.c
+index 54d97cd..3b46c2e 100644
+--- a/drivers/power/axp_power/axp-mfd.c
++++ b/drivers/power/axp_power/axp-mfd.c
+@@ -243,13 +243,18 @@ static void axp_power_off(void)
+     mdelay(20);
+ 	axp_read(&axp->dev, POWER20_STATUS, &val);
+ 	if(val & 0xF0){
+-        printk("[axp] set flag!\n");
+-	    axp_write(&axp->dev, POWER20_DATA_BUFFERC, 0x0f);
+-        mdelay(20);
+-		printk("[axp] reboot!\n");
+-		arch_reset(0,NULL);
+-		printk("[axp] warning!!! arch can't ,reboot, maybe some error happend!\n");
++	    axp_read(&axp->dev, POWER20_MODE_CHGSTATUS, &val);
++	    if(val & 0x20){
++            printk("[axp] set flag!\n");
++	        axp_write(&axp->dev, POWER20_DATA_BUFFERC, 0x0f);
++            mdelay(20);
++		    printk("[axp] reboot!\n");
++		    arch_reset(0,NULL);
++		    printk("[axp] warning!!! arch can't ,reboot, maybe some error happend!\n");
++	    }
+ 	}
++    axp_write(&axp->dev, POWER20_DATA_BUFFERC, 0x00);
++    mdelay(20);
+ 	axp_set_bits(&axp->dev, POWER20_OFF_CTL, 0x80);
+     mdelay(20);
+     printk("[axp] warning!!! axp can't power-off, maybe some error happend!\n");
+diff --git a/drivers/power/axp_power/axp20-sply.c b/drivers/power/axp_power/axp20-sply.c
+index 7609a24..0dc1ae7 100644
+--- a/drivers/power/axp_power/axp20-sply.c
++++ b/drivers/power/axp_power/axp20-sply.c
+@@ -1731,6 +1731,8 @@ static int axp_battery_probe(struct platform_device *pdev)
+   axp_clr_bits(charger->master,0xBA,0x80);
+   axp_clr_bits(charger->master,AXP20_CAP,0x80);
+ 
++  axp_set_bits(charger->master,0x8F,0x88);
++
+   charger->interval = msecs_to_jiffies(10 * 1000);
+   INIT_DELAYED_WORK(&charger->work, axp_charging_monitor);
+   schedule_delayed_work(&charger->work, charger->interval);
+-- 
+1.8.0
+

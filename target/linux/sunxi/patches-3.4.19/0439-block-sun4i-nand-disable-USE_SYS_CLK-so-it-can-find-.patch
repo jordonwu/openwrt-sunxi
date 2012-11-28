@@ -1,0 +1,36 @@
+From fd8707e9f0c53f1385fd15a496569cb77b282061 Mon Sep 17 00:00:00 2001
+From: Edward Nielsen <edward@australia.edu>
+Date: Thu, 26 Apr 2012 19:26:07 +0200
+Subject: [PATCH 439/944] block: sun4i-nand: disable USE_SYS_CLK so it can
+ find the nand partitions
+
+To: arm-netbook@lists.phcomp.co.uk
+From: Edward Nielsen <edward@australia.edu>
+Date: Thu, 26 Apr 2012 16:34:53 +0000 (UTC)
+Subject: [Arm-netbook] Access to NAND partitions from linux
+
+I can now mount the nand partitions in linux. the error line i was getting from
+the kernel output is:
+[ccmu] set nfc clock rate to 60000000 failed!
+[NAND] nand_set_module_clk fail
+[NAND]init_blklayer fail
+---
+ drivers/block/sun4i_nand/nfd/nand_blk.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/block/sun4i_nand/nfd/nand_blk.c b/drivers/block/sun4i_nand/nfd/nand_blk.c
+index 0440d90..619a63e 100644
+--- a/drivers/block/sun4i_nand/nfd/nand_blk.c
++++ b/drivers/block/sun4i_nand/nfd/nand_blk.c
+@@ -67,7 +67,7 @@ struct nand_disk disk_array[MAX_PART_COUNT];
+ //#define NAND_BIO_ALIGN
+ #define NAND_CACHE_RW
+ #define USE_SYS_PIN
+-#define USE_SYS_CLK
++//#define USE_SYS_CLK
+ 
+ /**
+ *USE_BIO_MERGE level description:
+-- 
+1.8.0
+

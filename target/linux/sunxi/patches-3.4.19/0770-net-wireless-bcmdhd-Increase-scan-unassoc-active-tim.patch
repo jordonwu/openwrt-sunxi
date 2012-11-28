@@ -1,0 +1,30 @@
+From 54ae97fbeb043604912c8152fc822dd422812096 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 3 Oct 2012 16:37:16 -0700
+Subject: [PATCH 770/944] net: wireless: bcmdhd: Increase scan unassoc active
+ time to 80 ms
+
+BUG: 7088022
+
+Change-Id: Ie38ff2bf657a65ef3f2e0102cd9f7003f1097f5c
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 888fd42..8fd4fb6 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -93,7 +93,7 @@ enum dhd_op_flags {
+ #endif
+ 
+ #define DHD_SCAN_ASSOC_ACTIVE_TIME	40 /* ms: Embedded default Active setting from DHD */
+-#define DHD_SCAN_UNASSOC_ACTIVE_TIME	40 /* ms: Embedded def. Unassoc Active setting from DHD */
++#define DHD_SCAN_UNASSOC_ACTIVE_TIME	80 /* ms: Embedded def. Unassoc Active setting from DHD */
+ #define DHD_SCAN_PASSIVE_TIME		130 /* ms: Embedded default Passive setting from DHD */
+ 
+ #ifndef POWERUP_MAX_RETRY
+-- 
+1.8.0
+

@@ -1,0 +1,64 @@
+From 4bf8b3d9f736d614a7b2c18f54b9c4004f278ee3 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Tue, 21 Aug 2012 17:57:19 -0700
+Subject: [PATCH 671/944] sync: change wait timeout to mirror poll semantics
+
+Change-Id: Ib38e6d339d41885a33027752690d65a52b6897f6
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c  | 6 +++---
+ include/linux/sync.h | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index eee2e56..fcf8632 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -560,14 +560,14 @@ EXPORT_SYMBOL(sync_fence_cancel_async);
+ 
+ int sync_fence_wait(struct sync_fence *fence, long timeout)
+ {
+-	int err;
++	int err = 0;
+ 
+-	if (timeout) {
++	if (timeout > 0) {
+ 		timeout = msecs_to_jiffies(timeout);
+ 		err = wait_event_interruptible_timeout(fence->wq,
+ 						       fence->status != 0,
+ 						       timeout);
+-	} else {
++	} else if (timeout < 0{
+ 		err = wait_event_interruptible(fence->wq, fence->status != 0);
+ 	}
+ 
+diff --git a/include/linux/sync.h b/include/linux/sync.h
+index 15863a6..75ed5f1 100644
+--- a/include/linux/sync.h
++++ b/include/linux/sync.h
+@@ -329,8 +329,8 @@ int sync_fence_cancel_async(struct sync_fence *fence,
+  * @fence:	fence to wait on
+  * @tiemout:	timeout in ms
+  *
+- * Wait for @fence to be signaled or have an error.  Waits indefintly
+- * if @timeout = 0
++ * Wait for @fence to be signaled or have an error.  Waits indefinitely
++ * if @timeout < 0
+  */
+ int sync_fence_wait(struct sync_fence *fence, long timeout);
+ 
+@@ -389,9 +389,9 @@ struct sync_fence_info_data {
+ /**
+  * DOC: SYNC_IOC_WAIT - wait for a fence to signal
+  *
+- * pass timeout in milliseconds.
++ * pass timeout in milliseconds.  Waits indefinitely timeout < 0.
+  */
+-#define SYNC_IOC_WAIT		_IOW(SYNC_IOC_MAGIC, 0, __u32)
++#define SYNC_IOC_WAIT		_IOW(SYNC_IOC_MAGIC, 0, __s32)
+ 
+ /**
+  * DOC: SYNC_IOC_MERGE - merge two fences
+-- 
+1.8.0
+

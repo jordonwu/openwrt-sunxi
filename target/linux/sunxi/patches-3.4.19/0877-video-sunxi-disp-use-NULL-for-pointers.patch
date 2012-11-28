@@ -1,0 +1,93 @@
+From 12f9e6451ffd44f3cec3d2f0bebfcc1da595f441 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 20:28:21 +0200
+Subject: [PATCH 877/944] video:sunxi:disp: use NULL for pointers
+
+Found by sparse.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/dev_disp.c | 16 ++++++++--------
+ drivers/video/sunxi/disp/dev_fb.c   |  2 +-
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 30937d2..e7c3ed1 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -114,7 +114,7 @@ __s32 disp_create_heap(__u32 pHeapHead, __u32 nHeapSize)
+ 	boot_heap_head.address = pHeapHead;
+ 	boot_heap_tail.address = pHeapHead + nHeapSize;
+ 	boot_heap_head.next = &boot_heap_tail;
+-	boot_heap_tail.next = 0;
++	boot_heap_tail.next = NULL;
+ 
+ 	__inf("head:%x,tail:%x\n", boot_heap_head.address,
+ 	      boot_heap_tail.address);
+@@ -127,7 +127,7 @@ void *disp_malloc(__u32 num_bytes)
+ 	__u32 actual_bytes;
+ 
+ 	if (!num_bytes) {
+-		return 0;
++		return NULL;
+ 	}
+ 
+ 	/* translate the byte count to size of long type  */
+@@ -148,14 +148,14 @@ void *disp_malloc(__u32 num_bytes)
+ 
+ 	if (!ptr->next) {
+ 		__wrn(" it has reached the boot_heap_tail of the heap now\n");
+-		return 0;
++		return NULL;
+ 	}
+ 
+ 	newptr = (struct alloc_struct_t *)(ptr->address + ptr->size);
+-	/* create a new node for the memory block             */
++	/* create a new node for the memory block */
+ 	if (!newptr) {
+ 		__wrn(" create the node failed, can't manage the block\n");
+-		return 0;
++		return NULL;
+ 	}
+ 
+ 	/* set the memory block chain, insert the node to the chain */
+@@ -378,7 +378,7 @@ disp_mem_release(int sel)
+ 		   get_order(page_size));
+ 	memset(&g_disp_mm[sel], 0, sizeof(struct info_mm));
+ #else
+-	if (g_disp_mm[sel].info_base == 0)
++	if (g_disp_mm[sel].info_base == NULL)
+ 		return -EINVAL;
+ 
+ 	disp_free((void *)g_disp_mm[sel].info_base);
+@@ -1802,12 +1802,12 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		{
+ 			pm_message_t state = { };
+ 
+-			ret = disp_suspend(0, state);
++			ret = disp_suspend(NULL, state);
+ 			break;
+ 		}
+ 
+ 	case DISP_CMD_RESUME:
+-		ret = disp_resume(0);
++		ret = disp_resume(NULL);
+ 		break;
+ 
+ 	case DISP_CMD_PRINT_REG:
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index d30f260..87bdf12 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1500,7 +1500,7 @@ __s32 Fb_Init(__u32 from)
+ 			g_fbi.fbinfo[i]->fix.smem_len =
+ 				g_fbi.fbinfo[i]->fix.line_length *
+ 				g_fbi.fbinfo[i]->var.yres_virtual * 2;
+-			g_fbi.fbinfo[i]->screen_base = 0x0;
++			g_fbi.fbinfo[i]->screen_base = NULL;
+ 			g_fbi.fbinfo[i]->pseudo_palette =
+ 				g_fbi.pseudo_palette[i];
+ 			g_fbi.fbinfo[i]->fix.smem_start = 0x0;
+-- 
+1.8.0
+

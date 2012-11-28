@@ -1,0 +1,1405 @@
+From 6382d1d415d0a136bff5dc75c07d9444d8b673b3 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 18 Oct 2012 01:00:36 +0200
+Subject: [PATCH 855/944] video:sunxi:disp: remove unused OSAL_ files
+
+These files have completely unused symbols in them.
+
+No functional changes.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile           |   4 +-
+ drivers/video/sunxi/disp/OSAL/OSAL.h        |   4 -
+ drivers/video/sunxi/disp/OSAL/OSAL_Dma.c    | 428 ----------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Dma.h    | 390 -------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Semi.c   | 118 --------
+ drivers/video/sunxi/disp/OSAL/OSAL_Semi.h   | 109 -------
+ drivers/video/sunxi/disp/OSAL/OSAL_Thread.c |  22 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Thread.h |  27 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Time.c   | 101 -------
+ drivers/video/sunxi/disp/OSAL/OSAL_Time.h   |  97 -------
+ 10 files changed, 2 insertions(+), 1298 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Time.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_Time.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index 6ff575d..ff44c89 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -1,8 +1,8 @@
+ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+-disp-objs += OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Dma.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+-	OSAL/OSAL_Lib_C.o OSAL/OSAL_Pin.o OSAL/OSAL_Semi.o OSAL/OSAL_Thread.o OSAL/OSAL_Time.o OSAL/OSAL_Parser.o
++disp-objs += OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
++	OSAL/OSAL_Lib_C.o OSAL/OSAL_Pin.o OSAL/OSAL_Parser.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+ 	de_layer.o de_lcdc.o de_tvec.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index edb1824..2a07cea 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -25,11 +25,7 @@
+ 
+ #include  "OSAL_Cache.h"
+ #include  "OSAL_Clock.h"
+-#include  "OSAL_Dma.h"
+ #include  "OSAL_Pin.h"
+-#include  "OSAL_Semi.h"
+-#include  "OSAL_Thread.h"
+-#include  "OSAL_Time.h"
+ #include  "OSAL_Lib_C.h"
+ #include  "OSAL_Int.h"
+ #include  "OSAL_IrqLock.h"
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
+deleted file mode 100644
+index c09f158..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
++++ /dev/null
+@@ -1,428 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-
+-
+-#include "OSAL.h"
+-
+-
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRequest
+-*
+-* Description:
+-*    申请DMA通道。
+-*
+-* Parameters:
+-*	 user_name 	:	模块名，方便统计
+-*    DmaType  	:  	input. DMA类型。Normal or Dedicated
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__hdle OSAL_DmaRequest(u8 * user_name ,__u32 DmaType)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRelease
+-*
+-* Description:
+-*    申请DMA通道。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRelease(__hdle hDMA)
+-{
+-	return 0;
+-}
+-
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaEnableINT
+-*
+-* Description:
+-*    使能DMA中断
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaEnableINT(__hdle hDMA, __s32 IrqType)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaDisableINT
+-*
+-* Description:
+-*    禁止DMA中断
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaDisableINT(__hdle hDMA, __s32 IrqType)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaRegIrq
+-*
+-* Description:
+-*    注册中断处理函数。
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 中断类型。end_irq or half_irq。
+-*    pCallBack  :  input. 中断回调函数。
+-*    pArg		:  input. 中断回调函数的参数。
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    回调函数的原型：typedef void (*DmaCallback)(void *pArg);
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRegIrq(__hdle hDMA, __u32 IrqType, DmaCallback pCallBack, void *pArg)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     FunctionName
+-*
+-* Description:
+-*    注销中断处理函数。
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*    pCallBack  :  input. 中断回调函数。
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaUnRegIrq(__hdle hDMA, __u32 IrqType, DmaCallback pCallBack)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaConfig
+-*
+-* Description:
+-*    配置DMA 通道，常用配置。
+-*
+-* Parameters:
+-*    hDMA 	     :  input. cspRequestDma申请的句柄。
+-*    p_cfg       :  input.  DMA配置。,实际数据结构请参数struct CSP_dma_config{}
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaConfig(__hdle hDMA, void * p_cfg)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaStart
+-*
+-* Description:
+-*    开始 DMA 传输。
+-*
+-* Parameters:
+-*    hDMA 	 		 :  input. cspRequestDma申请的句柄。
+-*    SrcAddr		 :  input. 源地址
+-*    DestAddr		 :  input. 目标地址
+-*    TransferLength  :  input. 传输长度
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaStart(__hdle hDMA, __u32 SrcAddr, __u32 DestAddr, __u32 TransferLength)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaStop
+-*
+-* Description:
+-*    停止本次DMA 传输。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaStop(__hdle hDMA)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRestart
+-*
+-* Description:
+-*    重新上一次DMA传输。
+-*
+-* Parameters:
+-*    hDMA 	： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRestart(__hdle hDMA)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryChannelNo
+-*
+-* Description:
+-*    查询DMA的通道号。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回DMA通道号。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryChannelNo(__hdle hDMA)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryStatus
+-*
+-* Description:
+-*    查询DMA的通道的状态，Busy or Idle。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回当前DMA通道的状态。1：busy，0：idle。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryStatus(__hdle hDMA)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryLeftCount
+-*
+-* Description:
+-*    查询DMA的剩余字节数。
+-*
+-* Parameters:
+-*    hDMA  :  input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回当前DMA的剩余字节数。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryLeftCount(__hdle hDMA)
+-{
+-	return 0;
+-	}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryConfig
+-*
+-* Description:
+-*    查询DMA通道的配置。
+-*
+-* Parameters:
+-*    hDMA 	   :  input. cspRequestDma申请的句柄。
+-*    RegAddr   :  input. 寄存器地址
+-*    RegWidth  :  input. 寄存器宽度
+-*    RegValue  :  output. 寄存器值
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaQueryConfig(__hdle hDMA, __u32 RegAddr, __u32 RegWidth, __u32 *RegValue)
+-{
+-	return 0;
+-	}
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaPause
+-*
+-* Description:
+-*    暂停DMA传输。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaPause(__hdle hDMA){
+-	return 0;
+-	}
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaProceed
+-*
+-* Description:
+-*    继续csp_DmaPause 暂停的DMA传输。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaProceed(__hdle hDMA){
+-	return 0;
+-	}
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaChangeMode
+-*
+-* Description:
+-*    切换 DMA 的传输模式。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*    mode  :  input. 传输模式
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaChangeMode(__hdle hDMA, __s32 mode){
+-	return 0;
+-	}
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
+deleted file mode 100644
+index b5dac83..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
++++ /dev/null
+@@ -1,390 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_DMA_H__
+-#define  __OSAL_DMA_H__
+-
+-
+-
+-//---------------------------------------------------------------
+-//  函数 定义
+-//---------------------------------------------------------------
+-
+-typedef __s32 (*DmaCallback)( void *pArg);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRequest
+-*
+-* Description:
+-*    申请DMA通道。
+-*
+-* Parameters:
+-*	 user_name 	:	模块名，方便统计
+-*    DmaType  	:  	input. DMA类型。Normal or Dedicated
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__hdle OSAL_DmaRequest(u8 * user_name ,__u32 DmaType);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRelease
+-*
+-* Description:
+-*    申请DMA通道。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRelease(__hdle hDMA);
+-
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaEnableINT
+-*
+-* Description:
+-*    使能DMA中断
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaEnableINT(__hdle hDMA, __s32 IrqType);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaDisableINT
+-*
+-* Description:
+-*    禁止DMA中断
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaDisableINT(__hdle hDMA, __s32 IrqType);
+-
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaRegIrq
+-*
+-* Description:
+-*    注册中断处理函数。
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 中断类型。end_irq or half_irq。
+-*    pCallBack  :  input. 中断回调函数。
+-*    pArg		:  input. 中断回调函数的参数。
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    回调函数的原型：typedef void (*DmaCallback)(void *pArg);
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRegIrq(__hdle hDMA, __u32 IrqType, DmaCallback pCallBack, void *pArg);
+-
+-/*
+-*******************************************************************************
+-*                     FunctionName
+-*
+-* Description:
+-*    注销中断处理函数。
+-*
+-* Parameters:
+-*    hDMA 	    :  input. cspRequestDma申请的句柄。
+-*    IrqType    :  input. 传输类型。end_irq or half_irq。
+-*    pCallBack  :  input. 中断回调函数。
+-*
+-* Return value:
+-*    成功返回DMA句柄，失败返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaUnRegIrq(__hdle hDMA, __u32 IrqType, DmaCallback pCallBack);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaConfig
+-*
+-* Description:
+-*    配置DMA 通道，常用配置。
+-*
+-* Parameters:
+-*    hDMA 	     :  input. cspRequestDma申请的句柄。
+-*    p_cfg       :  input.  DMA配置。,实际数据结构请参数struct CSP_dma_config{}
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaConfig(__hdle hDMA, void * p_cfg);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaStart
+-*
+-* Description:
+-*    开始 DMA 传输。
+-*
+-* Parameters:
+-*    hDMA 	 		 :  input. cspRequestDma申请的句柄。
+-*    SrcAddr		 :  input. 源地址
+-*    DestAddr		 :  input. 目标地址
+-*    TransferLength  :  input. 传输长度
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaStart(__hdle hDMA, __u32 SrcAddr, __u32 DestAddr, __u32 TransferLength);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaStop
+-*
+-* Description:
+-*    停止本次DMA 传输。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaStop(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaRestart
+-*
+-* Description:
+-*    重新上一次DMA传输。
+-*
+-* Parameters:
+-*    hDMA 	： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaRestart(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryChannelNo
+-*
+-* Description:
+-*    查询DMA的通道号。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回DMA通道号。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryChannelNo(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryStatus
+-*
+-* Description:
+-*    查询DMA的通道的状态，Busy or Idle。
+-*
+-* Parameters:
+-*    hDMA ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回当前DMA通道的状态。1：busy，0：idle。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryStatus(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryLeftCount
+-*
+-* Description:
+-*    查询DMA的剩余字节数。
+-*
+-* Parameters:
+-*    hDMA  :  input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    返回当前DMA的剩余字节数。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__u32 OSAL_DmaQueryLeftCount(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaQueryConfig
+-*
+-* Description:
+-*    查询DMA通道的配置。
+-*
+-* Parameters:
+-*    hDMA 	   :  input. cspRequestDma申请的句柄。
+-*    RegAddr   :  input. 寄存器地址
+-*    RegWidth  :  input. 寄存器宽度
+-*    RegValue  :  output. 寄存器值
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaQueryConfig(__hdle hDMA, __u32 RegAddr, __u32 RegWidth, __u32 *RegValue);
+-
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaPause
+-*
+-* Description:
+-*    暂停DMA传输。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaPause(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     eBsp_DmaProceed
+-*
+-* Description:
+-*    继续csp_DmaPause 暂停的DMA传输。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*
+-* Return value:
+-*    成功返回EBSP_OK，失败返回EBSP_FAIL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaProceed(__hdle hDMA);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DmaChangeMode
+-*
+-* Description:
+-*    切换 DMA 的传输模式。
+-*
+-* Parameters:
+-*    hDMA  ： input. cspRequestDma申请的句柄。
+-*    mode  :  input. 传输模式
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DmaChangeMode(__hdle hDMA, __s32 mode);
+-
+-#endif   //__OSAL_DMA_H__
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
+deleted file mode 100644
+index 23d5c2e..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
++++ /dev/null
+@@ -1,118 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "OSAL.h"
+-
+-/*
+-*******************************************************************************
+-*                     eBase_CreateSemaphore
+-*
+-* Description:
+-*    创建信号量
+-*
+-* Parameters:
+-*    Count  :  input.  信号量的初始值。
+-*
+-* Return value:
+-*    成功，返回信号量句柄。失败，返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-OSAL_SemHdle OSAL_CreateSemaphore(__u32 Count)
+-{
+-	return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DeleteSemaphore
+-*
+-* Description:
+-*    删除信号量
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_DeleteSemaphore(OSAL_SemHdle SemHdle)
+-{
+-
+-
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_SemPend
+-*
+-* Description:
+-*    锁信号量
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_SemPend(OSAL_SemHdle SemHdle, __u16 TimeOut)
+-{
+-
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_SemPost
+-*
+-* Description:
+-*    信号量解锁
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_SemPost(OSAL_SemHdle SemHdle)
+-{
+-
+-}
+-
+-
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
+deleted file mode 100644
+index 6c35c5d..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
++++ /dev/null
+@@ -1,109 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_SEMI_H__
+-#define  __OSAL_SEMI_H__
+-
+-
+-typedef void*  OSAL_SemHdle;
+-
+-/*
+-*******************************************************************************
+-*                     eBase_CreateSemaphore
+-*
+-* Description:
+-*    创建信号量
+-*
+-* Parameters:
+-*    Count  :  input.  信号量的初始值。
+-*
+-* Return value:
+-*    成功，返回信号量句柄。失败，返回NULL。
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-OSAL_SemHdle OSAL_CreateSemaphore(__u32 Count);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DeleteSemaphore
+-*
+-* Description:
+-*    删除信号量
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_DeleteSemaphore(OSAL_SemHdle SemHdle);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_SemPend
+-*
+-* Description:
+-*    锁信号量
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_SemPend(OSAL_SemHdle SemHdle, __u16 TimeOut);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_SemPost
+-*
+-* Description:
+-*    信号量解锁
+-*
+-* Parameters:
+-*    SemHdle  :  input.  OSAL_CreateSemaphore 申请的 信号量句柄
+-*
+-* Return value:
+-*    void
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-void OSAL_SemPost(OSAL_SemHdle SemHdle);
+-
+-
+-#endif   //__OSAL_SEMI_H__
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
+deleted file mode 100644
+index 9042a96..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
+deleted file mode 100644
+index 255561f..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_THREAD_H__
+-#define  __OSAL_THREAD_H__
+-
+-
+-
+-#endif   //__OSAL_THREAD_H__
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Time.c b/drivers/video/sunxi/disp/OSAL/OSAL_Time.c
+deleted file mode 100644
+index ca9bbfd..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Time.c
++++ /dev/null
+@@ -1,101 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "OSAL.h"
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_CreateTimer
+-*
+-* Description:
+-*    初始化一个timer
+-*
+-* Parameters:
+-*    Period     :  input. 周期时间
+-*    EventType  :  input. 事件触发的类型，一次还是多次。
+-*    CallBack   :  input. 回调函数
+-*    pArg       :  input. 回调函数的参数
+-*
+-* Return value:
+-*    返回timer句柄
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__hdle OSAL_CreateTimer(__u32 Period, __u32 EventType, TIMECALLBACK CallBack, void *pArg)
+-{
+-    return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DelTimer
+-*
+-* Description:
+-*    删除timer
+-*
+-* Parameters:
+-*    HTimer  :  input. OSAL_InitTimer申请timer句柄
+-*
+-* Return value:
+-*    返回成功或者失败
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DelTimer(__hdle HTimer)
+-{
+-    return 0;
+-}
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_StartTimer
+-*
+-* Description:
+-*    开始timer计时
+-*
+-* Parameters:
+-*    HTimer  :  input. OSAL_InitTimer申请timer句柄
+-*
+-* Return value:
+-*    返回成功或者失败
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_StartTimer(__hdle HTimer)
+-{
+-	return 0;
+-}
+-
+-/* 睡眠 *//* 单位：毫秒 */
+-void OSAL_Sleep(__u32 Milliseconds)
+-{
+-
+-}
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Time.h b/drivers/video/sunxi/disp/OSAL/OSAL_Time.h
+deleted file mode 100644
+index e72c187..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Time.h
++++ /dev/null
+@@ -1,97 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_TIME_H__
+-#define  __OSAL_TIME_H__
+-
+-/* 定时器 */
+-#define  OSAL_TIMER_EVENT_TYPE_ONCE       0   /* 一次触发     */
+-#define  OSAL_TIMER_EVENT_TYPE_PERIOD     1   /* 周期性触发   */
+-
+-typedef void (* TIMECALLBACK)(void *pArg);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_CreateTimer
+-*
+-* Description:
+-*    初始化一个timer
+-*
+-* Parameters:
+-*    Period     :  input. 周期时间
+-*    EventType  :  input. 事件触发的类型，一次还是多次。
+-*    CallBack   :  input. 回调函数
+-*    pArg       :  input. 回调函数的参数
+-*
+-* Return value:
+-*    返回timer句柄
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__hdle OSAL_CreateTimer(__u32 Period, __u32 EventType, TIMECALLBACK CallBack, void *pArg);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_DelTimer
+-*
+-* Description:
+-*    删除timer
+-*
+-* Parameters:
+-*    HTimer  :  input. OSAL_InitTimer申请timer句柄
+-*
+-* Return value:
+-*    返回成功或者失败
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_DelTimer(__hdle HTimer);
+-
+-/*
+-*******************************************************************************
+-*                     OSAL_StartTimer
+-*
+-* Description:
+-*    开始timer计时
+-*
+-* Parameters:
+-*    HTimer  :  input. OSAL_InitTimer申请timer句柄
+-*
+-* Return value:
+-*    返回成功或者失败
+-*
+-* note:
+-*    void
+-*
+-*******************************************************************************
+-*/
+-__s32 OSAL_StartTimer(__hdle HTimer);
+-
+-/* 睡眠 */
+-void OSAL_Sleep(__u32 Milliseconds);	/* 单位：毫秒 */
+-
+-#endif   //__OSAL_TIME_H__
+-
+-- 
+1.8.0
+

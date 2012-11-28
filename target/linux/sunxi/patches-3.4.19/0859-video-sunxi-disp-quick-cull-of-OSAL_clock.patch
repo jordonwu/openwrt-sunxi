@@ -1,0 +1,383 @@
+From 22c22ec39ff4a8a331bf1b73be7b4831f62921d7 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Thu, 18 Oct 2012 15:31:17 +0200
+Subject: [PATCH 859/944] video:sunxi:disp: quick cull of OSAL_clock.*
+
+This code needs to gradually be folded into disp_clk.c. This pass
+culls the unneeded functions from OSAL_clock.c, and removes the
+""documentation"" in the headerfile.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/OSAL/OSAL_Clock.c |  96 -------------
+ drivers/video/sunxi/disp/OSAL/OSAL_Clock.h | 219 +----------------------------
+ 2 files changed, 2 insertions(+), 313 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
+index 5961854..355e7d8 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
+@@ -21,8 +21,6 @@
+ #include "OSAL.h"
+ #include "OSAL_Clock.h"
+ 
+-#if 1
+-
+ static char* _sysClkName[AW_SYS_CLK_CNT] =
+ {
+     "none",//0
+@@ -309,35 +307,6 @@ __s32 OSAL_CCMU_SetMclkSrc( __hdle hMclk, __u32 nSclkNo )
+     return retCode;
+ }
+ 
+-__s32 OSAL_CCMU_GetMclkSrc( __hdle hMclk )
+-{
+-    int sysClkNo = 0;
+-    struct clk* hModClk = (struct clk*)hMclk;
+-    struct clk* hParentClk = clk_get_parent(hModClk);
+-    const int TOTAL_SYS_CLK = sizeof(_sysClkName)/sizeof(char*);
+-
+-    for (; sysClkNo <  TOTAL_SYS_CLK; sysClkNo++)
+-    {
+-        struct clk* tmpSysClk = clk_get(NULL, _sysClkName[sysClkNo]);
+-
+-        if(tmpSysClk == NULL)
+-        	continue;
+-
+-        if(hParentClk == tmpSysClk){
+-            clk_put(tmpSysClk);
+-            break;
+-        }
+-        clk_put(tmpSysClk);
+-    }
+-
+-    if(sysClkNo >= TOTAL_SYS_CLK){
+-        __wrn("Failed to get parent clk.\n");
+-        return -1;
+-    }
+-
+-    return sysClkNo;
+-}
+-
+ __s32 OSAL_CCMU_SetMclkDiv( __hdle hMclk, __s32 nDiv )
+ {
+     struct clk* hModClk     = (struct clk*)hMclk;
+@@ -353,19 +322,6 @@ __s32 OSAL_CCMU_SetMclkDiv( __hdle hMclk, __s32 nDiv )
+     return clk_set_rate(hModClk, srcRate/nDiv);
+ }
+ 
+-__u32 OSAL_CCMU_GetMclkDiv( __hdle hMclk )
+-{
+-    struct clk* hModClk = (struct clk*)hMclk;
+-    struct clk* hParentClk = clk_get_parent(hModClk);
+-    u32 mod_freq = clk_get_rate(hModClk);
+-
+-    if(mod_freq == 0){
+-    	return 0;
+-    }
+-
+-    return clk_get_rate(hParentClk)/mod_freq;
+-}
+-
+ __s32 OSAL_CCMU_MclkOnOff( __hdle hMclk, __s32 bOnOff )
+ {
+     struct clk* hModClk = (struct clk*)hMclk;
+@@ -398,55 +354,3 @@ __s32 OSAL_CCMU_MclkReset(__hdle hMclk, __s32 bReset)
+ 
+     return clk_reset(hModClk, bReset);
+ }
+-#else
+-__s32 OSAL_CCMU_SetSrcFreq( CSP_CCM_sysClkNo_t nSclkNo, __u32 nFreq )
+-{
+-    return 0;
+-}
+-
+-__u32 OSAL_CCMU_GetSrcFreq( CSP_CCM_sysClkNo_t nSclkNo )
+-{
+-    return 0;
+-}
+-
+-__hdle OSAL_CCMU_OpenMclk( __s32 nMclkNo )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_CloseMclk( __hdle hMclk )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_SetMclkSrc( __hdle hMclk, CSP_CCM_sysClkNo_t nSclkNo )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_GetMclkSrc( __hdle hMclk )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_SetMclkDiv( __hdle hMclk, __s32 nDiv )
+-{
+-    return 0;
+-}
+-
+-__u32 OSAL_CCMU_GetMclkDiv( __hdle hMclk )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_MclkOnOff( __hdle hMclk, __s32 bOnOff )
+-{
+-    return 0;
+-}
+-
+-__s32 OSAL_CCMU_MclkReset(__hdle hMclk, __s32 bReset)
+-{
+-    return 0;
+-}
+-#endif
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
+index 5cec630..913a357 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
+@@ -18,233 +18,18 @@
+  * MA 02111-1307 USA
+  */
+ 
+-
+ #ifndef  __OSAL_CLOCK_H__
+ #define  __OSAL_CLOCK_H__
+-/*
+-*********************************************************************************************************
+-*                                   SET SOURCE CLOCK FREQUENCY
+-*
+-* Description:
+-*		set source clock frequency;
+-*
+-* Arguments  :
+-*		nSclkNo  	:	source clock number;
+-*       nFreq   	:	frequency, the source clock will change to;
+-*
+-* Returns    : result;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+-__s32 OSAL_CCMU_SetSrcFreq(__u32 nSclkNo, __u32 nFreq);
+-
+ 
+-
+-/*
+-*********************************************************************************************************
+-*                                   GET SOURCE CLOCK FREQUENCY
+-*
+-* Description:
+-*		get source clock frequency;
+-*
+-* Arguments  :
+-*		nSclkNo  	:	source clock number need get frequency;
+-*
+-* Returns    :
+-*		frequency of the source clock;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
++__s32 OSAL_CCMU_SetSrcFreq(__u32 nSclkNo, __u32 nFreq);
+ __u32 OSAL_CCMU_GetSrcFreq(__u32 nSclkNo);
+-
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                   OPEN MODULE CLK
+-* Description:
+-*		open module clk;
+-*
+-* Arguments  :
+-*		nMclkNo	:	number of module clock which need be open;
+-*
+-* Returns    :
+-*		EBSP_TRUE/EBSP_FALSE
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __hdle OSAL_CCMU_OpenMclk(__s32 nMclkNo);
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                    CLOSE MODULE CLK
+-* Description:
+-*		close module clk;
+-*
+-* Arguments  :
+-*		hMclk	:	handle
+-*
+-* Returns    :
+-*		EBSP_TRUE/EBSP_FALSE
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32  OSAL_CCMU_CloseMclk(__hdle hMclk);
+-
+-/*
+-*********************************************************************************************************
+-*                                   GET MODULE SRC
+-* Description:
+-*		set module src;
+-*
+-* Arguments  :
+-*		nMclkNo	:	number of module clock which need be open;
+-*       nSclkNo	:	call-back function for process clock change;
+-*
+-* Returns    :
+-*		EBSP_TRUE/EBSP_FALSE
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 OSAL_CCMU_SetMclkSrc(__hdle hMclk, __u32 nSclkNo);
+-
+-
+-
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                  GET MODULE SRC
+-*
+-* Description:
+-*		get module src;
+-*
+-* Arguments  :
+-*		nMclkNo	:	handle of the module clock;
+-*
+-* Returns    :
+-*		src no
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+-__s32 OSAL_CCMU_GetMclkSrc(__hdle hMclk);
+-
+-
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                   SET MODUEL CLOCK FREQUENCY
+-*
+-* Description:
+-*		set module clock frequency;
+-*
+-* Arguments  :
+-*		nSclkNo  :	number of source clock which the module clock will use;
+-*		nDiv     :	division for the module clock;
+-*
+-* Returns    :
+-*		EBSP_TRUE/EBSP_FALSE
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 OSAL_CCMU_SetMclkDiv(__hdle hMclk, __s32 nDiv);
+-
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                   GET MODUEL CLOCK FREQUENCY
+-*
+-* Description:
+-*		get module clock requency;
+-*
+-* Arguments  :
+-*		hMclk    	:	module clock handle;
+-*
+-* Returns    :
+-*		frequency of the module clock;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+-__u32 OSAL_CCMU_GetMclkDiv(__hdle hMclk);
+-
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                   MODUEL CLOCK ON/OFF
+-*
+-* Description:
+-*		module clock on/off;
+-*
+-* Arguments  :
+-*		nMclkNo		:	module clock handle;
+-*       bOnOff   	:	on or off;
+-*
+-* Returns    :
+-*		EBSP_TRUE/EBSP_FALSE
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 OSAL_CCMU_MclkOnOff(__hdle hMclk, __s32 bOnOff);
+ 
+ __s32 OSAL_CCMU_MclkReset(__hdle hMclk, __s32 bReset);
+ 
+-
+-/*
+-//第一版
+-__s32  esCLK_SetSrcFreq(__s32 nSclkNo, __u32 nFreq);
+-__u32  esCLK_GetSrcFreq(__s32 nSclkNo);
+-
+-__hdle esCLK_OpenMclk(__s32 nMclkNo, __pCB_ClkCtl_t pCb);
+-__s32  esCLK_CloseMclk(__hdle hMclk);
+-
+-__s32  esCLK_SetMclkSrc(__s32 nMclkNo, __s32 nSclkNo);
+-__s32  esCLK_GetMclkSrc(__s32 nMclkNo);
+-
+-__s32  esCLK_SetMclkDiv(__s32 nMclkNo, __s32 nDiv);
+-__u32  esCLK_GetMclkDiv(__s32 nMclkNo);
+-
+-__s32  esCLK_MclkOnOff(__s32 nMclkNo, __s32 bOnOff);
+-
+-//======================================================================================
+-
+-//第二版
+-__s32 esCLK_reg_cb(__s32 nMclkNo, __pCB_ClkCtl_t pCb);	//__hdle esCLK_OpenMclk(__s32 nMclkNo, __pCB_ClkCtl_t pCb);
+-__s32  esCLK_unreg_cb(__s32 nMclkNo);					//__s32  esCLK_CloseMclk(__hdle hMclk);
+-
+-//------------------------------------------------------
+-
+-					__s32  esCLK_SetSrcFreq(__s32 nSclkNo, __u32 nFreq);
+-					__u32  esCLK_GetSrcFreq(__s32 nSclkNo);
+-
+-
+-__hdle esCLK_OpenMclk(__s32 nMclkNo);
+-__s32  esCLK_CloseMclk(__hdle hMclk);
+-
+-
+-
+-__s32  esCLK_SetMclkSrc(__hdle hMclk, __s32 nSclkNo);	//__s32  esCLK_SetMclkSrc(__s32 nMclkNo, __s32 nSclkNo);
+-__s32  esCLK_GetMclkSrc(__hdle hMclk);					//__s32  esCLK_GetMclkSrc(__s32 nMclkNo);
+-
+-__s32  esCLK_SetMclkDiv(__hdle hMclk, __s32 nDiv);
+-__u32  esCLK_GetMclkDiv(__hdle hMclk);
+-
+-__s32  esCLK_MclkOnOff(__hdle hMclk, __s32 bOnOff);
+-
+-
+-*/
+-
+-#endif   //__OSAL_CLOCK_H__
++#endif   /* __OSAL_CLOCK_H__ */
+ 
+-- 
+1.8.0
+

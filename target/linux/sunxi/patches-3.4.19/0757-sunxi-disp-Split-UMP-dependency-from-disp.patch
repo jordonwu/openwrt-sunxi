@@ -1,0 +1,197 @@
+From 985d3a5a806e8d1d3fe2e5c5530cc410a61d76fd Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Wed, 12 Sep 2012 23:50:21 +0200
+Subject: [PATCH 757/944] sunxi disp: Split UMP dependency from disp
+
+---
+ drivers/video/sunxi/disp/Makefile   |  1 +
+ drivers/video/sunxi/disp/dev_disp.h | 10 +++++++
+ drivers/video/sunxi/disp/dev_fb.c   | 34 +++++++--------------
+ drivers/video/sunxi/disp/disp_ump.c | 59 +++++++++++++++++++++++++++++++++++++
+ 4 files changed, 81 insertions(+), 23 deletions(-)
+ create mode 100644 drivers/video/sunxi/disp/disp_ump.c
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index 1c050ff..d2ddecb 100755
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -21,5 +21,6 @@ disp-objs += de_bsp_sun5i/de/ebios/de_be.o de_bsp_sun5i/de/ebios/de_fe.o de_bsp_
+ endif
+ 
+ ifeq ($(CONFIG_FB_SUNXI_UMP),y)
++obj-m += disp_ump.o
+ EXTRA_CFLAGS += -Idrivers/gpu/mali/include
+ endif
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index fc8b782..89233eb 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -26,6 +26,10 @@
+ 
+ #include "drv_disp_i.h"
+ 
++#ifdef CONFIG_FB_SUNXI_UMP
++#include <ump/ump_kernel_interface.h>
++#endif
++
+ // 1M + 64M(ve) + 16M(fb)
+ #define FB_RESERVED_MEM
+ 
+@@ -67,6 +71,9 @@ typedef struct
+ 	wait_queue_head_t       wait[2];
+ 	unsigned long           wait_count[2];
+ 	__u32 pseudo_palette [FB_MAX][16];
++#ifdef CONFIG_FB_SUNXI_UMP
++	ump_dd_handle ump_wrapped_buffer[FB_MAX];
++#endif
+ }fb_info_t;
+ 
+ typedef struct
+@@ -118,5 +125,8 @@ extern __s32 DRV_lcd_open(__u32 sel);
+ extern __s32 DRV_lcd_close(__u32 sel);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 Fb_Exit(void);
++#ifdef CONFIG_FB_SUNXI_UMP
++extern int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg);
++#endif
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 2a3e158..f73bd3f 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -27,15 +27,6 @@
+ #include <linux/kernel.h>
+ #include <linux/fb.h>
+ 
+-#ifdef CONFIG_FB_SUNXI_UMP
+-#include <ump/ump_kernel_interface.h>
+-
+-static ump_dd_handle ump_wrapped_buffer;
+-extern ump_dd_handle ump_dd_handle_create_from_phys_blocks(ump_dd_physical_block * blocks, unsigned long num_blocks);
+-#endif
+-
+-extern fb_info_t g_fbi;
+-
+ #define FBHANDTOID(handle)  ((handle) - 100)
+ #define FBIDTOHAND(ID)  ((ID) + 100)
+ 
+@@ -766,12 +757,6 @@ __s32 var_to_disp_fb(__disp_fb_t *fb, struct fb_var_screeninfo *var, struct fb_f
+ 
+ static int Fb_open(struct fb_info *info, int user)
+ {
+-#ifdef CONFIG_FB_SUNXI_UMP
+-	ump_dd_physical_block ump_memory_description;
+-	ump_memory_description.addr = info->fix.smem_start;
+-	ump_memory_description.size = info->fix.smem_len;
+-	ump_wrapped_buffer = ump_dd_handle_create_from_phys_blocks( &ump_memory_description, 1);
+-#endif
+ 	return 0;
+ }
+ static int Fb_release(struct fb_info *info, int user)
+@@ -1055,16 +1040,16 @@ __s32 DRV_disp_int_process(__u32 sel)
+     return 0;
+ }
+ 
++#ifdef CONFIG_FB_SUNXI_UMP
++int (*disp_get_ump_secure_id)(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg);
++EXPORT_SYMBOL(disp_get_ump_secure_id);
++#endif
++
+ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+ {
+ 	long ret = 0;
+ 	unsigned long layer_hdl = 0;
+ 
+-#ifdef CONFIG_FB_SUNXI_UMP
+-	u32 __user *psecureid = (u32 __user *) arg;
+-	ump_secure_id secure_id;
+-#endif
+-
+ 	switch (cmd)
+ 	{
+     case FBIOGET_LAYER_HDL_0:
+@@ -1131,9 +1116,12 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd,unsigned long arg)
+ #ifdef CONFIG_FB_SUNXI_UMP
+ 	case GET_UMP_SECURE_ID:
+ 	{
+-		secure_id = ump_dd_secure_id_get( ump_wrapped_buffer );
+-		return put_user( (unsigned int)secure_id, psecureid );
+-		break;
++		if (!disp_get_ump_secure_id)
++			request_module("disp_ump");
++		if (disp_get_ump_secure_id)
++			return disp_get_ump_secure_id(info, &g_fbi, arg);
++		else
++			return -ENOTSUPP;
+ 	}
+ #endif
+ 
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+new file mode 100644
+index 0000000..8f05cd4
+--- /dev/null
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -0,0 +1,59 @@
++/*
++ * drivers/video/sunxi/disp/dev_disp.c
++ *
++ * (C) Copyright 2012
++ * Henrik Nordstrom <henrik@henriknordstrom.net>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <linux/module.h>
++#include "dev_disp.h"
++#include <ump/ump_kernel_interface_ref_drv.h>
++
++static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi, unsigned long arg)
++{
++	u32 __user *psecureid = (u32 __user *) arg;
++	ump_secure_id secure_id;
++	if (!g_fbi->ump_wrapped_buffer[info->node]) {
++		ump_dd_physical_block ump_memory_description;
++		ump_memory_description.addr = info->fix.smem_start;
++		ump_memory_description.size = info->fix.smem_len;
++		g_fbi->ump_wrapped_buffer[info->node] = ump_dd_handle_create_from_phys_blocks( &ump_memory_description, 1);
++	}
++	secure_id = ump_dd_secure_id_get(g_fbi->ump_wrapped_buffer[info->node]);
++	return put_user( (unsigned int)secure_id, psecureid );
++}
++
++int __init disp_ump_module_init(void)
++{
++	int ret = 0;
++	disp_get_ump_secure_id = _disp_get_ump_secure_id;
++
++	return ret;
++}
++
++static void __exit disp_ump_module_exit(void)
++{
++	disp_get_ump_secure_id = NULL;
++}
++
++module_init(disp_ump_module_init);
++module_exit(disp_ump_module_exit);
++
++MODULE_AUTHOR("Henrik Nordstrom <henrik@henriknordstrom.net>");
++MODULE_DESCRIPTION("sunxi display driver MALI UMP module glue");
++MODULE_LICENSE("GPL");
+-- 
+1.8.0
+

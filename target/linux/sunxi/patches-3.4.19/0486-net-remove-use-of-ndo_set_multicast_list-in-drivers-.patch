@@ -1,0 +1,225 @@
+From 7c34f4cb61282c5455179341286c0feb2a12bfa6 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 13:11:51 +0200
+Subject: [PATCH 486/944] net: remove use of ndo_set_multicast_list in drivers
+ (afc4b13df143122f99a0eb10bfefb216c2806de0)
+
+replace it by ndo_set_rx_mode
+---
+ drivers/net/ethernet/sun3i/sun3i_wemac.c                              | 2 +-
+ drivers/net/ethernet/sun4i/sun4i_wemac.c                              | 3 ++-
+ drivers/net/usb/qf9700.c                                              | 2 +-
+ drivers/net/wireless/bcm4330/dhd_linux.c                              | 4 ++--
+ drivers/net/wireless/bcm4330/dhd_linux_mon.c                          | 2 +-
+ .../wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/ar6000_drv.c   | 2 +-
+ .../ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/ar6000_drv.c   | 2 +-
+ modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux.c  | 4 ++--
+ .../wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux_mon.c  | 2 +-
+ modules/wifi/bcm40181/open-src/src/dhd/sys/dhd_linux.c                | 4 ++--
+ modules/wifi/nano-c047.12/kernel/ic/nanonet.c                         | 2 +-
+ .../wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_linux.c   | 4 ++--
+ 12 files changed, 17 insertions(+), 16 deletions(-)
+
+diff --git a/drivers/net/ethernet/sun3i/sun3i_wemac.c b/drivers/net/ethernet/sun3i/sun3i_wemac.c
+index d901941..1acd335 100644
+--- a/drivers/net/ethernet/sun3i/sun3i_wemac.c
++++ b/drivers/net/ethernet/sun3i/sun3i_wemac.c
+@@ -1835,7 +1835,7 @@ static const struct net_device_ops wemac_netdev_ops = {
+ 	.ndo_stop		= wemac_stop,
+ 	.ndo_start_xmit		= wemac_start_xmit,
+ 	.ndo_tx_timeout		= wemac_timeout,
+-	.ndo_set_multicast_list	= wemac_hash_table,
++	.ndo_set_rx_mode	= wemac_hash_table,
+ 	.ndo_do_ioctl		= wemac_ioctl,
+ 	.ndo_change_mtu		= eth_change_mtu,
+ 	.ndo_validate_addr	= eth_validate_addr,
+diff --git a/drivers/net/ethernet/sun4i/sun4i_wemac.c b/drivers/net/ethernet/sun4i/sun4i_wemac.c
+index 884bc41..d465ee8 100644
+--- a/drivers/net/ethernet/sun4i/sun4i_wemac.c
++++ b/drivers/net/ethernet/sun4i/sun4i_wemac.c
+@@ -23,6 +23,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/ioport.h>
++#include <linux/interrupt.h>
+ #include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
+ #include <linux/init.h>
+@@ -1669,7 +1670,7 @@ static const struct net_device_ops wemac_netdev_ops = {
+ 	.ndo_stop		= wemac_stop,
+ 	.ndo_start_xmit		= wemac_start_xmit,
+ 	.ndo_tx_timeout		= wemac_timeout,
+-	.ndo_set_multicast_list	= wemac_hash_table,
++	.ndo_set_rx_mode	= wemac_hash_table,
+ 	.ndo_do_ioctl		= wemac_ioctl,
+ 	.ndo_change_mtu		= eth_change_mtu,
+ 	.ndo_validate_addr	= eth_validate_addr,
+diff --git a/drivers/net/usb/qf9700.c b/drivers/net/usb/qf9700.c
+index 9bafb0c..aa62690 100644
+--- a/drivers/net/usb/qf9700.c
++++ b/drivers/net/usb/qf9700.c
+@@ -408,7 +408,7 @@ static const struct net_device_ops qf9700_netdev_ops = {
+ 	.ndo_validate_addr	= eth_validate_addr,
+ 	.ndo_do_ioctl		= qf9700_ioctl,
+ 	.ndo_set_mac_address 	= qf9700_set_mac_address,
+-	.ndo_set_multicast_list = qf9700_set_multicast,
++	.ndo_set_rx_mode	= qf9700_set_multicast,
+ };
+ 
+ static int qf9700_bind(struct usbnet *dev, struct usb_interface *intf)
+diff --git a/drivers/net/wireless/bcm4330/dhd_linux.c b/drivers/net/wireless/bcm4330/dhd_linux.c
+index 8e3afe9..78a27d2 100644
+--- a/drivers/net/wireless/bcm4330/dhd_linux.c
++++ b/drivers/net/wireless/bcm4330/dhd_linux.c
+@@ -2898,7 +2898,7 @@ static struct net_device_ops dhd_ops_pri = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ 
+ static struct net_device_ops dhd_ops_virt = {
+@@ -2906,7 +2906,7 @@ static struct net_device_ops dhd_ops_virt = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)) */
+ 
+diff --git a/drivers/net/wireless/bcm4330/dhd_linux_mon.c b/drivers/net/wireless/bcm4330/dhd_linux_mon.c
+index a35fe0c..0939714 100644
+--- a/drivers/net/wireless/bcm4330/dhd_linux_mon.c
++++ b/drivers/net/wireless/bcm4330/dhd_linux_mon.c
+@@ -82,7 +82,7 @@ static const struct net_device_ops dhd_mon_if_ops = {
+ 	.ndo_open		= dhd_mon_if_open,
+ 	.ndo_stop		= dhd_mon_if_stop,
+ 	.ndo_start_xmit		= dhd_mon_if_subif_start_xmit,
+-	.ndo_set_multicast_list = dhd_mon_if_set_multicast_list,
++	.ndo_set_rx_mode	= dhd_mon_if_set_multicast_list,
+ 	.ndo_set_mac_address 	= dhd_mon_if_change_mac,
+ };
+ 
+diff --git a/modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/ar6000_drv.c b/modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/ar6000_drv.c
+index b1c9257..7425e91 100644
+--- a/modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/ar6000_drv.c
++++ b/modules/wifi/ar6003/AR6kSDK.build_3.1_RC.514/host/os/linux/ar6000_drv.c
+@@ -481,7 +481,7 @@ static struct net_device_ops ar6000_netdev_ops = {
+     .ndo_get_stats          = ar6000_get_stats,
+     .ndo_do_ioctl           = ar6000_ioctl,
+     .ndo_start_xmit         = ar6000_data_tx,
+-    .ndo_set_multicast_list = ar6000_set_multicast_list,
++    .ndo_set_rx_mode        = ar6000_set_multicast_list,
+     .ndo_change_mtu         = eth_change_mtu,
+ };
+ #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29) */
+diff --git a/modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/ar6000_drv.c b/modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/ar6000_drv.c
+index 163b2d2..b3e53e1 100644
+--- a/modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/ar6000_drv.c
++++ b/modules/wifi/ar6302/AR6K_SDK_ISC.build_3.1_RC.329/host/os/linux/ar6000_drv.c
+@@ -471,7 +471,7 @@ static struct net_device_ops ar6000_netdev_ops = {
+     .ndo_get_stats          = ar6000_get_stats,
+     .ndo_do_ioctl           = ar6000_ioctl,
+     .ndo_start_xmit         = ar6000_data_tx,
+-    .ndo_set_multicast_list = ar6000_set_multicast_list,
++    .ndo_set_rx_mode        = ar6000_set_multicast_list,
+     .ndo_change_mtu         = eth_change_mtu,
+ };
+ #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,29) */
+diff --git a/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux.c b/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux.c
+index f6ec36b..7634065 100644
+--- a/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux.c
++++ b/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux.c
+@@ -2897,7 +2897,7 @@ static struct net_device_ops dhd_ops_pri = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ 
+ static struct net_device_ops dhd_ops_virt = {
+@@ -2905,7 +2905,7 @@ static struct net_device_ops dhd_ops_virt = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)) */
+ 
+diff --git a/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux_mon.c b/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux_mon.c
+index a35fe0c..0939714 100644
+--- a/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux_mon.c
++++ b/modules/wifi/bcm40181/5.90.125.69.2/open-src/src/dhd/sys/dhd_linux_mon.c
+@@ -82,7 +82,7 @@ static const struct net_device_ops dhd_mon_if_ops = {
+ 	.ndo_open		= dhd_mon_if_open,
+ 	.ndo_stop		= dhd_mon_if_stop,
+ 	.ndo_start_xmit		= dhd_mon_if_subif_start_xmit,
+-	.ndo_set_multicast_list = dhd_mon_if_set_multicast_list,
++	.ndo_set_rx_mode	= dhd_mon_if_set_multicast_list,
+ 	.ndo_set_mac_address 	= dhd_mon_if_change_mac,
+ };
+ 
+diff --git a/modules/wifi/bcm40181/open-src/src/dhd/sys/dhd_linux.c b/modules/wifi/bcm40181/open-src/src/dhd/sys/dhd_linux.c
+index ddd6a90..eb8d6de 100644
+--- a/modules/wifi/bcm40181/open-src/src/dhd/sys/dhd_linux.c
++++ b/modules/wifi/bcm40181/open-src/src/dhd/sys/dhd_linux.c
+@@ -2592,7 +2592,7 @@ static struct net_device_ops dhd_ops_pri = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ 
+ static struct net_device_ops dhd_ops_virt = {
+@@ -2600,7 +2600,7 @@ static struct net_device_ops dhd_ops_virt = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list,
++	.ndo_set_rx_mode = dhd_set_multicast_list,
+ };
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)) */
+ 
+diff --git a/modules/wifi/nano-c047.12/kernel/ic/nanonet.c b/modules/wifi/nano-c047.12/kernel/ic/nanonet.c
+index bcb47d4..d0994c3 100644
+--- a/modules/wifi/nano-c047.12/kernel/ic/nanonet.c
++++ b/modules/wifi/nano-c047.12/kernel/ic/nanonet.c
+@@ -1575,7 +1575,7 @@ const struct net_device_ops nanonet_ops = {
+    .ndo_get_stats		= nrx_get_stats,
+    .ndo_tx_timeout		= nrx_tx_timeout,
+    .ndo_set_mac_address		= nrx_set_mac_address,
+-   .ndo_set_multicast_list      = nrx_set_multicast_list,
++   .ndo_set_rx_mode		= nrx_set_multicast_list,
+ #ifdef USE_MULTIQUEUE
+    .ndo_select_queue            = nrx_select_queue,
+ #endif
+diff --git a/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_linux.c b/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_linux.c
+index 5087970..d756d0d 100644
+--- a/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_linux.c
++++ b/modules/wifi/usi-bcm4329/v4.218.248.15/open-src/src/dhd/sys/dhd_linux.c
+@@ -2282,7 +2282,7 @@ static struct net_device_ops dhd_ops_pri = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list
++	.ndo_set_rx_mode = dhd_set_multicast_list
+ };
+ 
+ static struct net_device_ops dhd_ops_virt = {
+@@ -2290,7 +2290,7 @@ static struct net_device_ops dhd_ops_virt = {
+ 	.ndo_do_ioctl = dhd_ioctl_entry,
+ 	.ndo_start_xmit = dhd_start_xmit,
+ 	.ndo_set_mac_address = dhd_set_mac_address,
+-	.ndo_set_multicast_list = dhd_set_multicast_list
++	.ndo_set_rx_mode = dhd_set_multicast_list
+ };
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)) */
+ int
+-- 
+1.8.0
+

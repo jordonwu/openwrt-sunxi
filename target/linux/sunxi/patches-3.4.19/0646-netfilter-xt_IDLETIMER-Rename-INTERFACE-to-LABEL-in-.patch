@@ -1,0 +1,49 @@
+From feddc13ac4a5c3f595275edde3eae06806a70197 Mon Sep 17 00:00:00 2001
+From: Ashish Sharma <ashishsharma@google.com>
+Date: Mon, 13 Aug 2012 13:19:57 -0700
+Subject: [PATCH 646/944] netfilter: xt_IDLETIMER: Rename INTERFACE to LABEL
+ in netlink notification.
+
+Change-Id: Iaeca5dd2d7878c0733923ae03309a2a7b86979ca
+Signed-off-by: Ashish Sharma <ashishsharma@google.com>
+---
+ net/netfilter/xt_IDLETIMER.c | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/net/netfilter/xt_IDLETIMER.c b/net/netfilter/xt_IDLETIMER.c
+index df91e26..f4ba863 100644
+--- a/net/netfilter/xt_IDLETIMER.c
++++ b/net/netfilter/xt_IDLETIMER.c
+@@ -68,15 +68,15 @@ static DEFINE_MUTEX(list_mutex);
+ 
+ static struct kobject *idletimer_tg_kobj;
+ 
+-static void notify_netlink_uevent(const char *iface, struct idletimer_tg *timer)
++static void notify_netlink_uevent(const char *label, struct idletimer_tg *timer)
+ {
+-	char iface_msg[NLMSG_MAX_SIZE];
++	char label_msg[NLMSG_MAX_SIZE];
+ 	char state_msg[NLMSG_MAX_SIZE];
+-	char *envp[] = { iface_msg, state_msg, NULL };
++	char *envp[] = { label_msg, state_msg, NULL };
+ 	int res;
+ 
+-	res = snprintf(iface_msg, NLMSG_MAX_SIZE, "INTERFACE=%s",
+-		       iface);
++	res = snprintf(label_msg, NLMSG_MAX_SIZE, "LABEL=%s",
++		       label);
+ 	if (NLMSG_MAX_SIZE <= res) {
+ 		pr_err("message too long (%d)", res);
+ 		return;
+@@ -87,7 +87,7 @@ static void notify_netlink_uevent(const char *iface, struct idletimer_tg *timer)
+ 		pr_err("message too long (%d)", res);
+ 		return;
+ 	}
+-	pr_debug("putting nlmsg: <%s> <%s>\n", iface_msg, state_msg);
++	pr_debug("putting nlmsg: <%s> <%s>\n", label_msg, state_msg);
+ 	kobject_uevent_env(idletimer_tg_kobj, KOBJ_CHANGE, envp);
+ 	return;
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,821 @@
+From 783a15162f0b2a11c7cdd3f2f3586feab3148b82 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Thu, 16 Aug 2012 12:56:17 -0700
+Subject: [PATCH 666/944] net: wireless: bcmdhd: Remove obsolete files
+
+Change-Id: I2969ecf8008e04f88757ec7a41285f11b9e2b928
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ .../wireless/bcmdhd/include/bcm_android_types.h    |  44 -----
+ drivers/net/wireless/bcmdhd/include/bcmspibrcm.h   | 147 ---------------
+ drivers/net/wireless/bcmdhd/include/rwl_wifi.h     |  96 ----------
+ drivers/net/wireless/bcmdhd/include/spid.h         | 153 ----------------
+ drivers/net/wireless/bcmdhd/include/usbrdl.h       | 203 ---------------------
+ .../net/wireless/bcmdhd/include/wlc_extlog_idstr.h | 117 ------------
+ 6 files changed, 760 deletions(-)
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/bcm_android_types.h
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/bcmspibrcm.h
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/rwl_wifi.h
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/spid.h
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/usbrdl.h
+ delete mode 100644 drivers/net/wireless/bcmdhd/include/wlc_extlog_idstr.h
+
+diff --git a/drivers/net/wireless/bcmdhd/include/bcm_android_types.h b/drivers/net/wireless/bcmdhd/include/bcm_android_types.h
+deleted file mode 100644
+index fd8aea7..0000000
+--- a/drivers/net/wireless/bcmdhd/include/bcm_android_types.h
++++ /dev/null
+@@ -1,44 +0,0 @@
+-/*
+- * Android related remote wl declarations
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- * $Id: bcm_android_types.h 241182 2011-02-17 21:50:03Z $
+- *
+- */
+-#ifndef _wlu_android_h
+-#define _wlu_android_h
+-#define  __fd_mask unsigned long
+-typedef struct
+-	{
+-	
+-#ifdef __USE_XOPEN
+-    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
+-# define __FDS_BITS(set) ((set)->fds_bits)
+-#else
+-    __fd_mask __fds_bits[__FD_SETSIZE / __NFDBITS];
+-# define __FDS_BITS(set) ((set)->__fds_bits)
+-#endif
+-	} fd_set1;
+-#define fd_set fd_set1
+-
+-#define htons(x) BCMSWAP16(x)
+-#define htonl(x) BCMSWAP32(x)
+-#define __FD_ZERO(s) \
+-	do {                                                                        \
+-    unsigned int __i;                                                         \
+-    fd_set *__arr = (s);                                                      \
+-    for (__i = 0; __i < sizeof (fd_set) / sizeof (__fd_mask); ++__i)          \
+-	__FDS_BITS(__arr)[__i] = 0;                                            \
+-	} while (0)
+-#define __FD_SET(d, s)     (__FDS_BITS (s)[__FDELT(d)] |= __FDMASK(d))
+-#define __FD_CLR(d, s)     (__FDS_BITS (s)[__FDELT(d)] &= ~__FDMASK(d))
+-#define __FD_ISSET(d, s)   ((__FDS_BITS (s)[__FDELT(d)] & __FDMASK(d)) != 0)
+-#define MCL_CURRENT 1
+-#define MCL_FUTURE 2
+-#endif 
+diff --git a/drivers/net/wireless/bcmdhd/include/bcmspibrcm.h b/drivers/net/wireless/bcmdhd/include/bcmspibrcm.h
+deleted file mode 100644
+index bb6610f..0000000
+--- a/drivers/net/wireless/bcmdhd/include/bcmspibrcm.h
++++ /dev/null
+@@ -1,147 +0,0 @@
+-/*
+- * SD-SPI Protocol Conversion - BCMSDH->gSPI Translation Layer
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- *
+- * $Id: bcmspibrcm.h 345514 2012-07-18 07:47:36Z $
+- */
+-#ifndef	_BCM_SPI_BRCM_H
+-#define	_BCM_SPI_BRCM_H
+-
+-#ifndef SPI_MAX_IOFUNCS
+-/* Maximum number of I/O funcs */
+-#define SPI_MAX_IOFUNCS		4
+-#endif
+-/* global msglevel for debug messages - bitvals come from sdiovar.h */
+-
+-#define sd_err(x)
+-#define sd_trace(x)
+-#define sd_info(x)
+-#define sd_debug(x)
+-#define sd_data(x)
+-#define sd_ctrl(x)
+-
+-#define sd_log(x)
+-
+-#define SDIOH_ASSERT(exp) \
+-	do { if (!(exp)) \
+-		printf("!!!ASSERT fail: file %s lines %d", __FILE__, __LINE__); \
+-	} while (0)
+-
+-#define BLOCK_SIZE_F1		64
+-#define BLOCK_SIZE_F2 		2048
+-#define BLOCK_SIZE_F3 		2048
+-
+-/* internal return code */
+-#define SUCCESS	0
+-#undef ERROR
+-#define ERROR	1
+-#define ERROR_UF	2
+-#define ERROR_OF	3
+-
+-/* private bus modes */
+-#define SDIOH_MODE_SPI		0
+-
+-#define USE_BLOCKMODE		0x2	/* Block mode can be single block or multi */
+-#define USE_MULTIBLOCK		0x4
+-
+-struct sdioh_info {
+-	uint		cfg_bar;		/* pci cfg address for bar */
+-	uint32		caps;			/* cached value of capabilities reg */
+-#ifndef BCMSPI_ANDROID
+-	void		*bar0;			/* BAR0 for PCI Device */
+-#endif /* !BCMSPI_ANDROID */
+-	osl_t		*osh;			/* osh handler */
+-	void		*controller;	/* Pointer to SPI Controller's private data struct */
+-#ifndef BCMSPI_ANDROID
+-	uint		lockcount;		/* nest count of spi_lock() calls */
+-	bool		client_intr_enabled;	/* interrupt connnected flag */
+-	bool		intr_handler_valid;	/* client driver interrupt handler valid */
+-	sdioh_cb_fn_t	intr_handler;		/* registered interrupt handler */
+-	void		*intr_handler_arg;	/* argument to call interrupt handler */
+-#endif /* !BCMSPI_ANDROID */
+-	bool		initialized;		/* card initialized */
+-	uint32		target_dev;		/* Target device ID */
+-	uint32		intmask;		/* Current active interrupts */
+-#ifndef BCMSPI_ANDROID
+-	void		*sdos_info;		/* Pointer to per-OS private data */
+-#endif /* !BCMSPI_ANDROID */
+-	uint32		controller_type;	/* Host controller type */
+-	uint8		version;		/* Host Controller Spec Compliance Version */
+-	uint		irq;			/* Client irq */
+-	uint32		intrcount;		/* Client interrupts */
+-	uint32		local_intrcount;	/* Controller interrupts */
+-	bool 		host_init_done;		/* Controller initted */
+-	bool 		card_init_done;		/* Client SDIO interface initted */
+-	bool 		polled_mode;		/* polling for command completion */
+-
+-	bool		sd_use_dma;		/* DMA on CMD53 */
+-	bool 		sd_blockmode;		/* sd_blockmode == FALSE => 64 Byte Cmd 53s. */
+-						/*  Must be on for sd_multiblock to be effective */
+-	bool 		use_client_ints;	/* If this is false, make sure to restore */
+-						/*  polling hack in wl_linux.c:wl_timer() */
+-	int 		adapter_slot;		/* Maybe dealing with multiple slots/controllers */
+-	int 		sd_mode;		/* SD1/SD4/SPI */
+-	int 		client_block_size[SPI_MAX_IOFUNCS];		/* Blocksize */
+-	uint32 		data_xfer_count;	/* Current transfer */
+-	uint16 		card_rca;		/* Current Address */
+-	uint8 		num_funcs;		/* Supported funcs on client */
+-	uint32 		card_dstatus;		/* 32bit device status */
+-	uint32 		com_cis_ptr;
+-	uint32 		func_cis_ptr[SPI_MAX_IOFUNCS];
+-	void		*dma_buf;
+-	ulong		dma_phys;
+-	int 		r_cnt;			/* rx count */
+-	int 		t_cnt;			/* tx_count */
+-	uint32		wordlen;			/* host processor 16/32bits */
+-	uint32		prev_fun;
+-	uint32		chip;
+-	uint32		chiprev;
+-	bool		resp_delay_all;
+-	bool		dwordmode;
+-	bool		resp_delay_new;
+-
+-	struct spierrstats_t spierrstats;
+-};
+-
+-/************************************************************
+- * Internal interfaces: per-port references into bcmspibrcm.c
+- */
+-
+-/* Global message bits */
+-extern uint sd_msglevel;
+-
+-/**************************************************************
+- * Internal interfaces: bcmspibrcm.c references to per-port code
+- */
+-
+-/* Interrupt (de)registration routines */
+-extern int spi_register_irq(sdioh_info_t *sd, uint irq);
+-extern void spi_free_irq(uint irq, sdioh_info_t *sd);
+-
+-/* OS-specific interrupt wrappers (atomic interrupt enable/disable) */
+-extern void spi_lock(sdioh_info_t *sd);
+-extern void spi_unlock(sdioh_info_t *sd);
+-
+-/* Allocate/init/free per-OS private data */
+-extern int spi_osinit(sdioh_info_t *sd);
+-extern void spi_osfree(sdioh_info_t *sd);
+-
+-#define SPI_RW_FLAG_M			BITFIELD_MASK(1)	/* Bit [31] - R/W Command Bit */
+-#define SPI_RW_FLAG_S			31
+-#define SPI_ACCESS_M			BITFIELD_MASK(1)	/* Bit [30] - Fixed/Incr Access */
+-#define SPI_ACCESS_S			30
+-#define SPI_FUNCTION_M			BITFIELD_MASK(2)	/* Bit [29:28] - Function Number */
+-#define SPI_FUNCTION_S			28
+-#define SPI_REG_ADDR_M			BITFIELD_MASK(17)	/* Bit [27:11] - Address */
+-#define SPI_REG_ADDR_S			11
+-#define SPI_LEN_M			BITFIELD_MASK(11)	/* Bit [10:0] - Packet length */
+-#define SPI_LEN_S			0
+-
+-#endif /* _BCM_SPI_BRCM_H */
+diff --git a/drivers/net/wireless/bcmdhd/include/rwl_wifi.h b/drivers/net/wireless/bcmdhd/include/rwl_wifi.h
+deleted file mode 100644
+index 187c2bc..0000000
+--- a/drivers/net/wireless/bcmdhd/include/rwl_wifi.h
++++ /dev/null
+@@ -1,96 +0,0 @@
+-/*
+- * RWL definitions  of
+- * Broadcom 802.11bang Networking Device Driver
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- *
+- * $Id: rwl_wifi.h 281527 2011-09-02 17:12:53Z $
+- *
+- */
+-
+-#ifndef _rwl_wifi_h_
+-#define _rwl_wifi_h_
+-
+-#if defined(RWL_WIFI) || defined(WIFI_REFLECTOR) || defined(RFAWARE)
+-
+-#define RWL_ACTION_WIFI_CATEGORY	127  /* Vendor-specific category value for WiFi */
+-#define RWL_WIFI_OUI_BYTE0		0x00 /* BRCM-specific public OUI */
+-#define RWL_WIFI_OUI_BYTE1		0x90
+-#define RWL_WIFI_OUI_BYTE2		0x4c
+-#define RWL_WIFI_ACTION_FRAME_SIZE	sizeof(struct dot11_action_wifi_vendor_specific)
+-#define RWL_WIFI_FIND_MY_PEER		0x09 /* Used while finding server */
+-#define RWL_WIFI_FOUND_PEER		0x0A /* Server response to the client  */
+-#define RWL_WIFI_DEFAULT		0x00
+-#define RWL_ACTION_WIFI_FRAG_TYPE	0x55 /* Fragment indicator for receiver */
+-
+-/*
+- * Information about the action frame data fields in the dot11_action_wifi_vendor_specific
+- * cdc structure (1 to 16). This does not include the status flag. Since this
+- * is not directly visible to the driver code, we can't use sizeof(struct cdc_ioctl).
+- * Hence Ref MAC address offset starts from byte 17.
+- * REF MAC ADDR (6 bytes (MAC Address len) from byte 17 to 22)
+- * DUT MAC ADDR (6 bytes after the REF MAC Address byte 23 to 28)
+- * unused (byte 29 to 49)
+- * REF/Client Channel offset (50)
+- * DUT/Server channel offset (51)
+- * ---------------------------------------------------------------------------------------
+- * cdc struct|REF MAC ADDR|DUT_MAC_ADDR|un used|REF Channel|DUT channel|Action frame Data|
+- * 1---------17-----------23-------------------50----------51----------52----------------1040
+- * REF MAC addr after CDC struct without status flag (status flag not used by wifi)
+- */
+-
+-#define RWL_REF_MAC_ADDRESS_OFFSET	17
+-#define RWL_DUT_MAC_ADDRESS_OFFSET	23
+-#define RWL_WIFI_CLIENT_CHANNEL_OFFSET	50
+-#define RWL_WIFI_SERVER_CHANNEL_OFFSET	51
+-
+-#ifdef WIFI_REFLECTOR
+-#include <bcmcdc.h>
+-#define REMOTE_FINDSERVER_CMD 	16
+-#define RWL_WIFI_ACTION_CMD		"wifiaction"
+-#define RWL_WIFI_ACTION_CMD_LEN		11	/* With the NULL terminator */
+-#define REMOTE_SET_CMD 		1
+-#define REMOTE_GET_CMD 		2
+-#define REMOTE_REPLY 			4
+-#define RWL_WIFI_DEFAULT_TYPE           0x00
+-#define RWL_WIFI_DEFAULT_SUBTYPE        0x00
+-#define RWL_ACTION_FRAME_DATA_SIZE      1024	/* fixed size for the wifi frame data */
+-#define RWL_WIFI_CDC_HEADER_OFFSET      0
+-#define RWL_WIFI_FRAG_DATA_SIZE         960	/* max size of the frag data */
+-#define RWL_DEFAULT_WIFI_FRAG_COUNT 	127 	/* maximum fragment count */
+-#define RWL_WIFI_RETRY			5       /* CMD retry count for wifi */
+-#define RWL_WIFI_SEND			5	/* WIFI frame sent count */
+-#define RWL_WIFI_SEND_DELAY		100	/* delay between two frames */
+-#define MICROSEC_CONVERTOR_VAL		1000
+-#ifndef IFNAMSIZ
+-#define IFNAMSIZ			16
+-#endif
+-
+-typedef struct rem_packet {
+-	rem_ioctl_t rem_cdc;
+-	uchar message [RWL_ACTION_FRAME_DATA_SIZE];
+-} rem_packet_t;
+-
+-struct send_packet {
+-	char command [RWL_WIFI_ACTION_CMD_LEN];
+-	dot11_action_wifi_vendor_specific_t response;
+-} PACKED;
+-typedef struct send_packet send_packet_t;
+-
+-#define REMOTE_SIZE     sizeof(rem_ioctl_t)
+-#endif /* WIFI_REFLECTOR */
+-
+-typedef struct rwl_request {
+-	struct rwl_request* next_request;
+-	struct dot11_action_wifi_vendor_specific action_frame;
+-} rwl_request_t;
+-
+-
+-#endif /* defined(RWL_WIFI) || defined(WIFI_REFLECTOR) */
+-#endif	/* _rwl_wifi_h_ */
+diff --git a/drivers/net/wireless/bcmdhd/include/spid.h b/drivers/net/wireless/bcmdhd/include/spid.h
+deleted file mode 100644
+index ccae977..0000000
+--- a/drivers/net/wireless/bcmdhd/include/spid.h
++++ /dev/null
+@@ -1,153 +0,0 @@
+-/*
+- * SPI device spec header file
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- *
+- * $Id: spid.h 241182 2011-02-17 21:50:03Z $
+- */
+-
+-#ifndef	_SPI_H
+-#define	_SPI_H
+-
+-/*
+- * Brcm SPI Device Register Map.
+- *
+- */
+-
+-typedef volatile struct {
+-	uint8	config;			/* 0x00, len, endian, clock, speed, polarity, wakeup */
+-	uint8	response_delay;		/* 0x01, read response delay in bytes (corerev < 3) */
+-	uint8	status_enable;		/* 0x02, status-enable, intr with status, response_delay
+-					 * function selection, command/data error check
+-					 */
+-	uint8	reset_bp;		/* 0x03, reset on wlan/bt backplane reset (corerev >= 1) */
+-	uint16	intr_reg;		/* 0x04, Intr status register */
+-	uint16	intr_en_reg;		/* 0x06, Intr mask register */
+-	uint32	status_reg;		/* 0x08, RO, Status bits of last spi transfer */
+-	uint16	f1_info_reg;		/* 0x0c, RO, enabled, ready for data transfer, blocksize */
+-	uint16	f2_info_reg;		/* 0x0e, RO, enabled, ready for data transfer, blocksize */
+-	uint16	f3_info_reg;		/* 0x10, RO, enabled, ready for data transfer, blocksize */
+-	uint32	test_read;		/* 0x14, RO 0xfeedbead signature */
+-	uint32	test_rw;		/* 0x18, RW */
+-	uint8	resp_delay_f0;		/* 0x1c, read resp delay bytes for F0 (corerev >= 3) */
+-	uint8	resp_delay_f1;		/* 0x1d, read resp delay bytes for F1 (corerev >= 3) */
+-	uint8	resp_delay_f2;		/* 0x1e, read resp delay bytes for F2 (corerev >= 3) */
+-	uint8	resp_delay_f3;		/* 0x1f, read resp delay bytes for F3 (corerev >= 3) */
+-} spi_regs_t;
+-
+-/* SPI device register offsets */
+-#define SPID_CONFIG			0x00
+-#define SPID_RESPONSE_DELAY		0x01
+-#define SPID_STATUS_ENABLE		0x02
+-#define SPID_RESET_BP			0x03	/* (corerev >= 1) */
+-#define SPID_INTR_REG			0x04	/* 16 bits - Interrupt status */
+-#define SPID_INTR_EN_REG		0x06	/* 16 bits - Interrupt mask */
+-#define SPID_STATUS_REG			0x08	/* 32 bits */
+-#define SPID_F1_INFO_REG		0x0C	/* 16 bits */
+-#define SPID_F2_INFO_REG		0x0E	/* 16 bits */
+-#define SPID_F3_INFO_REG		0x10	/* 16 bits */
+-#define SPID_TEST_READ			0x14	/* 32 bits */
+-#define SPID_TEST_RW			0x18	/* 32 bits */
+-#define SPID_RESP_DELAY_F0		0x1c	/* 8 bits (corerev >= 3) */
+-#define SPID_RESP_DELAY_F1		0x1d	/* 8 bits (corerev >= 3) */
+-#define SPID_RESP_DELAY_F2		0x1e	/* 8 bits (corerev >= 3) */
+-#define SPID_RESP_DELAY_F3		0x1f	/* 8 bits (corerev >= 3) */
+-
+-/* Bit masks for SPID_CONFIG device register */
+-#define WORD_LENGTH_32	0x1	/* 0/1 16/32 bit word length */
+-#define ENDIAN_BIG	0x2	/* 0/1 Little/Big Endian */
+-#define CLOCK_PHASE	0x4	/* 0/1 clock phase delay */
+-#define CLOCK_POLARITY	0x8	/* 0/1 Idle state clock polarity is low/high */
+-#define HIGH_SPEED_MODE	0x10	/* 1/0 High Speed mode / Normal mode */
+-#define INTR_POLARITY	0x20	/* 1/0 Interrupt active polarity is high/low */
+-#define WAKE_UP		0x80	/* 0/1 Wake-up command from Host to WLAN */
+-
+-/* Bit mask for SPID_RESPONSE_DELAY device register */
+-#define RESPONSE_DELAY_MASK	0xFF	/* Configurable rd response delay in multiples of 8 bits */
+-
+-/* Bit mask for SPID_STATUS_ENABLE device register */
+-#define STATUS_ENABLE		0x1	/* 1/0 Status sent/not sent to host after read/write */
+-#define INTR_WITH_STATUS	0x2	/* 0/1 Do-not / do-interrupt if status is sent */
+-#define RESP_DELAY_ALL		0x4	/* Applicability of resp delay to F1 or all func's read */
+-#define DWORD_PKT_LEN_EN	0x8	/* Packet len denoted in dwords instead of bytes */
+-#define CMD_ERR_CHK_EN		0x20	/* Command error check enable */
+-#define DATA_ERR_CHK_EN		0x40	/* Data error check enable */
+-
+-/* Bit mask for SPID_RESET_BP device register */
+-#define RESET_ON_WLAN_BP_RESET	0x4	/* enable reset for WLAN backplane */
+-#define RESET_ON_BT_BP_RESET	0x8	/* enable reset for BT backplane */
+-#define RESET_SPI		0x80	/* reset the above enabled logic */
+-
+-/* Bit mask for SPID_INTR_REG device register */
+-#define DATA_UNAVAILABLE	0x0001	/* Requested data not available; Clear by writing a "1" */
+-#define F2_F3_FIFO_RD_UNDERFLOW	0x0002
+-#define F2_F3_FIFO_WR_OVERFLOW	0x0004
+-#define COMMAND_ERROR		0x0008	/* Cleared by writing 1 */
+-#define DATA_ERROR		0x0010	/* Cleared by writing 1 */
+-#define F2_PACKET_AVAILABLE	0x0020
+-#define F3_PACKET_AVAILABLE	0x0040
+-#define F1_OVERFLOW		0x0080	/* Due to last write. Bkplane has pending write requests */
+-#define MISC_INTR0		0x0100
+-#define MISC_INTR1		0x0200
+-#define MISC_INTR2		0x0400
+-#define MISC_INTR3		0x0800
+-#define MISC_INTR4		0x1000
+-#define F1_INTR			0x2000
+-#define F2_INTR			0x4000
+-#define F3_INTR			0x8000
+-
+-/* Bit mask for 32bit SPID_STATUS_REG device register */
+-#define STATUS_DATA_NOT_AVAILABLE	0x00000001
+-#define STATUS_UNDERFLOW		0x00000002
+-#define STATUS_OVERFLOW			0x00000004
+-#define STATUS_F2_INTR			0x00000008
+-#define STATUS_F3_INTR			0x00000010
+-#define STATUS_F2_RX_READY		0x00000020
+-#define STATUS_F3_RX_READY		0x00000040
+-#define STATUS_HOST_CMD_DATA_ERR	0x00000080
+-#define STATUS_F2_PKT_AVAILABLE		0x00000100
+-#define STATUS_F2_PKT_LEN_MASK		0x000FFE00
+-#define STATUS_F2_PKT_LEN_SHIFT		9
+-#define STATUS_F3_PKT_AVAILABLE		0x00100000
+-#define STATUS_F3_PKT_LEN_MASK		0xFFE00000
+-#define STATUS_F3_PKT_LEN_SHIFT		21
+-
+-/* Bit mask for 16 bits SPID_F1_INFO_REG device register */
+-#define F1_ENABLED 			0x0001
+-#define F1_RDY_FOR_DATA_TRANSFER	0x0002
+-#define F1_MAX_PKT_SIZE			0x01FC
+-
+-/* Bit mask for 16 bits SPID_F2_INFO_REG device register */
+-#define F2_ENABLED 			0x0001
+-#define F2_RDY_FOR_DATA_TRANSFER	0x0002
+-#define F2_MAX_PKT_SIZE			0x3FFC
+-
+-/* Bit mask for 16 bits SPID_F3_INFO_REG device register */
+-#define F3_ENABLED 			0x0001
+-#define F3_RDY_FOR_DATA_TRANSFER	0x0002
+-#define F3_MAX_PKT_SIZE			0x3FFC
+-
+-/* Bit mask for 32 bits SPID_TEST_READ device register read in 16bit LE mode */
+-#define TEST_RO_DATA_32BIT_LE		0xFEEDBEAD
+-
+-/* Maximum number of I/O funcs */
+-#define SPI_MAX_IOFUNCS		4
+-
+-#define SPI_MAX_PKT_LEN		(2048*4)
+-
+-/* Misc defines */
+-#define SPI_FUNC_0		0
+-#define SPI_FUNC_1		1
+-#define SPI_FUNC_2		2
+-#define SPI_FUNC_3		3
+-
+-#define WAIT_F2RXFIFORDY	100
+-#define WAIT_F2RXFIFORDY_DELAY	20
+-
+-#endif /* _SPI_H */
+diff --git a/drivers/net/wireless/bcmdhd/include/usbrdl.h b/drivers/net/wireless/bcmdhd/include/usbrdl.h
+deleted file mode 100644
+index c90dccd..0000000
+--- a/drivers/net/wireless/bcmdhd/include/usbrdl.h
++++ /dev/null
+@@ -1,203 +0,0 @@
+-/*
+- * Broadcom USB remote download definitions
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- *
+- * $Id: usbrdl.h 296577 2011-11-16 03:09:51Z $
+- */
+-
+-#ifndef _USB_RDL_H
+-#define _USB_RDL_H
+-
+-/* Control messages: bRequest values */
+-#define DL_GETSTATE		0	/* returns the rdl_state_t struct */
+-#define DL_CHECK_CRC		1	/* currently unused */
+-#define DL_GO			2	/* execute downloaded image */
+-#define DL_START		3	/* initialize dl state */
+-#define DL_REBOOT		4	/* reboot the device in 2 seconds */
+-#define DL_GETVER		5	/* returns the bootrom_id_t struct */
+-#define DL_GO_PROTECTED		6	/* execute the downloaded code and set reset event
+-					 * to occur in 2 seconds.  It is the responsibility
+-					 * of the downloaded code to clear this event
+-					 */
+-#define DL_EXEC			7	/* jump to a supplied address */
+-#define DL_RESETCFG		8	/* To support single enum on dongle
+-					 * - Not used by bootloader
+-					 */
+-#define DL_DEFER_RESP_OK	9	/* Potentially defer the response to setup
+-					 * if resp unavailable
+-					 */
+-
+-#define	DL_HWCMD_MASK		0xfc	/* Mask for hardware read commands: */
+-#define	DL_RDHW			0x10	/* Read a hardware address (Ctl-in) */
+-#define	DL_RDHW32		0x10	/* Read a 32 bit word */
+-#define	DL_RDHW16		0x11	/* Read 16 bits */
+-#define	DL_RDHW8		0x12	/* Read an 8 bit byte */
+-#define	DL_WRHW			0x14	/* Write a hardware address (Ctl-out) */
+-#define DL_WRHW_BLK 	0x13	/* Block write to hardware access */
+-
+-#define DL_CMD_RDHW		1	/* read data from a backplane address */
+-#define DL_CMD_WRHW		2	/* write data to a backplane address */
+-
+-#ifndef LINUX_POSTMOGRIFY_REMOVAL
+-#define	DL_JTCONF		0x15	/* Get JTAG configuration (Ctl_in)
+-					 *  Set JTAG configuration (Ctl-out)
+-					 */
+-#define	DL_JTON			0x16	/* Turn on jtag master (Ctl-in) */
+-#define	DL_JTOFF		0x17	/* Turn on jtag master (Ctl-in) */
+-#define	DL_RDRJT		0x18	/* Read a JTAG register (Ctl-in) */
+-#define	DL_WRJT			0x19	/* Write a hardware address over JTAG (Ctl/Bulk-out) */
+-#define	DL_WRRJT		0x1a	/* Write a JTAG register (Ctl/Bulk-out) */
+-#define	DL_JTRST		0x1b	/* Reset jtag fsm on jtag DUT (Ctl-in) */
+-
+-#define	DL_RDJT			0x1c	/* Read a hardware address over JTAG (Ctl-in) */
+-#define	DL_RDJT32		0x1c	/* Read 32 bits */
+-#define	DL_RDJT16		0x1e	/* Read 16 bits (sz = 4 - low bits) */
+-#define	DL_RDJT8		0x1f	/* Read 8 bits */
+-
+-#define	DL_MRDJT		0x20	/* Multiple read over JTAG (Ctl-out+Bulk-in) */
+-#define	DL_MRDJT32		0x20	/* M-read 32 bits */
+-#define	DL_MRDJT16		0x22	/* M-read 16 bits (sz = 4 - low bits) */
+-#define	DL_MRDJT6		0x23	/* M-read 8 bits */
+-#define	DL_MRDIJT		0x24	/* M-read over JTAG (Ctl-out+Bulk-in) with auto-increment */
+-#define	DL_MRDIJT32		0x24	/* M-read 32 bits w/ai */
+-#define	DL_MRDIJT16		0x26	/* M-read 16 bits w/ai (sz = 4 - low bits) */
+-#define	DL_MRDIJT8		0x27	/* M-read 8 bits w/ai */
+-#define	DL_MRDDJT		0x28	/* M-read over JTAG (Ctl-out+Bulk-in) with auto-decrement */
+-#define	DL_MRDDJT32		0x28	/* M-read 32 bits w/ad */
+-#define	DL_MRDDJT16		0x2a	/* M-read 16 bits w/ad (sz = 4 - low bits) */
+-#define	DL_MRDDJT8		0x2b	/* M-read 8 bits w/ad */
+-#define	DL_MWRJT		0x2c	/* Multiple write over JTAG (Bulk-out) */
+-#define	DL_MWRIJT		0x2d	/*	With auto-increment */
+-#define	DL_MWRDJT		0x2e	/*	With auto-decrement */
+-#define	DL_VRDJT		0x2f	/* Vector read over JTAG (Bulk-out+Bulk-in) */
+-#define	DL_VWRJT		0x30	/* Vector write over JTAG (Bulk-out+Bulk-in) */
+-#define	DL_SCJT			0x31	/* Jtag scan (Bulk-out+Bulk-in) */
+-
+-#define	DL_CFRD			0x33	/* Reserved for dmamem use */
+-#define	DL_CFWR			0x34	/* Reserved for dmamem use */
+-#define DL_GET_NVRAM            0x35    /* Query nvram parameter */
+-
+-#define	DL_DBGTRIG		0xFF	/* Trigger bRequest type to aid debug */
+-
+-#define	DL_JTERROR		0x80000000
+-#endif /* LINUX_POSTMOGRIFY_REMOVAL */
+-
+-/* states */
+-#define DL_WAITING	0	/* waiting to rx first pkt that includes the hdr info */
+-#define DL_READY	1	/* hdr was good, waiting for more of the compressed image */
+-#define DL_BAD_HDR	2	/* hdr was corrupted */
+-#define DL_BAD_CRC	3	/* compressed image was corrupted */
+-#define DL_RUNNABLE	4	/* download was successful, waiting for go cmd */
+-#define DL_START_FAIL	5	/* failed to initialize correctly */
+-#define DL_NVRAM_TOOBIG	6	/* host specified nvram data exceeds DL_NVRAM value */
+-#define DL_IMAGE_TOOBIG	7	/* download image too big (exceeds DATA_START for rdl) */
+-
+-#define TIMEOUT		5000	/* Timeout for usb commands */
+-
+-struct bcm_device_id {
+-	char	*name;
+-	uint32	vend;
+-	uint32	prod;
+-};
+-
+-typedef struct {
+-	uint32	state;
+-	uint32	bytes;
+-} rdl_state_t;
+-
+-typedef struct {
+-	uint32	chip;		/* Chip id */
+-	uint32	chiprev;	/* Chip rev */
+-	uint32  ramsize;    /* Size of RAM */
+-	uint32  remapbase;   /* Current remap base address */
+-	uint32  boardtype;   /* Type of board */
+-	uint32  boardrev;    /* Board revision */
+-} bootrom_id_t;
+-
+-/* struct for backplane & jtag accesses */
+-typedef struct {
+-	uint32	cmd;		/* tag to identify the cmd */
+-	uint32	addr;		/* backplane address for write */
+-	uint32	len;		/* length of data: 1, 2, 4 bytes */
+-	uint32	data;		/* data to write */
+-} hwacc_t;
+-
+-/* struct for backplane */
+-typedef struct {
+-	uint32  cmd;            /* tag to identify the cmd */
+-	uint32  addr;           /* backplane address for write */
+-	uint32  len;            /* length of data: 1, 2, 4 bytes */
+-	uint8   data[1];                /* data to write */
+-} hwacc_blk_t;
+-
+-#ifndef LINUX_POSTMOGRIFY_REMOVAL
+-typedef struct {
+-	uint32  chip;           /* Chip id */
+-	uint32  chiprev;        /* Chip rev */
+-	uint32  ccrev;          /* Chipcommon core rev */
+-	uint32  siclock;        /* Backplane clock */
+-} jtagd_id_t;
+-
+-/* Jtag configuration structure */
+-typedef struct {
+-	uint32	cmd;		/* tag to identify the cmd */
+-	uint8	clkd;		/* Jtag clock divisor */
+-	uint8	disgpio;	/* Gpio to disable external driver */
+-	uint8	irsz;		/* IR size for readreg/writereg */
+-	uint8	drsz;		/* DR size for readreg/writereg */
+-
+-	uint8	bigend;		/* Big endian */
+-	uint8	mode;		/* Current mode */
+-	uint16	delay;		/* Delay between jtagm "simple commands" */
+-
+-	uint32	retries;	/* Number of retries for jtagm operations */
+-	uint32	ctrl;		/* Jtag control reg copy */
+-	uint32	ir_lvbase;	/* Bits to add to IR values in LV tap */
+-	uint32	dretries;	/* Number of retries for dma operations */
+-} jtagconf_t;
+-
+-/* struct for jtag scan */
+-#define MAX_USB_IR_BITS	256
+-#define MAX_USB_DR_BITS	3072
+-#define USB_IR_WORDS	(MAX_USB_IR_BITS / 32)
+-#define USB_DR_WORDS	(MAX_USB_DR_BITS / 32)
+-typedef struct {
+-	uint32	cmd;		/* tag to identify the cmd */
+-	uint32	irsz;		/* IR size in bits */
+-	uint32	drsz;		/* DR size in bits */
+-	uint32	ts;		/* Terminal state (def, pause, rti) */
+-	uint32	data[USB_IR_WORDS + USB_DR_WORDS];	/* IR & DR data */
+-} scjt_t;
+-#endif /* LINUX_POSTMOGRIFY_REMOVAL */
+-
+-/* struct for querying nvram params from bootloader */
+-#define QUERY_STRING_MAX 32
+-typedef struct {
+-	uint32  cmd;                    /* tag to identify the cmd */
+-	char    var[QUERY_STRING_MAX];  /* param name */
+-} nvparam_t;
+-
+-typedef void (*exec_fn_t)(void *sih);
+-
+-#define USB_CTRL_IN (USB_TYPE_VENDOR | 0x80 | USB_RECIP_INTERFACE)
+-#define USB_CTRL_OUT (USB_TYPE_VENDOR | 0 | USB_RECIP_INTERFACE)
+-
+-#define USB_CTRL_EP_TIMEOUT 500 /* Timeout used in USB control_msg transactions. */
+-
+-#define RDL_CHUNK	1500  /* size of each dl transfer */
+-
+-/* bootloader makes special use of trx header "offsets" array */
+-#define TRX_OFFSETS_DLFWLEN_IDX	0	/* Size of the fw; used in uncompressed case */
+-#define TRX_OFFSETS_JUMPTO_IDX	1	/* RAM address for jumpto after download */
+-#define TRX_OFFSETS_NVM_LEN_IDX	2	/* Length of appended NVRAM data */
+-
+-#define TRX_OFFSETS_DLBASE_IDX  0       /* RAM start address for download */
+-
+-#endif  /* _USB_RDL_H */
+diff --git a/drivers/net/wireless/bcmdhd/include/wlc_extlog_idstr.h b/drivers/net/wireless/bcmdhd/include/wlc_extlog_idstr.h
+deleted file mode 100644
+index 95f616a..0000000
+--- a/drivers/net/wireless/bcmdhd/include/wlc_extlog_idstr.h
++++ /dev/null
+@@ -1,117 +0,0 @@
+-/*
+- * EXTLOG Module log ID to log Format String mapping table
+- *
+- * Copyright (C) 2012, Broadcom Corporation
+- * All Rights Reserved.
+- * 
+- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
+- * the contents of this file may not be disclosed to third parties, copied
+- * or duplicated in any form, in whole or in part, without the prior
+- * written permission of Broadcom Corporation.
+- *
+- * $Id: wlc_extlog_idstr.h 241182 2011-02-17 21:50:03Z $
+- */
+-#ifndef _WLC_EXTLOG_IDSTR_H_
+-#define _WLC_EXTLOG_IDSTR_H_
+-
+-#include "wlioctl.h"
+-
+-/* Strings corresponding to the IDs defined in wlioctl.h
+- * This file is only included by the apps and not included by the external driver
+- * Formats of pre-existing ids should NOT be changed
+- */
+-log_idstr_t extlog_fmt_str[ ] = {
+-	{FMTSTR_DRIVER_UP_ID, 0, LOG_ARGTYPE_NULL,
+-	"Driver is Up\n"},
+-
+-	{FMTSTR_DRIVER_DOWN_ID, 0, LOG_ARGTYPE_NULL,
+-	"Driver is Down\n"},
+-
+-	{FMTSTR_SUSPEND_MAC_FAIL_ID, 0, LOG_ARGTYPE_INT,
+-	"wlc_suspend_mac_and_wait() failed with psmdebug 0x%08x\n"},
+-
+-	{FMTSTR_NO_PROGRESS_ID, 0, LOG_ARGTYPE_INT,
+-	"No Progress on TX for %d seconds\n"},
+-
+-	{FMTSTR_RFDISABLE_ID, 0, LOG_ARGTYPE_INT,
+-	"Detected a change in RF Disable Input 0x%x\n"},
+-
+-	{FMTSTR_REG_PRINT_ID, 0, LOG_ARGTYPE_STR_INT,
+-	"Register %s = 0x%x\n"},
+-
+-	{FMTSTR_EXPTIME_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Strong RF interference detected\n"},
+-
+-	{FMTSTR_JOIN_START_ID, FMTSTRF_USER, LOG_ARGTYPE_STR,
+-	"Searching for networks with ssid %s\n"},
+-
+-	{FMTSTR_JOIN_COMPLETE_ID, FMTSTRF_USER, LOG_ARGTYPE_STR,
+-	"Successfully joined network with BSSID %s\n"},
+-
+-	{FMTSTR_NO_NETWORKS_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"No networks found. Please check if the network exists and is in range\n"},
+-
+-	{FMTSTR_SECURITY_MISMATCH_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"AP rejected due to security mismatch. Change the security settings and try again...\n"},
+-
+-	{FMTSTR_RATE_MISMATCH_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"AP rejected due to rate mismatch\n"},
+-
+-	{FMTSTR_AP_PRUNED_ID, 0, LOG_ARGTYPE_INT,
+-	"AP rejected due to reason %d\n"},
+-
+-	{FMTSTR_KEY_INSERTED_ID, 0, LOG_ARGTYPE_INT,
+-	"Inserting keys for algorithm %d\n"},
+-
+-	{FMTSTR_DEAUTH_ID, FMTSTRF_USER, LOG_ARGTYPE_STR_INT,
+-	"Received Deauth from %s with Reason %d\n"},
+-
+-	{FMTSTR_DISASSOC_ID, FMTSTRF_USER, LOG_ARGTYPE_STR_INT,
+-	"Received Disassoc from %s with Reason %d\n"},
+-
+-	{FMTSTR_LINK_UP_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Link Up\n"},
+-
+-	{FMTSTR_LINK_DOWN_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Link Down\n"},
+-
+-	{FMTSTR_RADIO_HW_OFF_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Radio button is turned OFF. Please turn it on...\n"},
+-
+-	{FMTSTR_RADIO_HW_ON_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Hardware Radio button is turned ON\n"},
+-
+-	{FMTSTR_EVENT_DESC_ID, 0, LOG_ARGTYPE_INT_STR,
+-	"Generated event id %d: (result status) is (%s)\n"},
+-
+-	{FMTSTR_PNP_SET_POWER_ID, 0, LOG_ARGTYPE_INT,
+-	"Device going into power state %d\n"},
+-
+-	{FMTSTR_RADIO_SW_OFF_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Software Radio is disabled. Please enable it through the UI...\n"},
+-
+-	{FMTSTR_RADIO_SW_ON_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Software Radio is enabled\n"},
+-
+-	{FMTSTR_PWD_MISMATCH_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Potential passphrase mismatch. Please try a different one...\n"},
+-
+-	{FMTSTR_FATAL_ERROR_ID, 0, LOG_ARGTYPE_INT,
+-	"Fatal Error: intstatus 0x%x\n"},
+-
+-	{FMTSTR_AUTH_FAIL_ID, 0, LOG_ARGTYPE_STR_INT,
+-	"Authentication to %s Failed with status %d\n"},
+-
+-	{FMTSTR_ASSOC_FAIL_ID, 0, LOG_ARGTYPE_STR_INT,
+-	"Association to %s Failed with status %d\n"},
+-
+-	{FMTSTR_IBSS_FAIL_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Unable to start IBSS since PeerNet is already active\n"},
+-
+-	{FMTSTR_EXTAP_FAIL_ID, FMTSTRF_USER, LOG_ARGTYPE_NULL,
+-	"Unable to start Ext-AP since PeerNet is already active\n"},
+-
+-	{FMTSTR_MAX_ID, 0, 0, "\0"}
+-};
+-
+-#endif /* _WLC_EXTLOG_IDSTR_H_ */
+-- 
+1.8.0
+

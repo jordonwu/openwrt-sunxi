@@ -1,0 +1,24 @@
+From b59f804f3138c71afbbad190ee8e0956f03eb055 Mon Sep 17 00:00:00 2001
+From: Benn Huang <benn@allwinnertech.com>
+Date: Fri, 18 Nov 2011 14:32:33 +0800
+Subject: [PATCH 353/944] Kconfig: fix compile error
+
+---
+ drivers/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 715f0ba..a765f40 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -44,7 +44,6 @@ source "drivers/isdn/Kconfig"
+ 
+ source "drivers/input/Kconfig"
+ 
+-source "drivers/gsensor/Kconfig"
+ source "drivers/char/Kconfig"
+ 
+ source "drivers/i2c/Kconfig"
+-- 
+1.8.0
+

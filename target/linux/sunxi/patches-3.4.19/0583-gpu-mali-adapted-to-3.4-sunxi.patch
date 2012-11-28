@@ -1,0 +1,52 @@
+From 65783197994aeb76380fc33239dc9f1fb37a8237 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 9 Jul 2012 21:09:15 +0200
+Subject: [PATCH 583/944] gpu: mali: adapted to 3.4/sunxi
+
+---
+ drivers/gpu/mali/mali/linux/mali_kernel_pm.c               | 2 ++
+ drivers/gpu/mali/mali/linux/mali_kernel_sysfs.c            | 1 +
+ drivers/gpu/mali/mali/platform/mali400-pmu/mali_platform.c | 2 +-
+ 3 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/mali/mali/linux/mali_kernel_pm.c b/drivers/gpu/mali/mali/linux/mali_kernel_pm.c
+index 0c03678..f1cfdc7 100644
+--- a/drivers/gpu/mali/mali/linux/mali_kernel_pm.c
++++ b/drivers/gpu/mali/mali/linux/mali_kernel_pm.c
+@@ -13,6 +13,8 @@
+  * Implementation of the Linux Power Management for Mali GPU kernel driver
+  */
+ 
++#include <linux/module.h>
++
+ #if USING_MALI_PMM
+ #include <linux/sched.h>
+ 
+diff --git a/drivers/gpu/mali/mali/linux/mali_kernel_sysfs.c b/drivers/gpu/mali/mali/linux/mali_kernel_sysfs.c
+index 08d0d0d..2c08219 100644
+--- a/drivers/gpu/mali/mali/linux/mali_kernel_sysfs.c
++++ b/drivers/gpu/mali/mali/linux/mali_kernel_sysfs.c
+@@ -14,6 +14,7 @@
+  * Implementation of some sysfs data exports
+  */
+ 
++#include <linux/module.h>
+ #include <linux/fs.h>
+ #include <linux/device.h>
+ #include "mali_kernel_license.h"
+diff --git a/drivers/gpu/mali/mali/platform/mali400-pmu/mali_platform.c b/drivers/gpu/mali/mali/platform/mali400-pmu/mali_platform.c
+index 0b1c023..cd77b61 100644
+--- a/drivers/gpu/mali/mali/platform/mali400-pmu/mali_platform.c
++++ b/drivers/gpu/mali/mali/platform/mali400-pmu/mali_platform.c
+@@ -20,7 +20,7 @@
+ #include <linux/clk.h>
+ #include <mach/irqs.h>
+ #include <mach/clock.h>
+-#include <mach/sys_config.h>
++#include <plat/sys_config.h>
+ 
+ 
+ int mali_clk_div = 3;
+-- 
+1.8.0
+

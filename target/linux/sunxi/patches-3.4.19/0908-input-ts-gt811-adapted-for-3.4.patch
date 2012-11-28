@@ -1,0 +1,59 @@
+From 5bcfb7c663a916c9025dc0cc95043a2ddf3edec5 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 30 Oct 2012 19:20:29 +0000
+Subject: [PATCH 908/944] input:ts:gt811: adapted for 3.4
+
+---
+ drivers/input/touchscreen/gt811_ts.c | 4 ++--
+ drivers/input/touchscreen/gt811_ts.h | 4 ++++
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/input/touchscreen/gt811_ts.c b/drivers/input/touchscreen/gt811_ts.c
+index 3d7fa87..f4d69ff 100644
+--- a/drivers/input/touchscreen/gt811_ts.c
++++ b/drivers/input/touchscreen/gt811_ts.c
+@@ -34,7 +34,7 @@
+ #include <mach/irqs.h>
+ #include <mach/system.h>
+ #include <mach/hardware.h>
+-#include <mach/sys_config.h>
++#include <plat/sys_config.h>
+ #include "ctp_platform_ops.h"
+ 
+ 
+@@ -380,7 +380,7 @@ static int ctp_fetch_sysconfig_para(void)
+ 	int ret = -1;
+ 	int ctp_used = -1;
+ 	char name[I2C_NAME_SIZE];
+-	script_parser_value_type_t type = SCIRPT_PARSER_VALUE_TYPE_STRING;
++	script_parser_value_type_t type = SCRIPT_PARSER_VALUE_TYPE_STRING;
+ 
+ 	printk("%s. \n", __func__);
+ 
+diff --git a/drivers/input/touchscreen/gt811_ts.h b/drivers/input/touchscreen/gt811_ts.h
+index b210cc4..6917364 100644
+--- a/drivers/input/touchscreen/gt811_ts.h
++++ b/drivers/input/touchscreen/gt811_ts.h
+@@ -19,7 +19,9 @@
+ #ifndef 	_LINUX_GT811_H
+ #define		_LINUX_GT811_H
+ 
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ #include <linux/earlysuspend.h>
++#endif
+ #include <linux/hrtimer.h>
+ #include <linux/i2c.h>
+ #include <linux/input.h>
+@@ -123,7 +125,9 @@ struct goodix_ts_data {
+        unsigned int version;
+ /////////////////////////////// UPDATE STEP 6 END /////////////////////////////////////////////////////////////////
+ 
++#ifdef CONFIG_HAS_EARLYSUSPEND
+ 	struct early_suspend early_suspend;
++#endif
+ 	int (*power)(struct goodix_ts_data * ts, int on);
+ };
+ 
+-- 
+1.8.0
+

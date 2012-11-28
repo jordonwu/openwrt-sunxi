@@ -1,0 +1,63 @@
+From 420359667ce49da1f5d6b081abf5cb6db0d7b700 Mon Sep 17 00:00:00 2001
+From: Jaikumar Ganesh <jaikumarg@android.com>
+Date: Tue, 20 Sep 2011 16:47:43 -0700
+Subject: [PATCH 140/944] HID: magicmouse: Add input_register callback.
+
+The magicmouse driver needs to setup the input mapping
+after reports are parsed but before device is registered.
+
+Change-Id: Ic3a0ff4fc056f5d374bb7ea1bd831a175c690b0b
+Signed-off-by: Jaikumar Ganesh <jaikumarg@android.com>
+---
+ drivers/hid/hid-magicmouse.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/hid/hid-magicmouse.c b/drivers/hid/hid-magicmouse.c
+index 7cf3ffe..8427463 100644
+--- a/drivers/hid/hid-magicmouse.c
++++ b/drivers/hid/hid-magicmouse.c
+@@ -387,8 +387,10 @@ static int magicmouse_raw_event(struct hid_device *hdev,
+ 	return 1;
+ }
+ 
+-static void magicmouse_setup_input(struct input_dev *input, struct hid_device *hdev)
++static int magicmouse_setup_input(struct hid_device *hdev, struct hid_input *hi)
+ {
++	struct input_dev *input = hi->input;
++
+ 	__set_bit(EV_KEY, input->evbit);
+ 
+ 	if (input->id.product == USB_DEVICE_ID_APPLE_MAGICMOUSE) {
+@@ -471,6 +473,8 @@ static void magicmouse_setup_input(struct input_dev *input, struct hid_device *h
+ 		__set_bit(EV_MSC, input->evbit);
+ 		__set_bit(MSC_RAW, input->mscbit);
+ 	}
++
++	return 0;
+ }
+ 
+ static int magicmouse_input_mapping(struct hid_device *hdev,
+@@ -523,12 +527,6 @@ static int magicmouse_probe(struct hid_device *hdev,
+ 		goto err_free;
+ 	}
+ 
+-	/* We do this after hid-input is done parsing reports so that
+-	 * hid-input uses the most natural button and axis IDs.
+-	 */
+-	if (msc->input)
+-		magicmouse_setup_input(msc->input, hdev);
+-
+ 	if (id->product == USB_DEVICE_ID_APPLE_MAGICMOUSE)
+ 		report = hid_register_report(hdev, HID_INPUT_REPORT,
+ 			MOUSE_REPORT_ID);
+@@ -593,6 +591,7 @@ static struct hid_driver magicmouse_driver = {
+ 	.remove = magicmouse_remove,
+ 	.raw_event = magicmouse_raw_event,
+ 	.input_mapping = magicmouse_input_mapping,
++	.input_register = magicmouse_setup_input,
+ };
+ 
+ static int __init magicmouse_init(void)
+-- 
+1.8.0
+

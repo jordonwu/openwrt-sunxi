@@ -1,0 +1,110 @@
+From 41d9d91eeb7288e34a7631b4446b0f642055daa7 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@google.com>
+Date: Thu, 30 Jul 2009 07:55:28 -0700
+Subject: [PATCH 056/944] mmc: core: Add deferred bus resume policy.
+
+A card driver can now specify that the underlying bus should *not*
+auto-resume with the rest of the system. This is useful for reducing resume
+latency as well as saving power when the card driver is not using the
+bus. In the future, we'll add support for manual suspend
+
+Signed-off-by: San Mehat <san@google.com>
+---
+ drivers/mmc/core/core.c  | 33 +++++++++++++++++++++++++++++++++
+ include/linux/mmc/host.h | 15 +++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index c9fb3be..3aad3dc 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1288,6 +1288,30 @@ static inline void mmc_bus_put(struct mmc_host *host)
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ }
+ 
++int mmc_resume_bus(struct mmc_host *host)
++{
++	if (!mmc_bus_needs_resume(host))
++		return -EINVAL;
++
++	printk("%s: Starting deferred resume\n", mmc_hostname(host));
++	host->bus_resume_flags &= ~MMC_BUSRESUME_NEEDS_RESUME;
++	mmc_bus_get(host);
++	if (host->bus_ops && !host->bus_dead) {
++		mmc_power_up(host);
++		BUG_ON(!host->bus_ops->resume);
++		host->bus_ops->resume(host);
++	}
++
++	if (host->bus_ops->detect && !host->bus_dead)
++		host->bus_ops->detect(host);
++
++	mmc_bus_put(host);
++	printk("%s: Deferred resume completed\n", mmc_hostname(host));
++	return 0;
++}
++
++EXPORT_SYMBOL(mmc_resume_bus);
++
+ /*
+  * Assign a mmc bus handler to a host. Only one bus handler may control a
+  * host at any given time.
+@@ -2277,6 +2301,9 @@ int mmc_suspend_host(struct mmc_host *host)
+ {
+ 	int err = 0;
+ 
++	if (mmc_bus_needs_resume(host))
++		return 0;
++
+ 	cancel_delayed_work(&host->detect);
+ 	mmc_flush_scheduled_work();
+ 	if (mmc_try_claim_host(host)) {
+@@ -2344,6 +2371,12 @@ int mmc_resume_host(struct mmc_host *host)
+ 	int err = 0;
+ 
+ 	mmc_bus_get(host);
++	if (host->bus_resume_flags & MMC_BUSRESUME_MANUAL_RESUME) {
++		host->bus_resume_flags |= MMC_BUSRESUME_NEEDS_RESUME;
++		mmc_bus_put(host);
++		return 0;
++	}
++
+ 	if (host->bus_ops && !host->bus_dead) {
+ 		if (!mmc_card_keep_power(host)) {
+ 			mmc_power_up(host);
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 2929765..1e0cdf7 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -295,6 +295,10 @@ struct mmc_host {
+ 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
+ 	unsigned int		bus_refs;	/* reference counter */
+ 
++	unsigned int		bus_resume_flags;
++#define MMC_BUSRESUME_MANUAL_RESUME	(1 << 0)
++#define MMC_BUSRESUME_NEEDS_RESUME	(1 << 1)
++
+ 	unsigned int		sdio_irqs;
+ 	struct task_struct	*sdio_irq_thread;
+ 	atomic_t		sdio_irq_thread_abort;
+@@ -354,6 +358,17 @@ static inline void *mmc_priv(struct mmc_host *host)
+ #define mmc_dev(x)	((x)->parent)
+ #define mmc_classdev(x)	(&(x)->class_dev)
+ #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
++#define mmc_bus_needs_resume(host) ((host)->bus_resume_flags & MMC_BUSRESUME_NEEDS_RESUME)
++
++static inline void mmc_set_bus_resume_policy(struct mmc_host *host, int manual)
++{
++	if (manual)
++		host->bus_resume_flags |= MMC_BUSRESUME_MANUAL_RESUME;
++	else
++		host->bus_resume_flags &= ~MMC_BUSRESUME_MANUAL_RESUME;
++}
++
++extern int mmc_resume_bus(struct mmc_host *host);
+ 
+ extern int mmc_suspend_host(struct mmc_host *);
+ extern int mmc_resume_host(struct mmc_host *);
+-- 
+1.8.0
+

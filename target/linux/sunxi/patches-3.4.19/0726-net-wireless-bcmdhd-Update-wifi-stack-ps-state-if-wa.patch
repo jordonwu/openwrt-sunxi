@@ -1,0 +1,83 @@
+From 61473191171a9ddb9ec05e7837229e2551e30b09 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Sun, 16 Sep 2012 14:35:23 -0700
+Subject: [PATCH 726/944] net: wireless: bcmdhd: Update wifi stack ps state if
+ was changed
+
+Change-Id: Ib1ee0b6ee05077d1ed6cfb578b6384dfc9787c81
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c   |  3 +++
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 17 +++++++++++++++++
+ drivers/net/wireless/bcmdhd/wl_cfg80211.h |  1 +
+ drivers/net/wireless/bcmdhd/wl_cfgp2p.c   |  2 ++
+ 4 files changed, 23 insertions(+)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 40eead0..853d90a 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -4798,6 +4798,9 @@ int net_os_set_suspend(struct net_device *dev, int val, int force)
+ #else
+ 		ret = dhd_suspend_resume_helper(dhd, val, force);
+ #endif
++#ifdef WL_CFG80211
++		wl_cfg80211_update_power_mode(dev);
++#endif
+ 	}
+ 	return ret;
+ }
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index ba68317..7c63a94 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -3347,6 +3347,23 @@ get_station_err:
+ 	return err;
+ }
+ 
++int wl_cfg80211_update_power_mode(struct net_device *dev)
++{
++	int pm = -1;
++	int err;
++
++	err = wldev_ioctl(dev, WLC_GET_PM, &pm, sizeof(pm), false);
++	if (err || (pm == -1)) {
++		WL_ERR(("error (%d)\n", err));
++	} else {
++		pm = (pm == PM_OFF) ? false : true;
++		WL_DBG(("%s: %d\n", __func__, pm));
++		if (dev->ieee80211_ptr)
++			dev->ieee80211_ptr->ps = pm;
++	}
++	return err;
++}
++
+ static s32
+ wl_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 	bool enabled, s32 timeout)
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.h b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+index b53c67e..fecfb35 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.h
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.h
+@@ -810,4 +810,5 @@ extern s32 wl_cfg80211_if_is_group_owner(void);
+ extern chanspec_t wl_ch_host_to_driver(u16 channel);
+ extern s32 wl_add_remove_eventmsg(struct net_device *ndev, u16 event, bool add);
+ extern void wl_stop_wait_next_action_frame(struct wl_priv *wl, struct net_device *ndev);
++extern int wl_cfg80211_update_power_mode(struct net_device *dev);
+ #endif				/* _wl_cfg80211_h_ */
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+index 3ad3440..1274e5f 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfgp2p.c
+@@ -1973,6 +1973,8 @@ wl_cfgp2p_set_p2p_ps(struct wl_priv *wl, struct net_device *ndev, char* buf, int
+ 				WLC_SET_PM, &legacy_ps, sizeof(legacy_ps), true);
+ 			if (unlikely(ret)) {
+ 				CFGP2P_ERR(("error (%d)\n", ret));
++			} else {
++				wl_cfg80211_update_power_mode(ndev);
+ 			}
+ 		}
+ 		else
+-- 
+1.8.0
+

@@ -1,0 +1,41 @@
+From 0ffb73771d5d05d4155f1563fb8dd6cc3780cb7d Mon Sep 17 00:00:00 2001
+From: Jiri Kosina <jkosina@suse.cz>
+Date: Mon, 18 Jun 2012 17:08:08 +0200
+Subject: [PATCH 664/944] HID: uhid: silence gcc warning
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+gcc is giving me:
+
+drivers/hid/uhid.c: In function ‘uhid_hid_get_raw’:
+drivers/hid/uhid.c:157: warning: ‘len’ may be used uninitialized in this function
+
+which is clearly bogus, as
+
+- when used as memcpy() argument, it's initialized properly
+- the code is structured in a way that either 'ret' or 'len'
+  is always initialized, so the return statement always has
+  an initialized value.
+
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index ea560bf..119b7e6 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -154,7 +154,7 @@ static int uhid_hid_get_raw(struct hid_device *hid, unsigned char rnum,
+ 	struct uhid_event *ev;
+ 	unsigned long flags;
+ 	int ret;
+-	size_t len;
++	size_t uninitialized_var(len);
+ 	struct uhid_feature_answer_req *req;
+ 
+ 	if (!uhid->running)
+-- 
+1.8.0
+

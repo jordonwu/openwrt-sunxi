@@ -1,0 +1,31 @@
+From 6237dd132d4eb408ffa80830fe395448e5657ab0 Mon Sep 17 00:00:00 2001
+From: Marcos Paulo de Souza <marcos.souza.org@gmail.com>
+Date: Wed, 2 May 2012 14:33:37 +0200
+Subject: [PATCH 224/944] PM / Documentation: suspend-and-cpuhotplug.txt: Fix
+ typo
+
+sysfs was expected in this context.
+
+Signed-off-by: Marcos Paulo de Souza <marcos.souza.org@gmail.com>
+Acked-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ Documentation/power/suspend-and-cpuhotplug.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/power/suspend-and-cpuhotplug.txt b/Documentation/power/suspend-and-cpuhotplug.txt
+index f28f9a6..e13dafc 100644
+--- a/Documentation/power/suspend-and-cpuhotplug.txt
++++ b/Documentation/power/suspend-and-cpuhotplug.txt
+@@ -29,7 +29,7 @@ More details follow:
+ 
+                                   Write 'mem' to
+                                 /sys/power/state
+-                                    syfs file
++                                    sysfs file
+                                         |
+                                         v
+                                Acquire pm_mutex lock
+-- 
+1.8.0
+

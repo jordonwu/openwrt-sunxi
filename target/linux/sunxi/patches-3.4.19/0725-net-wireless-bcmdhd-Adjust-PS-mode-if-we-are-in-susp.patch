@@ -1,0 +1,36 @@
+From aa99765dfdc048fe2e41d0b358be7d522b503cac Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Sun, 16 Sep 2012 14:06:21 -0700
+Subject: [PATCH 725/944] net: wireless: bcmdhd: Adjust PS mode if we are in
+ 'suspend'
+
+Change-Id: I007eb5311ba4935b2f26c2292ad5a1b9e6725fc2
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/wl_cfg80211.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/wl_cfg80211.c b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+index a46a4e6..ba68317 100644
+--- a/drivers/net/wireless/bcmdhd/wl_cfg80211.c
++++ b/drivers/net/wireless/bcmdhd/wl_cfg80211.c
+@@ -3355,6 +3355,7 @@ wl_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 	s32 err = 0;
+ 	struct wl_priv *wl = wiphy_priv(wiphy);
+ 	struct net_info *_net_info = wl_get_netinfo_by_netdev(wl, dev);
++	dhd_pub_t *dhd = (dhd_pub_t *)(wl->pub);
+ 
+ 	CHECK_SYS_UP(wl);
+ 
+@@ -3362,7 +3363,7 @@ wl_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev,
+ 		return err;
+ 	}
+ 
+-	pm = enabled ? PM_FAST : PM_OFF;
++	pm = enabled ? ((dhd->in_suspend) ? PM_MAX : PM_FAST) : PM_OFF;
+ 	/* Do not enable the power save after assoc if it is p2p interface */
+ 	if (_net_info->pm_block || wl->vsdb_mode) {
+ 		WL_DBG(("Do not enable the power save\n"));
+-- 
+1.8.0
+

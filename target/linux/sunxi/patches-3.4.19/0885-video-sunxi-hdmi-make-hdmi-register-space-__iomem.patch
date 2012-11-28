@@ -1,0 +1,73 @@
+From e0d4259959f652c62ed82a257dc6ad2276106fe8 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 24 Oct 2012 14:11:50 +0200
+Subject: [PATCH 885/944] video:sunxi:hdmi: make hdmi register space __iomem
+
+Fixes another sparse warning.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/hdmi/drv_hdmi.c  | 2 +-
+ drivers/video/sunxi/hdmi/hdmi_core.h | 2 +-
+ drivers/video/sunxi/hdmi/hdmi_hal.c  | 4 ++--
+ drivers/video/sunxi/hdmi/hdmi_hal.h  | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index cdbfc0d..2d00fef 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -269,7 +269,7 @@ __s32 Hdmi_init(void)
+ 	}
+ 	wake_up_process(HDMI_task);
+ 
+-	Hdmi_set_reg_base((__u32) ghdmi.base_hdmi);
++	Hdmi_set_reg_base((void __iomem *) ghdmi.base_hdmi);
+ 	Hdmi_hal_init();
+ 
+ 	audio_func.hdmi_audio_enable = Hdmi_Audio_Enable;
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.h b/drivers/video/sunxi/hdmi/hdmi_core.h
+index 33d09d9..d291b2d 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.h
++++ b/drivers/video/sunxi/hdmi/hdmi_core.h
+@@ -25,7 +25,7 @@
+ #include "hdmi_hal.h"
+ #include "hdmi_interface.h"
+ 
+-extern volatile __u32 HDMI_BASE;
++extern void __iomem *HDMI_BASE;
+ 
+ #define HDMI_WUINT32(offset, value)	writel(value, HDMI_BASE + offset)
+ #define HDMI_RUINT32(offset)		readl(HDMI_BASE + offset)
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.c b/drivers/video/sunxi/hdmi/hdmi_hal.c
+index e53e965..389ac34 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.c
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.c
+@@ -23,9 +23,9 @@
+ #include "hdmi_interface.h"
+ #include "hdmi_core.h"
+ 
+-volatile __u32 HDMI_BASE;
++void __iomem *HDMI_BASE;
+ 
+-void Hdmi_set_reg_base(__u32 base)
++void Hdmi_set_reg_base(void __iomem *base)
+ {
+ 	HDMI_BASE = base;
+ }
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.h b/drivers/video/sunxi/hdmi/hdmi_hal.h
+index ddcbf19..317a16b 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.h
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.h
+@@ -51,7 +51,7 @@
+ 
+ extern void hdmi_delay_ms(__u32 t);
+ 
+-extern void Hdmi_set_reg_base(__u32 base);
++extern void Hdmi_set_reg_base(void __iomem *base);
+ extern __s32 Hdmi_hal_init(void);
+ extern __s32 Hdmi_hal_exit(void);
+ extern __s32 Hdmi_hal_video_enable(__bool enable);
+-- 
+1.8.0
+

@@ -1,0 +1,62 @@
+From 53409ee2b8da4c760ebcc30c1ab9ac1c226c3c69 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 24 Sep 2012 18:44:36 +0200
+Subject: [PATCH 735/944] sun4i: don't query script.bin in .reserve(). before
+ the iomaps halts the system
+
+---
+ arch/arm/mach-sun4i/core.c | 30 ++++--------------------------
+ 1 file changed, 4 insertions(+), 26 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index 136fbe2..e48b09e 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -177,15 +177,8 @@ EXPORT_SYMBOL(fb_size);
+ 
+ static void __init reserve_fb(void)
+ {
+-    char *script_base = (char *)(PAGE_OFFSET + 0x3000000);
+-
+-    if (sw_cfg_get_int(script_base, "disp_init", "disp_init_enable"))
+-    {
+-		memblock_reserve(fb_start, fb_size);
+-		pr_reserve_info("LCD ", fb_start, fb_size);
+-    }
+-	else
+-		fb_start = fb_size = 0;
++	memblock_reserve(fb_start, fb_size);
++	pr_reserve_info("LCD ", fb_start, fb_size);
+ }
+ 
+ #else
+@@ -208,24 +201,9 @@ EXPORT_SYMBOL(g2d_size);
+ 
+ static void __init reserve_g2d(void)
+ {
+-    char *script_base = (char *)(PAGE_OFFSET + 0x3000000);
+-
+-    if (sw_cfg_get_int(script_base, "g2d_para", "g2d_used"))
+-    {
+-		g2d_size = sw_cfg_get_int(script_base, "g2d_para", "g2d_size");
+-		if ((g2d_size < 0) || (g2d_size > SW_G2D_MEM_MAX))
+-			g2d_size = SW_G2D_MEM_MAX;
+-
+-		g2d_start = SW_G2D_MEM_BASE;
+-		g2d_size = g2d_size;
+-		memblock_reserve(g2d_start, g2d_size);
+-
+-		pr_reserve_info("G2D ", g2d_start, g2d_size);
+-    }
+-    else
+-    	g2d_start = g2d_size = 0;
++	memblock_reserve(g2d_start, g2d_size);
++	pr_reserve_info("G2D ", g2d_start, g2d_size);
+ }
+-
+ #else
+ static void __init reserve_g2d(void) {}
+ #endif
+-- 
+1.8.0
+

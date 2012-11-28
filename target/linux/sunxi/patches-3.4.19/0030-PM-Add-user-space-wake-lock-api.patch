@@ -1,0 +1,328 @@
+From 025ff0ad2ff6030b7071fc3da7dda4a96ec91468 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Thu, 9 Oct 2008 21:01:46 -0700
+Subject: [PATCH 030/944] PM: Add user-space wake lock api.
+
+This adds /sys/power/wake_lock and /sys/power/wake_unlock.
+Writing a string to wake_lock creates a wake lock the
+first time is sees a string and locks it. Optionally, the
+string can be followed by a timeout.
+To unlock the wake lock, write the same string to wake_unlock.
+
+Change-Id: I66c6e3fe6487d17f9c2fafde1174042e57d15cd7
+---
+ kernel/power/Kconfig        |  10 ++
+ kernel/power/Makefile       |   1 +
+ kernel/power/main.c         |   9 ++
+ kernel/power/power.h        |  11 +++
+ kernel/power/userwakelock.c | 219 ++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 250 insertions(+)
+ create mode 100644 kernel/power/userwakelock.c
+
+diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
+index e4d8a4d..1e9acb4 100644
+--- a/kernel/power/Kconfig
++++ b/kernel/power/Kconfig
+@@ -26,6 +26,16 @@ config WAKELOCK
+ 	bool
+ 	default y
+ 
++config USER_WAKELOCK
++	bool "Userspace wake locks"
++	depends on PM_SLEEP
++	default y
++	---help---
++	  User-space wake lock api. Write "lockname" or "lockname timeout"
++	  to /sys/power/wake_lock lock and if needed create a wake lock.
++	  Write "lockname" to /sys/power/wake_unlock to unlock a user wake
++	  lock.
++
+ config HIBERNATE_CALLBACKS
+ 	bool
+ 
+diff --git a/kernel/power/Makefile b/kernel/power/Makefile
+index c0708ae..7f51f84 100644
+--- a/kernel/power/Makefile
++++ b/kernel/power/Makefile
+@@ -9,6 +9,7 @@ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_PM_TEST_SUSPEND)	+= suspend_test.o
+ obj-$(CONFIG_HIBERNATION)	+= hibernate.o snapshot.o swap.o user.o \
+ 				   block_io.o
++obj-$(CONFIG_USER_WAKELOCK)	+= userwakelock.o
+ obj-$(CONFIG_SUSPEND_TIME)	+= suspend_time.o
+ 
+ obj-$(CONFIG_MAGIC_SYSRQ)	+= poweroff.o
+diff --git a/kernel/power/main.c b/kernel/power/main.c
+index 1c12581..7f3c91a 100644
+--- a/kernel/power/main.c
++++ b/kernel/power/main.c
+@@ -400,6 +400,11 @@ power_attr(pm_trace_dev_match);
+ 
+ #endif /* CONFIG_PM_TRACE */
+ 
++#ifdef CONFIG_USER_WAKELOCK
++power_attr(wake_lock);
++power_attr(wake_unlock);
++#endif
++
+ static struct attribute * g[] = {
+ 	&state_attr.attr,
+ #ifdef CONFIG_PM_TRACE
+@@ -412,6 +417,10 @@ static struct attribute * g[] = {
+ #ifdef CONFIG_PM_DEBUG
+ 	&pm_test_attr.attr,
+ #endif
++#ifdef CONFIG_USER_WAKELOCK
++	&wake_lock_attr.attr,
++	&wake_unlock_attr.attr,
++#endif
+ #endif
+ 	NULL,
+ };
+diff --git a/kernel/power/power.h b/kernel/power/power.h
+index 98f3622..c4ecb81 100644
+--- a/kernel/power/power.h
++++ b/kernel/power/power.h
+@@ -264,3 +264,14 @@ static inline void suspend_thaw_processes(void)
+ {
+ }
+ #endif
++
++#ifdef CONFIG_USER_WAKELOCK
++ssize_t wake_lock_show(struct kobject *kobj, struct kobj_attribute *attr,
++			char *buf);
++ssize_t wake_lock_store(struct kobject *kobj, struct kobj_attribute *attr,
++			const char *buf, size_t n);
++ssize_t wake_unlock_show(struct kobject *kobj, struct kobj_attribute *attr,
++			char *buf);
++ssize_t  wake_unlock_store(struct kobject *kobj, struct kobj_attribute *attr,
++			const char *buf, size_t n);
++#endif
+diff --git a/kernel/power/userwakelock.c b/kernel/power/userwakelock.c
+new file mode 100644
+index 0000000..a28a8db
+--- /dev/null
++++ b/kernel/power/userwakelock.c
+@@ -0,0 +1,219 @@
++/* kernel/power/userwakelock.c
++ *
++ * Copyright (C) 2005-2008 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/ctype.h>
++#include <linux/module.h>
++#include <linux/wakelock.h>
++#include <linux/slab.h>
++
++#include "power.h"
++
++enum {
++	DEBUG_FAILURE	= BIT(0),
++	DEBUG_ERROR	= BIT(1),
++	DEBUG_NEW	= BIT(2),
++	DEBUG_ACCESS	= BIT(3),
++	DEBUG_LOOKUP	= BIT(4),
++};
++static int debug_mask = DEBUG_FAILURE;
++module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
++
++static DEFINE_MUTEX(tree_lock);
++
++struct user_wake_lock {
++	struct rb_node		node;
++	struct wake_lock	wake_lock;
++	char			name[0];
++};
++struct rb_root user_wake_locks;
++
++static struct user_wake_lock *lookup_wake_lock_name(
++	const char *buf, int allocate, long *timeoutptr)
++{
++	struct rb_node **p = &user_wake_locks.rb_node;
++	struct rb_node *parent = NULL;
++	struct user_wake_lock *l;
++	int diff;
++	u64 timeout;
++	int name_len;
++	const char *arg;
++
++	/* Find length of lock name and start of optional timeout string */
++	arg = buf;
++	while (*arg && !isspace(*arg))
++		arg++;
++	name_len = arg - buf;
++	if (!name_len)
++		goto bad_arg;
++	while (isspace(*arg))
++		arg++;
++
++	/* Process timeout string */
++	if (timeoutptr && *arg) {
++		timeout = simple_strtoull(arg, (char **)&arg, 0);
++		while (isspace(*arg))
++			arg++;
++		if (*arg)
++			goto bad_arg;
++		/* convert timeout from nanoseconds to jiffies > 0 */
++		timeout += (NSEC_PER_SEC / HZ) - 1;
++		do_div(timeout, (NSEC_PER_SEC / HZ));
++		if (timeout <= 0)
++			timeout = 1;
++		*timeoutptr = timeout;
++	} else if (*arg)
++		goto bad_arg;
++	else if (timeoutptr)
++		*timeoutptr = 0;
++
++	/* Lookup wake lock in rbtree */
++	while (*p) {
++		parent = *p;
++		l = rb_entry(parent, struct user_wake_lock, node);
++		diff = strncmp(buf, l->name, name_len);
++		if (!diff && l->name[name_len])
++			diff = -1;
++		if (debug_mask & DEBUG_ERROR)
++			pr_info("lookup_wake_lock_name: compare %.*s %s %d\n",
++				name_len, buf, l->name, diff);
++
++		if (diff < 0)
++			p = &(*p)->rb_left;
++		else if (diff > 0)
++			p = &(*p)->rb_right;
++		else
++			return l;
++	}
++
++	/* Allocate and add new wakelock to rbtree */
++	if (!allocate) {
++		if (debug_mask & DEBUG_ERROR)
++			pr_info("lookup_wake_lock_name: %.*s not found\n",
++				name_len, buf);
++		return ERR_PTR(-EINVAL);
++	}
++	l = kzalloc(sizeof(*l) + name_len + 1, GFP_KERNEL);
++	if (l == NULL) {
++		if (debug_mask & DEBUG_FAILURE)
++			pr_err("lookup_wake_lock_name: failed to allocate "
++				"memory for %.*s\n", name_len, buf);
++		return ERR_PTR(-ENOMEM);
++	}
++	memcpy(l->name, buf, name_len);
++	if (debug_mask & DEBUG_NEW)
++		pr_info("lookup_wake_lock_name: new wake lock %s\n", l->name);
++	wake_lock_init(&l->wake_lock, WAKE_LOCK_SUSPEND, l->name);
++	rb_link_node(&l->node, parent, p);
++	rb_insert_color(&l->node, &user_wake_locks);
++	return l;
++
++bad_arg:
++	if (debug_mask & DEBUG_ERROR)
++		pr_info("lookup_wake_lock_name: wake lock, %.*s, bad arg, %s\n",
++			name_len, buf, arg);
++	return ERR_PTR(-EINVAL);
++}
++
++ssize_t wake_lock_show(
++	struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++	char *s = buf;
++	char *end = buf + PAGE_SIZE;
++	struct rb_node *n;
++	struct user_wake_lock *l;
++
++	mutex_lock(&tree_lock);
++
++	for (n = rb_first(&user_wake_locks); n != NULL; n = rb_next(n)) {
++		l = rb_entry(n, struct user_wake_lock, node);
++		if (wake_lock_active(&l->wake_lock))
++			s += scnprintf(s, end - s, "%s ", l->name);
++	}
++	s += scnprintf(s, end - s, "\n");
++
++	mutex_unlock(&tree_lock);
++	return (s - buf);
++}
++
++ssize_t wake_lock_store(
++	struct kobject *kobj, struct kobj_attribute *attr,
++	const char *buf, size_t n)
++{
++	long timeout;
++	struct user_wake_lock *l;
++
++	mutex_lock(&tree_lock);
++	l = lookup_wake_lock_name(buf, 1, &timeout);
++	if (IS_ERR(l)) {
++		n = PTR_ERR(l);
++		goto bad_name;
++	}
++
++	if (debug_mask & DEBUG_ACCESS)
++		pr_info("wake_lock_store: %s, timeout %ld\n", l->name, timeout);
++
++	if (timeout)
++		wake_lock_timeout(&l->wake_lock, timeout);
++	else
++		wake_lock(&l->wake_lock);
++bad_name:
++	mutex_unlock(&tree_lock);
++	return n;
++}
++
++
++ssize_t wake_unlock_show(
++	struct kobject *kobj, struct kobj_attribute *attr, char *buf)
++{
++	char *s = buf;
++	char *end = buf + PAGE_SIZE;
++	struct rb_node *n;
++	struct user_wake_lock *l;
++
++	mutex_lock(&tree_lock);
++
++	for (n = rb_first(&user_wake_locks); n != NULL; n = rb_next(n)) {
++		l = rb_entry(n, struct user_wake_lock, node);
++		if (!wake_lock_active(&l->wake_lock))
++			s += scnprintf(s, end - s, "%s ", l->name);
++	}
++	s += scnprintf(s, end - s, "\n");
++
++	mutex_unlock(&tree_lock);
++	return (s - buf);
++}
++
++ssize_t wake_unlock_store(
++	struct kobject *kobj, struct kobj_attribute *attr,
++	const char *buf, size_t n)
++{
++	struct user_wake_lock *l;
++
++	mutex_lock(&tree_lock);
++	l = lookup_wake_lock_name(buf, 0, NULL);
++	if (IS_ERR(l)) {
++		n = PTR_ERR(l);
++		goto not_found;
++	}
++
++	if (debug_mask & DEBUG_ACCESS)
++		pr_info("wake_unlock_store: %s\n", l->name);
++
++	wake_unlock(&l->wake_lock);
++not_found:
++	mutex_unlock(&tree_lock);
++	return n;
++}
++
+-- 
+1.8.0
+

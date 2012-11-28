@@ -1,0 +1,56 @@
+From 5ff5594382bbc750dc1a1a0daa0c61791cab2af0 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:22 +0200
+Subject: [PATCH 657/944] HID: uhid: forward open/close events to user-space
+
+HID core notifies us with *_open/*_close callbacks when there is an actual
+user of our device. We forward these to user-space so they can react on
+this. This allows user-space to skip I/O unless they receive an OPEN
+event. When they receive a CLOSE event they can stop I/O again to save
+energy.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c   | 7 ++++++-
+ include/linux/uhid.h | 2 ++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index 2e7f3a0..0226ba3f 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -97,11 +97,16 @@ static void uhid_hid_stop(struct hid_device *hid)
+ 
+ static int uhid_hid_open(struct hid_device *hid)
+ {
+-	return 0;
++	struct uhid_device *uhid = hid->driver_data;
++
++	return uhid_queue_event(uhid, UHID_OPEN);
+ }
+ 
+ static void uhid_hid_close(struct hid_device *hid)
+ {
++	struct uhid_device *uhid = hid->driver_data;
++
++	uhid_queue_event(uhid, UHID_CLOSE);
+ }
+ 
+ static int uhid_hid_input(struct input_dev *input, unsigned int type,
+diff --git a/include/linux/uhid.h b/include/linux/uhid.h
+index f8ce6f7..351650b 100644
+--- a/include/linux/uhid.h
++++ b/include/linux/uhid.h
+@@ -27,6 +27,8 @@ enum uhid_event_type {
+ 	UHID_DESTROY,
+ 	UHID_START,
+ 	UHID_STOP,
++	UHID_OPEN,
++	UHID_CLOSE,
+ 	UHID_INPUT,
+ };
+ 
+-- 
+1.8.0
+

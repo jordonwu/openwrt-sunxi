@@ -1,0 +1,51 @@
+From 2c663a0eb78a51429297aa0758ab9e5fe314b3be Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 09:43:33 +0200
+Subject: [PATCH 484/944] usb: sunxi: Remove the SAW_IRQ hcd flag
+ (968b822c0023861ef6e4e15bb68582b36e89ad29)
+
+---
+ drivers/usb/sun3i_usb/hcd/core/sw_hcd_core.c | 1 -
+ drivers/usb/sun4i_usb/hcd/core/sw_hcd_core.c | 1 -
+ drivers/usb/sun5i_usb/hcd/core/sw_hcd_core.c | 1 -
+ 3 files changed, 3 deletions(-)
+
+diff --git a/drivers/usb/sun3i_usb/hcd/core/sw_hcd_core.c b/drivers/usb/sun3i_usb/hcd/core/sw_hcd_core.c
+index 32b4568..9887b9e 100644
+--- a/drivers/usb/sun3i_usb/hcd/core/sw_hcd_core.c
++++ b/drivers/usb/sun3i_usb/hcd/core/sw_hcd_core.c
+@@ -805,7 +805,6 @@ static irqreturn_t sw_hcd_stage0_irq(struct sw_hcd *sw_hcd, u8 int_usb, u8 devct
+ 
+ 		handled = IRQ_HANDLED;
+ 		sw_hcd->is_active = 1;
+-		set_bit(HCD_FLAG_SAW_IRQ, &hcd->flags);
+ 
+ 		sw_hcd->ep0_stage = SW_HCD_EP0_START;
+ 
+diff --git a/drivers/usb/sun4i_usb/hcd/core/sw_hcd_core.c b/drivers/usb/sun4i_usb/hcd/core/sw_hcd_core.c
+index d69700f..76ea6eb 100644
+--- a/drivers/usb/sun4i_usb/hcd/core/sw_hcd_core.c
++++ b/drivers/usb/sun4i_usb/hcd/core/sw_hcd_core.c
+@@ -813,7 +813,6 @@ static irqreturn_t sw_hcd_stage0_irq(struct sw_hcd *sw_hcd, u8 int_usb, u8 devct
+ 
+ 		handled = IRQ_HANDLED;
+ 		sw_hcd->is_active = 1;
+-		set_bit(HCD_FLAG_SAW_IRQ, &hcd->flags);
+ 
+ 		sw_hcd->ep0_stage = SW_HCD_EP0_START;
+ 
+diff --git a/drivers/usb/sun5i_usb/hcd/core/sw_hcd_core.c b/drivers/usb/sun5i_usb/hcd/core/sw_hcd_core.c
+index d69700f..76ea6eb 100644
+--- a/drivers/usb/sun5i_usb/hcd/core/sw_hcd_core.c
++++ b/drivers/usb/sun5i_usb/hcd/core/sw_hcd_core.c
+@@ -813,7 +813,6 @@ static irqreturn_t sw_hcd_stage0_irq(struct sw_hcd *sw_hcd, u8 int_usb, u8 devct
+ 
+ 		handled = IRQ_HANDLED;
+ 		sw_hcd->is_active = 1;
+-		set_bit(HCD_FLAG_SAW_IRQ, &hcd->flags);
+ 
+ 		sw_hcd->ep0_stage = SW_HCD_EP0_START;
+ 
+-- 
+1.8.0
+

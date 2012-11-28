@@ -1,0 +1,753 @@
+From 298bd8f0c6597f366614ae49ae0106681898f224 Mon Sep 17 00:00:00 2001
+From: huangxin <huangxin@LServer.(none)>
+Date: Wed, 16 Nov 2011 11:10:09 +0800
+Subject: [PATCH 318/944] [sun4i]:rtc,ace.use the code style to modify the
+ code
+
+---
+ drivers/media/audio/sun4i_ace.c     | 203 ++++++++----------------------------
+ drivers/media/audio/sun4i_ace_i.h   |  35 +++----
+ drivers/media/audio/sun4i_dev_ace.c |  64 +++++++-----
+ drivers/media/audio/sun4i_drv_ace.h | 109 +++----------------
+ drivers/rtc/rtc-sun4i.c             |  14 +++
+ 5 files changed, 120 insertions(+), 305 deletions(-)
+
+diff --git a/drivers/media/audio/sun4i_ace.c b/drivers/media/audio/sun4i_ace.c
+index ecd04ac..4eb12ef 100644
+--- a/drivers/media/audio/sun4i_ace.c
++++ b/drivers/media/audio/sun4i_ace.c
+@@ -1,20 +1,17 @@
+ /*
+-**************************************************************************************************************
+-*											         eLDK
+-*						            the Easy Portable/Player Develop Kits
+-*									           desktop system
+-*
+-*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
+-*											 All Rights Reserved
+-*
+-* File    	: sun4i_ace.c
+-* By      	: HUANGXIN
+-* Func		:
+-* Version	: v1.0
+-* ============================================================================================================
+-* 2011-6-2 16:10:39  HUANGXIN create this file, implements the fundemental interface;
+-**************************************************************************************************************
+-*/
++ * drivers\media\audio\sun4i_ace.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #include "sun4i_ace_i.h"
+ #include <linux/module.h>
+ #include <linux/semaphore.h>
+@@ -41,14 +38,14 @@ int esCLK_SetMclkSrc(struct clk *clk, int parent)
+ {
+ 	int ret = 0;
+ 
+-	if(clk == NULL){
++	if (clk == NULL) {
+ 		printk(" %s %d The clk is NULL\n ", __FUNCTION__, __LINE__);
+ 		return ACE_FAIL;
+ 	}
+ 
+-	if(parent == CSP_CCM_SYS_CLK_SDRAM_PLL){
++	if (parent == CSP_CCM_SYS_CLK_SDRAM_PLL) {
+ 		parent_clk = clk_get(NULL, "sdram_pll");
+-		if(parent_clk == NULL){
++		if (parent_clk == NULL) {
+ 			printk("%s %d : get sdram pll fail \n", __FUNCTION__, __LINE__);
+ 			return ACE_FAIL;
+ 		}
+@@ -62,7 +59,7 @@ int esCLK_CloseMclkSrc(int parent)
+ {
+ 	struct clk *parent_clk = NULL;
+ 
+-	if(parent == CSP_CCM_SYS_CLK_SDRAM_PLL){
++	if (parent == CSP_CCM_SYS_CLK_SDRAM_PLL) {
+ 		if (parent_clk) {
+ 			printk("release parent clk\n");
+ 			clk_put(parent_clk);
+@@ -73,12 +70,13 @@ int esCLK_CloseMclkSrc(int parent)
+ 	return 0;
+ }
+ 
+-int esCLK_MclkOnOff(struct clk *clk, int onoff){
++int esCLK_MclkOnOff(struct clk *clk, int onoff)
++{
+ 	int ret = 1;
+ 
+-	if(onoff == 1){
++	if (onoff == 1) {
+ 		ret = clk_enable(clk);
+-		if(ret == -1){
++		if (ret == -1) {
+ 			printk("%s %d : Enable clk fail\n", __FUNCTION__, __LINE__);
+ 		}
+ 	}
+@@ -89,7 +87,8 @@ int esCLK_MclkOnOff(struct clk *clk, int onoff){
+ 
+ 	return ret;
+ }
+-void *esMEM_SramReqBlk(int addr){
++void *esMEM_SramReqBlk(int addr)
++{
+ 	void *map_addr = NULL;
+ 
+ 	addr |= 0xf0000000;
+@@ -98,38 +97,20 @@ void *esMEM_SramReqBlk(int addr){
+ 	return map_addr;
+ }
+ 
+-/*
+-*********************************************************************************************************
+-*                                   ACE INIT
+-*
+-* Description: initialise ACE moudle, create the manager for resource management.
+-*
+-* Arguments  : none
+-*
+-* Returns    : result;
+-*               ACE_OK   - init ACE successed;
+-*               ACE_FAIL - init ACE failed;
+-*
+-* Note       : This funciton just create manager, without hardware operation;
+-*********************************************************************************************************
+-*/
+ __s32 ACE_Init(void)
+ {
+     //create semphore to sync clock adjust.
+  	sema_init(&pSemAceClkAdjust, 1);
+ 
+-	//ACE_REGS_BASE = ACE_PBASE_ADDR;
+ 	/*ae,ce的相关寄存器都需要通过这个地址值映射偏移找到*/
+ 	ace_hsram = ioremap(ACE_REGS_pBASE, 4096);
+-    if (!ace_hsram){
++    if (!ace_hsram) {
+         printk("cannot map region for sram");
+        return -1;
+     }
+     //create sem to sync ace config
+-
+     sema_init(&pSemAceConfig, 1);
+ 
+-
+     //create semphore to sync resource usage
+     sema_init(&pSemAceCe, 1);
+ 
+@@ -138,21 +119,6 @@ __s32 ACE_Init(void)
+ }
+ EXPORT_SYMBOL_GPL(ACE_Init);
+ 
+-/*
+-*********************************************************************************************************
+-*                                   ACE EXIT
+-*
+-* Description: exit ACE module, destroy resource manager;
+-*
+-* Arguments  : none
+-*
+-* Returns    : result;
+-*               ACE_OK   - exit ace module successed;
+-*               ACE_FAIL - exit ace module failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 ACE_Exit(void)
+ {
+     iounmap((void *)ace_hsram);
+@@ -160,52 +126,23 @@ __s32 ACE_Exit(void)
+ }
+ EXPORT_SYMBOL_GPL(ACE_Exit);
+ 
+-/*
+-*********************************************************************************************************
+-*                                   REQUEST HARDWARE RESOURCE
+-*
+-* Description: require hardware resource.
+-*
+-* Arguments  : module   the hardware module which need be requested;
+-*              mode     mode of hardware module requested;
+-                            ACE_REQUEST_MODE_WAIT   - request hw resource with waiting mode;
+-                            ACE_REQUEST_MODE_NOWAIT - request hw resource with no-wait mode;
+-*              timeout  limitation of time out, just used under ACE_REQUEST_MODE_WAIT mode;
+-*
+-* Returns    : handle of hardware resource, NULL means request hw-resource failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ s32 ACE_HwReq(__ace_module_type_e module, __ace_request_mode_e mode, __u32 timeout)
+ {
+-    if(ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module )
+-    {
++    if (ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module ) {
+         //request semphore
+-        if(ACE_REQUEST_MODE_NOWAIT == mode)
+-        {
+-            if(down_trylock(&pSemAceCe)== 0)     //the resource is available or not
+-            {
++        if (ACE_REQUEST_MODE_NOWAIT == mode) {
++            if (down_trylock(&pSemAceCe)== 0) {     //the resource is available or not
+                  return ACE_FAIL;
+ 	    	}
+-	    }
+-        else if(ACE_REQUEST_MODE_WAIT == mode)
+-        {
+-
+-            if(down_interruptible(&pSemAceCe))
+-            {
++	    } else if (ACE_REQUEST_MODE_WAIT == mode) {
++            if (down_interruptible(&pSemAceCe)) {
+ 	    	    return  -ERESTARTSYS;
+ 	        }
+ 	    }
+         ACE_EnableModule(ACE_MODULE_CE, ACE_MODULE_ENABLE);
+-
+-    }
+-    else if(ACE_MODULE_AE == module)
+-    {
++    } else if (ACE_MODULE_AE == module) {
+         ACE_EnableModule(ACE_MODULE_AE, ACE_MODULE_ENABLE);
+-    }
+-    else
+-    {
++    } else {
+ 		printk("%s, %d\n", __FILE__, __LINE__);
+         return ACE_FAIL;
+     }
+@@ -214,21 +151,6 @@ s32 ACE_HwReq(__ace_module_type_e module, __ace_request_mode_e mode, __u32 timeo
+ }
+ EXPORT_SYMBOL_GPL(ACE_HwReq);
+ 
+-/*
+-*********************************************************************************************************
+-*                                   RELEASE HARDWARE RESOURCE
+-*
+-* Description: release hardware resource;
+-*
+-* Arguments  : moudle   the module need be released;
+-*
+-* Returns    : result;
+-*                   ACE_OK,    release hardware resource successed;
+-*                   ACE_FAIL,  release hardware resource failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 ACE_HwRel(__ace_module_type_e module)
+ {
+ 	if (module == ACE_MODULE_CE) {
+@@ -244,17 +166,6 @@ __s32 ACE_HwRel(__ace_module_type_e module)
+ }
+ EXPORT_SYMBOL_GPL(ACE_HwRel);
+ 
+-/*
+-*********************************************************************************************************
+-*                                       GET ACE MODULE CLOCK
+-*
+-* Description: This function Get ACE module clock;
+-*
+-* Arguments  :
+-*
+-* Returns    : nFreq    ce module clk freqrence value;
+-*********************************************************************************************************
+-*/
+ __u32 ACE_GetClk(void)
+ {
+     __u32 temp = 0;
+@@ -263,50 +174,22 @@ __u32 ACE_GetClk(void)
+ }
+ EXPORT_SYMBOL_GPL(ACE_GetClk);
+ 
+-
+-
+-/*
+-*********************************************************************************************************
+-*                                       ACE_EnableModule
+-*
+-* Description:
+-*
+-* Arguments  :
+-*
+-* Returns    :
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ static __s32 ACE_EnableModule(__ace_module_type_e module, __u32 mode)
+ {
+-
+     __u32 status = readReg(ACE_MODE_SELECTOR);
+-    if(ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module )
+-    {
+-        if(ACE_MODULE_ENABLE == mode)
+-          {
+-              status |=  ACE_CE_ENABLE_MASK;
+-          }
+-          else if(ACE_MODULE_DISABLE == mode)
+-          {
+-              status &= (~ACE_CE_ENABLE_MASK);
+-          }
+-
+-    }
+-    else if(ACE_MODULE_AE == module)
+-    {
+-        if(ACE_MODULE_ENABLE == mode)
+-          {
+-              status |=  ACE_AE_ENABLE_MASK;
+-          }
+-          else if(ACE_MODULE_DISABLE == mode)
+-          {
+-              status &= (~ACE_AE_ENABLE_MASK);
+-          }
++    if(ACE_MODULE_CE == module || ACE_MODULE_PNG == module || ACE_MODULE_TSCC == module) {
++        if(ACE_MODULE_ENABLE == mode) {
++        	status |=  ACE_CE_ENABLE_MASK;
++        } else if(ACE_MODULE_DISABLE == mode) {
++            status &= (~ACE_CE_ENABLE_MASK);
++        }
++    } else if(ACE_MODULE_AE == module) {
++        if(ACE_MODULE_ENABLE == mode) {
++			status |=  ACE_AE_ENABLE_MASK;
++        } else if(ACE_MODULE_DISABLE == mode) {
++            status &= (~ACE_AE_ENABLE_MASK);
++        }
+     }
+     writeReg(ACE_MODE_SELECTOR,status);
+     return ACE_OK;
+ }
+-
+-
+diff --git a/drivers/media/audio/sun4i_ace_i.h b/drivers/media/audio/sun4i_ace_i.h
+index f0ae9c4..d5d8723 100644
+--- a/drivers/media/audio/sun4i_ace_i.h
++++ b/drivers/media/audio/sun4i_ace_i.h
+@@ -1,20 +1,17 @@
+ /*
+-**************************************************************************************************************
+-*											         eLDK
+-*						            the Easy Portable/Player Develop Kits
+-*									           desktop system
+-*
+-*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
+-*											 All Rights Reserved
+-*
+-* File    	: sun4i_ace_i.h
+-* By      	: HUANGXIN
+-* Func		:
+-* Version	: v1.0
+-* ============================================================================================================
+-* 2011-6-2 16:09:33  HUANGXIN create this file, implements the fundemental interface;
+-**************************************************************************************************************
+-*/
++ * drivers\media\audio\sun4i_ace_i.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #ifndef _SUN4I_ACE_I_H_
+ #define	_SUN4I_ACE_I_H_
+ 
+@@ -28,7 +25,6 @@
+ #define sys_put_wvalue(n,c) (*((volatile __u32 *)(n))  = (c))   /* word output */
+ 
+ #define ACE_REGS_pBASE    	(0x01c1a000)
+-//extern __u32 ACE_REGS_BASE;
+ 
+ extern void *       ace_hsram;
+ 
+@@ -40,7 +36,6 @@ extern void *       ace_hsram;
+ #define AE_INT_EN_REG_OFF             (0x100+0x08)
+ #define AE_STATUS_REG_OFF             (0x100+0x24)
+ 
+-
+ /*ACE register address*/
+ #define ACE_MODE_SELECTOR     	(ace_hsram + ACE_MODE_SELECTOR_OFF)
+ #define ACE_ACE_RESET         	(ace_hsram + ACE_ACE_RESET_OFF)
+@@ -76,14 +71,12 @@ typedef struct __ACE_MODULE_USE_STAT{
+ #define CLK_OFF 0
+ #define CLK_ON  1
+ 
+-
+ #define ACE_FAIL    -1
+ #define ACE_OK       0
+ 
+ #define CLK_CMD_SCLKCHG_REQ  2
+ #define CLK_CMD_SCLKCHG_DONE 3
+ 
+-
+ #define CSP_CCM_MOD_CLK_ACE  "ace"
+ #define CSP_CCM_MOD_CLK_AHB_ACE "ahb_ace"
+ #define CSP_CCM_MOD_CLK_SDRAM_ACE "sdram_ace"
+@@ -98,6 +91,4 @@ typedef struct __ACE_MODULE_USE_STAT{
+ #define esCLK_MclkUnregCb(a, b) NULL
+ #define esCLK_MclkReset(a, b)   clk_reset(a, b)
+ 
+-
+-
+ #endif	/* _ACE_I_H_ */
+diff --git a/drivers/media/audio/sun4i_dev_ace.c b/drivers/media/audio/sun4i_dev_ace.c
+index 161389f..bd8435c 100644
+--- a/drivers/media/audio/sun4i_dev_ace.c
++++ b/drivers/media/audio/sun4i_dev_ace.c
+@@ -7,6 +7,20 @@
+ #include <linux/list.h>
+ #include <linux/errno.h>
+ #include <linux/mutex.h>
++/*
++ * drivers\media\audio\sun4i_dev_ace.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #include <linux/slab.h>
+ #include <linux/preempt.h>
+ #include <linux/cdev.h>
+@@ -36,11 +50,10 @@ static int ref_count = 0;
+ static DECLARE_WAIT_QUEUE_HEAD(wait_ae);
+ __u32 ae_interrupt_sta = 0, ae_interrupt_value = 0;
+ void *       ccmu_hsram;
+-//ae、ace、ce共享中断号
++/*ae、ace、ce共享中断号*/
+ #define ACE_IRQ_NO (60)
+ 
+-//extern int clk_reset(struct clk *clk, int reset);
+-
++//#define ACE_DEBUG
+ static int ace_dev_open(struct inode *inode, struct file *filp){
+     int status = 0;
+     return status;
+@@ -60,7 +73,7 @@ static irqreturn_t ace_interrupt(int irq, void *dev)
+ {
+ 	volatile int ae_out_mode_reg = 0;
+ 
+-	//status 0x24
++	/*status 0x24*/
+ 	ae_out_mode_reg = readReg(AE_STATUS_REG);
+ 	ae_interrupt_value = ae_out_mode_reg;
+ 	if(ae_out_mode_reg & 0x04){
+@@ -71,15 +84,14 @@ static irqreturn_t ace_interrupt(int irq, void *dev)
+ 	writeReg(AE_STATUS_REG,ae_out_mode_reg);
+ 	ae_interrupt_sta = 1;
+ 
+-	ae_out_mode_reg = readReg(AE_STATUS_REG);//没用  测试是否可以del
++	ae_out_mode_reg = readReg(AE_STATUS_REG);
+ 	wake_up_interruptible(&wait_ae);
+ 
+     return IRQ_HANDLED;
+ }
+ 
+-static long
+-ace_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg){
+-
++static long ace_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++{
+ 	int 				ret_val = 0;
+ 	unsigned long       test_arg;
+ 	__ace_req_e 		mpara;
+@@ -181,16 +193,17 @@ ace_dev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg){
+ 		default:
+ 			break;
+ 	}
+-
+ 	return ret_val;
+ }
+ 
+ void acedev_vma_open(struct vm_area_struct *vma)
+ {
++
+ }
+ 
+ void acedev_vma_close(struct vm_area_struct *vma)
+ {
++
+ }
+ 
+ static struct vm_operations_struct acedev_remap_vm_ops = {
+@@ -198,7 +211,6 @@ static struct vm_operations_struct acedev_remap_vm_ops = {
+     .close = acedev_vma_close,
+ };
+ 
+-
+ static int acedev_mmap(struct file *filp, struct vm_area_struct *vma)
+ {
+     unsigned long temp_pfn;
+@@ -209,8 +221,7 @@ static int acedev_mmap(struct file *filp, struct vm_area_struct *vma)
+     /* Select uncached access. */
+     vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+     if (io_remap_pfn_range(vma, vma->vm_start, temp_pfn,
+-                    vma->vm_end - vma->vm_start, vma->vm_page_prot))
+-    {
++                    vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
+         return -EAGAIN;
+     }
+     vma->vm_ops = &acedev_remap_vm_ops;
+@@ -236,12 +247,14 @@ static int snd_sw_ace_suspend(struct platform_device *pdev,pm_message_t state)
+ 	clk_put(ace_pll5_pclk);
+ 
+ 	/*for clk test*/
+-	pr_debug("[ace_suspend reg]\n");
+-	pr_debug("ace_module CLK:0xf1c20148 is:%x\n", *(volatile int *)0xf1c20148);
+-	pr_debug("ace_pll5_p CLK:0xf1c20020 is:%x\n", *(volatile int *)0xf1c20020);
+-	pr_debug("dram_ace CLK:0xf1c20100 is:%x\n", *(volatile int *)0xf1c20100);
+-	pr_debug("ahb_ace CLK:0xf1c20060 is:%x\n", *(volatile int *)0xf1c20060);
+-	pr_debug("[ace_suspend reg]\n");
++#ifdef ACE_DEBUG
++	printk("[ace_suspend reg]\n");
++	printk("ace_module CLK:0xf1c20148 is:%x\n", *(volatile int *)0xf1c20148);
++	printk("ace_pll5_p CLK:0xf1c20020 is:%x\n", *(volatile int *)0xf1c20020);
++	printk("dram_ace CLK:0xf1c20100 is:%x\n", *(volatile int *)0xf1c20100);
++	printk("ahb_ace CLK:0xf1c20060 is:%x\n", *(volatile int *)0xf1c20060);
++	printk("[ace_suspend reg]\n");
++#endif
+ 	return 0;
+ }
+ 
+@@ -327,31 +340,30 @@ static int __init ace_dev_init(void)
+     int status = 0;
+     int err = 0;
+ 	int ret = 0;
+-	pr_debug("[ace_drv] start!!!\n");
++	printk("[ace_drv] start!!!\n");
+ 	ret = request_irq(ACE_IRQ_NO, ace_interrupt, 0, "ace_dev", NULL);
+ 	if (ret < 0) {
+ 	   printk("request ace irq err\n");
+ 	   return -EINVAL;
+ 	}
++
+ 	if((platform_device_register(&sw_device_ace))<0)
+ 		return err;
+-
+ 	if ((err = platform_driver_register(&sw_ace_driver)) < 0)
+ 		return err;
+ 
+-
+     alloc_chrdev_region(&dev_num, 0, 1, "ace_chrdev");
+     ace_dev = cdev_alloc();
+     cdev_init(ace_dev, &ace_dev_fops);
+     ace_dev->owner = THIS_MODULE;
+     err = cdev_add(ace_dev, dev_num, 1);
+-    if (err){
++    if (err) {
+     	printk(KERN_NOTICE"Error %d adding ace_dev!\n", err);
+         return -1;
+     }
++
+     ace_dev_class = class_create(THIS_MODULE, "ace_cls");
+-    device_create(ace_dev_class, NULL,
+-                  dev_num, NULL, "ace_dev");
++    device_create(ace_dev_class, NULL, dev_num, NULL, "ace_dev");
+     ACE_Init();
+     printk("[ace_drv] init end!!!\n");
+     return status;
+@@ -362,14 +374,12 @@ static void __exit ace_dev_exit(void)
+ {
+ 	free_irq(ACE_IRQ_NO, NULL);
+ 	ACE_Exit();
+-
+     device_destroy(ace_dev_class,  dev_num);
+     class_destroy(ace_dev_class);
+-    	platform_driver_unregister(&sw_ace_driver);
++    platform_driver_unregister(&sw_ace_driver);
+ }
+ module_exit(ace_dev_exit);
+ 
+ MODULE_AUTHOR("young");
+ MODULE_DESCRIPTION("User mode encrypt device interface");
+ MODULE_LICENSE("GPL");
+-
+diff --git a/drivers/media/audio/sun4i_drv_ace.h b/drivers/media/audio/sun4i_drv_ace.h
+index 12a80c4..d3bb23f 100644
+--- a/drivers/media/audio/sun4i_drv_ace.h
++++ b/drivers/media/audio/sun4i_drv_ace.h
+@@ -1,20 +1,17 @@
+ /*
+-**************************************************************************************************************
+-*											         eLDK
+-*						            the Easy Portable/Player Develop Kits
+-*									           desktop system
+-*
+-*						        	 (c) Copyright 2009-2012, ,HUANGXIN China
+-*											 All Rights Reserved
+-*
+-* File    	: sun4i_drv_ace.h
+-* By      	: HUANGXIN
+-* Func		:
+-* Version	: v1.0
+-* ============================================================================================================
+-* 2011-6-2 16:09:00  HUANGXIN create this file, implements the fundemental interface;
+-**************************************************************************************************************
+-*/
++ * drivers\media\audio\sun4i_drv_ace.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #ifndef __ACE_HAL_H__
+ #define	__ACE_HAL_H__
+ #include <linux/types.h>
+@@ -32,7 +29,6 @@ typedef enum __ACE_MODULE_TYPE
+ 
+ }__ace_module_type_e;
+ 
+-
+ typedef enum __ACE_REQUEST_MODE
+ {
+     ACE_REQUEST_MODE_WAIT = 0,  //request hw with waiting mode
+@@ -41,7 +37,6 @@ typedef enum __ACE_REQUEST_MODE
+ 
+ } __ace_request_mode_e;
+ 
+-
+ typedef enum __ACE_OPS
+ {
+ 	ACE_DEV_HWREQ = 100,
+@@ -62,88 +57,10 @@ typedef struct ace_req{
+ 	__u32 timeout;
+ }__ace_req_e;
+ 
+-/*
+-*********************************************************************************************************
+-*                                   ACE INIT
+-*
+-* Description: initialise ACE moudle, create the manager for resource management.
+-*
+-* Arguments  : none
+-*
+-* Returns    : result;
+-*               EPDK_OK   - init ACE successed;
+-*               EPDK_FAIL - init ACE failed;
+-*
+-* Note       : This funciton just create manager, without hardware operation;
+-*********************************************************************************************************
+-*/
+ __s32 ACE_Init(void);
+-
+-/*
+-*********************************************************************************************************
+-*                                   ACE EXIT
+-*
+-* Description: exit ACE module, destroy resource manager;
+-*
+-* Arguments  : none
+-*
+-* Returns    : result;
+-*               EPDK_OK   - exit ace module successed;
+-*               EPDK_FAIL - exit ace module failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 ACE_Exit(void);
+-
+-/*
+-*********************************************************************************************************
+-*                                   REQUEST HARDWARE RESOURCE
+-*
+-* Description: require hardware resource.
+-*
+-* Arguments  : module   the hardware module which need be requested;
+-*              mode     mode of hardware module requested;
+-                            ACE_REQUEST_MODE_WAIT   - request hw resource with waiting mode;
+-                            ACE_REQUEST_MODE_NOWAIT - request hw resource with no-wait mode;
+-*              timeout  limitation of time out, just used under ACE_REQUEST_MODE_WAIT mode;
+-*
+-* Returns    : handle of hardware resource, NULL means request hw-resource failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ s32 ACE_HwReq(__ace_module_type_e module, __ace_request_mode_e mode, __u32 timeout);
+-
+-/*
+-*********************************************************************************************************
+-*                                   RELEASE HARDWARE RESOURCE
+-*
+-* Description: release hardware resource;
+-*
+-* Arguments  : moudle   the module need be released;
+-*
+-* Returns    : result;
+-*                   EPDK_OK,    release hardware resource successed;
+-*                   EPDK_FAIL,  release hardware resource failed;
+-*
+-* Note       :
+-*********************************************************************************************************
+-*/
+ __s32 ACE_HwRel(u32 hHWRes);
+-
+-/*
+-*********************************************************************************************************
+-*                                       GET ACE MODULE CLOCK
+-*
+-* Description: This function Get ACE module clock;
+-*
+-* Arguments  :
+-*
+-* Returns    : nFreq    ce module clk freqrence value;
+-*********************************************************************************************************
+-*/
+ __u32 ACE_GetClk(void);
+ 
+ #endif	/* __ACE_HAL_H__ */
+-
+diff --git a/drivers/rtc/rtc-sun4i.c b/drivers/rtc/rtc-sun4i.c
+index e990007..f56a2a9 100644
+--- a/drivers/rtc/rtc-sun4i.c
++++ b/drivers/rtc/rtc-sun4i.c
+@@ -1,3 +1,17 @@
++/*
++ * drivers\rtc\rtc-sun4i.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * huangxin <huangxin@allwinnertech.com>
++ *
++ * some simple description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
+ #include <linux/module.h>
+ #include <linux/fs.h>
+ #include <linux/string.h>
+-- 
+1.8.0
+

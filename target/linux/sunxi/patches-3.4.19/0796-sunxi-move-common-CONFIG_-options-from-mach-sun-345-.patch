@@ -1,0 +1,146 @@
+From 8f138d90b30ba61068fb9d0ade6f8ff70bf10277 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 12 Oct 2012 01:07:19 +0200
+Subject: [PATCH 796/944] sunxi: move common CONFIG_ options from
+ mach-sun[345]i to plat-sunxi
+
+---
+ arch/arm/Kconfig            |  2 --
+ arch/arm/mach-sun3i/Kconfig | 15 +--------------
+ arch/arm/mach-sun4i/Kconfig | 18 ------------------
+ arch/arm/mach-sun5i/Kconfig | 16 ----------------
+ arch/arm/plat-sunxi/Kconfig | 16 ++++++++++++++++
+ 5 files changed, 17 insertions(+), 50 deletions(-)
+ delete mode 100644 arch/arm/mach-sun4i/Kconfig
+ delete mode 100644 arch/arm/mach-sun5i/Kconfig
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 76d27a6..049df2a 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1152,8 +1152,6 @@ source "arch/arm/mach-s5pv210/Kconfig"
+ if PLAT_SUNXI
+ source "arch/arm/plat-sunxi/Kconfig"
+ source "arch/arm/mach-sun3i/Kconfig"
+-source "arch/arm/mach-sun4i/Kconfig"
+-source "arch/arm/mach-sun5i/Kconfig"
+ endif
+ 
+ source "arch/arm/mach-exynos/Kconfig"
+diff --git a/arch/arm/mach-sun3i/Kconfig b/arch/arm/mach-sun3i/Kconfig
+index ae565ee..53187fa 100644
+--- a/arch/arm/mach-sun3i/Kconfig
++++ b/arch/arm/mach-sun3i/Kconfig
+@@ -1,41 +1,28 @@
+-if ARCH_SUN3I
+ menu "All winner system configure"
++depends on ARCH_SUN3I
+ 
+ config SW_SYSMEM_TOTAL_MEM
+ 	int "Memory Size in MB"
+ 	default 128
+-	depends on ARCH_SUN3I
+ 	---help---
+ 	  In MB size
+ 
+ config SW_SYSMEM_RESERVED_BASE
+ 	hex "Physical address base to reserved for sun3i"
+ 	default 0x83000000
+-	depends on ARCH_SUN3I
+ 	---help---
+ 	  Sun3i reserves some memory for its hardware
+ 
+ config SW_SYSMEM_RESERVED_SIZE
+ 	int "Memory reserved size in KB"
+ 	default 16448
+-	depends on ARCH_SUN3I
+ 	---help---
+ 	  In KB size. Lowwer 32KB for PIN, and then for FB & DE
+ 
+ config SW_PIN_TEST
+ 	tristate "Test code for PIN module"
+ 	default n
+-	depends on ARCH_SUN3I
+ 	---help---
+ 	  "Test code for PIN module"
+ 
+-config SW_DEBUG_UART
+-	int "UART to use for low-level debug"
+-	depends on DEBUG_LL
+-	default 0
+-	help
+-	  Choose the UART on which kernel low-level debug messages should be
+-	  output.
+-
+ endmenu
+-endif
+diff --git a/arch/arm/mach-sun4i/Kconfig b/arch/arm/mach-sun4i/Kconfig
+deleted file mode 100644
+index de9260b..0000000
+--- a/arch/arm/mach-sun4i/Kconfig
++++ /dev/null
+@@ -1,18 +0,0 @@
+-if ARCH_SUN4I
+-
+-comment "Allwinner A10 options"
+-
+-config SW_DEBUG_UART
+-	int "UART to use for low-level debug"
+-	depends on DEBUG_LL
+-	default 0
+-	help
+-	  Choose the UART on which kernel low-level debug messages should be
+-	  output.
+-
+-config SUNXI_MALI_RESERVED_MEM
+-	bool
+-	depends on MALI
+-	default y
+-
+-endif
+diff --git a/arch/arm/mach-sun5i/Kconfig b/arch/arm/mach-sun5i/Kconfig
+deleted file mode 100644
+index e860c3b..0000000
+--- a/arch/arm/mach-sun5i/Kconfig
++++ /dev/null
+@@ -1,16 +0,0 @@
+-if ARCH_SUN5I
+-
+-config SW_DEBUG_UART
+-	int "UART to use for low-level debug"
+-	depends on DEBUG_LL
+-	default 0
+-	help
+-	  Choose the UART on which kernel low-level debug messages should be
+-	  output.
+-
+-config SUNXI_MALI_RESERVED_MEM
+-	bool
+-	depends on MALI
+-	default y
+-
+-endif
+diff --git a/arch/arm/plat-sunxi/Kconfig b/arch/arm/plat-sunxi/Kconfig
+index e69de29..36072a2 100644
+--- a/arch/arm/plat-sunxi/Kconfig
++++ b/arch/arm/plat-sunxi/Kconfig
+@@ -0,0 +1,16 @@
++menu "Allwinner's sunxi options"
++
++config SW_DEBUG_UART
++	int "UART to use for low-level debug"
++	depends on DEBUG_LL
++	default 0
++	help
++	  Choose the UART on which kernel low-level debug messages should be
++	  output.
++
++config SUNXI_MALI_RESERVED_MEM
++	bool
++	depends on MALI
++	default y
++
++endmenu
+-- 
+1.8.0
+

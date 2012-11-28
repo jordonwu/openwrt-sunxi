@@ -1,0 +1,115 @@
+From 8b79db57632b7e9d45af8c0d4fda1db7f116b535 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Thu, 2 Aug 2012 17:26:45 -0700
+Subject: [PATCH 631/944] sync: add reference counting to timelines
+
+If a timeline is destroyed while fences still hold pts on it, the reworked
+fence release handler can cause the timeline to be freed before all it's points
+are freed.
+
+Change-Id: I1cd8ddb638eded7db9db446ff6b37f3dd165d6c4
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c  | 25 +++++++++++++------------
+ include/linux/sync.h |  2 ++
+ 2 files changed, 15 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index be808b0..ad3fee0 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -51,6 +51,7 @@ struct sync_timeline *sync_timeline_create(const struct sync_timeline_ops *ops,
+ 	if (obj == NULL)
+ 		return NULL;
+ 
++	kref_init(&obj->kref);
+ 	obj->ops = ops;
+ 	strlcpy(obj->name, name, sizeof(obj->name));
+ 
+@@ -68,8 +69,10 @@ struct sync_timeline *sync_timeline_create(const struct sync_timeline_ops *ops,
+ }
+ EXPORT_SYMBOL(sync_timeline_create);
+ 
+-static void sync_timeline_free(struct sync_timeline *obj)
++static void sync_timeline_free(struct kref *kref)
+ {
++	struct sync_timeline *obj =
++		container_of(kref, struct sync_timeline, kref);
+ 	unsigned long flags;
+ 
+ 	if (obj->ops->release_obj)
+@@ -87,14 +90,14 @@ void sync_timeline_destroy(struct sync_timeline *obj)
+ 	unsigned long flags;
+ 	bool needs_freeing;
+ 
+-	spin_lock_irqsave(&obj->child_list_lock, flags);
+ 	obj->destroyed = true;
+-	needs_freeing = list_empty(&obj->child_list_head);
+-	spin_unlock_irqrestore(&obj->child_list_lock, flags);
+ 
+-	if (needs_freeing)
+-		sync_timeline_free(obj);
+-	else
++	/*
++	 * If this is not the last reference, signal any children
++	 * that their parent is going away.
++	 */
++
++	if (!kref_put(&obj->kref, sync_timeline_free))
+ 		sync_timeline_signal(obj);
+ }
+ EXPORT_SYMBOL(sync_timeline_destroy);
+@@ -124,13 +127,8 @@ static void sync_timeline_remove_pt(struct sync_pt *pt)
+ 	spin_lock_irqsave(&obj->child_list_lock, flags);
+ 	if (!list_empty(&pt->child_list)) {
+ 		list_del_init(&pt->child_list);
+-		needs_freeing = obj->destroyed &&
+-			list_empty(&obj->child_list_head);
+ 	}
+ 	spin_unlock_irqrestore(&obj->child_list_lock, flags);
+-
+-	if (needs_freeing)
+-		sync_timeline_free(obj);
+ }
+ 
+ void sync_timeline_signal(struct sync_timeline *obj)
+@@ -177,6 +175,7 @@ struct sync_pt *sync_pt_create(struct sync_timeline *parent, int size)
+ 		return NULL;
+ 
+ 	INIT_LIST_HEAD(&pt->active_list);
++	kref_get(&parent->kref);
+ 	sync_timeline_add_pt(parent, pt);
+ 
+ 	return pt;
+@@ -190,6 +189,8 @@ void sync_pt_free(struct sync_pt *pt)
+ 
+ 	sync_timeline_remove_pt(pt);
+ 
++	kref_put(&pt->parent->kref, sync_timeline_free);
++
+ 	kfree(pt);
+ }
+ EXPORT_SYMBOL(sync_pt_free);
+diff --git a/include/linux/sync.h b/include/linux/sync.h
+index 00c9bae..15863a6 100644
+--- a/include/linux/sync.h
++++ b/include/linux/sync.h
+@@ -80,6 +80,7 @@ struct sync_timeline_ops {
+ 
+ /**
+  * struct sync_timeline - sync object
++ * @kref:		reference count on fence.
+  * @ops:		ops that define the implementaiton of the sync_timeline
+  * @name:		name of the sync_timeline. Useful for debugging
+  * @destoryed:		set when sync_timeline is destroyed
+@@ -90,6 +91,7 @@ struct sync_timeline_ops {
+  * @sync_timeline_list:	membership in global sync_timeline_list
+  */
+ struct sync_timeline {
++	struct kref		kref;
+ 	const struct sync_timeline_ops	*ops;
+ 	char			name[32];
+ 
+-- 
+1.8.0
+

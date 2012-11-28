@@ -1,0 +1,44 @@
+From f2d851600c01bd16a8ceb9b5ec0c913f9fcc22de Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Sat, 19 May 2012 21:56:14 +0000
+Subject: [PATCH 455/944] net: fix WEMAC_SUN4I dependencies
+
+This needs to select MII, otherwise the following happens
+
+  drivers/built-in.o: In function `wemac_drv_resume':
+  tree/drivers/net/sun4i/sun4i_wemac.c:1973: undefined reference to `mii_link_ok'
+  drivers/built-in.o: In function `wemac_drv_suspend':
+  tree/drivers/net/sun4i/sun4i_wemac.c:1953: undefined reference to `mii_link_ok'
+  drivers/built-in.o: In function `wemac_nway_reset':
+  tree/drivers/net/sun4i/sun4i_wemac.c:421: undefined reference to `mii_nway_restart'
+  drivers/built-in.o: In function `wemac_set_settings':
+  tree/drivers/net/sun4i/sun4i_wemac.c:415: undefined reference to `mii_ethtool_sset'
+  drivers/built-in.o: In function `wemac_get_settings':
+  tree/drivers/net/sun4i/sun4i_wemac.c:407: undefined reference to `mii_ethtool_gset'
+  drivers/built-in.o: In function `wemac_ioctl':
+  tree/drivers/net/sun4i/sun4i_wemac.c:374: undefined reference to `generic_mii_ioctl'
+  drivers/built-in.o: In function `wemac_open':
+  tree/drivers/net/sun4i/sun4i_wemac.c:1530: undefined reference to `mii_check_media'
+  drivers/built-in.o: In function `wemac_get_link':
+  tree/drivers/net/sun4i/sun4i_wemac.c:430: undefined reference to `mii_link_ok'
+  drivers/built-in.o: In function `wemac_poll_work':
+  tree/drivers/net/sun4i/sun4i_wemac.c:941: undefined reference to `mii_check_media'
+---
+ drivers/net/ethernet/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
+index 58c0da2..e253baf 100644
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -172,6 +172,7 @@ source "drivers/net/ethernet/sun/Kconfig"
+ config WEMAC_SUN4I
+         tristate "wemac support(A1x)"
+         depends on ARCH_SUN4I || ARCH_SUN5I
++	select MII
+         ---help---
+           Support for Softwinner chipset.
+ 
+-- 
+1.8.0
+

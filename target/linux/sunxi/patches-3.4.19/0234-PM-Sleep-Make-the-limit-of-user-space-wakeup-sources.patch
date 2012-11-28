@@ -1,0 +1,116 @@
+From c73893e2ca731b4a81ae59246ab57979aa188777 Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 5 May 2012 21:57:20 +0200
+Subject: [PATCH 234/944] PM / Sleep: Make the limit of user space wakeup
+ sources configurable
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Make it possible to configure out the check against the limit of
+user space wakeup sources for debugging and default Android builds.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Acked-by: Arve Hjønnevåg <arve@android.com>
+---
+ kernel/power/Kconfig    |  6 ++++++
+ kernel/power/wakelock.c | 31 ++++++++++++++++++++++++++-----
+ 2 files changed, 32 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
+index 1d53407..08783ed 100644
+--- a/kernel/power/Kconfig
++++ b/kernel/power/Kconfig
+@@ -119,6 +119,12 @@ config PM_WAKELOCKS
+ 	Allow user space to create, activate and deactivate wakeup source
+ 	objects with the help of a sysfs-based interface.
+ 
++config PM_WAKELOCKS_LIMIT
++	int "Maximum number of user space wakeup sources (0 = no limit)"
++	range 0 100000
++	default 100
++	depends on PM_WAKELOCKS
++
+ config PM_RUNTIME
+ 	bool "Run-time PM core functionality"
+ 	depends on !IA64_HP_SIM
+diff --git a/kernel/power/wakelock.c b/kernel/power/wakelock.c
+index 5797006..dc34b9d3b 100644
+--- a/kernel/power/wakelock.c
++++ b/kernel/power/wakelock.c
+@@ -17,7 +17,6 @@
+ #include <linux/rbtree.h>
+ #include <linux/slab.h>
+ 
+-#define WL_NUMBER_LIMIT	100
+ #define WL_GC_COUNT_MAX	100
+ #define WL_GC_TIME_SEC	300
+ 
+@@ -32,7 +31,6 @@ struct wakelock {
+ 
+ static struct rb_root wakelocks_tree = RB_ROOT;
+ static LIST_HEAD(wakelocks_lru_list);
+-static unsigned int number_of_wakelocks;
+ static unsigned int wakelocks_gc_count;
+ 
+ ssize_t pm_show_wakelocks(char *buf, bool show_active)
+@@ -58,6 +56,29 @@ ssize_t pm_show_wakelocks(char *buf, bool show_active)
+ 	return (str - buf);
+ }
+ 
++#if CONFIG_PM_WAKELOCKS_LIMIT > 0
++static unsigned int number_of_wakelocks;
++
++static inline bool wakelocks_limit_exceeded(void)
++{
++	return number_of_wakelocks > CONFIG_PM_WAKELOCKS_LIMIT;
++}
++
++static inline void increment_wakelocks_number(void)
++{
++	number_of_wakelocks++;
++}
++
++static inline void decrement_wakelocks_number(void)
++{
++	number_of_wakelocks--;
++}
++#else /* CONFIG_PM_WAKELOCKS_LIMIT = 0 */
++static inline bool wakelocks_limit_exceeded(void) { return false; }
++static inline void increment_wakelocks_number(void) {}
++static inline void decrement_wakelocks_number(void) {}
++#endif /* CONFIG_PM_WAKELOCKS_LIMIT */
++
+ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
+ 					    bool add_if_not_found)
+ {
+@@ -85,7 +106,7 @@ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
+ 	if (!add_if_not_found)
+ 		return ERR_PTR(-EINVAL);
+ 
+-	if (number_of_wakelocks > WL_NUMBER_LIMIT)
++	if (wakelocks_limit_exceeded())
+ 		return ERR_PTR(-ENOSPC);
+ 
+ 	/* Not found, we have to add a new one. */
+@@ -103,7 +124,7 @@ static struct wakelock *wakelock_lookup_add(const char *name, size_t len,
+ 	rb_link_node(&wl->node, parent, node);
+ 	rb_insert_color(&wl->node, &wakelocks_tree);
+ 	list_add(&wl->lru, &wakelocks_lru_list);
+-	number_of_wakelocks++;
++	increment_wakelocks_number();
+ 	return wl;
+ }
+ 
+@@ -175,7 +196,7 @@ static void wakelocks_gc(void)
+ 			list_del(&wl->lru);
+ 			kfree(wl->name);
+ 			kfree(wl);
+-			number_of_wakelocks--;
++			decrement_wakelocks_number();
+ 		}
+ 	}
+ 	wakelocks_gc_count = 0;
+-- 
+1.8.0
+

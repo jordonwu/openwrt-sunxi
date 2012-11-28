@@ -1,0 +1,55 @@
+From ad48137cf58feb634cd2282451193653692ead0c Mon Sep 17 00:00:00 2001
+From: Javen <javen@allwinnertech.com>
+Date: Wed, 23 Nov 2011 16:30:43 +0800
+Subject: [PATCH 365/944] usb: change module_init to fs_initcall
+
+---
+ drivers/usb/sun4i_usb/hcd/hcd0/sw_hcd0.c    | 3 ++-
+ drivers/usb/sun4i_usb/manager/usb_manager.c | 3 ++-
+ drivers/usb/sun4i_usb/udc/sw_udc.c          | 3 ++-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/usb/sun4i_usb/hcd/hcd0/sw_hcd0.c b/drivers/usb/sun4i_usb/hcd/hcd0/sw_hcd0.c
+index 1e5fa55..fe55991 100644
+--- a/drivers/usb/sun4i_usb/hcd/hcd0/sw_hcd0.c
++++ b/drivers/usb/sun4i_usb/hcd/hcd0/sw_hcd0.c
+@@ -2335,7 +2335,8 @@ static int __init sw_hcd_init(void)
+ /* make us init after usbcore and i2c (transceivers, regulators, etc)
+  * and before usb gadget and host-side drivers start to register
+  */
+-module_init(sw_hcd_init);
++//module_init(sw_hcd_init);
++fs_initcall(sw_hcd_init);
+ 
+ /*
+ *******************************************************************************
+diff --git a/drivers/usb/sun4i_usb/manager/usb_manager.c b/drivers/usb/sun4i_usb/manager/usb_manager.c
+index 79382b1..0c33e93 100644
+--- a/drivers/usb/sun4i_usb/manager/usb_manager.c
++++ b/drivers/usb/sun4i_usb/manager/usb_manager.c
+@@ -589,6 +589,7 @@ static void __exit usb_manager_exit(void)
+     return;
+ }
+ 
+-module_init(usb_manager_init);
++//module_init(usb_manager_init);
++fs_initcall(usb_manager_init);
+ module_exit(usb_manager_exit);
+ 
+diff --git a/drivers/usb/sun4i_usb/udc/sw_udc.c b/drivers/usb/sun4i_usb/udc/sw_udc.c
+index 4947b8e..5589f8f 100644
+--- a/drivers/usb/sun4i_usb/udc/sw_udc.c
++++ b/drivers/usb/sun4i_usb/udc/sw_udc.c
+@@ -3779,7 +3779,8 @@ static void __exit udc_exit(void)
+ EXPORT_SYMBOL(usb_gadget_probe_driver);
+ EXPORT_SYMBOL(usb_gadget_unregister_driver);
+ 
+-module_init(udc_init);
++//module_init(udc_init);
++fs_initcall(udc_init);
+ module_exit(udc_exit);
+ 
+ MODULE_AUTHOR(DRIVER_AUTHOR);
+-- 
+1.8.0
+

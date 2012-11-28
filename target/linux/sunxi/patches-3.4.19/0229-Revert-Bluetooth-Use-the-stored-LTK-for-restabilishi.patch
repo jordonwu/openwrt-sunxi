@@ -1,0 +1,42 @@
+From 6ff6845be02be8d53da28d2333a015d54b1234db Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Tue, 17 Apr 2012 13:00:43 -0700
+Subject: [PATCH 229/944] Revert Bluetooth: Use the stored LTK for
+ restabilishing security
+
+This patch reverts commit b7d6cd72ce713a256406d47e798ea4797404d81e.
+This patch was already applied upstream and then modified, then was
+accidentally applied again to the android-3.4 tree.
+
+Change-Id: I0c5a822f3f2a5b75564eeeb2598f13b7a149c58d
+Reported-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ net/bluetooth/smp.c | 11 -----------
+ 1 file changed, 11 deletions(-)
+
+diff --git a/net/bluetooth/smp.c b/net/bluetooth/smp.c
+index afd9253..deb1198 100644
+--- a/net/bluetooth/smp.c
++++ b/net/bluetooth/smp.c
+@@ -785,17 +785,6 @@ int smp_conn_security(struct l2cap_conn *conn, __u8 sec_level)
+ 
+ 	if (hcon->link_mode & HCI_LM_MASTER) {
+ 		struct smp_cmd_pairing cp;
+-		struct link_key *key;
+-
+-		key = hci_find_link_key_type(hcon->hdev, conn->dst,
+-							HCI_LK_SMP_LTK);
+-		if (key) {
+-			struct key_master_id *master = (void *) key->data;
+-
+-			hci_le_start_enc(hcon, master->ediv, master->rand,
+-								key->val);
+-			goto done;
+-		}
+ 
+ 		build_pairing_cmd(conn, &cp, NULL, authreq);
+ 		smp->preq[0] = SMP_CMD_PAIRING_REQ;
+-- 
+1.8.0
+

@@ -1,0 +1,42 @@
+From f7ed7f734dce62cf95ab1f12f959bbf544337ae1 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Tue, 23 Oct 2012 22:08:41 +0200
+Subject: [PATCH 872/944] video:sunxi:disp: fix cut-n-paste in
+ BSP_disp_get_timming
+
+Timming huh?
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/disp_lcd.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 67ca037..bbf6842 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -1871,18 +1871,18 @@ __s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt)
+ 		tt->pixel_clk = gpanel_info[sel].lcd_dclk_freq * 1000;
+ 	} else if ((gdisp.screen[sel].status & TV_ON) ||
+ 		   (gdisp.screen[sel].status & HDMI_ON)) {
+-		__disp_tv_mode_t mode = gdisp.screen[sel].tv_mode;;
++		__disp_tv_mode_t mode = gdisp.screen[sel].tv_mode;
+ 
+ 		LCDC_get_timing(sel, 1, tt);
+ 		tt->pixel_clk =
+ 			(clk_tab.tv_clk_tab[mode].tve_clk /
+ 			 clk_tab.tv_clk_tab[mode].pre_scale) / 1000;
+ 	} else if (gdisp.screen[sel].status & VGA_ON) {
+-		__disp_tv_mode_t mode = gdisp.screen[sel].vga_mode;;
++		__disp_vga_mode_t mode = gdisp.screen[sel].vga_mode;
+ 
+ 		LCDC_get_timing(sel, 1, tt);
+ 		tt->pixel_clk =
+-			(clk_tab.tv_clk_tab[mode].tve_clk /
++			(clk_tab.vga_clk_tab[mode].tve_clk /
+ 			 clk_tab.vga_clk_tab[mode].pre_scale) / 1000;
+ 	} else {
+ 		DE_INF("get timing fail because device is not output !\n");
+-- 
+1.8.0
+

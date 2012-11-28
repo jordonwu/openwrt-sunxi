@@ -1,0 +1,172 @@
+From c80114fd8bfecfb60121d0a82c59610435604ce3 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Tue, 15 May 2012 16:23:26 -0700
+Subject: [PATCH 266/944] sync: allow async waits to be canceled
+
+In order to allow drivers to cleanly handled teardown we need to allow them
+to cancel pending async waits.  To do this cleanly, we move allocation of
+sync_fence_waiter to the driver calling sync_async_wait().
+
+Change-Id: Ifcd95648be6ec07026d67f810070a4310f099989
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c  | 46 +++++++++++++++++++++++++++++++---------------
+ include/linux/sync.h | 36 +++++++++++++++++++++++++++++-------
+ 2 files changed, 60 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index cc40e4c..5e89195 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -421,33 +421,22 @@ static void sync_fence_signal_pt(struct sync_pt *pt)
+ 				container_of(pos, struct sync_fence_waiter,
+ 					     waiter_list);
+ 
+-			waiter->callback(fence, waiter->callback_data);
+ 			list_del(pos);
+-			kfree(waiter);
++			waiter->callback(fence, waiter);
+ 		}
+ 		wake_up(&fence->wq);
+ 	}
+ }
+ 
+ int sync_fence_wait_async(struct sync_fence *fence,
+-			  void (*callback)(struct sync_fence *, void *data),
+-			  void *callback_data)
++			  struct sync_fence_waiter *waiter)
+ {
+-	struct sync_fence_waiter *waiter;
+ 	unsigned long flags;
+ 	int err = 0;
+ 
+-	waiter = kzalloc(sizeof(struct sync_fence_waiter), GFP_KERNEL);
+-	if (waiter == NULL)
+-		return -ENOMEM;
+-
+-	waiter->callback = callback;
+-	waiter->callback_data = callback_data;
+-
+ 	spin_lock_irqsave(&fence->waiter_list_lock, flags);
+ 
+ 	if (fence->status) {
+-		kfree(waiter);
+ 		err = fence->status;
+ 		goto out;
+ 	}
+@@ -459,6 +448,34 @@ out:
+ 	return err;
+ }
+ 
++int sync_fence_cancel_async(struct sync_fence *fence,
++			     struct sync_fence_waiter *waiter)
++{
++	struct list_head *pos;
++	struct list_head *n;
++	unsigned long flags;
++	int ret = -ENOENT;
++
++	spin_lock_irqsave(&fence->waiter_list_lock, flags);
++	/*
++	 * Make sure waiter is still in waiter_list because it is possible for
++	 * the waiter to be removed from the list while the callback is still
++	 * pending.
++	 */
++	list_for_each_safe(pos, n, &fence->waiter_list_head) {
++		struct sync_fence_waiter *list_waiter =
++			container_of(pos, struct sync_fence_waiter,
++				     waiter_list);
++		if (list_waiter == waiter) {
++			list_del(pos);
++			ret = 0;
++			break;
++		}
++	}
++	spin_unlock_irqrestore(&fence->waiter_list_lock, flags);
++	return ret;
++}
++
+ int sync_fence_wait(struct sync_fence *fence, long timeout)
+ {
+ 	int err;
+@@ -739,8 +756,7 @@ static void sync_print_fence(struct seq_file *s, struct sync_fence *fence)
+ 			container_of(pos, struct sync_fence_waiter,
+ 				     waiter_list);
+ 
+-		seq_printf(s, "waiter %pF %p\n", waiter->callback,
+-			   waiter->callback_data);
++		seq_printf(s, "waiter %pF\n", waiter->callback);
+ 	}
+ 	spin_unlock_irqrestore(&fence->waiter_list_lock, flags);
+ }
+diff --git a/include/linux/sync.h b/include/linux/sync.h
+index 4f19938..943f414 100644
+--- a/include/linux/sync.h
++++ b/include/linux/sync.h
+@@ -159,6 +159,10 @@ struct sync_fence {
+ 	struct list_head	sync_fence_list;
+ };
+ 
++struct sync_fence_waiter;
++typedef void (*sync_callback_t)(struct sync_fence *fence,
++				struct sync_fence_waiter *waiter);
++
+ /**
+  * struct sync_fence_waiter - metadata for asynchronous waiter on a fence
+  * @waiter_list:	membership in sync_fence.waiter_list_head
+@@ -168,10 +172,15 @@ struct sync_fence {
+ struct sync_fence_waiter {
+ 	struct list_head	waiter_list;
+ 
+-	void (*callback)(struct sync_fence *fence, void *data);
+-	void *callback_data;
++	sync_callback_t		callback;
+ };
+ 
++static inline void sync_fence_waiter_init(struct sync_fence_waiter *waiter,
++					  sync_callback_t callback)
++{
++	waiter->callback = callback;
++}
++
+ /*
+  * API for sync_timeline implementers
+  */
+@@ -284,16 +293,29 @@ void sync_fence_install(struct sync_fence *fence, int fd);
+ /**
+  * sync_fence_wait_async() - registers and async wait on the fence
+  * @fence:		fence to wait on
+- * @callback:		callback
+- * @callback_data	data to pass to the callback
++ * @waiter:		waiter callback struck
+  *
+  * Returns 1 if @fence has already signaled.
+  *
+- * Registers a callback to be called when @fence signals or has an error
++ * Registers a callback to be called when @fence signals or has an error.
++ * @waiter should be initialized with sync_fence_waiter_init().
+  */
+ int sync_fence_wait_async(struct sync_fence *fence,
+-			  void (*callback)(struct sync_fence *, void *data),
+-			  void *callback_data);
++			  struct sync_fence_waiter *waiter);
++
++/**
++ * sync_fence_cancel_async() - cancels an async wait
++ * @fence:		fence to wait on
++ * @waiter:		waiter callback struck
++ *
++ * returns 0 if waiter was removed from fence's async waiter list.
++ * returns -ENOENT if waiter was not found on fence's async waiter list.
++ *
++ * Cancels a previously registered async wait.  Will fail gracefully if
++ * @waiter was never registered or if @fence has already signaled @waiter.
++ */
++int sync_fence_cancel_async(struct sync_fence *fence,
++			    struct sync_fence_waiter *waiter);
+ 
+ /**
+  * sync_fence_wait() - wait on fence
+-- 
+1.8.0
+

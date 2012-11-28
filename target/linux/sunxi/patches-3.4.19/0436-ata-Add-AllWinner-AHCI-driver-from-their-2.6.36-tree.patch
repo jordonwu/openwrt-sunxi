@@ -1,0 +1,702 @@
+From 2715804f0c394b12edf2793a6ebe32b567e6caf8 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 24 Jan 2012 16:02:01 +0100
+Subject: [PATCH 436/944] ata: Add AllWinner AHCI driver from their 2.6.36
+ tree
+
+---
+ drivers/ata/Kconfig            |   8 +
+ drivers/ata/Makefile           |   1 +
+ drivers/ata/libahci.c          |  43 +++-
+ drivers/ata/sw_ahci_platform.c | 503 +++++++++++++++++++++++++++++++++++++++++
+ drivers/ata/sw_ahci_platform.h |  57 +++++
+ 5 files changed, 611 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/ata/sw_ahci_platform.c
+ create mode 100644 drivers/ata/sw_ahci_platform.h
+
+diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
+index 6bdedd7..d93eeb7 100644
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
+@@ -83,6 +83,14 @@ config SATA_AHCI_PLATFORM
+ 
+ 	  If unsure, say N.
+ 
++config SW_SATA_AHCI_PLATFORM
++	tristate "SoftWinner Platform AHCI SATA support"
++	help
++	  This option enables support for SoftWinner Platform AHCI Serial ATA
++	  controllers.
++
++	  If unsure, say N.
++
+ config SATA_FSL
+ 	tristate "Freescale 3.0Gbps SATA support"
+ 	depends on FSL_SOC
+diff --git a/drivers/ata/Makefile b/drivers/ata/Makefile
+index 6ece5b7..218238c 100644
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
+@@ -5,6 +5,7 @@ obj-$(CONFIG_ATA)		+= libata.o
+ obj-$(CONFIG_SATA_AHCI)		+= ahci.o libahci.o
+ obj-$(CONFIG_SATA_ACARD_AHCI)	+= acard-ahci.o libahci.o
+ obj-$(CONFIG_SATA_AHCI_PLATFORM) += ahci_platform.o libahci.o
++obj-$(CONFIG_SW_SATA_AHCI_PLATFORM) += sw_ahci_platform.o libahci.o
+ obj-$(CONFIG_SATA_FSL)		+= sata_fsl.o
+ obj-$(CONFIG_SATA_INIC162X)	+= sata_inic162x.o
+ obj-$(CONFIG_SATA_SIL24)	+= sata_sil24.o
+diff --git a/drivers/ata/libahci.c b/drivers/ata/libahci.c
+index f9eaa82..7f80e44 100644
+--- a/drivers/ata/libahci.c
++++ b/drivers/ata/libahci.c
+@@ -46,6 +46,8 @@
+ #include <linux/libata.h>
+ #include "ahci.h"
+ 
++#include <linux/slab.h>
++
+ static int ahci_skip_host_reset;
+ int ahci_ignore_sss;
+ EXPORT_SYMBOL_GPL(ahci_ignore_sss);
+@@ -558,11 +560,18 @@ static int ahci_scr_write(struct ata_link *link, unsigned int sc_reg, u32 val)
+ 	return -EINVAL;
+ }
+ 
++#define SW_AHCI_PORT_DMA		0x70
+ void ahci_start_engine(struct ata_port *ap)
+ {
+ 	void __iomem *port_mmio = ahci_port_base(ap);
+ 	u32 tmp;
+ 
++	/*Setup DMA before Start DMA, by danielwang*/
++	tmp = readl(port_mmio + SW_AHCI_PORT_DMA);
++	tmp &= ~0xff00;
++	tmp |= 0x4400;
++	writel(tmp, port_mmio + SW_AHCI_PORT_DMA);
++
+ 	/* start DMA */
+ 	tmp = readl(port_mmio + PORT_CMD);
+ 	tmp |= PORT_CMD_START;
+@@ -2067,7 +2076,11 @@ static int ahci_port_start(struct ata_port *ap)
+ 		rx_fis_sz = AHCI_RX_FIS_SZ;
+ 	}
+ 
+-	mem = dmam_alloc_coherent(dev, dma_sz, &mem_dma, GFP_KERNEL);
++	//mem = dmam_alloc_coherent(dev, dma_sz, &mem_dma, GFP_KERNEL);
++	//danielwang
++	mem = kmalloc(dma_sz, GFP_DMA | GFP_KERNEL);
++	mem_dma = __pa(mem);
++	//printk("dmam_alloc_coherent mem = 0x%x, size = 0x%x, mem_dma=0x%x\n", (unsigned int)mem, (unsigned int)dma_sz, (unsigned int)mem_dma);
+ 	if (!mem)
+ 		return -ENOMEM;
+ 	memset(mem, 0, dma_sz);
+@@ -2110,6 +2123,34 @@ static int ahci_port_start(struct ata_port *ap)
+ 	return ahci_port_resume(ap);
+ }
+ 
++int ahci_hardware_recover_for_controller_resume(struct ata_host *host)
++{
++	int i;
++
++	ahci_reset_controller(host);
++	ahci_init_controller(host);
++
++	for (i = 0; i < host->n_ports; i++) {
++		struct ata_port *ap = host->ports[i];
++		struct ahci_port_priv *pp = ap->private_data;
++		size_t dma_sz;
++
++		if (pp->fbs_supported) {
++			dma_sz = AHCI_PORT_PRIV_FBS_DMA_SZ;
++		} else {
++			dma_sz = AHCI_PORT_PRIV_DMA_SZ;
++		}
++
++		memset((void*)pp->cmd_slot, 0, dma_sz);
++
++		/* engage engines, captain */
++		ahci_port_resume(ap);
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(ahci_hardware_recover_for_controller_resume);
++
+ static void ahci_port_stop(struct ata_port *ap)
+ {
+ 	const char *emsg = NULL;
+diff --git a/drivers/ata/sw_ahci_platform.c b/drivers/ata/sw_ahci_platform.c
+new file mode 100644
+index 0000000..de4cc75
+--- /dev/null
++++ b/drivers/ata/sw_ahci_platform.c
+@@ -0,0 +1,503 @@
++/*
++*************************************************************************************
++*                         			      Linux
++*					           AHCI SATA platform driver
++*
++*				        (c) Copyright 2006-2010, All winners Co,Ld.
++*							       All Rights Reserved
++*
++* File Name 	: sw_ahci_platform.c
++*
++* Author 		: danielwang
++*
++* Description 	: SATA Host Controller Driver for AW1623 Platform
++*
++* Notes         :
++*
++* History 		:
++*      <author>    		<time>       	<version >    		<desc>
++*    danielwang        2011-6-29            1.0          create this file
++*
++*************************************************************************************
++*/
++
++#include <linux/kernel.h>
++#include <linux/gfp.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <linux/libata.h>
++#include <linux/ahci_platform.h>
++#include "ahci.h"
++
++#include <linux/clk.h>
++#include <mach/gpio_v2.h>
++#include <mach/script_v2.h>
++#include "sw_ahci_platform.h"
++
++static struct scsi_host_template ahci_platform_sht = {
++	AHCI_SHT("sw_ahci_platform"),
++};
++
++static char* sw_ahci_hclk_name = "ahb_sata";
++static char* sw_ahci_mclk_name = "sata";
++static char* sw_ahci_para_name = "sata_para";
++static char* sw_ahci_used_name = "sata_used";
++static char* sw_ahci_gpio_name = "sata_power_en";
++
++static struct resource sw_ahci_resources[] = {
++	[0] = {
++		.start		= SW_AHCI_BASE,
++		.end		= SW_AHCI_BASE + 0x1000 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++
++	[1] = {
++    	.start	= INTC_IRQNO_AHCI,
++    	.end	= INTC_IRQNO_AHCI,
++    	.flags	= IORESOURCE_IRQ,
++    },
++};
++
++static int sw_ahci_phy_init(unsigned int base)
++{
++	unsigned int tmp;
++	const unsigned int timeout_val = 0x100000;
++	unsigned int timeout = timeout_val;
++
++	for(tmp=0; tmp<0x1000; tmp++);
++
++	SW_AHCI_ACCESS_LOCK(base, 0);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS1R_OFFSET);
++	tmp |= (0x1<<19);
++	ahci_writel(base, SW_AHCI_PHYCS1R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS0R_OFFSET);
++	tmp |= 0x1<<23;
++	tmp |= 0x1<<18;
++	tmp &= ~(0x7<<24);
++	tmp |= 0x5<<24;
++	ahci_writel(base, SW_AHCI_PHYCS0R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS1R_OFFSET);
++	tmp &= ~(0x3<<16);
++	tmp |= (0x2<<16);
++	tmp &= ~(0x1f<<8);
++	tmp |= (6<<8);
++	tmp &= ~(0x3<<6);
++	tmp |= (2<<6);
++	ahci_writel(base, SW_AHCI_PHYCS1R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS1R_OFFSET);
++	tmp |= (0x1<<28);
++	tmp |= (0x1<<15);
++	ahci_writel(base, SW_AHCI_PHYCS1R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS1R_OFFSET);
++	tmp &= ~(0x1<<19);
++	ahci_writel(base, SW_AHCI_PHYCS1R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS0R_OFFSET);
++	tmp &= ~(0x7<<20);
++	tmp |= (0x03<<20);
++	ahci_writel(base, SW_AHCI_PHYCS0R_OFFSET, tmp);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS2R_OFFSET);
++	tmp &= ~(0x1f<<5);
++	tmp |= (0x19<<5);
++	ahci_writel(base, SW_AHCI_PHYCS2R_OFFSET, tmp);
++
++	for(tmp=0; tmp<0x1000; tmp++);
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS0R_OFFSET);
++	tmp |= 0x1<<19;
++	ahci_writel(base, SW_AHCI_PHYCS0R_OFFSET, tmp);
++
++	timeout = timeout_val;
++	do{
++		tmp = ahci_readl(base, SW_AHCI_PHYCS0R_OFFSET);
++		timeout --;
++		if(!timeout) break;
++	}while((tmp&(0x7<<28))!=(0x02<<28));
++
++	if(!timeout)
++	{
++		printk("SATA AHCI Phy Power Failed!!\n");
++	}
++
++	tmp = ahci_readl(base, SW_AHCI_PHYCS2R_OFFSET);
++	tmp |= 0x1<<24;
++	ahci_writel(base, SW_AHCI_PHYCS2R_OFFSET, tmp);
++
++	timeout = timeout_val;
++	do{
++		tmp = ahci_readl(base, SW_AHCI_PHYCS2R_OFFSET);
++		timeout --;
++		if(!timeout) break;
++	}while(tmp&(0x1<<24));
++
++	if(!timeout)
++	{
++		printk("SATA AHCI Phy Calibration Failed!!\n");
++	}
++
++	for(tmp=0; tmp<0x3000; tmp++);
++
++	SW_AHCI_ACCESS_LOCK(base, 0x07);
++
++	return 0;
++}
++
++static int sw_ahci_start(struct device *dev, void __iomem *addr)
++{
++	struct clk *hclk;
++	struct clk *mclk;
++	u32 pio_hdle = 0;
++	int ctrl = 0;
++	int rc = 0;
++
++	script_parser_fetch(sw_ahci_para_name, sw_ahci_used_name, &ctrl, sizeof(int));
++	if(!ctrl)
++	{
++		dev_err(dev, "AHCI is disable\n");
++		rc = -EINVAL;
++    	goto err2;
++	}
++
++	/*Enable mclk and hclk for AHCI*/
++	mclk = clk_get(dev, sw_ahci_mclk_name);
++	if (IS_ERR(mclk))
++    {
++    	dev_err(dev, "Error to get module clk for AHCI\n");
++    	rc = -EINVAL;
++    	goto err2;
++    }
++
++	hclk = clk_get(dev, sw_ahci_hclk_name);
++	if (IS_ERR(hclk))
++	{
++		dev_err(dev, "Error to get ahb clk for AHCI\n");
++    	rc = -EINVAL;
++    	goto err1;
++	}
++
++	/*Enable SATA Clock in SATA PLL*/
++	ahci_writel(CCMU_PLL6_VBASE, 0, ahci_readl(CCMU_PLL6_VBASE, 0)|(0x1<<14));
++	clk_enable(mclk);
++	clk_enable(hclk);
++
++	sw_ahci_phy_init((unsigned int)addr);
++
++	pio_hdle = gpio_request_ex(sw_ahci_para_name, sw_ahci_gpio_name);
++	if(pio_hdle)
++	{
++		gpio_write_one_pin_value(pio_hdle, 1, sw_ahci_gpio_name);
++		gpio_release(pio_hdle, 2);
++	}
++
++	clk_put(hclk);
++err1:
++	clk_put(mclk);
++err2:
++	return rc;
++}
++
++static void sw_ahci_stop(struct device *dev)
++{
++	struct clk *hclk;
++	struct clk *mclk;
++	u32 pio_hdle = 0;
++	int rc = 0;
++
++	mclk = clk_get(dev, sw_ahci_mclk_name);
++	if (IS_ERR(mclk))
++    {
++    	dev_err(dev, "Error to get module clk for AHCI\n");
++    	rc = -EINVAL;
++    	goto err2;
++    }
++
++	hclk = clk_get(dev, sw_ahci_hclk_name);
++	if (IS_ERR(hclk))
++	{
++		dev_err(dev, "Error to get ahb clk for AHCI\n");
++    	rc = -EINVAL;
++    	goto err1;
++	}
++
++	pio_hdle = gpio_request_ex(sw_ahci_para_name, sw_ahci_gpio_name);
++	if(pio_hdle)
++	{
++		gpio_write_one_pin_value(pio_hdle, 0, sw_ahci_gpio_name);
++		gpio_release(pio_hdle, 2);
++	}
++
++	/*Disable mclk and hclk for AHCI*/
++	clk_disable(mclk);
++	clk_disable(hclk);
++	clk_put(hclk);
++err1:
++	clk_put(mclk);
++err2:
++	return;// rc;
++}
++
++static struct ata_port_info sw_ahci_port_info = {
++	.flags = AHCI_FLAG_COMMON,
++	//.link_flags = ,
++	.pio_mask = ATA_PIO4,
++	//.mwdma_mask = ,
++	.udma_mask = ATA_UDMA6,
++	.port_ops = &ahci_ops,
++	.private_data = (void*)(AHCI_HFLAG_32BIT_ONLY | AHCI_HFLAG_NO_MSI
++							| AHCI_HFLAG_NO_PMP | AHCI_HFLAG_YES_NCQ),
++};
++
++static struct ahci_platform_data sw_ahci_platform_data = {
++	.ata_port_info = &sw_ahci_port_info,
++	.init = sw_ahci_start,
++	.exit = sw_ahci_stop,
++};
++
++static struct platform_device sw_ahci_device = {
++	.name		= "sw_ahci",
++	.id			= 0,
++	.dev 		= {
++		.platform_data = &sw_ahci_platform_data,
++	},
++
++	.num_resources	= ARRAY_SIZE(sw_ahci_resources),
++	.resource		= sw_ahci_resources,
++};
++
++static int __init sw_ahci_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct ahci_platform_data *pdata = dev->platform_data;
++	struct ata_port_info pi = {
++		.flags		= AHCI_FLAG_COMMON,
++		.pio_mask	= ATA_PIO4,
++		.udma_mask	= ATA_UDMA6,
++		.port_ops	= &ahci_ops,
++	};
++	const struct ata_port_info *ppi[] = { &pi, NULL };
++	struct ahci_host_priv *hpriv;
++	struct ata_host *host;
++	struct resource *mem;
++	int irq;
++	int n_ports;
++	int i;
++	int rc;
++
++	mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!mem) {
++		dev_err(dev, "no mmio space\n");
++		return -EINVAL;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq <= 0) {
++		dev_err(dev, "no irq\n");
++		return -EINVAL;
++	}
++
++	if (pdata && pdata->ata_port_info)
++		pi = *pdata->ata_port_info;
++
++	hpriv = devm_kzalloc(dev, sizeof(*hpriv), GFP_KERNEL);
++	if (!hpriv) {
++		dev_err(dev, "can't alloc ahci_host_priv\n");
++		return -ENOMEM;
++	}
++
++	hpriv->flags |= (unsigned long)pi.private_data;
++
++	hpriv->mmio = devm_ioremap(dev, mem->start, resource_size(mem));
++	if (!hpriv->mmio) {
++		dev_err(dev, "can't map %pR\n", mem);
++		return -ENOMEM;
++	}
++
++	/*
++	 * Some platforms might need to prepare for mmio region access,
++	 * which could be done in the following init call. So, the mmio
++	 * region shouldn't be accessed before init (if provided) has
++	 * returned successfully.
++	 */
++	if (pdata && pdata->init) {
++		rc = pdata->init(dev, hpriv->mmio);
++		if (rc)
++			return rc;
++	}
++
++	ahci_save_initial_config(dev, hpriv,
++		pdata ? pdata->force_port_map : 0,
++		pdata ? pdata->mask_port_map  : 0);
++
++	/* prepare host */
++	if (hpriv->cap & HOST_CAP_NCQ)
++		pi.flags |= ATA_FLAG_NCQ;
++
++	if (hpriv->cap & HOST_CAP_PMP)
++		pi.flags |= ATA_FLAG_PMP;
++
++	ahci_set_em_messages(hpriv, &pi);
++
++	/* CAP.NP sometimes indicate the index of the last enabled
++	 * port, at other times, that of the last possible port, so
++	 * determining the maximum port number requires looking at
++	 * both CAP.NP and port_map.
++	 */
++	n_ports = max(ahci_nr_ports(hpriv->cap), fls(hpriv->port_map));
++
++	host = ata_host_alloc_pinfo(dev, ppi, n_ports);
++	if (!host) {
++		rc = -ENOMEM;
++		goto err0;
++	}
++
++	host->private_data = hpriv;
++
++	if (!(hpriv->cap & HOST_CAP_SSS) || ahci_ignore_sss)
++		host->flags |= ATA_HOST_PARALLEL_SCAN;
++	else
++		printk(KERN_INFO "ahci: SSS flag set, parallel bus scan disabled\n");
++
++	if (pi.flags & ATA_FLAG_EM)
++		ahci_reset_em(host);
++
++	for (i = 0; i < host->n_ports; i++) {
++		struct ata_port *ap = host->ports[i];
++
++		ata_port_desc(ap, "mmio %pR", mem);
++		ata_port_desc(ap, "port 0x%x", 0x100 + ap->port_no * 0x80);
++
++		/* set initial link pm policy */
++		ap->pm_policy = NOT_AVAILABLE;
++
++		/* set enclosure management message type */
++		if (ap->flags & ATA_FLAG_EM)
++			ap->em_message_type = hpriv->em_msg_type;
++
++		/* disabled/not-implemented port */
++		if (!(hpriv->port_map & (1 << i)))
++			ap->ops = &ata_dummy_port_ops;
++	}
++
++	rc = ahci_reset_controller(host);
++	if (rc)
++		goto err0;
++
++	ahci_init_controller(host);
++	ahci_print_info(host, "platform");
++
++	rc = ata_host_activate(host, irq, ahci_interrupt, IRQF_SHARED,
++			       &ahci_platform_sht);
++	if (rc)
++		goto err0;
++
++	return 0;
++err0:
++	if (pdata && pdata->exit)
++		pdata->exit(dev);
++	return rc;
++}
++
++static int __devexit sw_ahci_remove(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct ahci_platform_data *pdata = dev->platform_data;
++	struct ata_host *host = dev_get_drvdata(dev);
++
++	ata_host_detach(host);
++
++	if (pdata && pdata->exit)
++		pdata->exit(dev);
++
++	return 0;
++}
++
++
++void sw_ahci_dump_reg(struct device *dev)
++{
++	struct ata_host *host = dev_get_drvdata(dev);
++	struct ahci_host_priv *hpriv = host->private_data;
++	u32 base = (u32)hpriv->mmio;
++	int i = 0;
++
++	for(i=0; i<0x200; i+=0x10) {
++		printk("0x%3x = 0x%x, 0x%3x = 0x%x, 0x%3x = 0x%x, 0x%3x = 0x%x\n", i, ahci_readl(base, i), i+4, ahci_readl(base, i+4), i+8, ahci_readl(base, i+8), i+12, ahci_readl(base, i+12));
++	}
++}
++
++#ifdef CONFIG_PM
++
++static int sw_ahci_suspend(struct device *dev)
++{
++
++	printk("sw_ahci_platform: sw_ahci_suspend\n"); //danielwang
++	//sw_ahci_dump_reg(dev);
++
++	sw_ahci_stop(dev);
++
++	return 0;
++}
++
++extern int ahci_hardware_recover_for_controller_resume(struct ata_host *host);
++static int sw_ahci_resume(struct device *dev)
++{
++	struct ata_host *host = dev_get_drvdata(dev);
++	struct ahci_host_priv *hpriv = host->private_data;
++
++	printk("sw_ahci_platform: sw_ahci_resume\n"); //danielwang
++
++	sw_ahci_start(dev, hpriv->mmio);
++	//sw_ahci_dump_reg(dev);
++
++	ahci_hardware_recover_for_controller_resume(host);
++
++	return 0;
++}
++
++
++static const struct dev_pm_ops  sw_ahci_pmops = {
++	.suspend	= sw_ahci_suspend,
++	.resume		= sw_ahci_resume,
++};
++
++#define SW_AHCI_PMOPS &sw_ahci_pmops
++#else
++#define SW_AHCI_PMOPS NULL
++#endif
++
++
++
++static struct platform_driver sw_ahci_driver = {
++	.remove = __devexit_p(sw_ahci_remove),
++	.driver = {
++		.name = "sw_ahci",
++		.owner = THIS_MODULE,
++		.pm = SW_AHCI_PMOPS,
++	},
++};
++
++static int __init sw_ahci_init(void)
++{
++	platform_device_register(&sw_ahci_device);
++	return platform_driver_probe(&sw_ahci_driver, sw_ahci_probe);
++}
++module_init(sw_ahci_init);
++
++static void __exit sw_ahci_exit(void)
++{
++	platform_driver_unregister(&sw_ahci_driver);
++}
++module_exit(sw_ahci_exit);
++
++MODULE_DESCRIPTION("SW AHCI SATA platform driver");
++MODULE_AUTHOR("Daniel Wang <danielwang@allwinnertech.com>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:sw_ahci");
+diff --git a/drivers/ata/sw_ahci_platform.h b/drivers/ata/sw_ahci_platform.h
+new file mode 100644
+index 0000000..7eecc97
+--- /dev/null
++++ b/drivers/ata/sw_ahci_platform.h
+@@ -0,0 +1,57 @@
++/*
++ * AHCI SATA platform driver
++ *
++ * Copyright 2004-2005  Red Hat, Inc.
++ *   Jeff Garzik <jgarzik@pobox.com>
++ * Copyright 2010  MontaVista Software, LLC.
++ *   Anton Vorontsov <avorontsov@ru.mvista.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2, or (at your option)
++ * any later version.
++ */
++
++#ifndef _SW_AHCI_PLATFORM_H
++#define _SW_AHCI_PLATFORM_H
++
++#define	ahci_readb(base,offset)  		(*((volatile unsigned char*)((base)+(offset))))
++#define	ahci_readw(base,offset)  		(*((volatile unsigned short*)((base)+(offset))))
++#define	ahci_readl(base,offset)  		(*((volatile unsigned int*)((base)+(offset))))
++#define ahci_writeb(base,offset,val)	(*((volatile unsigned char*)((base)+(offset))) = (val))
++#define ahci_writew(base,offset,val)	(*((volatile unsigned short*)((base)+(offset))) = (val))
++#define ahci_writel(base,offset,val)	(*((volatile unsigned int*)((base)+(offset))) = (val))
++
++#define SW_AHCI_BASE				0x01c18000
++
++#define SW_AHCI_BISTAFR_OFFSET		0x00A0
++#define SW_AHCI_BISTCR_OFFSET		0x00A4
++#define SW_AHCI_BISTFCTR_OFFSET		0x00A8
++#define SW_AHCI_BISTSR_OFFSET		0x00AC
++#define SW_AHCI_BISTDECR_OFFSET		0x00B0
++#define SW_AHCI_DIAGNR_OFFSET		0x00B4
++#define SW_AHCI_DIAGNR1_OFFSET		0x00B8
++#define SW_AHCI_OOBR_OFFSET			0x00BC
++#define SW_AHCI_PHYCS0R_OFFSET		0x00C0
++#define SW_AHCI_PHYCS1R_OFFSET		0x00C4
++#define SW_AHCI_PHYCS2R_OFFSET		0x00C8
++#define SW_AHCI_TIMER1MS_OFFSET		0x00E0
++#define SW_AHCI_GPARAM1R_OFFSET		0x00E8
++#define SW_AHCI_GPARAM2R_OFFSET		0x00EC
++#define SW_AHCI_PPARAMR_OFFSET		0x00F0
++#define SW_AHCI_TESTR_OFFSET		0x00F4
++#define SW_AHCI_VERSIONR_OFFSET		0x00F8
++#define SW_AHCI_IDR_OFFSET			0x00FC
++#define SW_AHCI_RWCR_OFFSET			0x00FC
++
++#define SW_AHCI_P0DMACR_OFFSET		0x0170
++#define SW_AHCI_P0PHYCR_OFFSET		0x0178
++#define SW_AHCI_P0PHYSR_OFFSET		0x017C
++
++#define SW_AHCI_ACCESS_LOCK(base,x)		(*((volatile unsigned int *)((base)+SW_AHCI_RWCR_OFFSET)) = (x))
++
++#define INTC_IRQNO_AHCI				56
++
++#define CCMU_PLL6_VBASE				0xF1C20028
++
++#endif /* _SW_AHCI_PLATFORM_H */
+-- 
+1.8.0
+

@@ -1,0 +1,68 @@
+From 4a2212f2e6a4938180bfced93efb3adea4c6418d Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Fri, 9 Mar 2012 20:07:04 -0800
+Subject: [PATCH 162/944] android: persistent_ram: fix section mismatch in
+ clients
+
+persistent_ram clients will call the init functions from their
+probe functions, which need to be __devinit, not __init.  Change
+the persistent_ram init functions to be __devinit.
+
+Change-Id: If92338f7c8d57dd34b286ff7705a96c078477ba4
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/staging/android/persistent_ram.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/staging/android/persistent_ram.c b/drivers/staging/android/persistent_ram.c
+index e08f257..9103062 100644
+--- a/drivers/staging/android/persistent_ram.c
++++ b/drivers/staging/android/persistent_ram.c
+@@ -34,7 +34,7 @@ struct persistent_ram_buffer {
+ 
+ #define PERSISTENT_RAM_SIG (0x43474244) /* DBGC */
+ 
+-static __initdata LIST_HEAD(persistent_ram_list);
++static __devinitdata LIST_HEAD(persistent_ram_list);
+ 
+ static inline size_t buffer_size(struct persistent_ram_zone *prz)
+ {
+@@ -266,7 +266,7 @@ static void notrace persistent_ram_update(struct persistent_ram_zone *prz,
+ 	persistent_ram_update_ecc(prz, start, count);
+ }
+ 
+-static void __init
++static void __devinit
+ persistent_ram_save_old(struct persistent_ram_zone *prz)
+ {
+ 	struct persistent_ram_buffer *buffer = prz->buffer;
+@@ -373,7 +373,7 @@ static int persistent_ram_buffer_map(phys_addr_t start, phys_addr_t size,
+ 	return 0;
+ }
+ 
+-static int __init persistent_ram_buffer_init(const char *name,
++static int __devinit persistent_ram_buffer_init(const char *name,
+ 		struct persistent_ram_zone *prz)
+ {
+ 	int i;
+@@ -395,7 +395,7 @@ static int __init persistent_ram_buffer_init(const char *name,
+ 	return -EINVAL;
+ }
+ 
+-static  __init
++static  __devinit
+ struct persistent_ram_zone *__persistent_ram_init(struct device *dev, bool ecc)
+ {
+ 	struct persistent_ram_zone *prz;
+@@ -444,7 +444,7 @@ struct persistent_ram_zone *__persistent_ram_init(struct device *dev, bool ecc)
+ 	return prz;
+ }
+ 
+-struct persistent_ram_zone * __init
++struct persistent_ram_zone * __devinit
+ persistent_ram_init_ringbuffer(struct device *dev, bool ecc)
+ {
+ 	return __persistent_ram_init(dev, ecc);
+-- 
+1.8.0
+

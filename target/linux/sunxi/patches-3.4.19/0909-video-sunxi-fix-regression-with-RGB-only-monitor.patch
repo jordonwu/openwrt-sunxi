@@ -1,0 +1,58 @@
+From 7b1a8f1dfaf93cb119e35fef40c3adda7187d417 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Thu, 1 Nov 2012 21:52:27 +0200
+Subject: [PATCH 909/944] video: sunxi: fix regression with RGB only monitor
+
+fixes #92, purple colors when using DVI monitor.
+
+Regression is noticed when monitor doesn't support YCbCr colorspace.
+This patch is workaround.
+To fix this properly, Colorspace must be set according EDID information
+
+Reviewed-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/disp_de.c   | 2 ++
+ drivers/video/sunxi/hdmi/hdmi_core.c | 7 +++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/drivers/video/sunxi/disp/disp_de.c b/drivers/video/sunxi/disp/disp_de.c
+index 26c138d..acd7d3d 100644
+--- a/drivers/video/sunxi/disp/disp_de.c
++++ b/drivers/video/sunxi/disp/disp_de.c
+@@ -223,7 +223,9 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type)
+ 		__s32 value = 0;
+ 
+ 		out_color_range = DISP_COLOR_RANGE_16_255;
++#ifdef YUV_COLORSPACE /* Fix me */
+ 		out_csc = DE_YUV_HDMI;
++#endif
+ 
+ 		ret =
+ 		    script_parser_fetch("disp_init", "screen0_out_color_range",
+diff --git a/drivers/video/sunxi/hdmi/hdmi_core.c b/drivers/video/sunxi/hdmi/hdmi_core.c
+index a77c7f9..938c0bf 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_core.c
++++ b/drivers/video/sunxi/hdmi/hdmi_core.c
+@@ -322,12 +322,19 @@ __s32 video_config(__s32 vic)
+ 	HDMI_WUINT8(0x081, 0x02);
+ 	HDMI_WUINT8(0x082, 0x0d);
+ 	HDMI_WUINT8(0x083, 0x00);
++#ifdef YUV_COLORSPACE /* Fix me */
+ 	/* 4:4:4 YCbCr */
+ 	HDMI_WUINT8(0x084, 0x50); /* Data Byte 1 */
+ 	if (video_timing[vic_tab].PCLK < 74250000) /* 4:3 601 */
+ 		HDMI_WUINT8(0x085, 0x58); /* Data Byte 2 */
+ 	else /* 16:9 709 */
+ 		HDMI_WUINT8(0x085, 0xa8); /* Data Byte 2 */
++#else
++	/* RGB */
++	HDMI_WUINT8(0x084, 0x1E); /* Data Byte 1 */
++	/* 4:3 601 */
++	HDMI_WUINT8(0x085, 0x58); /* Data Byte 2 */
++#endif
+ 
+ 	HDMI_WUINT8(0x086, 0x00);
+ 	HDMI_WUINT8(0x087, video_timing[vic_tab].VIC);
+-- 
+1.8.0
+

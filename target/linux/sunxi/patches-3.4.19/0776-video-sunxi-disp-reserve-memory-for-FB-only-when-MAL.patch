@@ -1,0 +1,136 @@
+From d3492d943b5abb46038a57c3c009a8fa044b9e21 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 3 Oct 2012 16:00:01 +0200
+Subject: [PATCH 776/944] video: sunxi-disp: reserve memory for FB only when
+ MALI is enabled
+
+The driver is expected to allocate it's own memory if this option is disabled
+---
+ arch/arm/mach-sun4i/core.c          | 2 +-
+ arch/arm/mach-sun5i/core.c          | 2 +-
+ drivers/video/Kconfig               | 6 ++++++
+ drivers/video/sunxi/disp/dev_disp.c | 4 ++--
+ drivers/video/sunxi/disp/dev_disp.h | 4 ----
+ drivers/video/sunxi/disp/dev_fb.c   | 6 +++---
+ 6 files changed, 13 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/core.c b/arch/arm/mach-sun4i/core.c
+index a8f568f..59874fb 100644
+--- a/arch/arm/mach-sun4i/core.c
++++ b/arch/arm/mach-sun4i/core.c
+@@ -182,7 +182,7 @@ static void __init sw_core_fixup(struct tag *t, char **cmdline,
+  * drivers which use them.
+  */
+ 
+-#if defined CONFIG_FB || defined CONFIG_FB_MODULE
++#ifdef CONFIG_FB_SUNXI_RESERVED_MEM
+ /* The FB block is used by:
+  *
+  * - the sun4i framebuffer driver, drivers/video/sun4i/disp.
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 5e34d9e..dff9baf 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -181,7 +181,7 @@ static void __init sw_core_fixup(struct tag *t, char **cmdline,
+ 		(u32)((SIZE) < SZ_1M ? (SIZE) / SZ_1K : (SIZE) / SZ_1M), \
+ 		(SIZE) < SZ_1M ? "kB" : "MB")
+ 
+-#if defined CONFIG_FB || defined CONFIG_FB_MODULE
++#ifdef CONFIG_FB_SUNXI_RESERVED_MEM
+ unsigned long fb_start = (PLAT_PHYS_OFFSET + SZ_512M - SZ_64M - SZ_32M);
+ unsigned long fb_size = SZ_32M;
+ EXPORT_SYMBOL(fb_start);
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index 2bab4c1..e8bb175 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -287,12 +287,18 @@ config SUN3I_HDMI
+ config FB_SUNXI
+         tristate "DISP Driver Support(sunxi)"
+         depends on FB && (ARCH_SUN5I || ARCH_SUN4I)
++	select FB_SUNXI_RESERVED_MEM if MALI
+ 	select FB_CFB_FILLRECT
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT
+         ---help---
+         default m
+ 
++config FB_SUNXI_RESERVED_MEM
++	bool "Reserve memory block for sunxi/fb"
++	depends on FB_SUNXI
++	default y
++
+ config FB_SUNXI_UMP
+ 	bool "Enable FB/UMP Integration"
+ 	depends on MALI && FB_SUNXI
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index fba57a2..b59d29c 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -287,7 +287,7 @@ __s32 DRV_DISP_Exit(void)
+ 
+ int disp_mem_request(int sel,__u32 size)
+ {
+-#ifndef FB_RESERVED_MEM
++#ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = 0;
+ 	struct page *page;
+ 
+@@ -342,7 +342,7 @@ int disp_mem_request(int sel,__u32 size)
+ 
+ int disp_mem_release(int sel)
+ {
+-#ifndef FB_RESERVED_MEM
++#ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = PAGE_ALIGN(g_disp_mm[sel].mem_len);
+ 	unsigned page_size = map_size;
+ 
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index 89233eb..b089109 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -30,10 +30,6 @@
+ #include <ump/ump_kernel_interface.h>
+ #endif
+ 
+-// 1M + 64M(ve) + 16M(fb)
+-#define FB_RESERVED_MEM
+-
+-
+ struct info_mm {
+ 	void *info_base;	/* Virtual address */
+ 	unsigned long mem_start;	/* Start of frame buffer mem */
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index f73bd3f..6112562 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -297,7 +297,7 @@ __s32 fb_draw_gray_pictures(__u32 base, __u32 width, __u32 height, struct fb_var
+ 
+ static int __init Fb_map_video_memory(struct fb_info *info)
+ {
+-#ifndef FB_RESERVED_MEM
++#ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = PAGE_ALIGN(info->fix.smem_len);
+ 	struct page *page;
+ 
+@@ -329,7 +329,7 @@ static int __init Fb_map_video_memory(struct fb_info *info)
+ 
+ static inline void Fb_unmap_video_memory(struct fb_info *info)
+ {
+-#ifndef FB_RESERVED_MEM
++#ifndef CONFIG_FB_SUNXI_RESERVED_MEM
+ 	unsigned map_size = PAGE_ALIGN(info->fix.smem_len);
+ 
+ 	free_pages((unsigned long)info->screen_base,get_order(map_size));
+@@ -1373,7 +1373,7 @@ __s32 Fb_Init(__u32 from)
+ 
+     if(from == 0)//call from lcd driver
+     {
+-#ifdef FB_RESERVED_MEM
++#ifdef CONFIG_FB_SUNXI_RESERVED_MEM
+         __inf("fbmem: fb_start=%lu, fb_size=%lu\n", fb_start, fb_size);
+         disp_create_heap((unsigned long)(__va(fb_start)),  fb_size);
+ #endif
+-- 
+1.8.0
+

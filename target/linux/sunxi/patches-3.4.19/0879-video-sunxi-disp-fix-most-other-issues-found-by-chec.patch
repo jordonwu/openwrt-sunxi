@@ -1,0 +1,5691 @@
+From 22c039d8507728baa2164e07ec3c83734407cade Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sun, 28 Oct 2012 02:25:02 +0200
+Subject: [PATCH 879/944] video:sunxi:disp: fix most other issues found by
+ checkpatch
+
+Leftovers are:
+* typedefs
+* horrible horrible macros, especially the register ones which
+will get fixed through __iomem
+* tables wider than 80 chars
+* some huge codeblocks with insane indentation
+* some, clearly temporary, // comments
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/OSAL_Clock.c     |   9 +-
+ drivers/video/sunxi/disp/OSAL_Clock.h     |   4 +-
+ drivers/video/sunxi/disp/OSAL_Pin.c       |   8 +-
+ drivers/video/sunxi/disp/OSAL_Pin.h       |  12 +-
+ drivers/video/sunxi/disp/bsp_display.h    |  78 ++++-----
+ drivers/video/sunxi/disp/de_be.c          |  56 +++---
+ drivers/video/sunxi/disp/de_fe.c          | 191 ++++++++++-----------
+ drivers/video/sunxi/disp/de_fe.h          |   9 +-
+ drivers/video/sunxi/disp/de_hwc.c         |   6 +-
+ drivers/video/sunxi/disp/de_iep.c         |  15 +-
+ drivers/video/sunxi/disp/de_iep.h         |   4 +-
+ drivers/video/sunxi/disp/de_layer.c       |  18 +-
+ drivers/video/sunxi/disp/de_lcdc.c        | 105 ++++++------
+ drivers/video/sunxi/disp/de_tvec.c        |  50 +++---
+ drivers/video/sunxi/disp/dev_disp.c       | 157 ++++++++---------
+ drivers/video/sunxi/disp/dev_disp.h       |  16 +-
+ drivers/video/sunxi/disp/dev_fb.c         |  91 +++++-----
+ drivers/video/sunxi/disp/disp_clk.c       | 227 +++++++++++-------------
+ drivers/video/sunxi/disp/disp_combined.c  |  55 +++---
+ drivers/video/sunxi/disp/disp_de.c        |   5 +-
+ drivers/video/sunxi/disp/disp_display.c   |  20 +--
+ drivers/video/sunxi/disp/disp_display.h   |  12 +-
+ drivers/video/sunxi/disp/disp_event.c     |   6 +-
+ drivers/video/sunxi/disp/disp_hdmi.c      |   6 +-
+ drivers/video/sunxi/disp/disp_hwc.c       |  10 +-
+ drivers/video/sunxi/disp/disp_iep.c       | 131 +++++++-------
+ drivers/video/sunxi/disp/disp_layer.c     |  77 ++++-----
+ drivers/video/sunxi/disp/disp_layer.h     |  16 +-
+ drivers/video/sunxi/disp/disp_lcd.c       | 276 ++++++++++++++----------------
+ drivers/video/sunxi/disp/disp_lcd.h       |  12 +-
+ drivers/video/sunxi/disp/disp_scaler.c    | 154 ++++++++---------
+ drivers/video/sunxi/disp/disp_scaler.h    |  12 +-
+ drivers/video/sunxi/disp/disp_sprite.c    | 168 ++++++++----------
+ drivers/video/sunxi/disp/disp_tv.c        |   6 +-
+ drivers/video/sunxi/disp/disp_ump.c       |   6 +-
+ drivers/video/sunxi/disp/disp_video.c     |  43 ++---
+ drivers/video/sunxi/disp/ebios_de.h       |  54 +++---
+ drivers/video/sunxi/disp/ebios_lcdc_tve.h |  10 +-
+ 38 files changed, 971 insertions(+), 1164 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL_Clock.c
+index 36a341e..49dc9dc 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL_Clock.c
+@@ -322,9 +322,8 @@ __s32 OSAL_CCMU_SetMclkDiv(__hdle hMclk, __s32 nDiv)
+ 	__inf("OSAL_CCMU_SetMclkDiv<p:%s,m:%s,%d>\n", hParentClk->clk->name,
+ 	      hModClk->clk->name, nDiv);
+ 
+-	if (nDiv == 0) {
++	if (nDiv == 0)
+ 		return -1;
+-	}
+ 
+ 	return clk_set_rate(hModClk, srcRate / nDiv);
+ }
+@@ -337,13 +336,11 @@ __s32 OSAL_CCMU_MclkOnOff(__hdle hMclk, __s32 bOnOff)
+ 	__inf("OSAL_CCMU_MclkOnOff<%s,%d>\n", hModClk->clk->name, bOnOff);
+ 
+ 	if (bOnOff) {
+-		if (!hModClk->enable) {
++		if (!hModClk->enable)
+ 			ret = clk_enable(hModClk);
+-		}
+ 	} else {
+-		while (hModClk->enable) {
++		while (hModClk->enable)
+ 			clk_disable(hModClk);
+-		}
+ 	}
+ 	return ret;
+ }
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.h b/drivers/video/sunxi/disp/OSAL_Clock.h
+index 6663c13..447e447 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.h
++++ b/drivers/video/sunxi/disp/OSAL_Clock.h
+@@ -18,8 +18,8 @@
+  * MA 02111-1307 USA
+  */
+ 
+-#ifndef  __OSAL_CLOCK_H__
+-#define  __OSAL_CLOCK_H__
++#ifndef __OSAL_CLOCK_H__
++#define __OSAL_CLOCK_H__
+ 
+ __s32 OSAL_CCMU_SetSrcFreq(__u32 nSclkNo, __u32 nFreq);
+ __u32 OSAL_CCMU_GetSrcFreq(__u32 nSclkNo);
+diff --git a/drivers/video/sunxi/disp/OSAL_Pin.c b/drivers/video/sunxi/disp/OSAL_Pin.c
+index e2a3f4bf..28e4b46 100644
+--- a/drivers/video/sunxi/disp/OSAL_Pin.c
++++ b/drivers/video/sunxi/disp/OSAL_Pin.c
+@@ -25,7 +25,7 @@
+ #include "../../../../power/axp_power/axp-gpio.h"
+ #endif
+ 
+-__hdle OSAL_GPIO_Request(user_gpio_set_t * gpio_list, __u32 group_count_max)
++__hdle OSAL_GPIO_Request(user_gpio_set_t *gpio_list, __u32 group_count_max)
+ {
+ 	__inf("OSAL_GPIO_Request, port:%d, port_num:%d, mul_sel:%d, "
+ 	      "pull:%d, drv_level:%d, data:%d\n", gpio_list->port,
+@@ -71,7 +71,7 @@ __s32 OSAL_GPIO_Release(__hdle p_handler, __s32 if_release_to_default_status)
+ }
+ 
+ __s32 OSAL_GPIO_DevGetAllPins_Status(unsigned p_handler,
+-				     user_gpio_set_t * gpio_status,
++				     user_gpio_set_t *gpio_status,
+ 				     unsigned gpio_count_max,
+ 				     unsigned if_get_from_hardware)
+ {
+@@ -80,7 +80,7 @@ __s32 OSAL_GPIO_DevGetAllPins_Status(unsigned p_handler,
+ }
+ 
+ __s32 OSAL_GPIO_DevGetONEPins_Status(unsigned p_handler,
+-				     user_gpio_set_t * gpio_status,
++				     user_gpio_set_t *gpio_status,
+ 				     const char *gpio_name,
+ 				     unsigned if_get_from_hardware)
+ {
+@@ -89,7 +89,7 @@ __s32 OSAL_GPIO_DevGetONEPins_Status(unsigned p_handler,
+ }
+ 
+ __s32 OSAL_GPIO_DevSetONEPin_Status(u32 p_handler,
+-				    user_gpio_set_t * gpio_status,
++				    user_gpio_set_t *gpio_status,
+ 				    const char *gpio_name,
+ 				    __u32 if_set_to_current_input_status)
+ {
+diff --git a/drivers/video/sunxi/disp/OSAL_Pin.h b/drivers/video/sunxi/disp/OSAL_Pin.h
+index 2990138..50bdaef 100644
+--- a/drivers/video/sunxi/disp/OSAL_Pin.h
++++ b/drivers/video/sunxi/disp/OSAL_Pin.h
+@@ -18,27 +18,27 @@
+  * MA 02111-1307 USA
+  */
+ 
+-#ifndef  __OSAL_PIN_H__
+-#define  __OSAL_PIN_H__
++#ifndef __OSAL_PIN_H__
++#define __OSAL_PIN_H__
+ 
+-__hdle OSAL_GPIO_Request(user_gpio_set_t * gpio_list, __u32 group_count_max);
++__hdle OSAL_GPIO_Request(user_gpio_set_t *gpio_list, __u32 group_count_max);
+ 
+ __hdle OSAL_GPIO_Request_Ex(char *main_name, const char *sub_name);
+ 
+ __s32 OSAL_GPIO_Release(__hdle p_handler, __s32 if_release_to_default_status);
+ 
+ __s32 OSAL_GPIO_DevGetAllPins_Status(unsigned p_handler,
+-				     user_gpio_set_t * gpio_status,
++				     user_gpio_set_t *gpio_status,
+ 				     unsigned gpio_count_max,
+ 				     unsigned if_get_from_hardware);
+ 
+ __s32 OSAL_GPIO_DevGetONEPins_Status(unsigned p_handler,
+-				     user_gpio_set_t * gpio_status,
++				     user_gpio_set_t *gpio_status,
+ 				     const char *gpio_name,
+ 				     unsigned if_get_from_hardware);
+ 
+ __s32 OSAL_GPIO_DevSetONEPin_Status(u32 p_handler,
+-				    user_gpio_set_t * gpio_status,
++				    user_gpio_set_t *gpio_status,
+ 				    const char *gpio_name,
+ 				    __u32 if_set_to_current_input_status);
+ 
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index cc18394..35a9af0 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -24,9 +24,9 @@
+ 
+ #include "linux/kernel.h"
+ #include "linux/mm.h"
+-#include <asm/uaccess.h>
++#include <linux/uaccess.h>
+ #include <asm/memory.h>
+-#include <asm/unistd.h>
++#include <linux/unistd.h>
+ #include "linux/semaphore.h"
+ #include <linux/vmalloc.h>
+ #include <linux/fs.h>
+@@ -89,20 +89,20 @@ typedef struct {
+ 
+ extern __s32 BSP_disp_clk_on(__u32 type);
+ extern __s32 BSP_disp_clk_off(__u32 type);
+-extern __s32 BSP_disp_init(__disp_bsp_init_para * para);
++extern __s32 BSP_disp_init(__disp_bsp_init_para *para);
+ extern __s32 BSP_disp_exit(__u32 mode);
+ extern __s32 BSP_disp_open(void);
+ extern __s32 BSP_disp_close(void);
+ extern __s32 BSP_disp_print_reg(__bool b_force_on, __u32 id);
+ extern __s32 BSP_disp_cmd_cache(__u32 sel);
+ extern __s32 BSP_disp_cmd_submit(__u32 sel);
+-extern __s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t * color);
+-extern __s32 BSP_disp_get_bk_color(__u32 sel, __disp_color_t * color);
+-extern __s32 BSP_disp_set_color_key(__u32 sel, __disp_colorkey_t * ck_mode);
+-extern __s32 BSP_disp_get_color_key(__u32 sel, __disp_colorkey_t * ck_mode);
+-extern __s32 BSP_disp_set_palette_table(__u32 sel, __u32 * pbuffer,
++extern __s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t *color);
++extern __s32 BSP_disp_get_bk_color(__u32 sel, __disp_color_t *color);
++extern __s32 BSP_disp_set_color_key(__u32 sel, __disp_colorkey_t *ck_mode);
++extern __s32 BSP_disp_get_color_key(__u32 sel, __disp_colorkey_t *ck_mode);
++extern __s32 BSP_disp_set_palette_table(__u32 sel, __u32 *pbuffer,
+ 					__u32 offset, __u32 size);
+-extern __s32 BSP_disp_get_palette_table(__u32 sel, __u32 * pbuffer,
++extern __s32 BSP_disp_get_palette_table(__u32 sel, __u32 *pbuffer,
+ 					__u32 offset, __u32 size);
+ extern __s32 BSP_disp_get_screen_height(__u32 sel);
+ extern __s32 BSP_disp_get_screen_width(__u32 sel);
+@@ -123,8 +123,8 @@ extern __s32 BSP_disp_enhance_enable(__u32 sel, __bool enable);
+ extern __s32 BSP_disp_get_enhance_enable(__u32 sel);
+ #endif
+ extern __s32 BSP_disp_capture_screen(__u32 sel,
+-				     __disp_capture_screen_para_t * para);
+-extern __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size);
++				     __disp_capture_screen_para_t *para);
++extern __s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t *size);
+ #ifdef CONFIG_ARCH_SUN4I
+ extern __s32 BSP_disp_set_output_csc(__u32 sel, __disp_output_type_t type);
+ extern __s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en);
+@@ -136,21 +136,21 @@ extern __s32 BSP_disp_layer_release(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_layer_open(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_layer_close(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid,
+-					    __disp_fb_t * fbinfo);
++					    __disp_fb_t *fbinfo);
+ extern __s32 BSP_disp_layer_get_framebuffer(__u32 sel, __u32 hid,
+-					    __disp_fb_t * fbinfo);
++					    __disp_fb_t *fbinfo);
+ extern __s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid,
+-					   __disp_rect_t * regn);
++					   __disp_rect_t *regn);
+ extern __s32 BSP_disp_layer_get_src_window(__u32 sel, __u32 hid,
+-					   __disp_rect_t * regn);
++					   __disp_rect_t *regn);
+ extern __s32 BSP_disp_layer_set_screen_window(__u32 sel, __u32 hid,
+-					      __disp_rect_t * regn);
++					      __disp_rect_t *regn);
+ extern __s32 BSP_disp_layer_get_screen_window(__u32 sel, __u32 hid,
+-					      __disp_rect_t * regn);
++					      __disp_rect_t *regn);
+ extern __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+-				     __disp_layer_info_t * layer_para);
++				     __disp_layer_info_t *layer_para);
+ extern __s32 BSP_disp_layer_get_para(__u32 sel, __u32 hid,
+-				     __disp_layer_info_t * layer_para);
++				     __disp_layer_info_t *layer_para);
+ extern __s32 BSP_disp_layer_set_top(__u32 sel, __u32 handle);
+ extern __s32 BSP_disp_layer_set_bottom(__u32 sel, __u32 handle);
+ extern __s32 BSP_disp_layer_set_alpha_value(__u32 sel, __u32 hid, __u8 value);
+@@ -197,21 +197,21 @@ extern __s32 BSP_disp_scaler_get_smooth(__u32 sel);
+ extern __s32 BSP_disp_scaler_set_smooth(__u32 sel, __disp_video_smooth_t mode);
+ extern __s32 BSP_disp_scaler_request(void);
+ extern __s32 BSP_disp_scaler_release(__u32 handle);
+-extern __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t * scl);
++extern __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t *scl);
+ 
+ extern __s32 BSP_disp_hwc_enable(__u32 sel, __bool enable);
+-extern __s32 BSP_disp_hwc_set_pos(__u32 sel, __disp_pos_t * pos);
+-extern __s32 BSP_disp_hwc_get_pos(__u32 sel, __disp_pos_t * pos);
++extern __s32 BSP_disp_hwc_set_pos(__u32 sel, __disp_pos_t *pos);
++extern __s32 BSP_disp_hwc_get_pos(__u32 sel, __disp_pos_t *pos);
+ extern __s32 BSP_disp_hwc_set_framebuffer(__u32 sel,
+-					  __disp_hwc_pattern_t * patmem);
++					  __disp_hwc_pattern_t *patmem);
+ extern __s32 BSP_disp_hwc_set_palette(__u32 sel, void *palette, __u32 offset,
+ 				      __u32 palette_size);
+ 
+ extern __s32 BSP_disp_video_set_fb(__u32 sel, __u32 hid,
+-				   __disp_video_fb_t * in_addr);
++				   __disp_video_fb_t *in_addr);
+ extern __s32 BSP_disp_video_get_frame_id(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_video_get_dit_info(__u32 sel, __u32 hid,
+-					 __disp_dit_info_t * dit_info);
++					 __disp_dit_info_t *dit_info);
+ extern __s32 BSP_disp_video_start(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_video_stop(__u32 sel, __u32 hid);
+ 
+@@ -222,7 +222,7 @@ extern __s32 BSP_disp_lcd_close_befor(__u32 sel);
+ extern __s32 BSP_disp_lcd_close_after(__u32 sel);
+ extern __lcd_flow_t *BSP_disp_lcd_get_close_flow(__u32 sel);
+ extern __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode);
+-extern __s32 BSP_disp_set_gamma_table(__u32 sel, __u32 * gamtbl_addr,
++extern __s32 BSP_disp_set_gamma_table(__u32 sel, __u32 *gamtbl_addr,
+ 				      __u32 gamtbl_size);
+ #ifdef CONFIG_ARCH_SUN4I
+ extern __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright);
+@@ -235,7 +235,7 @@ extern __s32 LCD_PWM_EN(__u32 sel, __bool b_en);
+ extern __s32 LCD_BL_EN(__u32 sel, __bool b_en);
+ extern __s32 BSP_disp_lcd_user_defined_func(__u32 sel, __u32 para1, __u32 para2,
+ 					    __u32 para3);
+-extern __s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt);
++extern __s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t *tt);
+ extern __u32 BSP_disp_get_cur_line(__u32 sel);
+ #ifdef CONFIG_ARCH_SUN5I
+ extern __s32 BSP_disp_close_lcd_backlight(__u32 sel);
+@@ -261,7 +261,7 @@ extern __s32 BSP_disp_hdmi_get_mode(__u32 sel);
+ extern __s32 BSP_disp_hdmi_check_support_mode(__u32 sel, __u8 mode);
+ extern __s32 BSP_disp_hdmi_get_hpd_status(__u32 sel);
+ extern __s32 BSP_disp_hdmi_set_src(__u32 sel, __disp_lcdc_src_t src);
+-extern __s32 BSP_disp_set_hdmi_func(__disp_hdmi_func * func);
++extern __s32 BSP_disp_set_hdmi_func(__disp_hdmi_func *func);
+ 
+ extern __s32 BSP_disp_vga_open(__u32 sel);
+ extern __s32 BSP_disp_vga_close(__u32 sel);
+@@ -280,27 +280,27 @@ extern __s32 BSP_disp_sprite_set_alpha_vale(__u32 sel, __u32 alpha);
+ extern __s32 BSP_disp_sprite_get_alpha_value(__u32 sel);
+ extern __s32 BSP_disp_sprite_set_format(__u32 sel, __disp_pixel_fmt_t format,
+ 					__disp_pixel_seq_t pixel_seq);
+-extern __s32 BSP_disp_sprite_set_palette_table(__u32 sel, __u32 * buffer,
++extern __s32 BSP_disp_sprite_set_palette_table(__u32 sel, __u32 *buffer,
+ 					       __u32 offset, __u32 size);
+ extern __s32 BSP_disp_sprite_set_order(__u32 sel, __s32 hid, __s32 dst_hid);
+ extern __s32 BSP_disp_sprite_get_top_block(__u32 sel);
+ extern __s32 BSP_disp_sprite_get_bottom_block(__u32 sel);
+ extern __s32 BSP_disp_sprite_get_block_number(__u32 sel);
+ extern __s32 BSP_disp_sprite_block_request(__u32 sel,
+-					   __disp_sprite_block_para_t * para);
++					   __disp_sprite_block_para_t *para);
+ extern __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid);
+ extern __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid,
+-						  __disp_rect_t * scn_win);
++						  __disp_rect_t *scn_win);
+ extern __s32 BSP_disp_sprite_block_get_srceen_win(__u32 sel, __s32 hid,
+-						  __disp_rect_t * scn_win);
++						  __disp_rect_t *scn_win);
+ extern __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid,
+-					       __disp_rect_t * scn_win);
++					       __disp_rect_t *scn_win);
+ extern __s32 BSP_disp_sprite_block_get_src_win(__u32 sel, __s32 hid,
+-					       __disp_rect_t * scn_win);
++					       __disp_rect_t *scn_win);
+ extern __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid,
+-						   __disp_fb_t * fb);
++						   __disp_fb_t *fb);
+ extern __s32 BSP_disp_sprite_block_get_framebufer(__u32 sel, __s32 hid,
+-						  __disp_fb_t * fb);
++						  __disp_fb_t *fb);
+ extern __s32 BSP_disp_sprite_block_set_top(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_set_bottom(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_get_pre_block(__u32 sel, __u32 hid);
+@@ -309,9 +309,9 @@ extern __s32 BSP_disp_sprite_block_get_prio(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_open(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_close(__u32 sel, __u32 hid);
+ extern __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,
+-					    __disp_sprite_block_para_t * para);
++					    __disp_sprite_block_para_t *para);
+ extern __s32 BSP_disp_sprite_block_get_para(__u32 sel, __u32 hid,
+-					    __disp_sprite_block_para_t * para);
++					    __disp_sprite_block_para_t *para);
+ 
+ #ifdef CONFIG_ARCH_SUN5I
+ extern __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en);
+@@ -319,7 +319,7 @@ extern __s32 BSP_disp_iep_get_deflicker_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en);
+ extern __s32 BSP_disp_iep_get_drc_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode,
+-				       __disp_rect_t * regn);
++				       __disp_rect_t *regn);
+ #endif
+ 
+ __s32 Display_set_fb_timing(__u32 sel);
+diff --git a/drivers/video/sunxi/disp/de_be.c b/drivers/video/sunxi/disp/de_be.c
+index eaee97a..2f47066 100644
+--- a/drivers/video/sunxi/disp/de_be.c
++++ b/drivers/video/sunxi/disp/de_be.c
+@@ -627,50 +627,44 @@ __u32 DE_BE_Reg_Init(__u32 sel)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_Set_SystemPalette(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 DE_BE_Set_SystemPalette(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 			      __u32 size)
+ {
+ 	__u32 *pdest_end;
+ 	__u32 *psrc_cur;
+ 	__u32 *pdest_cur;
+ 
+-	if (size > DE_BE_PALETTE_TABLE_SIZE) {
++	if (size > DE_BE_PALETTE_TABLE_SIZE)
+ 		size = DE_BE_PALETTE_TABLE_SIZE;
+-	}
+ 
+ 	psrc_cur = pbuffer;
+-	pdest_cur =
+-	    (__u32 *) (DE_Get_Reg_Base(sel) + DE_BE_PALETTE_TABLE_ADDR_OFF +
+-		       offset);
++	pdest_cur = (__u32 *) (DE_Get_Reg_Base(sel) +
++			       DE_BE_PALETTE_TABLE_ADDR_OFF + offset);
+ 	pdest_end = pdest_cur + (size >> 2);
+ 
+-	while (pdest_cur < pdest_end) {
++	while (pdest_cur < pdest_end)
+ 		*(volatile __u32 *)pdest_cur++ = *psrc_cur++;
+-	}
+ 
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_Get_SystemPalette(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 DE_BE_Get_SystemPalette(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 			      __u32 size)
+ {
+ 	__u32 *pdest_end;
+ 	__u32 *psrc_cur;
+ 	__u32 *pdest_cur;
+ 
+-	if (size > DE_BE_PALETTE_TABLE_SIZE) {
++	if (size > DE_BE_PALETTE_TABLE_SIZE)
+ 		size = DE_BE_PALETTE_TABLE_SIZE;
+-	}
+ 
+-	psrc_cur =
+-	    (__u32 *) (DE_Get_Reg_Base(sel) + DE_BE_PALETTE_TABLE_ADDR_OFF +
+-		       offset);
++	psrc_cur = (__u32 *) (DE_Get_Reg_Base(sel) +
++			      DE_BE_PALETTE_TABLE_ADDR_OFF + offset);
+ 	pdest_cur = pbuffer;
+ 	pdest_end = pdest_cur + (size >> 2);
+ 
+-	while (pdest_cur < pdest_end) {
++	while (pdest_cur < pdest_end)
+ 		*(volatile __u32 *)pdest_cur++ = *psrc_cur++;
+-	}
+ 
+ 	return 0;
+ }
+@@ -715,11 +709,10 @@ __s32 DE_BE_Output_Select(__u32 sel, __u32 out_sel)
+ 		      (DE_BE_RUINT32(sel, DE_BE_MODE_CTL_OFF) & 0xff8fffff) |
+ 		      (out_sel << 20));
+ 
+-	if ((out_sel == 6) || (out_sel == 7)) {
++	if ((out_sel == 6) || (out_sel == 7))
+ 		DE_BE_WUINT32(sel, DE_BE_ERROR_CORRECTION, 0xffffffff);
+-	} else {
++	else
+ 		DE_BE_WUINT32(sel, DE_BE_ERROR_CORRECTION, 0);
+-	}
+ 
+ 	return 0;
+ }
+@@ -727,7 +720,8 @@ __s32 DE_BE_Output_Select(__u32 sel, __u32 out_sel)
+ __s32 DE_BE_Set_BkColor(__u32 sel, __disp_color_t bkcolor)
+ {
+ 	DE_BE_WUINT32(sel, DE_BE_COLOR_CTL_OFF, (bkcolor.alpha << 24) |
+-		      (bkcolor.red << 16) | (bkcolor.green << 8) | bkcolor.blue);
++		      (bkcolor.red << 16) | (bkcolor.green << 8) |
++		      bkcolor.blue);
+ 
+ 	return 0;
+ }
+@@ -861,18 +855,16 @@ __s32 DE_BE_Sprite_Set_Palette_Table(__u32 sel, __u32 address, __u32 offset,
+ 	__u32 *psrc_cur;
+ 	__u32 *pdest_cur;
+ 
+-	if (size > DE_BE_SPRITE_PALETTE_TABLE_SIZE) {
++	if (size > DE_BE_SPRITE_PALETTE_TABLE_SIZE)
+ 		size = DE_BE_SPRITE_PALETTE_TABLE_SIZE;
+-	}
+ 
+ 	psrc_cur = (__u32 *) address;
+ 	pdest_cur = (__u32 *) (DE_Get_Reg_Base(sel) +
+ 			       DE_BE_SPRITE_PALETTE_TABLE_ADDR_OFF + offset);
+ 	pdest_end = pdest_cur + (size >> 2);
+ 
+-	while (pdest_cur < pdest_end) {
++	while (pdest_cur < pdest_end)
+ 		*(volatile __u32 *)pdest_cur++ = *psrc_cur++;
+-	}
+ 
+ 	return 0;
+ }
+@@ -910,7 +902,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ 	sinv = image_enhance_tab[8 * 12 + (i_hue & 0x3f)];
+ 	cosv = image_enhance_tab[8 * 12 + 8 * 8 + (i_hue & 0x3f)];
+ 
+-	//calculate enhance matrix
++	/* calculate enhance matrix */
+ 	matrixEn.x00 = i_contrast << 5;
+ 	matrixEn.x01 = 0;
+ 	matrixEn.x02 = 0;
+@@ -939,13 +931,13 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ #elif 0
+ 				/* bt601 rgb2yuv coeff */
+ 				*((__s64 *) (&tmpcoeff.x00) + i) =
+-					((__s64) *(image_enhance_tab + i) << 32 )
+-					>> 32;
++					((__s64) *(image_enhance_tab + i) <<
++					 32) >> 32;
+ #else
+ 				/* YCC rgb2yuv coeff */
+ 				*((__s64 *) (&tmpcoeff.x00) + i) =
+ 					((__s64) *(image_enhance_tab + 0x40 + i)
+-					 << 32 ) >> 32;
++					 << 32) >> 32;
+ #endif
+ 			}
+ 
+@@ -958,7 +950,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ #if 1
+ 				/* bt709 yuv2rgb coeff */
+ 				*((__s64 *) (&tmpcoeff.x00) + i) =
+-					((__s64) * (image_enhance_tab + 0x30 + i)
++					((__s64) *(image_enhance_tab + 0x30 + i)
+ 					 << 32) >> 32;
+ #elif 0
+ 				/* bt601 yuv2rgb coeff */
+@@ -1080,7 +1072,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ 		for (i = 0; i < 16; i++) {
+ 			/* bt601 rgb2yuv coeff */
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab + i) << 32) >> 32;
++				((__s64) *(image_enhance_tab + i) << 32) >> 32;
+ 		}
+ 
+ 		if (enhance_en == 1) {
+@@ -1120,7 +1112,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ 		for (i = 0; i < 16; i++) {
+ 			/* bt601 rgb2yuv coeff */
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab + i) << 32) >> 32;
++				((__s64) *(image_enhance_tab + i) << 32) >> 32;
+ 		}
+ 
+ 		if (enhance_en == 1) {
+@@ -1174,7 +1166,7 @@ __s32 DE_BE_Set_Enhance_ex(__u8 sel, __csc_t out_csc, __u32 out_color_range,
+ 	iDE_SCAL_Csc_Lmt(&matrixresult.x23, -16383, 16383, 0, 32767);
+ 
+ 	/* write csc register */
+-	pt = (__s64 *) & (matrixresult.x00);
++	pt = (__s64 *) &(matrixresult.x00);
+ 
+ 	for (i = 0; i < 4; i++) {
+ 		DE_BE_WUINT32(sel, DE_BE_OUT_COLOR_R_COEFF_OFF + 4 * i,
+diff --git a/drivers/video/sunxi/disp/de_fe.c b/drivers/video/sunxi/disp/de_fe.c
+index 60ba759..9cd724d 100644
+--- a/drivers/video/sunxi/disp/de_fe.c
++++ b/drivers/video/sunxi/disp/de_fe.c
+@@ -25,8 +25,8 @@ static volatile __de_scal_dev_t *scal_dev[2];
+ static __u32 de_scal_ch0_offset;
+ static __u32 de_scal_ch1_offset;
+ static __u32 de_scal_ch2_offset;
+-static __u32 de_scal_trd_fp_en = 0;
+-static __u32 de_scal_trd_itl_en = 0;
++static __u32 de_scal_trd_fp_en;
++static __u32 de_scal_trd_itl_en;
+ static __u32 de_scal_ch0r_offset;
+ static __u32 de_scal_ch1r_offset;
+ static __u32 de_scal_ch2r_offset;
+@@ -64,8 +64,8 @@ __u32 DE_SCAL_Get_Reg_Base(__u8 sel)
+  *   field: frame/field data get
+  *   dien:  deinterlace enable
+  */
+-__s32 DE_SCAL_Config_Src(__u8 sel, __scal_buf_addr_t * addr,
+-			 __scal_src_size_t * size, __scal_src_type_t * type,
++__s32 DE_SCAL_Config_Src(__u8 sel, __scal_buf_addr_t *addr,
++			 __scal_src_size_t *size, __scal_src_type_t *type,
+ 			 __u8 field, __u8 dien)
+ {
+ 	__u8 w_shift, h_shift;
+@@ -270,7 +270,7 @@ __s32 DE_SCAL_Config_Src(__u8 sel, __scal_buf_addr_t * addr,
+  *
+  * address is the frame buffer address for 3 channel, 32 bit absolute address.
+  */
+-__s32 DE_SCAL_Set_Fb_Addr(__u8 sel, __scal_buf_addr_t * addr)
++__s32 DE_SCAL_Set_Fb_Addr(__u8 sel, __scal_buf_addr_t *addr)
+ {
+ 	scal_dev[sel]->buf_addr0.dwval = addr->ch0_addr + de_scal_ch0_offset;
+ 	scal_dev[sel]->buf_addr1.dwval = addr->ch1_addr + de_scal_ch1_offset;
+@@ -296,12 +296,12 @@ __s32 DE_SCAL_Set_Fb_Addr(__u8 sel, __scal_buf_addr_t * addr)
+  * Note: when 3D mode (when output mode is HDMI_FPI), the Function Set_3D_Ctrl
+  * must carry out first. When 3D mode(HDMI_FPI), this function used once.
+  */
+-__s32 DE_SCAL_Set_Init_Phase(__u8 sel, __scal_scan_mod_t * in_scan,
+-			     __scal_src_size_t * in_size,
+-			     __scal_src_type_t * in_type,
+-			     __scal_scan_mod_t * out_scan,
+-			     __scal_out_size_t * out_size,
+-			     __scal_out_type_t * out_type, __u8 dien)
++__s32 DE_SCAL_Set_Init_Phase(__u8 sel, __scal_scan_mod_t *in_scan,
++			     __scal_src_size_t *in_size,
++			     __scal_src_type_t *in_type,
++			     __scal_scan_mod_t *out_scan,
++			     __scal_out_size_t *out_size,
++			     __scal_out_type_t *out_type, __u8 dien)
+ {
+ 	__s32 ch0_h_phase = 0, ch0_v_phase0 = 0, ch0_v_phase1 =
+ 	    0, ch12_h_phase = 0, ch12_v_phase0 = 0, ch12_v_phase1 = 0;
+@@ -434,12 +434,12 @@ __s32 DE_SCAL_Set_Init_Phase(__u8 sel, __scal_scan_mod_t * in_scan,
+  *            For example 480i, the value is 480.
+  *  out_type: output data format
+  */
+-__s32 DE_SCAL_Set_Scaling_Factor(__u8 sel, __scal_scan_mod_t * in_scan,
+-				 __scal_src_size_t * in_size,
+-				 __scal_src_type_t * in_type,
+-				 __scal_scan_mod_t * out_scan,
+-				 __scal_out_size_t * out_size,
+-				 __scal_out_type_t * out_type)
++__s32 DE_SCAL_Set_Scaling_Factor(__u8 sel, __scal_scan_mod_t *in_scan,
++				 __scal_src_size_t *in_size,
++				 __scal_src_type_t *in_type,
++				 __scal_scan_mod_t *out_scan,
++				 __scal_out_size_t *out_size,
++				 __scal_out_type_t *out_type)
+ {
+ 	__s32 in_w0, in_h0, out_w0, out_h0;
+ 	__s32 ch0_hstep, ch0_vstep;
+@@ -453,19 +453,16 @@ __s32 DE_SCAL_Set_Scaling_Factor(__u8 sel, __scal_scan_mod_t * in_scan,
+ 
+ 	/* sc0 */
+ 	if ((in_type->mod == DE_SCAL_INTER_LEAVED) &&
+-	    (in_type->fmt == DE_SCAL_INYUV422)) {
++	    (in_type->fmt == DE_SCAL_INYUV422))
+ 		in_w0 &= 0xfffffffe;
+-	}
+ 
+ 	/* algorithm select */
+ 	if (out_w0 > SCALLINEMAX) {
+ 		scal_dev[sel]->agth_sel.bits.linebuf_agth = 0x1;
+-		if (in_w0 > SCALLINEMAX) {
++		if (in_w0 > SCALLINEMAX)
+ 			in_w0 = SCALLINEMAX;
+-		}
+-	} else {
++	} else
+ 		scal_dev[sel]->agth_sel.bits.linebuf_agth = 0x0;
+-	}
+ 
+ 	w_shift = (in_type->fmt == DE_SCAL_INYUV411) ? 2 :
+ 		((in_type->fmt == DE_SCAL_INYUV420) ||
+@@ -474,18 +471,17 @@ __s32 DE_SCAL_Set_Scaling_Factor(__u8 sel, __scal_scan_mod_t * in_scan,
+ 		   (in_type->fmt == DE_SCAL_INCSIRGB)) ? 1 : 0;
+ 
+ 	if ((out_type->fmt == DE_SCAL_OUTPYUV420) ||
+-	    (out_type->fmt == DE_SCAL_OUTPYUV422)) {
++	    (out_type->fmt == DE_SCAL_OUTPYUV422))
+ 		w_shift -= 1;
+-	} else if (out_type->fmt == DE_SCAL_OUTPYUV411) {
++	else if (out_type->fmt == DE_SCAL_OUTPYUV411)
+ 		w_shift -= 2;
+-	} else {
++	else
+ 		w_shift -= 0;
+-	}
+-	if (out_type->fmt == DE_SCAL_OUTPYUV420) {
++
++	if (out_type->fmt == DE_SCAL_OUTPYUV420)
+ 		h_shift -= 1;
+-	} else {
++	else
+ 		h_shift -= 0;
+-	}
+ 
+ 	/* added no-zero limited */
+ 	in_h0 = (in_h0 != 0) ? in_h0 : 1;
+@@ -559,37 +555,36 @@ __s32 DE_SCAL_Set_Scaling_Coef(__u8 sel, __scal_scan_mod_t *in_scan,
+ 		zoom4_size + zoom5_size;
+ 
+ 	if ((in_type->mod == DE_SCAL_INTER_LEAVED) &&
+-	    (in_type->fmt == DE_SCAL_INYUV422)) {
++	    (in_type->fmt == DE_SCAL_INYUV422))
+ 		in_w0 &= 0xfffffffe;
+-	}
++
+ 	/* channel 1,2 size  */
+ 	if ((in_type->fmt == DE_SCAL_INYUV420) ||
+-	    (in_type->fmt == DE_SCAL_INYUV422)) {
++	    (in_type->fmt == DE_SCAL_INYUV422))
+ 		in_w1 = (in_w0 + 0x1) >> 0x1;
+-	} else if (in_type->fmt == DE_SCAL_INYUV411) {
++	else if (in_type->fmt == DE_SCAL_INYUV411)
+ 		in_w1 = (in_w0 + 0x3) >> 0x2;
+-	} else {
++	else
+ 		in_w1 = in_w0;
+-	}
++
+ 	if ((in_type->fmt == DE_SCAL_INYUV420) ||
+-	    (in_type->fmt == DE_SCAL_INCSIRGB)) {
++	    (in_type->fmt == DE_SCAL_INCSIRGB))
+ 		in_h1 = (in_h0 + 0x1) >> 0x1;
+-	} else {
++	else
+ 		in_h1 = in_h0;
+-	}
++
+ 	if ((out_type->fmt == DE_SCAL_OUTPYUV420) ||
+-	    (out_type->fmt == DE_SCAL_OUTPYUV422)) {
++	    (out_type->fmt == DE_SCAL_OUTPYUV422))
+ 		out_w1 = (out_w0 + 0x1) >> 0x1;
+-	} else if (out_type->fmt == DE_SCAL_OUTPYUV411) {
++	else if (out_type->fmt == DE_SCAL_OUTPYUV411)
+ 		out_w1 = (out_w0 + 0x3) >> 0x2;
+-	} else {
++	else
+ 		out_w1 = out_w0;
+-	}
+-	if (out_type->fmt == DE_SCAL_OUTPYUV420) {
++
++	if (out_type->fmt == DE_SCAL_OUTPYUV420)
+ 		out_h1 = (out_h0 + 0x1) >> 0x1;
+-	} else {
++	else
+ 		out_h1 = out_h0;
+-	}
+ 
+ 	/* added no-zero limited */
+ 	in_h0 = (in_h0 != 0) ? in_h0 : 1;
+@@ -629,19 +624,17 @@ __s32 DE_SCAL_Set_Scaling_Coef(__u8 sel, __scal_scan_mod_t *in_scan,
+ 
+ 	/* modify ch1 smooth level according to ratio to ch0 */
+ 	if (((smth_mode >> 31) & 0x01) == 0x0) {
+-		if (!ch1h_sc) {
++		if (!ch1h_sc)
+ 			ch1h_smth_level = 0;
+-		} else {
++		else
+ 			ch1h_smth_level =
+-			    ch0h_smth_level >> (ch0h_sc / ch1h_sc);
+-		}
++				ch0h_smth_level >> (ch0h_sc / ch1h_sc);
+ 
+-		if (!ch1v_sc) {
++		if (!ch1v_sc)
+ 			ch1v_smth_level = 0;
+-		} else {
++		else
+ 			ch1v_smth_level =
+-			    ch0v_smth_level >> (ch0v_sc / ch1v_sc);
+-		}
++				ch0v_smth_level >> (ch0v_sc / ch1v_sc);
+ 	}
+ 	/* comput the fir coefficient offset in coefficient table */
+ 	int_part = ch0v_sc >> 3;
+@@ -737,7 +730,8 @@ __s32 DE_SCAL_Set_Scaling_Coef(__u8 sel, __scal_scan_mod_t *in_scan,
+ 
+ 	/* added for aw1625, wait ceof access */
+ 	scal_dev[sel]->frm_ctrl.bits.coef_access_ctrl = 1;
+-	while (scal_dev[sel]->status.bits.coef_access_status == 0) ;
++	while (scal_dev[sel]->status.bits.coef_access_status == 0)
++		;
+ 
+ 	for (i = 0; i < 32; i++) {
+ 		scal_dev[sel]->ch0_horzcoef0[i].dwval =
+@@ -809,9 +803,9 @@ __s32 DE_SCAL_Set_CSC_Coef(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode,
+ 		}
+ 	}
+ 
+-	if (in_br_swap || out_br_swap) {
++	if (in_br_swap || out_br_swap)
+ 		csc_pass = 0;
+-	}
++
+ 	if (!csc_pass) {
+ 		for (i = 0; i < 4; i++) {
+ 			scal_dev[sel]->csc_coef[i].dwval =
+@@ -834,7 +828,7 @@ __s32 DE_SCAL_Set_CSC_Coef(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode,
+ /*
+  * Set scaler set output format
+  */
+-__s32 DE_SCAL_Set_Out_Format(__u8 sel, __scal_out_type_t * out_type)
++__s32 DE_SCAL_Set_Out_Format(__u8 sel, __scal_out_type_t *out_type)
+ {
+ 	scal_dev[sel]->output_fmt.bits.byte_seq = out_type->byte_seq;
+ 	scal_dev[sel]->output_fmt.bits.data_fmt = out_type->fmt;
+@@ -844,9 +838,9 @@ __s32 DE_SCAL_Set_Out_Format(__u8 sel, __scal_out_type_t * out_type)
+ /*
+  * set scaler set output size
+  */
+-__s32 DE_SCAL_Set_Out_Size(__u8 sel, __scal_scan_mod_t * out_scan,
+-			   __scal_out_type_t * out_type,
+-			   __scal_out_size_t * out_size)
++__s32 DE_SCAL_Set_Out_Size(__u8 sel, __scal_scan_mod_t *out_scan,
++			   __scal_out_type_t *out_type,
++			   __scal_out_size_t *out_size)
+ {
+ 	__u32 out_w1, out_h1, out_w0, out_h0;
+ 
+@@ -860,11 +854,11 @@ __s32 DE_SCAL_Set_Out_Size(__u8 sel, __scal_scan_mod_t * out_scan,
+ 		out_w1 = out_size->width;
+ 	}
+ 
+-	if (out_type->fmt == DE_SCAL_OUTPYUV420) {
++	if (out_type->fmt == DE_SCAL_OUTPYUV420)
+ 		out_h1 = (out_size->height + 0x1) >> 1;
+-	} else {
++	else
+ 		out_h1 = out_size->height;
+-	}
++
+ 	out_h0 = out_size->height;
+ 	out_w0 = out_size->width;
+ 	/* added no-zero limited */
+@@ -902,13 +896,12 @@ __s32 DE_SCAL_Set_Trig_Line(__u8 sel, __u32 line)
+  */
+ __s32 DE_SCAL_Set_Int_En(__u8 sel, __u32 int_num)
+ {
+-	if (int_num == 7) {
++	if (int_num == 7)
+ 		scal_dev[sel]->int_en.bits.wb_en = 0x1;
+-	} else if (int_num == 9) {
++	else if (int_num == 9)
+ 		scal_dev[sel]->int_en.bits.line_en = 0x1;
+-	} else if (int_num == 10) {
++	else if (int_num == 10)
+ 		scal_dev[sel]->int_en.bits.reg_load_en = 0x1;
+-	}
+ 
+ 	return 0;
+ }
+@@ -1086,7 +1079,7 @@ __s32 DE_SCAL_Disable(__u8 sel)
+ /*
+  * scaler write back address set
+  */
+-__s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t * addr)
++__s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr)
+ {
+ 	scal_dev[sel]->wb_addr0.dwval = addr->ch0_addr;
+ #ifdef CONFIG_ARCH_SUN4I
+@@ -1108,13 +1101,12 @@ __s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t * addr)
+  */
+ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel)
+ {
+-	if (channel == 0) {
++	if (channel == 0)
+ 		scal_dev[sel]->output_fmt.bits.wb_chsel = 0;
+-	} else if (channel == 1) {
++	else if (channel == 1)
+ 		scal_dev[sel]->output_fmt.bits.wb_chsel = 2;
+-	} else if (channel == 2) {
++	else if (channel == 2)
+ 		scal_dev[sel]->output_fmt.bits.wb_chsel = 3;
+-	}
+ 
+ 	return 0;
+ }
+@@ -1271,7 +1263,7 @@ __s32 DE_SCAL_Get_Field_Status(__u8 sel)
+  * matrix multiple of 4x4, m1 * m2.
+  */
+ __s32 iDE_SCAL_Matrix_Mul(__scal_matrix4x4 in1, __scal_matrix4x4 in2,
+-			  __scal_matrix4x4 * result)
++			  __scal_matrix4x4 *result)
+ {
+ 	__scal_matrix4x4 tmp;
+ 
+@@ -1313,12 +1305,11 @@ __s32 iDE_SCAL_Matrix_Mul(__scal_matrix4x4 in1, __scal_matrix4x4 in2,
+ 	return 0;
+ }
+ 
+-
+ /*
+  * csc coefficient and constant limited
+  */
+ #ifdef CONFIG_ARCH_SUN4I
+-__s32 iDE_SCAL_Csc_Lmt(__s64 * value, __s32 min, __s32 max, __s32 shift,
++__s32 iDE_SCAL_Csc_Lmt(__s64 *value, __s32 min, __s32 max, __s32 shift,
+ 		       __s32 validbit)
+ {
+ 	__s64 tmp;
+@@ -1333,7 +1324,7 @@ __s32 iDE_SCAL_Csc_Lmt(__s64 * value, __s32 min, __s32 max, __s32 shift,
+ 	return 0;
+ }
+ #else
+-__s32 iDE_SCAL_Csc_Lmt(__s32 * value, __s32 min, __s32 max, __s32 shift,
++__s32 iDE_SCAL_Csc_Lmt(__s32 *value, __s32 min, __s32 max, __s32 shift,
+ 		       __s32 validbit)
+ {
+ 	__s32 tmp;
+@@ -1418,8 +1409,8 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+ 	if ((incs == 0) && (outcs == 0)) { /* rgb to rgb */
+ 		for (i = 0; i < 16; i++) {
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab +
+-					    (in_csc_mode << 5) + i) << 32)
++				((__s64) *(image_enhance_tab +
++					   (in_csc_mode << 5) + i) << 32)
+ 				>> 32; /* RGB2YUV */
+ 
+ 		}
+@@ -1431,8 +1422,8 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+ 
+ 		for (i = 0; i < 16; i++) {
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab +
+-					    (in_csc_mode << 5) + 0x10 + i)
++				((__s64) *(image_enhance_tab +
++					   (in_csc_mode << 5) + 0x10 + i)
+ 				 << 32) >> 32; /* YUV2RGB */
+ 		}
+ 
+@@ -1461,8 +1452,8 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+ 	} else if ((incs == 1) && (outcs == 0))	{ /* yuv to rgb */
+ 		for (i = 0; i < 16; i++) {
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab +
+-					    (in_csc_mode << 5) + 0x10 + i)
++				((__s64) *(image_enhance_tab +
++					   (in_csc_mode << 5) + 0x10 + i)
+ 				 << 32) >> 32; /* YUV2RGB */
+ 		}
+ 
+@@ -1489,8 +1480,8 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+ 	} else if ((incs == 0) && (outcs == 1))	{ /* rgb to yuv */
+ 		for (i = 0; i < 16; i++) {
+ 			*((__s64 *) (&tmpcoeff.x00) + i) =
+-				((__s64) * (image_enhance_tab +
+-					    (in_csc_mode << 5) + i) << 32)
++				((__s64) *(image_enhance_tab +
++					   (in_csc_mode << 5) + i) << 32)
+ 				>> 32; /* RGB2YUV */
+ 		}
+ 
+@@ -1669,8 +1660,8 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+  *  singlesize: 3D left image size
+  */
+ __s32 DE_SCAL_Get_3D_In_Single_Size(__scal_3d_inmode_t inmode,
+-				    __scal_src_size_t * fullsize,
+-				    __scal_src_size_t * singlesize)
++				    __scal_src_size_t *fullsize,
++				    __scal_src_size_t *singlesize)
+ {
+ 	switch (inmode) {
+ 	case DE_SCAL_3DIN_TB:
+@@ -1725,8 +1716,8 @@ __s32 DE_SCAL_Get_3D_In_Single_Size(__scal_3d_inmode_t inmode,
+  *  singlesize: 3D left image size.
+  */
+ __s32 DE_SCAL_Get_3D_Out_Single_Size(__scal_3d_outmode_t outmode,
+-				     __scal_out_size_t * singlesize,
+-				     __scal_out_size_t * fullsize)
++				     __scal_out_size_t *singlesize,
++				     __scal_out_size_t *fullsize)
+ {
+ 	switch (outmode) {
+ 	case DE_SCAL_3DOUT_CI_1:
+@@ -1768,8 +1759,8 @@ __s32 DE_SCAL_Get_3D_Out_Single_Size(__scal_3d_outmode_t outmode,
+  * singlesize: 3D left image size
+  */
+ __s32 DE_SCAL_Get_3D_Out_Full_Size(__scal_3d_outmode_t outmode,
+-				   __scal_out_size_t * singlesize,
+-				   __scal_out_size_t * fullsize)
++				   __scal_out_size_t *singlesize,
++				   __scal_out_size_t *fullsize)
+ {
+ 	switch (outmode) {
+ 	case DE_SCAL_3DOUT_CI_1:
+@@ -1809,8 +1800,8 @@ __s32 DE_SCAL_Get_3D_Out_Full_Size(__scal_3d_outmode_t outmode,
+  * addrtrd: 3D source right image buffer address, only needed when 3dinmode is
+  *          FP
+  */
+-__s32 DE_SCAL_Set_3D_Fb_Addr(__u8 sel, __scal_buf_addr_t * addr,
+-			     __scal_buf_addr_t * addrtrd)
++__s32 DE_SCAL_Set_3D_Fb_Addr(__u8 sel, __scal_buf_addr_t *addr,
++			     __scal_buf_addr_t *addrtrd)
+ {
+ 	scal_dev[sel]->buf_addr0.dwval = addr->ch0_addr + de_scal_ch0_offset;
+ 	scal_dev[sel]->buf_addr1.dwval = addr->ch1_addr + de_scal_ch1_offset;
+@@ -1852,7 +1843,7 @@ __s32 DE_SCAL_Set_3D_Ctrl(__u8 sel, __u8 trden, __scal_3d_inmode_t inmode,
+ 	__u8 ci_mod = 0;
+ 
+ 	switch (inmode) {
+-	case DE_SCAL_3DIN_LI:;
++	case DE_SCAL_3DIN_LI:
+ 		in_li_en = 1;
+ 		break;
+ 	default:
+@@ -1862,7 +1853,7 @@ __s32 DE_SCAL_Set_3D_Ctrl(__u8 sel, __u8 trden, __scal_3d_inmode_t inmode,
+ 
+ 	if (trden) {
+ 		switch (outmode) {
+-		case DE_SCAL_3DOUT_CI_1:;
++		case DE_SCAL_3DOUT_CI_1:
+ 			ci_mod = 0;
+ 			out_ci_en = 1;
+ 			break;
+@@ -1878,11 +1869,11 @@ __s32 DE_SCAL_Set_3D_Ctrl(__u8 sel, __u8 trden, __scal_3d_inmode_t inmode,
+ 			ci_mod = 3;
+ 			out_ci_en = 1;
+ 			break;
+-		case DE_SCAL_3DOUT_HDMI_SSF:;
++		case DE_SCAL_3DOUT_HDMI_SSF:
+ 		case DE_SCAL_3DOUT_HDMI_SSH:
+ 			out_ss_en = 1;
+ 			break;
+-		case DE_SCAL_3DOUT_HDMI_TB:;
++		case DE_SCAL_3DOUT_HDMI_TB:
+ 		case DE_SCAL_3DOUT_HDMI_FPP:
+ 			out_tb_en = 1;
+ 			break;
+@@ -1930,10 +1921,10 @@ __s32 DE_SCAL_Set_3D_Ctrl(__u8 sel, __u8 trden, __scal_3d_inmode_t inmode,
+  *            must be set when 3d inmode is FP_P/FP_M, for other mode, the right
+  *            image buffer address can be get through left image address
+  */
+-__s32 DE_SCAL_Config_3D_Src(__u8 sel, __scal_buf_addr_t * addr,
+-			    __scal_src_size_t * size, __scal_src_type_t * type,
++__s32 DE_SCAL_Config_3D_Src(__u8 sel, __scal_buf_addr_t *addr,
++			    __scal_src_size_t *size, __scal_src_type_t *type,
+ 			    __scal_3d_inmode_t trdinmode,
+-			    __scal_buf_addr_t * addrtrd)
++			    __scal_buf_addr_t *addrtrd)
+ {
+ 	__u8 w_shift, h_shift;
+ 	__u32 image_w0, image_w1, image_h0, image_h1;
+diff --git a/drivers/video/sunxi/disp/de_fe.h b/drivers/video/sunxi/disp/de_fe.h
+index 44dd93c..7290837 100644
+--- a/drivers/video/sunxi/disp/de_fe.h
++++ b/drivers/video/sunxi/disp/de_fe.h
+@@ -1136,7 +1136,6 @@ typedef union {
+ 		 * 11: DI-MAF-BOB
+ 		 */
+ 		u32 mod:2; /* Default: 0 */
+-		// 11: DI-MAF-BOB
+ 		u32 res1:6;
+ 		/*
+ 		 * DIAGINTP_EN: De-interlacing diagonal interpolate enable.
+@@ -2093,8 +2092,8 @@ typedef struct __SCAL_MATRIX4X4 {
+ } __scal_matrix4x4;
+ 
+ extern __s32 iDE_SCAL_Matrix_Mul(__scal_matrix4x4 in1, __scal_matrix4x4 in2,
+-				 __scal_matrix4x4 * result);
+-extern __s32 iDE_SCAL_Csc_Lmt(__s64 * value, __s32 min, __s32 max, __s32 shift,
++				 __scal_matrix4x4 *result);
++extern __s32 iDE_SCAL_Csc_Lmt(__s64 *value, __s32 min, __s32 max, __s32 shift,
+ 			      __s32 validbit);
+ #else
+ typedef struct __SCAL_MATRIX4X4 {
+@@ -2117,8 +2116,8 @@ typedef struct __SCAL_MATRIX4X4 {
+ } __scal_matrix4x4;
+ 
+ extern __s32 iDE_SCAL_Matrix_Mul(__scal_matrix4x4 in1, __scal_matrix4x4 in2,
+-				 __scal_matrix4x4 * result);
+-extern __s32 iDE_SCAL_Csc_Lmt(__s32 * value, __s32 min, __s32 max, __s32 shift,
++				 __scal_matrix4x4 *result);
++extern __s32 iDE_SCAL_Csc_Lmt(__s32 *value, __s32 min, __s32 max, __s32 shift,
+ 			      __s32 validbit);
+ #endif /* CONFIG_ARCH_SUN4I */
+ 
+diff --git a/drivers/video/sunxi/disp/de_hwc.c b/drivers/video/sunxi/disp/de_hwc.c
+index b968aee..1673be1 100644
+--- a/drivers/video/sunxi/disp/de_hwc.c
++++ b/drivers/video/sunxi/disp/de_hwc.c
+@@ -32,7 +32,7 @@ __s32 DE_BE_HWC_Enable(__u32 sel, __bool enable)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_HWC_Set_Pos(__u32 sel, __disp_pos_t * pos)
++__s32 DE_BE_HWC_Set_Pos(__u32 sel, __disp_pos_t *pos)
+ {
+ 	__u32 tmp;
+ 
+@@ -43,7 +43,7 @@ __s32 DE_BE_HWC_Set_Pos(__u32 sel, __disp_pos_t * pos)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_HWC_Get_Pos(__u32 sel, __disp_pos_t * pos)
++__s32 DE_BE_HWC_Get_Pos(__u32 sel, __disp_pos_t *pos)
+ {
+ 	__u32 readval;
+ 
+@@ -72,7 +72,7 @@ __s32 DE_BE_HWC_Set_Palette(__u32 sel, __u32 address, __u32 offset, __u32 size)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_HWC_Set_Src(__u32 sel, de_hwc_src_t * hwc_pat)
++__s32 DE_BE_HWC_Set_Src(__u32 sel, de_hwc_src_t *hwc_pat)
+ {
+ 	__u32 tmp;
+ 	__u32 x_size = 0, y_size = 0, pixel_fmt = 0;
+diff --git a/drivers/video/sunxi/disp/de_iep.c b/drivers/video/sunxi/disp/de_iep.c
+index fec81b6..ef48dd4 100644
+--- a/drivers/video/sunxi/disp/de_iep.c
++++ b/drivers/video/sunxi/disp/de_iep.c
+@@ -281,7 +281,7 @@ __u32 DE_IEP_Drc_Set_Lgc_Coeff(__u32 sel, __u16 lgctab[IEP_DRC_INT_TAB_LEN])
+ {
+ 	__u32 i;
+ 
+-	if(sel == 0)
++	if (sel == 0)
+ 		return 0;
+ 	else
+ 		return -1;
+@@ -328,29 +328,26 @@ __u32 DE_IEP_Lh_Set_Thres(__u32 sel, __u8 thres[])
+ 	}
+ }
+ 
+-__u32 DE_IEP_Lh_Get_Sum_Rec(__u32 sel, __u32 * sum)
++__u32 DE_IEP_Lh_Get_Sum_Rec(__u32 sel, __u32 *sum)
+ {
+ 	__u32 i;
+ 
+ 	if (sel == 0) {
+-		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++) {
++		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++)
+ 			*sum++ = iep_dev->lhslum[i].bits.lh_lum_data;
+-		}
+ 		return 0;
+ 	}
+ 
+ 	return -1;
+ }
+ 
+-__u32 DE_IEP_Lh_Get_Cnt_Rec(__u32 sel, __u32 * cnt)
++__u32 DE_IEP_Lh_Get_Cnt_Rec(__u32 sel, __u32 *cnt)
+ {
+ 	__u32 i;
+ 
+-	if (sel == 0) {
+-		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++) {
++	if (sel == 0)
++		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++)
+ 			*cnt++ = iep_dev->lhscnt[i].bits.lh_cnt_data;
+-		}
+-	}
+ 
+ 	return 0;
+ }
+diff --git a/drivers/video/sunxi/disp/de_iep.h b/drivers/video/sunxi/disp/de_iep.h
+index 49a40f7..61206d2 100644
+--- a/drivers/video/sunxi/disp/de_iep.h
++++ b/drivers/video/sunxi/disp/de_iep.h
+@@ -318,7 +318,7 @@ __u32 DE_IEP_Drc_Set_Int_Coeff(__u32 sel, __u8 inttab[IEP_DRC_INT_TAB_LEN]);
+ __u32 DE_IEP_Lh_Set_Mode(__u32 sel, __u32 mod);
+ __u32 DE_IEP_Lh_Clr_Rec(__u32 sel);
+ __u32 DE_IEP_Lh_Set_Thres(__u32 sel, __u8 thres[IEP_LH_THRES_NUM]);
+-__u32 DE_IEP_Lh_Get_Sum_Rec(__u32 sel, __u32 * sum);
+-__u32 DE_IEP_Lh_Get_Cnt_Rec(__u32 sel, __u32 * cnt);
++__u32 DE_IEP_Lh_Get_Sum_Rec(__u32 sel, __u32 *sum);
++__u32 DE_IEP_Lh_Get_Cnt_Rec(__u32 sel, __u32 *cnt);
+ #define ____SEPARATOR_DF____
+ #endif
+diff --git a/drivers/video/sunxi/disp/de_layer.c b/drivers/video/sunxi/disp/de_layer.c
+index fb2e593..530d951 100644
+--- a/drivers/video/sunxi/disp/de_layer.c
++++ b/drivers/video/sunxi/disp/de_layer.c
+@@ -82,7 +82,7 @@ __u32 DE_BE_Offset_To_Addr(__u32 src_addr, __u32 width, __u32 x, __u32 y,
+ }
+ 
+ __u32 DE_BE_Addr_To_Offset(__u32 src_addr, __u32 off_addr, __u32 width,
+-			   __u32 bpp, __disp_pos_t * pos)
++			   __u32 bpp, __disp_pos_t *pos)
+ {
+ 	__u32 dist;
+ 	__disp_pos_t offset;
+@@ -149,18 +149,18 @@ __s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __u8 format,
+ }
+ 
+ __s32 DE_BE_Layer_Set_Framebuffer(__u32 sel, __u8 layidx,
+-				  layer_src_t * layer_fb)
++				  layer_src_t *layer_fb)
+ {
+ 	__s32 bpp;
+ 	__u32 addr;
+ 
+ 	bpp = DE_BE_Format_To_Bpp(sel, layer_fb->format);
+-	if (bpp <= 0) {
++	if (bpp <= 0)
+ 		return -1;
+-	}
+-	addr =
+-	    DE_BE_Offset_To_Addr(layer_fb->fb_addr, layer_fb->fb_width,
+-				 layer_fb->offset_x, layer_fb->offset_y, bpp);
++
++	addr = DE_BE_Offset_To_Addr(layer_fb->fb_addr, layer_fb->fb_width,
++				    layer_fb->offset_x, layer_fb->offset_y,
++				    bpp);
+ 	DE_BE_Layer_Set_Format(sel, layidx, layer_fb->format, layer_fb->br_swap,
+ 			       layer_fb->pixseq);
+ 
+@@ -170,7 +170,7 @@ __s32 DE_BE_Layer_Set_Framebuffer(__u32 sel, __u8 layidx,
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_Layer_Set_Screen_Win(__u32 sel, __u8 layidx, __disp_rect_t * win)
++__s32 DE_BE_Layer_Set_Screen_Win(__u32 sel, __u8 layidx, __disp_rect_t *win)
+ {
+ 	__u32 tmp;
+ 
+@@ -384,7 +384,7 @@ static __s32 DE_BE_YUV_CH_Set_Line_Width(__u32 sel, __u8 ch_no, __u32 width)
+ 	return 0;
+ }
+ 
+-__s32 DE_BE_YUV_CH_Set_Src(__u32 sel, de_yuv_ch_src_t * in_src)
++__s32 DE_BE_YUV_CH_Set_Src(__u32 sel, de_yuv_ch_src_t *in_src)
+ {
+ 	__u32 ch0_base, ch1_base, ch2_base;
+ 	__u32 image_w;
+diff --git a/drivers/video/sunxi/disp/de_lcdc.c b/drivers/video/sunxi/disp/de_lcdc.c
+index 3e6cd2b..d953443 100644
+--- a/drivers/video/sunxi/disp/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_lcdc.c
+@@ -22,28 +22,28 @@
+ #include "ebios_lcdc_tve.h"
+ #include "de_lcdc_i.h"
+ 
+-static __u32 lcdc_reg_base0 = 0;
+-static __u32 lcdc_reg_base1 = 0;
++static __u32 lcdc_reg_base0;
++static __u32 lcdc_reg_base1;
+ 
+ #define ____SEPARATOR_LCDC____
+ 
+ __s32 LCDC_set_reg_base(__u32 sel, __u32 address)
+ {
+-	if (sel == 0) {
++	if (sel == 0)
+ 		lcdc_reg_base0 = address;
+-	} else if (sel == 1) {
++	else if (sel == 1)
+ 		lcdc_reg_base1 = address;
+-	}
++
+ 	return 0;
+ }
+ 
+ __u32 LCDC_get_reg_base(__u32 sel)
+ {
+-	if (sel == 0) {
++	if (sel == 0)
+ 		return lcdc_reg_base0;
+-	} else if (sel == 1) {
++	else if (sel == 1)
+ 		return lcdc_reg_base1;
+-	}
++
+ 	return 0;
+ }
+ 
+@@ -67,9 +67,8 @@ __s32 LCDC_init(__u32 sel)
+ 
+ __s32 LCDC_exit(__u32 sel)
+ {
+-	LCDC_disable_int(sel,
+-			 LCDC_VBI_LCD_EN | LCDC_VBI_HD_EN | LCDC_LTI_LCD_EN |
+-			 LCDC_LTI_HD_EN);
++	LCDC_disable_int(sel, LCDC_VBI_LCD_EN | LCDC_VBI_HD_EN |
++			 LCDC_LTI_LCD_EN | LCDC_LTI_HD_EN);
+ 	LCDC_close(sel);
+ 	return 0;
+ }
+@@ -183,7 +182,7 @@ __s32 LCDC_clear_int(__u32 sel, __u32 irqsrc)
+ 	return 0;
+ }
+ 
+-__s32 LCDC_get_timing(__u32 sel, __u32 index, __disp_tcon_timing_t * tt)
++__s32 LCDC_get_timing(__u32 sel, __u32 index, __disp_tcon_timing_t *tt)
+ {
+ 	__u32 reg0, reg1, reg2, reg3;
+ 	__u32 x, y, ht, hbp, vt, vbp, hspw, vspw;
+@@ -239,7 +238,7 @@ __s32 TCON0_close(__u32 sel)
+ 	return 0;
+ }
+ 
+-void TCON0_cfg(__u32 sel, __panel_para_t * info)
++void TCON0_cfg(__u32 sel, __panel_para_t *info)
+ {
+ 	__u32 vblank_len;
+ 	__u32 lcd_if_reg = 0;
+@@ -248,11 +247,10 @@ void TCON0_cfg(__u32 sel, __panel_para_t * info)
+ 
+ 	vblank_len = info->lcd_vt / 2 - info->lcd_y;
+ 
+-	if (vblank_len >= 32) {
++	if (vblank_len >= 32)
+ 		info->start_delay = 30;
+-	} else {
++	else
+ 		info->start_delay = vblank_len - 2;
+-	}
+ 
+ 	switch (info->lcd_if) {
+ 	case LCDC_LCDIF_HV:
+@@ -354,17 +352,14 @@ void TCON0_cfg(__u32 sel, __panel_para_t * info)
+ 		if (info->lcd_lvds_io_cross != 0)
+ 			LCDC_SET_BIT(sel, LCDC_LVDS_ANA1,
+ 				     (0x1f << 21) | (0x1f << 5));
+-	} else {
+-		;
+ 	}
+ 
+-	if (info->lcd_frm == LCDC_FRM_RGB666) {
++	if (info->lcd_frm == LCDC_FRM_RGB666)
+ 		LCDC_CLR_BIT(sel, LCDC_FRM0_OFF, (__u32) 0x7 << 4);
+-	} else if (info->lcd_frm == LCDC_FRM_RGB656) {
++	else if (info->lcd_frm == LCDC_FRM_RGB656)
+ 		LCDC_INIT_BIT(sel, LCDC_FRM0_OFF, 0x7 << 4, 0x5 << 4);
+-	} else {
++	else
+ 		LCDC_CLR_BIT(sel, LCDC_FRM0_OFF, LCDC_BIT31);
+-	}
+ 
+ 	if (info->lcd_frm == LCDC_FRM_RGB666 ||
+ 	    info->lcd_frm == LCDC_FRM_RGB656) {
+@@ -479,29 +474,26 @@ __u32 TCON1_close(__u32 sel)
+ 	return 0;
+ }
+ 
+-__u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t * cfg)
++__u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t *cfg)
+ {
+ 	__u32 vblank_len;
+ 	__u32 reg_val;
+ 
+ 	vblank_len = cfg->vt / 2 - cfg->src_y - 2;
+-	if (vblank_len >= 32) {
++	if (vblank_len >= 32)
+ 		cfg->start_delay = 30;
+-	} else {
++	else
+ 		cfg->start_delay = vblank_len - 2; /* was vblank_len - 1 */
+-	}
+ 
+-	if (cfg->b_remap_if) {
++	if (cfg->b_remap_if)
+ 		LCDC_SET_BIT(sel, LCDC_GCTL_OFF, LCDC_BIT0);
+-	} else {
++	else
+ 		LCDC_CLR_BIT(sel, LCDC_GCTL_OFF, LCDC_BIT0);
+-	}
+ 
+ 	reg_val = LCDC_RUINT32(sel, LCDC_HDTVIF_OFF);
+ 	reg_val &= 0xffeffe0f;
+-	if (cfg->b_interlace) {
++	if (cfg->b_interlace)
+ 		reg_val |= (1 << 20);
+-	}
+ 
+ 	reg_val |= ((cfg->start_delay & 0x1f) << 4);
+ 
+@@ -527,7 +519,7 @@ __u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t * cfg)
+ 	return 0;
+ }
+ 
+-__u32 TCON1_cfg_ex(__u32 sel, __panel_para_t * info)
++__u32 TCON1_cfg_ex(__u32 sel, __panel_para_t *info)
+ {
+ 	__tcon1_cfg_t tcon1_cfg;
+ 
+@@ -1139,13 +1131,12 @@ __s32 TCON1_select_src(__u32 sel, __u8 src)
+ 	tv_tmp = LCDC_RUINT32(sel, LCDC_HDTVIF_OFF);
+ 
+ 	tv_tmp = tv_tmp & 0xfffffffc;
+-	if (src == LCDC_SRC_DE1) {
++	if (src == LCDC_SRC_DE1)
+ 		tv_tmp = tv_tmp | 0x00;
+-	} else if (src == LCDC_SRC_DE2) {
++	else if (src == LCDC_SRC_DE2)
+ 		tv_tmp = tv_tmp | 0x01;
+-	} else if (src == LCDC_SRC_BLUE) {
++	else if (src == LCDC_SRC_BLUE)
+ 		tv_tmp = tv_tmp | 0x02;
+-	}
+ 
+ 	LCDC_WUINT32(sel, LCDC_HDTVIF_OFF, tv_tmp);
+ 
+@@ -1167,11 +1158,11 @@ __bool TCON1_in_valid_regn(__u32 sel, __u32 juststd)
+ 	readval = LCDC_RUINT32(sel, LCDC_DUBUG_OFF);
+ 	SY2 = (readval) & 0xfff;
+ 
+-	if ((SY2 < juststd) || (SY2 > VT)) {
++	if ((SY2 < juststd) || (SY2 > VT))
+ 		return 1;
+-	} else {
++	else
+ 		return 0;
+-	}
++
+ }
+ 
+ __s32 TCON1_get_width(__u32 sel)
+@@ -1204,9 +1195,8 @@ __s32 TCON1_set_gamma_table(__u32 sel, __u32 address, __u32 size)
+ 	pmem_align_src = (__s32 *) address;
+ 	pmem_align_dest = pmem_dest_cur + (size >> 2);
+ 
+-	while (pmem_dest_cur < pmem_align_dest) {
++	while (pmem_dest_cur < pmem_align_dest)
+ 		*(volatile __u32 *)pmem_dest_cur++ = *pmem_align_src++;
+-	}
+ 
+ 	LCDC_WUINT32(sel, LCDC_GCTL_OFF, tmp);
+ 
+@@ -1218,18 +1208,18 @@ __s32 TCON1_set_gamma_Enable(__u32 sel, __bool enable)
+ 	__u32 tmp;
+ 
+ 	tmp = LCDC_RUINT32(sel, LCDC_GCTL_OFF);
+-	if (enable) {
++	if (enable)
+ 		LCDC_WUINT32(sel, LCDC_GCTL_OFF, tmp | (1 << 30));
+-	} else {
++	else
+ 		LCDC_WUINT32(sel, LCDC_GCTL_OFF, tmp & (~(1 << 30)));
+-	}
++
+ 	return 0;
+ }
+ 
+ #define ____SEPARATOR_CPU____
+ 
+ #if 0
+-__asm void my_stmia(int addr,int data1,int data2)
++__asm void my_stmia(int addr, int data1, int data2)
+ {
+ 	stmia r0!, {r1,r2}
+ 	BX    lr
+@@ -1253,7 +1243,8 @@ LCD_CPU_Busy(__u32 sel)
+ 	__u32 reg_val;
+ 
+ 	LCDC_SET_BIT(sel, LCDC_CPUIF_OFF, LCDC_BIT0);
+-	for (i = 0; i < 80; i++) ;
++	for (i = 0; i < 80; i++)
++		;
+ 
+ 	while (1) {
+ 		reg_val = LCDC_RUINT32(sel, LCDC_CPUIF_OFF);
+@@ -1267,7 +1258,7 @@ LCD_CPU_Busy(__u32 sel)
+ 		}
+ 	}
+ #else
+-	return (LCDC_RUINT32(sel, LCDC_CPUIF_OFF) & (LCDC_BIT23 | LCDC_BIT22));
++	return LCDC_RUINT32(sel, LCDC_CPUIF_OFF) & (LCDC_BIT23 | LCDC_BIT22);
+ #endif /* CONFIG_ARCH_SUN4I */
+ }
+ 
+@@ -1346,18 +1337,21 @@ void LCD_CPU_WR(__u32 sel, __u32 index, __u32 data)
+ 	LCD_CPU_WR_24b(sel, LCD_CPU_IO_extend_16b(index),
+ 		       LCD_CPU_IO_extend_16b(data));
+ }
++EXPORT_SYMBOL(LCD_CPU_WR);
+ 
+ void LCD_CPU_WR_INDEX(__u32 sel, __u32 index)
+ {
+ 	LCD_CPU_WR_INDEX_24b(sel, LCD_CPU_IO_extend_16b(index));
+ }
++EXPORT_SYMBOL(LCD_CPU_WR_INDEX);
+ 
+ void LCD_CPU_WR_DATA(__u32 sel, __u32 data)
+ {
+ 	LCD_CPU_WR_DATA_24b(sel, LCD_CPU_IO_extend_16b(data));
+ }
++EXPORT_SYMBOL(LCD_CPU_WR_DATA);
+ 
+-void LCD_CPU_RD(__u32 sel, __u32 index, __u32 * data)
++void LCD_CPU_RD(__u32 sel, __u32 index, __u32 *data)
+ {
+ }
+ 
+@@ -1368,6 +1362,7 @@ void LCD_CPU_AUTO_FLUSH(__u32 sel, __u8 en)
+ 	else
+ 		LCDC_SET_BIT(sel, LCDC_CPUIF_OFF, LCDC_BIT28);
+ }
++EXPORT_SYMBOL(LCD_CPU_AUTO_FLUSH);
+ 
+ void LCD_CPU_DMA_FLUSH(__u32 sel, __u8 en)
+ {
+@@ -1434,11 +1429,11 @@ __u8 TCON_set_hdmi_src(__u8 src)
+ 
+ __u8 TCON_set_tv_src(__u32 tv_index, __u8 src)
+ {
+-	if (tv_index == 0) {
++	if (tv_index == 0)
+ 		LCDC_INIT_BIT(0, LCDC_MUX_CTRL, 0x3 << 4, src << 4);
+-	} else {
++	else
+ 		LCDC_INIT_BIT(0, LCDC_MUX_CTRL, 0x3 << 0, src << 0);
+-	}
++
+ 	return 0;
+ }
+ #endif /* CONFIG_ARCH_SUN4I */
+@@ -1446,7 +1441,7 @@ __u8 TCON_set_tv_src(__u32 tv_index, __u8 src)
+ #ifdef UNUSED
+ #define ____TCON_CEU____
+ 
+-static __u32 range_cut(__s32 * x_value, __s32 x_min, __s32 x_max)
++static __u32 range_cut(__s32 *x_value, __s32 x_min, __s32 x_max)
+ {
+ 	if (*x_value > x_max) {
+ 		*x_value = x_max;
+@@ -1458,7 +1453,7 @@ static __u32 range_cut(__s32 * x_value, __s32 x_min, __s32 x_max)
+ 		return 0;
+ }
+ 
+-static void rect_multi(__s32 * dest, __s32 * src1, __s32 * src2)
++static void rect_multi(__s32 *dest, __s32 *src1, __s32 *src2)
+ {
+ 	__u32 x, y, z;
+ 	__s64 val_int64;
+@@ -1482,7 +1477,7 @@ static __s32 reg_corr(__s32 val, __u32 bit)
+ 		return (bit) | (__u32) (-val);
+ }
+ 
+-static void rect_ceu_pro(__s32 * p_rect, __s32 b, __s32 c, __s32 s, __s32 h)
++static void rect_ceu_pro(__s32 *p_rect, __s32 b, __s32 c, __s32 s, __s32 h)
+ {
+ 	const __u8 table_sin[91] = {
+ 		0, 2, 4, 7, 9, 11, 13, 16, 18, 20,
+@@ -1542,7 +1537,7 @@ static void rect_ceu_pro(__s32 * p_rect, __s32 b, __s32 c, __s32 s, __s32 h)
+ }
+ 
+ static void lcd_ceu(__u32 r2y_type, __u32 cen_type, __u32 y2r_type, __s32 b,
+-		    __s32 c, __s32 s, __s32 h, __s32 * p_coff)
++		    __s32 c, __s32 s, __s32 h, __s32 *p_coff)
+ {
+ 	const __s32 rect_1[16] = {
+ 		1024, 0, 0, 0,
+diff --git a/drivers/video/sunxi/disp/de_tvec.c b/drivers/video/sunxi/disp/de_tvec.c
+index 5cbdf8e..900f8e6 100644
+--- a/drivers/video/sunxi/disp/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_tvec.c
+@@ -27,11 +27,11 @@ static __u32 tve_reg_base1;
+ 
+ __s32 TVE_set_reg_base(__u32 sel, __u32 address)
+ {
+-	if (sel == 0) {
++	if (sel == 0)
+ 		tve_reg_base0 = address;
+-	} else if (sel == 1) {
++	else if (sel == 1)
+ 		tve_reg_base1 = address;
+-	}
++
+ 	return 0;
+ }
+ 
+@@ -478,17 +478,17 @@ __s32 TVE_dac_set_source(__u32 sel, __u32 index, __u32 source)
+ 
+ 	readval = TVE_RUINT32(sel, TVE_008);
+ 
+-	if (index == 0) {
++	if (index == 0)
+ 		readval = (readval & 0xffffff8f) | ((source & 0x7) << 4);
+-	} else if (index == 1) {
++	else if (index == 1)
+ 		readval = (readval & 0xfffffc7f) | ((source & 0x7) << 7);
+-	} else if (index == 2) {
++	else if (index == 2)
+ 		readval = (readval & 0xffffe3ff) | ((source & 0x7) << 10);
+-	} else if (index == 3) {
++	else if (index == 3)
+ 		readval = (readval & 0xffff1fff) | ((source & 0x7) << 13);
+-	} else {
++	else
+ 		return 0;
+-	}
++
+ 	TVE_WUINT32(sel, TVE_008, readval);
+ 
+ 	return 0;
+@@ -500,15 +500,14 @@ __s32 TVE_dac_get_source(__u32 sel, __u32 index)
+ 
+ 	readval = TVE_RUINT32(sel, TVE_008);
+ 
+-	if (index == 0) {
++	if (index == 0)
+ 		readval = (readval >> 4) & 0x7;
+-	} else if (index == 1) {
++	else if (index == 1)
+ 		readval = (readval >> 7) & 0x7;
+-	} else if (index == 2) {
++	else if (index == 2)
+ 		readval = (readval >> 10) & 0x7;
+-	} else if (index == 3) {
++	else if (index == 3)
+ 		readval = (readval >> 13) & 0x7;
+-	}
+ 
+ 	return readval;
+ }
+@@ -519,17 +518,17 @@ __u8 TVE_dac_set_de_bounce(__u32 sel, __u8 index, __u32 times)
+ 
+ 	readval = TVE_RUINT32(sel, TVE_03C);
+ 
+-	if (index == 0) {
++	if (index == 0)
+ 		readval = (readval & 0xfffffff0) | (times & 0xf);
+-	} else if (index == 1) {
++	else if (index == 1)
+ 		readval = (readval & 0xfffff0ff) | ((times & 0xf) << 8);
+-	} else if (index == 2) {
++	else if (index == 2)
+ 		readval = (readval & 0xfff0ffff) | ((times & 0xf) << 16);
+-	} else if (index == 3) {
++	else if (index == 3)
+ 		readval = (readval & 0xfff0ffff) | ((times & 0xf) << 20);
+-	} else {
++	else
+ 		return 0;
+-	}
++
+ 	TVE_WUINT32(sel, TVE_03C, readval);
+ 
+ 	return 0;
+@@ -542,17 +541,16 @@ __u8 TVE_dac_get_de_bounce(__u32 sel, __u8 index)
+ 
+ 	readval = TVE_RUINT32(sel, TVE_03C);
+ 
+-	if (index == 0) {
++	if (index == 0)
+ 		sts = readval & 0xf;
+-	} else if (index == 1) {
++	else if (index == 1)
+ 		sts = (readval & 0xf00) >> 8;
+-	} else if (index == 2) {
++	else if (index == 2)
+ 		sts = (readval & 0xf0000) >> 16;
+-	} else if (index == 3) {
++	else if (index == 3)
+ 		sts = (readval & 0xf000000) >> 20;
+-	} else {
++	else
+ 		return 0;
+-	}
+ 
+ 	return sts;
+ }
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index c1b8b7b..90dcf0a 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -42,17 +42,17 @@ __disp_drv_t g_disp_drv;
+ static struct alloc_struct_t boot_heap_head, boot_heap_tail;
+ 
+ static unsigned int gbuffer[4096];
+-static __u32 suspend_output_type[2] = { 0, 0 };
++static __u32 suspend_output_type[2];
+ 
+ /*
+  * 0:normal;
+  * suspend_status&1 != 0:in early_suspend;
+  * suspend_status&2 != 0:in suspend;
+  */
+-static __u32 suspend_status = 0;
++static __u32 suspend_status;
+ 
+ static struct info_mm g_disp_mm[10];
+-static int g_disp_mm_sel = 0;
++static int g_disp_mm_sel;
+ 
+ static struct cdev *my_cdev;
+ static dev_t devid;
+@@ -126,9 +126,8 @@ void *disp_malloc(__u32 num_bytes)
+ 	struct alloc_struct_t *ptr, *newptr;
+ 	__u32 actual_bytes;
+ 
+-	if (!num_bytes) {
++	if (!num_bytes)
+ 		return NULL;
+-	}
+ 
+ 	/* translate the byte count to size of long type  */
+ 	actual_bytes = MY_BYTE_ALIGN(num_bytes);
+@@ -260,12 +259,13 @@ __s32 DRV_lcd_close(__u32 sel)
+ 	return 0;
+ }
+ 
+-__s32 disp_set_hdmi_func(__disp_hdmi_func * func)
++__s32 disp_set_hdmi_func(__disp_hdmi_func *func)
+ {
+ 	BSP_disp_set_hdmi_func(func);
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(disp_set_hdmi_func);
+ 
+ __s32 DRV_DISP_Init(void)
+ {
+@@ -301,6 +301,7 @@ __s32 DRV_DISP_Init(void)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(DRV_DISP_Init);
+ 
+ __s32 DRV_DISP_Exit(void)
+ {
+@@ -413,14 +414,14 @@ int disp_release(struct inode *inode, struct file *file)
+ 	return 0;
+ }
+ 
+-ssize_t disp_read(struct file * file, char __user * buf, size_t count,
+-		  loff_t * ppos)
++ssize_t disp_read(struct file *file, char __user *buf, size_t count,
++		  loff_t *ppos)
+ {
+ 	return 0;
+ }
+ 
+-ssize_t disp_write(struct file * file, const char __user * buf, size_t count,
+-		   loff_t * ppos)
++ssize_t disp_write(struct file *file, const char __user *buf, size_t count,
++		   loff_t *ppos)
+ {
+ 	return 0;
+ }
+@@ -486,19 +487,18 @@ void backlight_early_suspend(struct early_suspend *h)
+ {
+ 	int i = 0;
+ 
+-	printk("display early suspend: %s\n", __func__);
++	pr_info("display early suspend: %s\n", __func__);
+ 
+ 	for (i = 0; i < 2; i++) {
+ 		suspend_output_type[i] = BSP_disp_get_output_type(i);
+-		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD) {
++		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD)
+ 			DRV_lcd_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV)
+ 			BSP_disp_tv_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA)
+ 			BSP_disp_vga_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI)
+ 			BSP_disp_hdmi_close(i);
+-		}
+ 	}
+ 
+ 	BSP_disp_clk_off(2);
+@@ -510,25 +510,24 @@ void backlight_late_resume(struct early_suspend *h)
+ {
+ 	int i = 0;
+ 
+-	printk("display late resume enter: %s\n", __func__);
++	pr_info("display late resume enter: %s\n", __func__);
+ 
+ 	BSP_disp_clk_on(2);
+ 
+ 	for (i = 0; i < 2; i++) {
+-		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD) {
++		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD)
+ 			DRV_lcd_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV)
+ 			BSP_disp_tv_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA)
+ 			BSP_disp_vga_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI)
+ 			BSP_disp_hdmi_open(i);
+-		}
+ 	}
+ 
+ 	suspend_status &= (~1);
+ 
+-	printk("display late resume done: %s\n", __func__);
++	pr_info("display late resume done: %s\n", __func__);
+ }
+ 
+ static struct early_suspend backlight_early_suspend_handler = {
+@@ -549,15 +548,14 @@ disp_suspend(struct platform_device *pdev, pm_message_t state)
+ 
+ 	for (i = 0; i < 2; i++) {
+ 		suspend_output_type[i] = BSP_disp_get_output_type(i);
+-		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD) {
++		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD)
+ 			DRV_lcd_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV)
+ 			BSP_disp_tv_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA)
+ 			BSP_disp_vga_close(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI)
+ 			BSP_disp_hdmi_close(i);
+-		}
+ 	}
+ 	BSP_disp_clk_off(3);
+ #else
+@@ -580,15 +578,14 @@ disp_resume(struct platform_device *pdev)
+ 	BSP_disp_clk_on(3);
+ 
+ 	for (i = 0; i < 2; i++) {
+-		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD) {
++		if (suspend_output_type[i] == DISP_OUTPUT_TYPE_LCD)
+ 			DRV_lcd_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_TV)
+ 			BSP_disp_tv_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_VGA)
+ 			BSP_disp_vga_open(i);
+-		} else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI) {
++		else if (suspend_output_type[i] == DISP_OUTPUT_TYPE_HDMI)
+ 			BSP_disp_hdmi_open(i);
+-		}
+ 	}
+ #else
+ 	BSP_disp_clk_on(1);
+@@ -606,9 +603,8 @@ disp_shutdown(struct platform_device *pdev)
+ 
+ 	for (i = 0; i < 2; i++) {
+ 		type = BSP_disp_get_output_type(i);
+-		if (type == DISP_OUTPUT_TYPE_LCD) {
++		if (type == DISP_OUTPUT_TYPE_LCD)
+ 			DRV_lcd_close(i);
+-		}
+ 	}
+ }
+ 
+@@ -645,9 +641,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	    cmd != DISP_CMD_HDMI_GET_HPD_STATUS &&
+ 	    cmd != DISP_CMD_GET_OUTPUT_TYPE && cmd != DISP_CMD_SCN_GET_WIDTH &&
+ 	    cmd != DISP_CMD_SCN_GET_HEIGHT && cmd != DISP_CMD_VIDEO_SET_FB &&
+-	    cmd != DISP_CMD_VIDEO_GET_FRAME_ID) {
++	    cmd != DISP_CMD_VIDEO_GET_FRAME_ID)
+ 		DE_WRN("cmd:0x%x,%ld,%ld\n", cmd, ubuffer[0], ubuffer[1]);
+-	}
+ #endif
+ 
+ 	switch (cmd) {
+@@ -1030,9 +1025,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_ALPHA_VALUE:
+-		ret =
+-		    BSP_disp_layer_set_alpha_value(ubuffer[0], ubuffer[1],
+-						   ubuffer[2]);
++		ret = BSP_disp_layer_set_alpha_value(ubuffer[0], ubuffer[1],
++						     ubuffer[2]);
+ 		//DRV_disp_wait_cmd_finish(ubuffer[0]);
+ 		break;
+ 
+@@ -1045,8 +1039,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_PIPE:
+-		ret =
+-		    BSP_disp_layer_set_pipe(ubuffer[0], ubuffer[1], ubuffer[2]);
++		ret = BSP_disp_layer_set_pipe(ubuffer[0], ubuffer[1],
++					      ubuffer[2]);
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_GET_ALPHA_VALUE:
+@@ -1081,9 +1075,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_BRIGHT:
+-		ret =
+-		    BSP_disp_layer_set_bright(ubuffer[0], ubuffer[1],
+-					      ubuffer[2]);
++		ret = BSP_disp_layer_set_bright(ubuffer[0], ubuffer[1],
++						ubuffer[2]);
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_GET_BRIGHT:
+@@ -1091,9 +1084,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_CONTRAST:
+-		ret =
+-		    BSP_disp_layer_set_contrast(ubuffer[0], ubuffer[1],
+-						ubuffer[2]);
++		ret = BSP_disp_layer_set_contrast(ubuffer[0], ubuffer[1],
++						  ubuffer[2]);
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_GET_CONTRAST:
+@@ -1101,9 +1093,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_SATURATION:
+-		ret =
+-		    BSP_disp_layer_set_saturation(ubuffer[0], ubuffer[1],
+-						  ubuffer[2]);
++		ret = BSP_disp_layer_set_saturation(ubuffer[0], ubuffer[1],
++						    ubuffer[2]);
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_GET_SATURATION:
+@@ -1111,8 +1102,8 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_SET_HUE:
+-		ret =
+-		    BSP_disp_layer_set_hue(ubuffer[0], ubuffer[1], ubuffer[2]);
++		ret = BSP_disp_layer_set_hue(ubuffer[0], ubuffer[1],
++					     ubuffer[2]);
+ 		break;
+ 
+ 	case DISP_CMD_LAYER_GET_HUE:
+@@ -1319,16 +1310,14 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	/* ----lcd---- */
+ 	case DISP_CMD_LCD_ON:
+ 		ret = DRV_lcd_open(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_LCD;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_LCD_OFF:
+ 		ret = DRV_lcd_close(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_NONE;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_LCD_SET_BRIGHTNESS:
+@@ -1369,16 +1358,14 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	/* ----tv---- */
+ 	case DISP_CMD_TV_ON:
+ 		ret = BSP_disp_tv_open(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_TV;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_TV_OFF:
+ 		ret = BSP_disp_tv_close(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_NONE;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_TV_SET_MODE:
+@@ -1399,11 +1386,10 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_TV_GET_INTERFACE:
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			ret = DISP_TV_NONE;
+-		} else {
++		else
+ 			ret = BSP_disp_tv_get_interface(ubuffer[0]);
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_TV_SET_SRC:
+@@ -1412,12 +1398,11 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_TV_GET_DAC_STATUS:
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			ret = 0;
+-		} else {
++		else
+ 			ret = BSP_disp_tv_get_dac_status(ubuffer[0],
+ 							 ubuffer[1]);
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_TV_SET_DAC_SOURCE:
+@@ -1433,16 +1418,14 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	/* ----hdmi---- */
+ 	case DISP_CMD_HDMI_ON:
+ 		ret = BSP_disp_hdmi_open(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_HDMI;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_HDMI_OFF:
+ 		ret = BSP_disp_hdmi_close(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_NONE;
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_HDMI_SET_MODE:
+@@ -1454,11 +1437,10 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 		break;
+ 
+ 	case DISP_CMD_HDMI_GET_HPD_STATUS:
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			ret = 0;
+-		} else {
++		else
+ 			ret = BSP_disp_hdmi_get_hpd_status(ubuffer[0]);
+-		}
+ 		break;
+ 
+ 	case DISP_CMD_HDMI_SUPPORT_MODE:
+@@ -1473,16 +1455,16 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 	/* ----vga---- */
+ 	case DISP_CMD_VGA_ON:
+ 		ret = BSP_disp_vga_open(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_VGA;
+-		}
++
+ 		break;
+ 
+ 	case DISP_CMD_VGA_OFF:
+ 		ret = BSP_disp_vga_close(ubuffer[0]);
+-		if (suspend_status != 0) {
++		if (suspend_status != 0)
+ 			suspend_output_type[ubuffer[0]] = DISP_OUTPUT_TYPE_NONE;
+-		}
++
+ 		break;
+ 
+ 	case DISP_CMD_VGA_SET_MODE:
+@@ -1575,8 +1557,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 			__disp_sprite_block_para_t para;
+ 
+ 			if (copy_from_user(&para, (void __user *)ubuffer[1],
+-					   sizeof(__disp_sprite_block_para_t)))
+-				{
++					   sizeof(__disp_sprite_block_para_t))) {
+ 				__wrn("copy_from_user fail\n");
+ 				return -EFAULT;
+ 			}
+@@ -1713,8 +1694,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 			__disp_sprite_block_para_t para;
+ 
+ 			if (copy_from_user(&para, (void __user *)ubuffer[2],
+-					   sizeof(__disp_sprite_block_para_t)))
+-				{
++					   sizeof(__disp_sprite_block_para_t))) {
+ 				__wrn("copy_from_user fail\n");
+ 				return -EFAULT;
+ 			}
+@@ -1838,9 +1818,9 @@ static struct platform_driver disp_driver = {
+ 	.resume = disp_resume,
+ 	.shutdown = disp_shutdown,
+ 	.driver = {
+-		   .name = "disp",
+-		   .owner = THIS_MODULE,
+-		   },
++		.name = "disp",
++		.owner = THIS_MODULE,
++	},
+ };
+ 
+ static struct platform_device disp_device = {
+@@ -1877,9 +1857,9 @@ static int __init disp_module_init(void)
+ 
+ 	ret = platform_device_register(&disp_device);
+ 
+-	if (ret == 0) {
++	if (ret == 0)
+ 		ret = platform_driver_register(&disp_driver);
+-	}
++
+ #ifdef CONFIG_HAS_EARLYSUSPEND
+ 	register_early_suspend(&backlight_early_suspend_handler);
+ #endif
+@@ -1905,9 +1885,6 @@ static void __exit disp_module_exit(void)
+ 	cdev_del(my_cdev);
+ }
+ 
+-EXPORT_SYMBOL(disp_set_hdmi_func);
+-EXPORT_SYMBOL(DRV_DISP_Init);
+-
+ module_init(disp_module_init);
+ module_exit(disp_module_exit);
+ 
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index ef3fec6..f2b111c 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -49,10 +49,10 @@ struct alloc_struct_t {
+ 
+ int disp_open(struct inode *inode, struct file *file);
+ int disp_release(struct inode *inode, struct file *file);
+-ssize_t disp_read(struct file *file, char __user * buf, size_t count,
+-		  loff_t * ppos);
+-ssize_t disp_write(struct file *file, const char __user * buf, size_t count,
+-		   loff_t * ppos);
++ssize_t disp_read(struct file *file, char __user *buf, size_t count,
++		  loff_t *ppos);
++ssize_t disp_write(struct file *file, const char __user *buf, size_t count,
++		   loff_t *ppos);
+ int disp_mmap(struct file *file, struct vm_area_struct *vma);
+ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ 
+@@ -60,11 +60,11 @@ __s32 disp_create_heap(__u32 pHeapHead, __u32 nHeapSize);
+ void *disp_malloc(__u32 num_bytes);
+ void disp_free(void *p);
+ 
+-extern __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t * fb_para);
++extern __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t *fb_para);
+ extern __s32 Display_Fb_Release(__u32 fb_id);
+ extern __s32 Display_Fb_get_para(__u32 fb_id,
+-				 __disp_fb_create_para_t * fb_para);
+-extern __s32 Display_get_disp_init_para(__disp_init_t * init_para);
++				 __disp_fb_create_para_t *fb_para);
++extern __s32 Display_get_disp_init_para(__disp_init_t *init_para);
+ 
+ extern __s32 DRV_disp_int_process(__u32 sel);
+ 
+@@ -78,6 +78,6 @@ extern __s32 DRV_lcd_close(__u32 sel);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 Fb_Exit(void);
+ 
+-__s32 disp_set_hdmi_func(__disp_hdmi_func * func);
++__s32 disp_set_hdmi_func(__disp_hdmi_func *func);
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 3eb778c..e4cdc96 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -854,21 +854,17 @@ static int Fb_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
+ 			__u32 y_offset = 0;
+ 
+ 			if (g_fbi.fb_mode[info->node] ==
+-			    FB_MODE_DUAL_DIFF_SCREEN_SAME_CONTENTS) {
+-				if (sel != var->reserved[0]) {
++			    FB_MODE_DUAL_DIFF_SCREEN_SAME_CONTENTS)
++				if (sel != var->reserved[0])
+ 					return -1;
+-				}
+-			}
+ 
+ 			if (g_fbi.fb_mode[info->node] ==
+-			    FB_MODE_DUAL_SAME_SCREEN_TB) {
++			    FB_MODE_DUAL_SAME_SCREEN_TB)
+ 				buffer_num = 2;
+-			}
+ 			if ((sel == 0) &&
+ 			    (g_fbi.fb_mode[info->node] ==
+-				FB_MODE_DUAL_SAME_SCREEN_TB)) {
++				FB_MODE_DUAL_SAME_SCREEN_TB))
+ 				y_offset = var->yres / 2;
+-			}
+ 
+ 			BSP_disp_layer_get_para(sel, layer_hdl, &layer_para);
+ 
+@@ -956,13 +952,13 @@ static int Fb_set_par(struct fb_info *info)
+ 			__u32 y_offset = 0;
+ 
+ 			if (g_fbi.fb_mode[info->node] ==
+-			    FB_MODE_DUAL_SAME_SCREEN_TB) {
++			    FB_MODE_DUAL_SAME_SCREEN_TB)
+ 				buffer_num = 2;
+-			}
++
+ 			if ((sel == 0) && (g_fbi.fb_mode[info->node] ==
+-			     FB_MODE_DUAL_SAME_SCREEN_TB)) {
++			     FB_MODE_DUAL_SAME_SCREEN_TB))
+ 				y_offset = var->yres / 2;
+-			}
++
+ 			BSP_disp_layer_get_para(sel, layer_hdl, &layer_para);
+ 
+ 			var_to_disp_fb(&(layer_para.fb), var, fix);
+@@ -1082,11 +1078,11 @@ Fb_blank(int blank_mode, struct fb_info *info)
+ 		     (g_fbi.fb_mode[info->node] != FB_MODE_SCREEN0))) {
+ 			__s32 layer_hdl = g_fbi.layer_hdl[info->node][sel];
+ 
+-			if (blank_mode == FB_BLANK_POWERDOWN) {
++			if (blank_mode == FB_BLANK_POWERDOWN)
+ 				BSP_disp_layer_close(sel, layer_hdl);
+-			} else {
++			else
+ 				BSP_disp_layer_open(sel, layer_hdl);
+-			}
++
+ 			//DRV_disp_wait_cmd_finish(sel);
+ 		}
+ 	}
+@@ -1109,7 +1105,7 @@ __s32 DRV_disp_int_process(__u32 sel)
+ }
+ 
+ #ifdef CONFIG_FB_SUNXI_UMP
+-int (*disp_get_ump_secure_id) (struct fb_info * info, fb_info_t * g_fbi,
++int (*disp_get_ump_secure_id) (struct fb_info *info, fb_info_t *g_fbi,
+ 			       unsigned long arg, int buf);
+ EXPORT_SYMBOL(disp_get_ump_secure_id);
+ #endif
+@@ -1157,13 +1153,13 @@ static int Fb_ioctl(struct fb_info *info, unsigned int cmd, unsigned long arg)
+ 			memset(&vblank, 0, sizeof(struct fb_vblank));
+ 			vblank.flags |= FB_VBLANK_HAVE_VBLANK;
+ 			vblank.flags |= FB_VBLANK_HAVE_VSYNC;
+-			if (line <= (tt.ver_total_time - tt.ver_pixels)) {
++
++			if (line <= (tt.ver_total_time - tt.ver_pixels))
+ 				vblank.flags |= FB_VBLANK_VBLANKING;
+-			}
++
+ 			if ((line > tt.ver_front_porch) &&
+-			    (line < (tt.ver_front_porch + tt.ver_sync_time))) {
++			    (line < (tt.ver_front_porch + tt.ver_sync_time)))
+ 				vblank.flags |= FB_VBLANK_VSYNCING;
+-			}
+ 
+ 			if (copy_to_user((void __user *)arg, &vblank,
+ 					 sizeof(struct fb_vblank)))
+@@ -1279,9 +1275,8 @@ __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t * fb_para)
+ 
+ 			if (fb_para->fb_mode == FB_MODE_DUAL_SAME_SCREEN_TB) {
+ 				src_height = yres / 2;
+-				if (sel == 0) {
++				if (sel == 0)
+ 					y_offset = yres / 2;
+-				}
+ 			}
+ 
+ 			memset(&layer_para, 0, sizeof(__disp_layer_info_t));
+@@ -1383,7 +1378,7 @@ __s32 Display_Fb_Release(__u32 fb_id)
+ 	}
+ }
+ 
+-__s32 Display_Fb_get_para(__u32 fb_id, __disp_fb_create_para_t * fb_para)
++__s32 Display_Fb_get_para(__u32 fb_id, __disp_fb_create_para_t *fb_para)
+ {
+ 	__inf("Display_Fb_Release, fb_id:%d\n", fb_id);
+ 
+@@ -1398,7 +1393,7 @@ __s32 Display_Fb_get_para(__u32 fb_id, __disp_fb_create_para_t * fb_para)
+ 	}
+ }
+ 
+-__s32 Display_get_disp_init_para(__disp_init_t * init_para)
++__s32 Display_get_disp_init_para(__disp_init_t *init_para)
+ {
+ 	memcpy(init_para, &g_fbi.disp_init, sizeof(__disp_init_t));
+ 
+@@ -1445,6 +1440,7 @@ __s32 Display_set_fb_timing(__u32 sel)
+ 	return 0;
+ }
+ 
++/* ??? --libv */
+ extern unsigned long fb_start;
+ extern unsigned long fb_size;
+ 
+@@ -1507,9 +1503,8 @@ __s32 Fb_Init(__u32 from)
+ 			g_fbi.fbinfo[i]->fix.mmio_start = 0;
+ 			g_fbi.fbinfo[i]->fix.mmio_len = 0;
+ 
+-			if (fb_alloc_cmap(&g_fbi.fbinfo[i]->cmap, 256, 1) < 0) {
++			if (fb_alloc_cmap(&g_fbi.fbinfo[i]->cmap, 256, 1) < 0)
+ 				return -ENOMEM;
+-			}
+ 		}
+ 		parser_disp_init_para(&(g_fbi.disp_init));
+ 	}
+@@ -1523,20 +1518,18 @@ __s32 Fb_Init(__u32 from)
+ 			    ((sel == 1) && (g_fbi.disp_init.disp_mode !=
+ 					    DISP_INIT_MODE_SCREEN0))) {
+ 				if (g_fbi.disp_init.output_type[sel] ==
+-				    DISP_OUTPUT_TYPE_HDMI) {
++				    DISP_OUTPUT_TYPE_HDMI)
+ 					need_open_hdmi = 1;
+-				}
+ 			}
+ 		}
+ 	}
+ 
+-	if (need_open_hdmi == 1 && from == 0) {
++	if (need_open_hdmi == 1 && from == 0)
+ 		/* it is called from lcd driver, but hdmi need to be opened */
+ 		return 0;
+-	} else if (need_open_hdmi == 0 && from == 1) {
++	else if (need_open_hdmi == 0 && from == 1)
+ 		/* it is called from hdmi driver, but hdmi need not be opened */
+ 		return 0;
+-	}
+ 
+ 	if (g_fbi.disp_init.b_init) {
+ 		__u32 fb_num = 0, sel = 0;
+@@ -1582,9 +1575,9 @@ __s32 Fb_Init(__u32 from)
+ 				       &(g_fbi.fbinfo[i]->var));
+ 
+ 			if (g_fbi.disp_init.disp_mode ==
+-			    DISP_INIT_MODE_SCREEN1) {
++			    DISP_INIT_MODE_SCREEN1)
+ 				screen_id = 1;
+-			}
++
+ 			fb_para.buffer_num = g_fbi.disp_init.buffer_num[i];
+ 			fb_para.width = BSP_disp_get_screen_width(screen_id);
+ 			fb_para.height = BSP_disp_get_screen_height(screen_id);
+@@ -1603,19 +1596,17 @@ __s32 Fb_Init(__u32 from)
+ 				fb_para.fb_mode = FB_MODE_SCREEN1;
+ 			} else if (g_fbi.disp_init.disp_mode ==
+ 				   DISP_INIT_MODE_TWO_DIFF_SCREEN) {
+-				if (i == 0) {
++				if (i == 0)
+ 					fb_para.fb_mode = FB_MODE_SCREEN0;
+-				} else {
++				else
+ 					fb_para.fb_mode = FB_MODE_SCREEN1;
+-				}
+ 			} else if (g_fbi.disp_init.disp_mode ==
+ 				   DISP_INIT_MODE_TWO_SAME_SCREEN) {
+ 				fb_para.fb_mode = FB_MODE_DUAL_SAME_SCREEN_TB;
+ 				fb_para.height *= 2;
+ 				fb_para.output_height *= 2;
+ 			} else if (g_fbi.disp_init.disp_mode ==
+-				   DISP_INIT_MODE_TWO_DIFF_SCREEN_SAME_CONTENTS)
+-			{
++				   DISP_INIT_MODE_TWO_DIFF_SCREEN_SAME_CONTENTS) {
+ 				fb_para.fb_mode =
+ 				    FB_MODE_DUAL_DIFF_SCREEN_SAME_CONTENTS;
+ 				fb_para.output_width =
+@@ -1642,26 +1633,25 @@ __s32 Fb_Init(__u32 from)
+ 					 &(g_fbi.fbinfo[i]->var));
+ #endif
+ 		}
+-		for (i = 0; i < SUNXI_MAX_FB; i++) {
++
++		for (i = 0; i < SUNXI_MAX_FB; i++)
+ 			/* Register framebuffers after they are initialized */
+ 			register_framebuffer(g_fbi.fbinfo[i]);
+-		}
+ 
+-		if (g_fbi.disp_init.scaler_mode[0]) {
++		if (g_fbi.disp_init.scaler_mode[0])
+ 			BSP_disp_print_reg(0, DISP_REG_SCALER0);
+-		}
+-		if (g_fbi.disp_init.scaler_mode[1]) {
++
++		if (g_fbi.disp_init.scaler_mode[1])
+ 			BSP_disp_print_reg(0, DISP_REG_SCALER1);
+-		}
++
+ 		if (g_fbi.disp_init.disp_mode != DISP_INIT_MODE_SCREEN1) {
+ 			BSP_disp_print_reg(0, DISP_REG_IMAGE0);
+ 			BSP_disp_print_reg(0, DISP_REG_LCDC0);
+ 			if ((g_fbi.disp_init.output_type[0] ==
+ 			     DISP_OUTPUT_TYPE_TV) ||
+ 			    (g_fbi.disp_init.output_type[0] ==
+-			     DISP_OUTPUT_TYPE_VGA)) {
++			     DISP_OUTPUT_TYPE_VGA))
+ 				BSP_disp_print_reg(0, DISP_REG_TVEC0);
+-			}
+ 		}
+ 		if (g_fbi.disp_init.disp_mode != DISP_INIT_MODE_SCREEN0) {
+ 			BSP_disp_print_reg(0, DISP_REG_IMAGE1);
+@@ -1669,9 +1659,8 @@ __s32 Fb_Init(__u32 from)
+ 			if ((g_fbi.disp_init.output_type[1] ==
+ 			     DISP_OUTPUT_TYPE_TV) ||
+ 			    (g_fbi.disp_init.output_type[1] ==
+-			     DISP_OUTPUT_TYPE_VGA)) {
++			     DISP_OUTPUT_TYPE_VGA))
+ 				BSP_disp_print_reg(0, DISP_REG_TVEC1);
+-			}
+ 		}
+ 		BSP_disp_print_reg(0, DISP_REG_CCMU);
+ 		BSP_disp_print_reg(0, DISP_REG_PWM);
+@@ -1681,15 +1670,15 @@ __s32 Fb_Init(__u32 from)
+ 	__inf("Fb_Init: END\n");
+ 	return 0;
+ }
++EXPORT_SYMBOL(Fb_Init);
+ 
+ __s32 Fb_Exit(void)
+ {
+ 	__u8 fb_id = 0;
+ 
+ 	for (fb_id = 0; fb_id < SUNXI_MAX_FB; fb_id++) {
+-		if (g_fbi.fbinfo[fb_id] != NULL) {
++		if (g_fbi.fbinfo[fb_id] != NULL)
+ 			Display_Fb_Release(FBIDTOHAND(fb_id));
+-		}
+ 
+ 		unregister_framebuffer(g_fbi.fbinfo[fb_id]);
+ 		framebuffer_release(g_fbi.fbinfo[fb_id]);
+@@ -1698,5 +1687,3 @@ __s32 Fb_Exit(void)
+ 
+ 	return 0;
+ }
+-
+-EXPORT_SYMBOL(Fb_Init);
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index 7651ae8..378549b 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -71,8 +71,6 @@ __u32 g_clk_status;
+ 
+ #define RESET_OSAL
+ 
+-extern __disp_dev_t gdisp;
+-
+ /* record tv/vga/hdmi mode clock requirement */
+ __disp_clk_tab clk_tab = {
+ 	/* { LCDx_CH1_CLK2, CLK2/CLK1, HDMI_CLK, PLL_CLK, PLLX2 req}, MODE, INDEX (FOLLOW enum order) */
+@@ -140,11 +138,11 @@ __s32 image_clk_init(__u32 sel)
+ 		OSAL_CCMU_SetMclkSrc(h_debe0mclk, AW_SYS_CLK_PLL5P);
+ 
+ 		dram_pll = OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL5P);
+-		if (dram_pll < 300000000) {
++		if (dram_pll < 300000000)
+ 			OSAL_CCMU_SetMclkDiv(h_debe0mclk, 1);
+-		} else {
++		else
+ 			OSAL_CCMU_SetMclkDiv(h_debe0mclk, 2);
+-		}
++
+ 		OSAL_CCMU_MclkOnOff(h_debe0ahbclk, CLK_ON);
+ #ifdef CONFIG_ARCH_SUN4I
+ 		OSAL_CCMU_MclkOnOff(h_debe0dramclk, CLK_ON);
+@@ -165,11 +163,10 @@ __s32 image_clk_init(__u32 sel)
+ 		OSAL_CCMU_SetMclkSrc(h_debe1mclk, AW_SYS_CLK_PLL5P);
+ 
+ 		dram_pll = OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL5P);
+-		if (dram_pll < 300000000) {
++		if (dram_pll < 300000000)
+ 			OSAL_CCMU_SetMclkDiv(h_debe1mclk, 1);
+-		} else {
++		else
+ 			OSAL_CCMU_SetMclkDiv(h_debe1mclk, 2);
+-		}
+ 
+ 		OSAL_CCMU_MclkOnOff(h_debe1ahbclk, CLK_ON);
+ #ifdef CONFIG_ARCH_SUN4I
+@@ -655,7 +652,7 @@ __s32 disp_pll_init(void)
+  * 2. support all lvds panels, when pll can't reach  (pixel clk x7),
+  *    set pll to 381MHz(pllx1), which will depress the frame rate.
+  */
+-static __s32 LCD_PLL_Calc(__u32 sel, __panel_para_t * info, __u32 * divider)
++static __s32 LCD_PLL_Calc(__u32 sel, __panel_para_t *info, __u32 *divider)
+ {
+ 	__u32 lcd_dclk_freq; /* Hz */
+ 	__s32 pll_freq = -1;
+@@ -676,25 +673,24 @@ static __s32 LCD_PLL_Calc(__u32 sel, __panel_para_t * info, __u32 * divider)
+ 	} else if (info->lcd_if == 3) {	/* lvds panel */
+ 		__u32 clk_max;
+ 
+-		if (!sunxi_is_version_A()) {
++		if (!sunxi_is_version_A())
+ 			clk_max = 150000000;
+-		} else {
++		else
+ 			/*
+ 			 * pixel clock can't be larger than 108MHz,
+ 			 * limited by Video pll frequency
+ 			 */
+ 			clk_max = 108000000;
+-		}
+-		if (lcd_dclk_freq > clk_max) {
++
++		if (lcd_dclk_freq > clk_max)
+ 			lcd_dclk_freq = clk_max;
+-		}
++
+ 
+ 		if (lcd_dclk_freq > 4000000) { /* pixel clk */
+ 			pll_freq = lcd_dclk_freq * 7;
+ 			*divider = 7;
+-		} else {
++		} else
+ 			return -1;
+-		}
+ 	}
+ 	return pll_freq;
+ }
+@@ -732,30 +728,26 @@ static __s32 disp_pll_assign(__u32 sel, __u32 pll_clk)
+ 
+ 	if (pll_clk >= 250000000 && pll_clk <= 300000000) {
+ 		if ((!(another_pll_use_status & VIDEO_PLL1_USED)) ||
+-		    (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL7) == pll_clk)) {
++		    (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL7) == pll_clk))
+ 			ret = 1;
+-		} else if ((!(another_pll_use_status & VIDEO_PLL0_USED)) ||
+-			   (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL3) == pll_clk)) {
++		else if ((!(another_pll_use_status & VIDEO_PLL0_USED)) ||
++			 (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL3) == pll_clk))
+ 			ret = 0;
+-		}
+ 	} else if (pll_clk <= (381000000 * 2)) {
+ 		if ((!(another_pll_use_status & VIDEO_PLL0_USED)) ||
+-		    (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL3) == pll_clk)) {
++		    (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL3) == pll_clk))
+ 			ret = 0;
+-		} else if ((!(another_pll_use_status & VIDEO_PLL1_USED)) ||
+-			   (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL7) == pll_clk)) {
++		else if ((!(another_pll_use_status & VIDEO_PLL1_USED)) ||
++			 (OSAL_CCMU_GetSrcFreq(AW_SYS_CLK_PLL7) == pll_clk))
+ 			ret = 1;
+-		}
+ 	} else if (pll_clk <= 1200000000) {
+-		if (!sunxi_is_version_A()) {
++		if (!sunxi_is_version_A())
+ 			ret = 2; /* sata pll */
+-		}
+ 	}
+ 
+-	if (ret == -1) {
++	if (ret == -1)
+ 		DE_WRN("Can't assign PLL for screen%d, pll_clk:%d\n", sel,
+ 		       pll_clk);
+-	}
+ 
+ 	DE_INF("====disp_pll_assign====: sel:%d,pll_clk:%d,pll_sel:%d\n", sel,
+ 	       pll_clk, ret);
+@@ -767,12 +759,11 @@ static __s32 disp_pll_assign(__u32 sel, __u32 pll_clk)
+ {
+ 	__s32 ret = -1;
+ 
+-	if (pll_clk <= (381000000 * 2)) {
++	if (pll_clk <= (381000000 * 2))
+ 		ret = 0;
+-	} else {
++	else
+ 		DE_WRN("Can't assign PLL for screen%d, pll_clk:%d\n", sel,
+ 		       pll_clk);
+-	}
+ 
+ 	return ret;
+ }
+@@ -811,9 +802,8 @@ static __s32 disp_pll_set(__u32 sel, __s32 videopll_sel, __u32 pll_freq,
+ #endif
+ 		} else { /* video pll0 or video pll1 */
+ 			pll_2x_req = (pll_freq > 381000000) ? 1 : 0;
+-			if (pll_2x_req) {
++			if (pll_2x_req)
+ 				pll_freq /= 2;
+-			}
+ 
+ 			/* in 3M unit */
+ 			pll_freq = (pll_freq + 1500000) / 3000000;
+@@ -822,10 +812,9 @@ static __s32 disp_pll_set(__u32 sel, __s32 videopll_sel, __u32 pll_freq,
+ 			videopll = (videopll_sel == 0) ?
+ 				AW_SYS_CLK_PLL3 : AW_SYS_CLK_PLL7;
+ 			OSAL_CCMU_SetSrcFreq(videopll, pll_freq);
+-			if (pll_2x_req) {
++			if (pll_2x_req)
+ 				videopll = (videopll == AW_SYS_CLK_PLL3) ?
+ 					AW_SYS_CLK_PLL3X2 : AW_SYS_CLK_PLL7X2;
+-			}
+ 		}
+ 
+ 		if (gpanel_info[sel].tcon_index == 0) {
+@@ -881,17 +870,15 @@ static __s32 disp_pll_set(__u32 sel, __s32 videopll_sel, __u32 pll_freq,
+ 
+ 			if (gdisp.init_para.hdmi_set_pll != NULL) {
+ 				if ((videopll == AW_SYS_CLK_PLL3X2) ||
+-				    (videopll == AW_SYS_CLK_PLL3)) {
++				    (videopll == AW_SYS_CLK_PLL3))
+ 					gdisp.init_para.hdmi_set_pll(0,
+ 								     pll_freq);
+-				} else {
++				else
+ 					gdisp.init_para.hdmi_set_pll(1,
+ 								     pll_freq);
+-				}
+-			} else {
++			} else
+ 				DE_WRN("gdisp.init_para.hdmi_set_pll is "
+ 				       "NULL\n");
+-			}
+ 		}
+ 	}
+ 
+@@ -922,24 +909,23 @@ __s32 disp_clk_cfg(__u32 sel, __u32 type, __u8 mode)
+ 		pll_2x = clk_tab.vga_clk_tab[mode].pll_2x;
+ 	} else if (type == DISP_OUTPUT_TYPE_LCD) {
+ 		pll_freq =
+-		    LCD_PLL_Calc(sel, (__panel_para_t *) & gpanel_info[sel],
++		    LCD_PLL_Calc(sel, (__panel_para_t *) &gpanel_info[sel],
+ 				 &lcd_clk_div);
+ 		pre_scale = 1;
+ 	} else {
+ 		return DIS_SUCCESS;
+ 	}
+ 
+-	if ((videopll_sel = disp_pll_assign(sel, pll_freq)) == -1) {
++	videopll_sel = disp_pll_assign(sel, pll_freq);
++	if (videopll_sel == -1)
+ 		return DIS_FAIL;
+-	}
+ 
+ 	disp_pll_set(sel, videopll_sel, pll_freq, tve_freq, pre_scale,
+ 		     lcd_clk_div, hdmi_freq, pll_2x, type);
+-	if (videopll_sel == 0) {
++	if (videopll_sel == 0)
+ 		gdisp.screen[sel].pll_use_status |= VIDEO_PLL0_USED;
+-	} else if (videopll_sel == 1) {
++	else if (videopll_sel == 1)
+ 		gdisp.screen[sel].pll_use_status |= VIDEO_PLL1_USED;
+-	}
+ 
+ 	return DIS_SUCCESS;
+ }
+@@ -953,89 +939,84 @@ __s32 BSP_disp_clk_on(__u32 type)
+ {
+ 	if (type & 1) {
+ 		/* AHB CLK */
+-		if ((g_clk_status & CLK_DEFE0_AHB_ON) == CLK_DEFE0_AHB_ON) {
++		if ((g_clk_status & CLK_DEFE0_AHB_ON) == CLK_DEFE0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0ahbclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_AHB_ON) == CLK_DEFE1_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_AHB_ON) == CLK_DEFE1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1ahbclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEBE0_AHB_ON) == CLK_DEBE0_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEBE0_AHB_ON) == CLK_DEBE0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0ahbclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_AHB_ON) == CLK_DEBE1_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_AHB_ON) == CLK_DEBE1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1ahbclk, CLK_ON);
+-		}
+ 
+ 		// OK?? REG wont clear?
+-		if ((g_clk_status & CLK_LCDC0_AHB_ON) == CLK_LCDC0_AHB_ON) {
++		if ((g_clk_status & CLK_LCDC0_AHB_ON) == CLK_LCDC0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ahbclk, CLK_ON);
+-		}
+ 
+ 		// OK?? REG wont clear?
+-		if ((g_clk_status & CLK_LCDC1_AHB_ON) == CLK_LCDC1_AHB_ON) {
++		if ((g_clk_status & CLK_LCDC1_AHB_ON) == CLK_LCDC1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ahbclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_HDMI_AHB_ON) == CLK_HDMI_AHB_ON) {
++
++		if ((g_clk_status & CLK_HDMI_AHB_ON) == CLK_HDMI_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_hdmiahbclk, CLK_ON);
+-		}
++
+ 		//OSAL_CCMU_MclkOnOff(h_tveahbclk, CLK_ON);
+ 
+ 		/* MODULE CLK */
+-		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0mclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1mclk, CLK_ON);
+-		}
+ 	}
+ 
+ 	if (type & 2) {
+ 		/* DRAM CLK */
+-		if ((g_clk_status & CLK_DEFE0_DRAM_ON) == CLK_DEFE0_DRAM_ON) {
++		if ((g_clk_status & CLK_DEFE0_DRAM_ON) == CLK_DEFE0_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0dramclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_DRAM_ON) == CLK_DEFE1_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_DRAM_ON) == CLK_DEFE1_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1dramclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEBE0_DRAM_ON) == CLK_DEBE0_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEBE0_DRAM_ON) == CLK_DEBE0_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0dramclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_DRAM_ON) == CLK_DEBE1_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_DRAM_ON) == CLK_DEBE1_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1dramclk, CLK_ON);
+-		}
++
+ 		/* MODULE CLK */
+-		if ((g_clk_status & CLK_DEFE0_MOD_ON) == CLK_DEFE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEFE0_MOD_ON) == CLK_DEFE0_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0mclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_MOD_ON) == CLK_DEFE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_MOD_ON) == CLK_DEFE1_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1mclk, CLK_ON);
+-		}
+-		if ((g_clk_status & CLK_LCDC0_MOD0_ON) == CLK_LCDC0_MOD0_ON) {
++
++		if ((g_clk_status & CLK_LCDC0_MOD0_ON) == CLK_LCDC0_MOD0_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch0mclk0, CLK_ON);
+-		}
++
+ 		if ((g_clk_status & CLK_LCDC0_MOD1_ON) == CLK_LCDC0_MOD1_ON) {
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk1, CLK_ON);
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk2, CLK_ON);
+ 		}
+-		if ((g_clk_status & CLK_LCDC1_MOD0_ON) == CLK_LCDC1_MOD0_ON) {
++		if ((g_clk_status & CLK_LCDC1_MOD0_ON) == CLK_LCDC1_MOD0_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_ON);
+-		}
++
+ 		if ((g_clk_status & CLK_LCDC1_MOD1_ON) == CLK_LCDC1_MOD1_ON) {
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk1, CLK_ON);
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk2, CLK_ON);
+ 		}
+-		if ((g_clk_status & CLK_HDMI_MOD_ON) == CLK_HDMI_MOD_ON) {
++		if ((g_clk_status & CLK_HDMI_MOD_ON) == CLK_HDMI_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_hdmimclk, CLK_ON);
+-		}
+ 	}
+ 
+ 	if (type == 2) {
+-		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON)
+ 			OSAL_CCMU_SetMclkDiv(h_debe0mclk, 2);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON)
+ 			OSAL_CCMU_SetMclkDiv(h_debe1mclk, 2);
+-		}
+ 	}
+ 
+ 	return DIS_SUCCESS;
+@@ -1050,90 +1031,84 @@ __s32 BSP_disp_clk_off(__u32 type)
+ {
+ 	if (type & 1) {
+ 		/* AHB CLK */
+-		if ((g_clk_status & CLK_DEFE0_AHB_ON) == CLK_DEFE0_AHB_ON) {
++		if ((g_clk_status & CLK_DEFE0_AHB_ON) == CLK_DEFE0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0ahbclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_AHB_ON) == CLK_DEFE1_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_AHB_ON) == CLK_DEFE1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1ahbclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEBE0_AHB_ON) == CLK_DEBE0_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEBE0_AHB_ON) == CLK_DEBE0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0ahbclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_AHB_ON) == CLK_DEBE1_AHB_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_AHB_ON) == CLK_DEBE1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1ahbclk, CLK_OFF);
+-		}
+ 
+ 		//OK?? REG wont clear?
+-		if ((g_clk_status & CLK_LCDC0_AHB_ON) == CLK_LCDC0_AHB_ON) {
++		if ((g_clk_status & CLK_LCDC0_AHB_ON) == CLK_LCDC0_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ahbclk, CLK_OFF);
+-		}
+ 
+ 		//OK?? REG wont clear?
+-		if ((g_clk_status & CLK_LCDC1_AHB_ON) == CLK_LCDC1_AHB_ON) {
++		if ((g_clk_status & CLK_LCDC1_AHB_ON) == CLK_LCDC1_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ahbclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_HDMI_AHB_ON) == CLK_HDMI_AHB_ON) {
++
++		if ((g_clk_status & CLK_HDMI_AHB_ON) == CLK_HDMI_AHB_ON)
+ 			OSAL_CCMU_MclkOnOff(h_hdmiahbclk, CLK_OFF);
+-		}
++
+ 		//OSAL_CCMU_MclkOnOff(h_tveahbclk, CLK_OFF);
+ 
+ 		/* MODULE CLK */
+-		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0mclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1mclk, CLK_OFF);
+-		}
+ 	}
+ 
+ 	if (type & 2) {
+ 		/* DRAM CLK */
+-		if ((g_clk_status & CLK_DEFE0_DRAM_ON) == CLK_DEFE0_DRAM_ON) {
++		if ((g_clk_status & CLK_DEFE0_DRAM_ON) == CLK_DEFE0_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0dramclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_DRAM_ON) == CLK_DEFE1_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_DRAM_ON) == CLK_DEFE1_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1dramclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEBE0_DRAM_ON) == CLK_DEBE0_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEBE0_DRAM_ON) == CLK_DEBE0_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe0dramclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_DRAM_ON) == CLK_DEBE1_DRAM_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_DRAM_ON) == CLK_DEBE1_DRAM_ON)
+ 			OSAL_CCMU_MclkOnOff(h_debe1dramclk, CLK_OFF);
+-		}
+ 
+ 		/* MODULE CLK */
+-		if ((g_clk_status & CLK_DEFE0_MOD_ON) == CLK_DEFE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEFE0_MOD_ON) == CLK_DEFE0_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe0mclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_DEFE1_MOD_ON) == CLK_DEFE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEFE1_MOD_ON) == CLK_DEFE1_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_defe1mclk, CLK_OFF);
+-		}
+-		if ((g_clk_status & CLK_LCDC0_MOD0_ON) == CLK_LCDC0_MOD0_ON) {
++
++		if ((g_clk_status & CLK_LCDC0_MOD0_ON) == CLK_LCDC0_MOD0_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch0mclk0, CLK_OFF);
+-		}
++
+ 		if ((g_clk_status & CLK_LCDC0_MOD1_ON) == CLK_LCDC0_MOD1_ON) {
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk1, CLK_OFF);
+ 			OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk2, CLK_OFF);
+ 		}
+-		if ((g_clk_status & CLK_LCDC1_MOD0_ON) == CLK_LCDC1_MOD0_ON) {
++		if ((g_clk_status & CLK_LCDC1_MOD0_ON) == CLK_LCDC1_MOD0_ON)
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_OFF);
+-		}
++
+ 		if ((g_clk_status & CLK_LCDC1_MOD1_ON) == CLK_LCDC1_MOD1_ON) {
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk1, CLK_OFF);
+ 			OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk2, CLK_OFF);
+ 		}
+-		if ((g_clk_status & CLK_HDMI_MOD_ON) == CLK_HDMI_MOD_ON) {
++		if ((g_clk_status & CLK_HDMI_MOD_ON) == CLK_HDMI_MOD_ON)
+ 			OSAL_CCMU_MclkOnOff(h_hdmimclk, CLK_OFF);
+-		}
+ 	}
+ 
+ 	if (type == 2) {
+-		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON) {
++		if ((g_clk_status & CLK_DEBE0_MOD_ON) == CLK_DEBE0_MOD_ON)
+ 			OSAL_CCMU_SetMclkDiv(h_debe0mclk, 16);
+-		}
+-		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON) {
++
++		if ((g_clk_status & CLK_DEBE1_MOD_ON) == CLK_DEBE1_MOD_ON)
+ 			OSAL_CCMU_SetMclkDiv(h_debe1mclk, 16);
+-		}
+ 	}
+ 
+ 	return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_combined.c b/drivers/video/sunxi/disp/disp_combined.c
+index bff0158..39e612e 100644
+--- a/drivers/video/sunxi/disp/disp_combined.c
++++ b/drivers/video/sunxi/disp/disp_combined.c
+@@ -23,11 +23,10 @@
+ #include "disp_combined.h"
+ #include "disp_event.h"
+ 
+-__s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t * color)
++__s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t *color)
+ {
+-	if (color == NULL) {
++	if (color == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	gdisp.screen[sel].bk_color.blue = color->blue;
+ 	gdisp.screen[sel].bk_color.red = color->red;
+@@ -38,7 +37,7 @@ __s32 BSP_disp_set_bk_color(__u32 sel, __disp_color_t * color)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_get_bk_color(__u32 sel, __disp_color_t * color)
++__s32 BSP_disp_get_bk_color(__u32 sel, __disp_color_t *color)
+ {
+ 	if (color == NULL) {
+ 		DE_WRN("para invalid in BSP_disp_get_bk_color\n");
+@@ -51,7 +50,7 @@ __s32 BSP_disp_get_bk_color(__u32 sel, __disp_color_t * color)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_set_color_key(__u32 sel, __disp_colorkey_t * ck_mode)
++__s32 BSP_disp_set_color_key(__u32 sel, __disp_colorkey_t *ck_mode)
+ {
+ 	if ((ck_mode == NULL) || (ck_mode->red_match_rule > 3) ||
+ 	    (ck_mode->green_match_rule > 3) || (ck_mode->blue_match_rule > 3)) {
+@@ -67,7 +66,7 @@ __s32 BSP_disp_set_color_key(__u32 sel, __disp_colorkey_t * ck_mode)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_get_color_key(__u32 sel, __disp_colorkey_t * ck_mode)
++__s32 BSP_disp_get_color_key(__u32 sel, __disp_colorkey_t *ck_mode)
+ {
+ 	memcpy(ck_mode, &(gdisp.screen[sel].color_key),
+ 	       sizeof(__disp_colorkey_t));
+@@ -75,7 +74,7 @@ __s32 BSP_disp_get_color_key(__u32 sel, __disp_colorkey_t * ck_mode)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_set_palette_table(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 BSP_disp_set_palette_table(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 				 __u32 size)
+ {
+ 	if ((pbuffer == NULL) || ((offset + size) > 1024)) {
+@@ -88,7 +87,7 @@ __s32 BSP_disp_set_palette_table(__u32 sel, __u32 * pbuffer, __u32 offset,
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_get_palette_table(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 BSP_disp_get_palette_table(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 				 __u32 size)
+ {
+ 	if ((pbuffer == NULL) || ((offset + size) > 1024)) {
+@@ -113,10 +112,9 @@ __s32 BSP_disp_layer_set_top(__u32 sel, __u32 hid)
+ 	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
+ 		__u32 prio = gdisp.screen[sel].max_layers - 1;
+ 
+-		for (i = 0; i < gdisp.screen[sel].max_layers; i++) {
++		for (i = 0; i < gdisp.screen[sel].max_layers; i++)
+ 			layer_prio[i] =
+ 			    gdisp.screen[sel].layer_manage[i].para.prio;
+-		}
+ 
+ 		layer_prio[hid] = prio--;
+ 
+@@ -125,9 +123,8 @@ __s32 BSP_disp_layer_set_top(__u32 sel, __u32 hid)
+ 				if ((gdisp.screen[sel].layer_manage[i].status &
+ 				     LAYER_USED) && (i != hid) &&
+ 				    (gdisp.screen[sel].layer_manage[i].para.prio
+-				     == j)) {
++				     == j))
+ 					layer_prio[i] = prio--;
+-				}
+ 			}
+ 		}
+ 
+@@ -158,10 +155,9 @@ __s32 BSP_disp_layer_set_bottom(__u32 sel, __u32 hid)
+ 	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
+ 		__u32 prio = 0;
+ 
+-		for (i = 0; i < gdisp.screen[sel].max_layers; i++) {
++		for (i = 0; i < gdisp.screen[sel].max_layers; i++)
+ 			layer_prio[i] =
+ 				gdisp.screen[sel].layer_manage[i].para.prio;
+-		}
+ 
+ 		layer_prio[hid] = prio++;
+ 		for (j = 0; j < gdisp.screen[sel].max_layers; j++) {
+@@ -169,9 +165,8 @@ __s32 BSP_disp_layer_set_bottom(__u32 sel, __u32 hid)
+ 				if ((gdisp.screen[sel].layer_manage[i].status &
+ 				     LAYER_USED) && (i != hid) &&
+ 				    (gdisp.screen[sel].layer_manage[i].para.prio
+-				     == j)) {
++				     == j))
+ 					layer_prio[i] = prio++;
+-				}
+ 			}
+ 		}
+ 
+@@ -212,11 +207,10 @@ __s32 BSP_disp_layer_get_alpha_value(__u32 sel, __u32 hid)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.alpha_val;
+-	} else {
++	else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_layer_alpha_enable(__u32 sel, __u32 hid, __bool enable)
+@@ -240,20 +234,18 @@ __s32 BSP_disp_layer_get_alpha_enable(__u32 sel, __u32 hid)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.alpha_en;
+-	} else {
++	else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_layer_set_pipe(__u32 sel, __u32 hid, __u8 pipe)
+ {
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+-	if (pipe != 0 && pipe != 1) {
++	if (pipe != 0 && pipe != 1)
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ 
+ 	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
+ 		DE_BE_Layer_Set_Pipe(sel, hid, pipe);
+@@ -271,11 +263,10 @@ __s32 BSP_disp_layer_get_pipe(__u32 sel, __u32 hid)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.pipe;
+-	} else {
++	else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_layer_colorkey_enable(__u32 sel, __u32 hid, __bool enable)
+@@ -299,11 +290,10 @@ __s32 BSP_disp_layer_get_colorkey_enable(__u32 sel, __u32 hid)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.ck_enable;
+-	} else {
++	else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_layer_get_piro(__u32 sel, __u32 hid)
+@@ -311,9 +301,8 @@ __s32 BSP_disp_layer_get_piro(__u32 sel, __u32 hid)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.prio;
+-	} else {
++	else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+diff --git a/drivers/video/sunxi/disp/disp_de.c b/drivers/video/sunxi/disp/disp_de.c
+index 20c4f8e..a94a88b 100644
+--- a/drivers/video/sunxi/disp/disp_de.c
++++ b/drivers/video/sunxi/disp/disp_de.c
+@@ -196,7 +196,7 @@ __s32 BSP_disp_get_enhance_enable(__u32 sel)
+ }
+ #endif /* CONFIG_ARCH_SUN4I */
+ 
+-__s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t * size)
++__s32 BSP_disp_set_screen_size(__u32 sel, __disp_rectsz_t *size)
+ {
+ 	DE_BE_set_display_size(sel, size->width, size->height);
+ 
+@@ -288,9 +288,8 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
+ 		out_csc = 1;
+ 	}
+ 
+-	if (drc_en) {
++	if (drc_en)
+ 		out_csc = 2;
+-	}
+ 
+ 	DE_BE_Set_Enhance(sel, out_csc, out_color_range,
+ 			  gdisp.screen[sel].bright, gdisp.screen[sel].contrast,
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index ecf9ae7..fd41dad 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -33,7 +33,7 @@
+ 
+ __disp_dev_t gdisp;
+ 
+-__s32 BSP_disp_init(__disp_bsp_init_para * para)
++__s32 BSP_disp_init(__disp_bsp_init_para *para)
+ {
+ 	__u32 i = 0, screen_id = 0;
+ 
+@@ -41,10 +41,10 @@ __s32 BSP_disp_init(__disp_bsp_init_para * para)
+ 
+ 	for (screen_id = 0; screen_id < 2; screen_id++) {
+ 		gdisp.screen[screen_id].max_layers = 4;
+-		for (i = 0; i < gdisp.screen[screen_id].max_layers; i++) {
++		for (i = 0; i < gdisp.screen[screen_id].max_layers; i++)
+ 			gdisp.screen[screen_id].layer_manage[i].para.prio =
+ 			    IDLE_PRIO;
+-		}
++
+ 		gdisp.screen[screen_id].image_output_type = IMAGE_OUTPUT_LCDC;
+ 
+ 		gdisp.screen[screen_id].bright = 50;
+@@ -161,9 +161,9 @@ __s32 BSP_disp_close(void)
+ 
+ 	for (sel = 0; sel < 2; sel++) {
+ 		Image_close(sel);
+-		if (gdisp.scaler[sel].status & SCALER_USED) {
++		if (gdisp.scaler[sel].status & SCALER_USED)
+ 			Scaler_close(sel);
+-		}
++
+ 		if (gdisp.screen[sel].lcdc_status & LCDC_TCON0_USED) {
+ 			TCON0_close(sel);
+ 			LCDC_close(sel);
+@@ -265,11 +265,10 @@ __s32 BSP_disp_print_reg(__bool b_force_on, __u32 id)
+ 		return DIS_FAIL;
+ 	}
+ 
+-	if (b_force_on) {
++	if (b_force_on)
+ 		DE_WRN("%s", str);
+-	} else {
++	else
+ 		DE_INF("%s", str);
+-	}
+ 
+ 	for (i = 0; i < size; i += 16) {
+ 		__u32 reg[4];
+@@ -279,13 +278,12 @@ __s32 BSP_disp_print_reg(__bool b_force_on, __u32 id)
+ 		reg[2] = sys_get_wvalue(base + i + 8);
+ 		reg[3] = sys_get_wvalue(base + i + 12);
+ 
+-		if (b_force_on) {
++		if (b_force_on)
+ 			DE_WRN("0x%08x:%08x,%08x:%08x,%08x\n", base + i,
+ 			       reg[0], reg[1], reg[2], reg[3]);
+-		} else {
++		else
+ 			DE_INF("0x%08x:%08x,%08x:%08x,%08x\n", base + i, reg[0],
+ 			       reg[1], reg[2], reg[3]);
+-		}
+ 	}
+ 
+ 	return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_display.h b/drivers/video/sunxi/disp/disp_display.h
+index 85ad026..59dcf58 100644
+--- a/drivers/video/sunxi/disp/disp_display.h
++++ b/drivers/video/sunxi/disp/disp_display.h
+@@ -31,12 +31,12 @@
+ #include "disp_iep.h"
+ #endif
+ 
+-#define IMAGE_USED		0x00000004
+-#define YUV_CH_USED		0x00000010
+-#define HWC_USED		0x00000040
+-#define LCDC_TCON0_USED		0x00000080
+-#define LCDC_TCON1_USED	 	0x00000100
+-#define SCALER_USED		0x00000200
++#define IMAGE_USED	0x00000004
++#define YUV_CH_USED	0x00000010
++#define HWC_USED	0x00000040
++#define LCDC_TCON0_USED	0x00000080
++#define LCDC_TCON1_USED	0x00000100
++#define SCALER_USED	0x00000200
+ 
+ #define LCD_ON		0x00010000
+ #define TV_ON		0x00020000
+diff --git a/drivers/video/sunxi/disp/disp_event.c b/drivers/video/sunxi/disp/disp_event.c
+index 7985c54..bffecb0 100644
+--- a/drivers/video/sunxi/disp/disp_event.c
++++ b/drivers/video/sunxi/disp/disp_event.c
+@@ -72,9 +72,8 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+ 	IEP_Operation_In_Vblanking(sel, tcon_index);
+ #endif
+ 
+-	if (gdisp.screen[sel].LCD_CPUIF_ISR) {
++	if (gdisp.screen[sel].LCD_CPUIF_ISR)
+ 		(*gdisp.screen[sel].LCD_CPUIF_ISR) ();
+-	}
+ 
+ 	if (gdisp.screen[sel].cache_flag == FALSE &&
+ 	    gdisp.screen[sel].cfg_cnt == 0) {
+@@ -155,9 +154,8 @@ void LCD_vbi_event_proc(__u32 sel, __u32 tcon_index)
+ #if 0
+ 	cur_line = LCDC_get_cur_line(sel, tcon_index);
+ 
+-	if (cur_line > 5) {
++	if (cur_line > 5)
+ 		DE_INF("%d\n", cur_line);
+-	}
+ #endif
+ 
+ 	return;
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index 0af62a9..9855d96 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -98,9 +98,9 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+ 
+ 		TCON1_set_hdmi_mode(sel, tv_mod);
+ 		TCON1_open(sel);
+-		if (gdisp.init_para.Hdmi_open) {
++		if (gdisp.init_para.Hdmi_open)
+ 			gdisp.init_para.Hdmi_open();
+-		} else {
++		else {
+ 			DE_WRN("Hdmi_open is NULL\n");
+ 			return -1;
+ 		}
+@@ -238,7 +238,7 @@ __s32 BSP_disp_hdmi_set_src(__u32 sel, __disp_lcdc_src_t src)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_set_hdmi_func(__disp_hdmi_func * func)
++__s32 BSP_disp_set_hdmi_func(__disp_hdmi_func *func)
+ {
+ 	gdisp.init_para.Hdmi_open = func->Hdmi_open;
+ 	gdisp.init_para.Hdmi_close = func->Hdmi_close;
+diff --git a/drivers/video/sunxi/disp/disp_hwc.c b/drivers/video/sunxi/disp/disp_hwc.c
+index 2db5f4c..7da7828 100644
+--- a/drivers/video/sunxi/disp/disp_hwc.c
++++ b/drivers/video/sunxi/disp/disp_hwc.c
+@@ -29,27 +29,27 @@ __s32 BSP_disp_hwc_enable(__u32 sel, __bool enable)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_hwc_set_pos(__u32 sel, __disp_pos_t * pos)
++__s32 BSP_disp_hwc_set_pos(__u32 sel, __disp_pos_t *pos)
+ {
+ 	DE_BE_HWC_Set_Pos(sel, pos);
+ 
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_hwc_get_pos(__u32 sel, __disp_pos_t * pos)
++__s32 BSP_disp_hwc_get_pos(__u32 sel, __disp_pos_t *pos)
+ {
+ 	DE_BE_HWC_Get_Pos(sel, pos);
+ 
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_hwc_set_framebuffer(__u32 sel, __disp_hwc_pattern_t * patmem)
++__s32 BSP_disp_hwc_set_framebuffer(__u32 sel, __disp_hwc_pattern_t *patmem)
+ {
+ 	de_hwc_src_t hsrc;
+ 
+-	if (patmem == NULL) {
++	if (patmem == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
++
+ 	hsrc.mode = patmem->pat_mode;
+ 	hsrc.paddr = patmem->addr;
+ 	DE_BE_HWC_Set_Src(sel, &hsrc);
+diff --git a/drivers/video/sunxi/disp/disp_iep.c b/drivers/video/sunxi/disp/disp_iep.c
+index 2f415ce..f295256 100644
+--- a/drivers/video/sunxi/disp/disp_iep.c
++++ b/drivers/video/sunxi/disp/disp_iep.c
+@@ -9,13 +9,11 @@
+ #error IEP should only be used on sun5i
+ #endif
+ 
+-extern __u32 g_clk_status;
+-
+ static __hdle h_iepahbclk, h_iepdramclk, h_iepmclk;
+ static __disp_iep_t giep[2]; /* IEP module parameters */
+ static __disp_pwrsv_t gpwrsv[2]; /* Power Saving algorithm parameters */
+ static __u32 *pttab; /* POINTER of LGC tab */
+-static __u32 printf_cnt = 0; /* for test */
++static __u32 printf_cnt; /* for test */
+ 
+ /* power save core */
+ #define SCENE_CHNG_THR 45
+@@ -43,7 +41,7 @@ static __u32 printf_cnt = 0; /* for test */
+ *  - Add HANG-UP DETECT: When use PWRSAVE_CORE in LOW referential backlight
+ * condiction, backlight will flicker. So STOP use PWRSAVE_CORE.
+ */
+-static __inline __s32 PWRSAVE_CORE(__u32 sel)
++static inline __s32 PWRSAVE_CORE(__u32 sel)
+ {
+ 	__u32 i;
+ 	__u32 hist_region_num = 8;
+@@ -74,16 +72,15 @@ static __inline __s32 PWRSAVE_CORE(__u32 sel)
+ 		/* read histogram result */
+ 		DE_IEP_Lh_Get_Cnt_Rec(sel, histcnt);
+ 
+-		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++) {
++		for (i = 0; i < IEP_LH_INTERVAL_NUM; i++)
+ 			size += histcnt[i];
+-		}
++
+ 		size = (size == 0) ? 1 : size;
+ 
+ 		/* calculate some var */
+ 		hist[0] = (histcnt[0] * 100) / size;
+-		for (i = 1; i < hist_region_num; i++) {
++		for (i = 1; i < hist_region_num; i++)
+ 			hist[i] = (histcnt[i] * 100) / size + hist[i - 1];
+-		}
+ 
+ 		for (i = 0; i < hist_region_num; i++) {
+ 			if (hist[i] >= 95) {
+@@ -181,11 +178,11 @@ static __inline __s32 PWRSAVE_CORE(__u32 sel)
+ __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en)
+ {
+ 	if (sel == 0) {
+-		if (en) {
++		if (en)
+ 			gdisp.screen[sel].iep_status |= DRC_REQUIRED;
+-		} else {
++		else
+ 			gdisp.screen[sel].iep_status &= ~DRC_REQUIRED;
+-		}
++
+ 		Disp_drc_enable(sel, en);
+ 		return DIS_SUCCESS;
+ 	} else {
+@@ -221,11 +218,11 @@ __s32 BSP_disp_iep_get_drc_enable(__u32 sel)
+ __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en)
+ {
+ 	if (sel == 0) {
+-		if (en) {
++		if (en)
+ 			gdisp.screen[sel].iep_status |= DE_FLICKER_REQUIRED;
+-		} else {
++		else
+ 			gdisp.screen[sel].iep_status &= ~DE_FLICKER_REQUIRED;
+-		}
++
+ 		Disp_de_flicker_enable(sel, en);
+ 		return DIS_SUCCESS;
+ 	} else {
+@@ -239,17 +236,16 @@ __s32 BSP_disp_iep_get_deflicker_enable(__u32 sel)
+ 	__u32 ret;
+ 
+ 	if (sel == 0) {
+-		if (gdisp.screen[sel].iep_status & DE_FLICKER_USED) {
++		if (gdisp.screen[sel].iep_status & DE_FLICKER_USED)
+ 			/* used (ON) */
+ 			ret = 1;
+-		} else if (!(gdisp.screen[sel].iep_status & DE_FLICKER_USED) &&
++		else if (!(gdisp.screen[sel].iep_status & DE_FLICKER_USED) &&
+ 			   (gdisp.screen[sel].iep_status &
+-			    DE_FLICKER_REQUIRED)) {
++			    DE_FLICKER_REQUIRED))
+ 			/* required but not used(ON) */
+ 			ret = 2;
+-		} else { /* not required and not used (OFF) */
++		else /* not required and not used (OFF) */
+ 			ret = 0;
+-		}
+ 
+ 		return ret;
+ 	} else {
+@@ -257,7 +253,7 @@ __s32 BSP_disp_iep_get_deflicker_enable(__u32 sel)
+ 	}
+ }
+ 
+-__s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t * regn)
++__s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)
+ {
+ 	__u32 scn_width, scn_height;
+ 
+@@ -303,56 +299,51 @@ __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t * regn)
+  */
+ __s32 Disp_drc_enable(__u32 sel, __u32 en)
+ {
+-	if (sel == 0) {
+-		switch (en) {
+-		case 0:
++	if (sel)
++		return -1;
+ 
+-			if (gdisp.screen[sel].iep_status & DRC_USED) {
+-				gdisp.screen[sel].iep_status |= DRC_NEED_CLOSED;
+-			} else {
+-				DE_INF("de: DRC hasn't opened yet !\n");
+-			}
+-			break;
+-
+-		case 1:
+-			if (gdisp.screen[sel].iep_status & DRC_REQUIRED) {
+-				if ((gdisp.screen[sel].output_type ==
+-				     DISP_OUTPUT_TYPE_LCD) &&
+-				    (gdisp.screen[sel].status & LCD_ON)) {
+-					if (!
+-					    (gdisp.screen[sel].
+-					     iep_status & DRC_USED)) {
+-						Disp_drc_init(sel);
+-						gdisp.screen[sel].iep_status |=
+-						    DRC_USED;
+-						DE_INF("de: DRC open now!\n");
+-					} else {
+-						DE_INF("de: DRC has already "
+-						       "opened before !\n");
+-					}
++	switch (en) {
++	case 0:
++		if (gdisp.screen[sel].iep_status & DRC_USED)
++			gdisp.screen[sel].iep_status |= DRC_NEED_CLOSED;
++		else
++			DE_INF("de: DRC hasn't opened yet !\n");
++		break;
++
++	case 1:
++		if (gdisp.screen[sel].iep_status & DRC_REQUIRED) {
++			if ((gdisp.screen[sel].output_type ==
++			     DISP_OUTPUT_TYPE_LCD) &&
++			    (gdisp.screen[sel].status & LCD_ON)) {
++				if (!(gdisp.screen[sel].iep_status &
++				      DRC_USED)) {
++					Disp_drc_init(sel);
++					gdisp.screen[sel].iep_status |=
++						DRC_USED;
++					DE_INF("de: DRC open now!\n");
+ 				} else {
+-					DE_INF("de: Will OPEN DRC when output "
+-					       "to LCD !\n");
++					DE_INF("de: DRC has already opened "
++					       "before!\n");
+ 				}
+ 			} else {
+-				DE_INF("de: Run DISP_CMD_DRC_ON will open "
+-				       "DRC!\n");
++				DE_INF("de: Will OPEN DRC when output to "
++				       "LCD!\n");
+ 			}
+-			break;
++		} else {
++			DE_INF("de: Run DISP_CMD_DRC_ON will open DRC!\n");
++		}
++		break;
+ 
+-		case 2:
+-			if (gdisp.screen[sel].iep_status & DRC_USED) {
+-				Disp_drc_close_proc(sel, 0);
+-			} else {
+-				DE_INF("de: DRC hasn't opened yet !\n");
+-			}
+-			break;
++	case 2:
++		if (gdisp.screen[sel].iep_status & DRC_USED)
++			Disp_drc_close_proc(sel, 0);
++		else
++			DE_INF("de: DRC hasn't opened yet !\n");
+ 
+-		}
+-		return 0;
+-	} else {
+-		return -1;
++		break;
+ 	}
++
++	return 0;
+ }
+ 
+ __s32 Disp_drc_init(__u32 sel)
+@@ -422,9 +413,11 @@ __s32 Disp_drc_init(__u32 sel)
+ 	}
+ }
+ 
+-//en : 0-close when vbi
+-//en : 1- open when vbi
+-//en : 2-close immediately
++/*
++ * en : 0-close when vbi
++ * en : 1- open when vbi
++ * en : 2-close immediately
++ */
+ __s32 Disp_de_flicker_enable(__u32 sel, __u32 en)
+ {
+ 	__disp_tv_mode_t tv_mode;
+@@ -476,7 +469,7 @@ __s32 Disp_de_flicker_enable(__u32 sel, __u32 en)
+ 				      DE_FLICKER_USED)) {
+ 					BSP_disp_cfg_start(sel);
+ 
+-					//config defe to fit de-flicker
++					/* config defe to fit de-flicker */
+ 					for (scaler_index = 0;
+ 					     scaler_index < 2;
+ 					     scaler_index++) {
+@@ -593,13 +586,11 @@ __s32 iep_clk_exit(__u32 sel)
+ {
+ 	OSAL_CCMU_MclkReset(h_iepmclk, RST_VALID);
+ 
+-	if (g_clk_status & CLK_IEP_DRAM_ON) {
++	if (g_clk_status & CLK_IEP_DRAM_ON)
+ 		OSAL_CCMU_MclkOnOff(h_iepdramclk, CLK_OFF);
+-	}
+ 
+-	if (g_clk_status & CLK_IEP_MOD_ON) {
++	if (g_clk_status & CLK_IEP_MOD_ON)
+ 		OSAL_CCMU_MclkOnOff(h_iepmclk, CLK_OFF);
+-	}
+ 
+ 	OSAL_CCMU_MclkOnOff(h_iepahbclk, CLK_OFF);
+ 
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 3589522..92162b2 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -30,11 +30,9 @@ static __s32 Layer_Get_Idle_Hid(__u32 sel)
+ {
+ 	__s32 i;
+ 
+-	for (i = 0; i < gdisp.screen[sel].max_layers; i++) {
+-		if (!(gdisp.screen[sel].layer_manage[i].status & LAYER_USED)) {
++	for (i = 0; i < gdisp.screen[sel].max_layers; i++)
++		if (!(gdisp.screen[sel].layer_manage[i].status & LAYER_USED))
+ 			return i;
+-		}
+-	}
+ 
+ 	return (__s32) DIS_NO_RES;
+ }
+@@ -43,23 +41,21 @@ static __s32 Layer_Get_Idle_Prio(__u32 sel)
+ {
+ 	__s32 i, j;
+ 
+-	for (i = 0; i < gdisp.screen[sel].max_layers; i++) {
++	for (i = 0; i < gdisp.screen[sel].max_layers; i++)
+ 		for (j = 0; j < gdisp.screen[sel].max_layers; j++) {
+-			if (gdisp.screen[sel].layer_manage[j].para.prio == i) {
++			if (gdisp.screen[sel].layer_manage[j].para.prio == i)
+ 				break;
+-			} else if (j == gdisp.screen[sel].max_layers - 1) {
++			else if (j == gdisp.screen[sel].max_layers - 1)
+ 				return i;
+-			}
+ 		}
+-	}
++
+ 	return DIS_PRIO_ERROR;
+ }
+ 
+ __u32 Layer_Get_Prio(__u32 sel, __u32 hid)
+ {
+-	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED) {
++	if (gdisp.screen[sel].layer_manage[hid].status & LAYER_USED)
+ 		return gdisp.screen[sel].layer_manage[hid].para.prio;
+-	}
+ 
+ 	return (__u32) DIS_PARA_FAILED;
+ }
+@@ -67,11 +63,10 @@ __u32 Layer_Get_Prio(__u32 sel, __u32 hid)
+ __disp_pixel_type_t get_fb_type(__disp_pixel_fmt_t format)
+ {
+ 	if (format == DISP_FORMAT_YUV444 || format == DISP_FORMAT_YUV422 ||
+-	    format == DISP_FORMAT_YUV420 || format == DISP_FORMAT_YUV411) {
++	    format == DISP_FORMAT_YUV420 || format == DISP_FORMAT_YUV411)
+ 		return DISP_FB_TYPE_YUV;
+-	} else {
++	else
+ 		return DISP_FB_TYPE_RGB;
+-	}
+ }
+ 
+ /*
+@@ -254,7 +249,7 @@ static __s32 Yuv_Channel_Release(__u32 sel, __u8 hid)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t * pfb, __u32 xoffset,
++__s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t *pfb, __u32 xoffset,
+ 				  __u32 yoffset)
+ {
+ 	de_yuv_ch_src_t yuv_src;
+@@ -274,23 +269,23 @@ __s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t * pfb, __u32 xoffset,
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Yuv_Channel_adjusting(__u32 sel, __u32 mode, __u32 format, __s32 * src_x,
+-			    __u32 * scn_width)
++__s32 Yuv_Channel_adjusting(__u32 sel, __u32 mode, __u32 format, __s32 *src_x,
++			    __u32 *scn_width)
+ {
+ 	__u32 w_shift;
+ 	__u32 reg_format;
+ 
+ 	reg_format = img_sw_para_to_reg(0, mode, format);
+ 
+-	if (reg_format == 0x0) { /* planar yuv411 */
++	if (reg_format == 0x0) /* planar yuv411 */
+ 		w_shift = 4;
+-	} else if (reg_format == 0x1) { /* planar yuv422 */
++	else if (reg_format == 0x1) /* planar yuv422 */
+ 		w_shift = 3;
+-	} else if (reg_format == 0x2) { /* planar yuv444 */
++	else if (reg_format == 0x2) /* planar yuv444 */
+ 		w_shift = 2;
+-	} else {
++	else
+ 		w_shift = 0;
+-	}
++
+ 	*src_x = (*src_x >> w_shift) << w_shift;
+ 	*scn_width = (*scn_width >> w_shift) << w_shift;
+ 
+@@ -432,7 +427,7 @@ __s32 BSP_disp_layer_close(__u32 sel, __u32 hid)
+ /*
+  * keep the src window offset x/y
+  */
+-__s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)
++__s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t *pfb)
+ {
+ 	__s32 ret;
+ 	layer_src_t layer_fb;
+@@ -442,9 +437,8 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (pfb == NULL) {
++	if (pfb == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	layer_man = &gdisp.screen[sel].layer_manage[hid];
+ 	if (layer_man->status & LAYER_USED) {
+@@ -510,16 +504,15 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)
+ 	}
+ }
+ 
+-__s32 BSP_disp_layer_get_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)
++__s32 BSP_disp_layer_get_framebuffer(__u32 sel, __u32 hid, __disp_fb_t *pfb)
+ {
+ 	__layer_man_t *layer_man;
+ 
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (pfb == NULL) {
++	if (pfb == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	layer_man = &gdisp.screen[sel].layer_manage[hid];
+ 	if (layer_man->status & LAYER_USED) {
+@@ -539,19 +532,18 @@ __s32 BSP_disp_layer_get_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)
+ /*
+  * if not scaler mode, ignore the src window width&height.
+  */
+-__s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid, __disp_rect_t * regn)
++__s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid, __disp_rect_t *regn)
+ {
+ 	__layer_man_t *layer_man;
+ 
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (regn == NULL) {
++	if (regn == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+-	if (regn->width <= 0 || regn->height <= 0) {
++
++	if (regn->width <= 0 || regn->height <= 0)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	layer_man = &gdisp.screen[sel].layer_manage[hid];
+ 	if (layer_man->status & LAYER_USED) {
+@@ -612,7 +604,7 @@ __s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid, __disp_rect_t * regn)
+ 	}
+ }
+ 
+-__s32 BSP_disp_layer_get_src_window(__u32 sel, __u32 hid, __disp_rect_t * regn)
++__s32 BSP_disp_layer_get_src_window(__u32 sel, __u32 hid, __disp_rect_t *regn)
+ {
+ 	__layer_man_t *layer_man;
+ 
+@@ -643,7 +635,7 @@ __s32 BSP_disp_layer_get_src_window(__u32 sel, __u32 hid, __disp_rect_t * regn)
+ }
+ 
+ __s32 BSP_disp_layer_set_screen_window(__u32 sel, __u32 hid,
+-				       __disp_rect_t * regn)
++				       __disp_rect_t *regn)
+ {
+ 	__disp_rectsz_t outsize;
+ 	__layer_man_t *layer_man;
+@@ -716,16 +708,15 @@ __s32 BSP_disp_layer_set_screen_window(__u32 sel, __u32 hid,
+ }
+ 
+ __s32 BSP_disp_layer_get_screen_window(__u32 sel, __u32 hid,
+-				       __disp_rect_t * regn)
++				       __disp_rect_t *regn)
+ {
+ 	__layer_man_t *layer_man;
+ 
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+-	if (regn == NULL) {
++	if (regn == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	layer_man = &gdisp.screen[sel].layer_manage[hid];
+ 	if (layer_man->status & LAYER_USED) {
+@@ -742,7 +733,7 @@ __s32 BSP_disp_layer_get_screen_window(__u32 sel, __u32 hid,
+ }
+ 
+ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+-			      __disp_layer_info_t * player)
++			      __disp_layer_info_t *player)
+ {
+ 	__s32 ret;
+ 	__layer_man_t *layer_man;
+@@ -753,17 +744,15 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+ 	layer_man = &gdisp.screen[sel].layer_manage[hid];
+-	if (player->b_from_screen) {
++	if (player->b_from_screen)
+ 		player->mode = DISP_LAYER_WORK_MODE_SCALER;
+-	}
+ 
+ 	if (layer_man->status & LAYER_USED) {
+ 		BSP_disp_cfg_start(sel);
+ 		if (player->mode != DISP_LAYER_WORK_MODE_NORMAL ||
+ 		    get_fb_type(player->fb.format) != DISP_FB_TYPE_YUV) {
+-			if (layer_man->byuv_ch) {
++			if (layer_man->byuv_ch)
+ 				Yuv_Channel_Release(sel, hid);
+-			}
+ 		}
+ 		if (player->mode != DISP_LAYER_WORK_MODE_SCALER) {
+ 			if (layer_man->para.mode ==
+@@ -929,7 +918,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,
+  * todo
+  */
+ __s32
+-BSP_disp_layer_get_para(__u32 sel, __u32 hid, __disp_layer_info_t * player)
++BSP_disp_layer_get_para(__u32 sel, __u32 hid, __disp_layer_info_t *player)
+ {
+ 	__layer_man_t *layer_man;
+ 
+diff --git a/drivers/video/sunxi/disp/disp_layer.h b/drivers/video/sunxi/disp/disp_layer.h
+index 779768e..fa1e5d9 100644
+--- a/drivers/video/sunxi/disp/disp_layer.h
++++ b/drivers/video/sunxi/disp/disp_layer.h
+@@ -24,11 +24,11 @@
+ 
+ #include "disp_display_i.h"
+ 
+-#define HLID_ASSERT(no,max) \
+-do{ \
+-if((__s32)(no) < DIS_SUCCESS || (no) >= (max))\
+-	return DIS_PARA_FAILED;\
+-}while(0);
++#define HLID_ASSERT(no, max) \
++do { \
++	if ((__s32)(no) < DIS_SUCCESS || (no) >= (max))	\
++		return DIS_PARA_FAILED;			\
++} while (0);
+ 
+ #define IDLE_HID    0xff
+ #define IDLE_PRIO   0xff
+@@ -59,9 +59,9 @@ __u32 Layer_Get_Prio(__u32 sel, __u32 hid);
+ __disp_pixel_type_t get_fb_type(__disp_pixel_fmt_t format);
+ __s32 de_format_to_bpp(__disp_pixel_fmt_t fmt);
+ __s32 img_sw_para_to_reg(__u8 type, __u8 mode, __u8 value);
+-__s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t * pfb, __u32 xoffset,
++__s32 Yuv_Channel_Set_framebuffer(__u32 sel, __disp_fb_t *pfb, __u32 xoffset,
+ 				  __u32 yoffset);
+-__s32 Yuv_Channel_adjusting(__u32 sel, __u32 mode, __u32 format, __s32 * src_x,
+-			    __u32 * scn_width);
++__s32 Yuv_Channel_adjusting(__u32 sel, __u32 mode, __u32 format, __s32 *src_x,
++			    __u32 *scn_width);
+ 
+ #endif
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 56461fa..e5f1514 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -42,6 +42,7 @@ LCD_get_reg_bases(__reg_bases_t *para)
+ 	para->base_ccmu = gdisp.init_para.base_ccmu;
+ 	para->base_pwm = gdisp.init_para.base_pwm;
+ }
++EXPORT_SYMBOL(LCD_get_reg_bases);
+ 
+ static void
+ Lcd_Panel_Parameter_Check(__u32 sel)
+@@ -78,29 +79,25 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 	else
+ 		cycle_num = 1;
+ 
+-	if (info->lcd_hbp > info->lcd_hv_hspw) {
++	if (info->lcd_hbp > info->lcd_hv_hspw)
+ 		;
+-	} else {
++	else
+ 		Lcd_Panel_Err_Flag |= BIT0;
+-	}
+ 
+-	if (info->lcd_vbp > info->lcd_hv_vspw) {
++	if (info->lcd_vbp > info->lcd_hv_vspw)
+ 		;
+-	} else {
++	else
+ 		Lcd_Panel_Err_Flag |= BIT1;
+-	}
+ 
+-	if (info->lcd_ht >= (info->lcd_hbp + info->lcd_x * cycle_num + 4)) {
++	if (info->lcd_ht >= (info->lcd_hbp + info->lcd_x * cycle_num + 4))
+ 		;
+-	} else {
++	else
+ 		Lcd_Panel_Err_Flag |= BIT2;
+-	}
+ 
+-	if ((info->lcd_vt / 2) >= (info->lcd_vbp + info->lcd_y + 2)) {
++	if ((info->lcd_vt / 2) >= (info->lcd_vbp + info->lcd_y + 2))
+ 		;
+-	} else {
++	else
+ 		Lcd_Panel_Err_Flag |= BIT3;
+-	}
+ 
+ 	lcd_clk_div = TCON0_get_dclk_div(sel);
+ 	if (lcd_clk_div >= 6) {
+@@ -108,12 +105,10 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 	} else if ((lcd_clk_div == 5) || (lcd_clk_div == 4) ||
+ 		   (lcd_clk_div == 2)) {
+ 		if ((info->lcd_io_cfg0 != 0x00000000) &&
+-		    (info->lcd_io_cfg0 != 0x04000000)) {
++		    (info->lcd_io_cfg0 != 0x04000000))
+ 			Lcd_Panel_Err_Flag |= BIT10;
+-		}
+-	} else {
++	} else
+ 		Disp_Driver_Bug_Flag |= 1;
+-	}
+ 
+ 	if ((info->lcd_if == 1 && info->lcd_cpu_if == 0) ||
+ 	    (info->lcd_if == 3 && info->lcd_lvds_bitwidth == 1)) {
+@@ -126,27 +121,26 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 
+ 	lcd_fclk_frq = (info->lcd_dclk_freq * 1000 * 1000) /
+ 		((info->lcd_vt / 2) * info->lcd_ht);
+-	if (lcd_fclk_frq < 50 || lcd_fclk_frq > 70) {
++	if (lcd_fclk_frq < 50 || lcd_fclk_frq > 70)
+ 		Lcd_Panel_Wrn_Flag |= BIT2;
+-	}
+ 
+ 	if (Lcd_Panel_Err_Flag != 0 || Lcd_Panel_Wrn_Flag != 0) {
+ 		if (Lcd_Panel_Err_Flag != 0) {
+ 			__u32 i;
+-			for (i = 0; i < 200; i++) {
++
++			for (i = 0; i < 200; i++)
+ 				DE_WRN("*** Lcd in danger...\n");
+-			}
+ 		}
+ 
+-		DE_WRN("********************************************************"
+-		       "*********\n");
++		DE_WRN("*******************************************************"
++		       "**********\n");
+ 		DE_WRN("***\n");
+ 		DE_WRN("*** LCD Panel Parameter Check\n");
+ 		DE_WRN("***\n");
+ 		DE_WRN("***             by dulianping\n");
+ 		DE_WRN("***\n");
+-		DE_WRN("********************************************************"
+-		       "*********\n");
++		DE_WRN("*******************************************************"
++		       "**********\n");
+ 
+ 		DE_WRN("***\n");
+ 		DE_WRN("*** Interface:");
+@@ -171,13 +165,12 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 			DE_WRN("*** lcd_cpu_if: %d\n", info->lcd_cpu_if);
+ 		}
+ 
+-		if (info->lcd_frm == 0) {
++		if (info->lcd_frm == 0)
+ 			DE_WRN("*** Lcd Frm Disable\n");
+-		} else if (info->lcd_frm == 1) {
++		else if (info->lcd_frm == 1)
+ 			DE_WRN("*** Lcd Frm to RGB666\n");
+-		} else if (info->lcd_frm == 2) {
++		else if (info->lcd_frm == 2)
+ 			DE_WRN("*** Lcd Frm to RGB565\n");
+-		}
+ 
+ 		DE_WRN("***\n");
+ 		DE_WRN("*** Timing:\n");
+@@ -193,35 +186,34 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 
+ 		/* Print Error */
+ 		DE_WRN("***\n");
+-		if (Lcd_Panel_Err_Flag & BIT0) {
++		if (Lcd_Panel_Err_Flag & BIT0)
+ 			DE_WRN("*** Err01: Violate \"lcd_hbp > lcd_hspw\"\n");
+-		}
+-		if (Lcd_Panel_Err_Flag & BIT1) {
++
++		if (Lcd_Panel_Err_Flag & BIT1)
+ 			DE_WRN("*** Err02: Violate \"lcd_vbp > lcd_vspw\"\n");
+-		}
+-		if (Lcd_Panel_Err_Flag & BIT2) {
++
++		if (Lcd_Panel_Err_Flag & BIT2)
+ 			DE_WRN("*** Err03: Violate \"lcd_ht >= "
+ 			       "(lcd_hbp+lcd_x*%d+4)\"\n", cycle_num);
+-		}
+-		if (Lcd_Panel_Err_Flag & BIT3) {
++
++		if (Lcd_Panel_Err_Flag & BIT3)
+ 			DE_WRN("*** Err04: Violate \"(lcd_vt/2) >= "
+ 			       "(lcd_vbp+lcd_y+2)\"\n");
+-		}
+-		if (Lcd_Panel_Err_Flag & BIT10) {
++
++		if (Lcd_Panel_Err_Flag & BIT10)
+ 			DE_WRN("*** Err10: Violate \"lcd_io_cfg0\", "
+ 			       "use \"0x00000000\" or \"0x04000000\"");
+-		}
+-		if (Lcd_Panel_Wrn_Flag & BIT0) {
++
++		if (Lcd_Panel_Wrn_Flag & BIT0)
+ 			DE_WRN("*** WRN01: Recommend \"lcd_frm = 1\"\n");
+-		}
+-		if (Lcd_Panel_Wrn_Flag & BIT1) {
++
++		if (Lcd_Panel_Wrn_Flag & BIT1)
+ 			DE_WRN("*** WRN02: Recommend \"lcd_frm = 2\"\n");
+-		}
+-		if (Lcd_Panel_Wrn_Flag & BIT2) {
++
++		if (Lcd_Panel_Wrn_Flag & BIT2)
+ 			DE_WRN("*** WRN03: Recommend \"lcd_dclk_frq = %d\"\n",
+ 			       ((info->lcd_vt / 2) * info->lcd_ht) * 60 /
+ 			       (1000 * 1000));
+-		}
+ 		DE_WRN("***\n");
+ 
+ 		if (Lcd_Panel_Err_Flag != 0) {
+@@ -244,11 +236,12 @@ Lcd_Panel_Parameter_Check(__u32 sel)
+ 			/* open layer */
+ 			sys_put_wvalue(image_base_addr + 0x800, reg_value);
+ 
+-			DE_WRN("*** Try new parameters,you can make it pass!\n");
++			DE_WRN("*** Try new parameters, you can make it "
++			       "pass!\n");
+ 		}
+ 		DE_WRN("*** LCD Panel Parameter Check End\n");
+-		DE_WRN("********************************************************"
+-		       "*********\n");
++		DE_WRN("*******************************************************"
++		       "**********\n");
+ 	}
+ }
+ 
+@@ -645,9 +638,9 @@ LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ 		lcd_cfg->init_bright = 192;
+ 	} else {
+ 		DE_INF("%s.%s = %d\n", primary_key, sub_name, value);
+-		if (value > 256) {
++		if (value > 256)
+ 			value = 256;
+-		}
++
+ 		lcd_cfg->init_bright = value;
+ 	}
+ }
+@@ -659,11 +652,13 @@ void LCD_delay_ms(__u32 ms)
+ 	set_current_state(TASK_INTERRUPTIBLE);
+ 	schedule_timeout(timeout);
+ }
++EXPORT_SYMBOL(LCD_delay_ms);
+ 
+ void LCD_delay_us(__u32 us)
+ {
+ 	udelay(us);
+ }
++EXPORT_SYMBOL(LCD_delay_us);
+ 
+ void
+ LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+@@ -672,6 +667,7 @@ LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+ 	open_flow[sel].func[open_flow[sel].func_num].delay = delay;
+ 	open_flow[sel].func_num++;
+ }
++EXPORT_SYMBOL(LCD_OPEN_FUNC);
+ 
+ void
+ LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+@@ -680,6 +676,7 @@ LCD_CLOSE_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+ 	close_flow[sel].func[close_flow[sel].func_num].delay = delay;
+ 	close_flow[sel].func_num++;
+ }
++EXPORT_SYMBOL(LCD_CLOSE_FUNC);
+ 
+ void
+ TCON_open(__u32 sel)
+@@ -692,17 +689,16 @@ TCON_open(__u32 sel)
+ 		gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+ 	}
+ 
+-	if (gpanel_info[sel].lcd_if == 3) {
++	if (gpanel_info[sel].lcd_if == 3)
+ 		LCD_LVDS_open(sel);
+-	}
+ }
++EXPORT_SYMBOL(TCON_open);
+ 
+ void
+ TCON_close(__u32 sel)
+ {
+-	if (gpanel_info[sel].lcd_if == 3) {
++	if (gpanel_info[sel].lcd_if == 3)
+ 		LCD_LVDS_close(sel);
+-	}
+ 
+ 	if (gpanel_info[sel].tcon_index == 0) {
+ 		TCON0_close(sel);
+@@ -712,6 +708,7 @@ TCON_close(__u32 sel)
+ 		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON1_USED;
+ 	}
+ }
++EXPORT_SYMBOL(TCON_close);
+ 
+ static __u32 pwm_read_reg(__u32 offset)
+ {
+@@ -745,30 +742,30 @@ pwm_enable(__u32 channel, __bool b_en)
+ 		memcpy(gpio_info, &(gdisp.screen[channel].lcd_cfg.lcd_pwm),
+ 		       sizeof(user_gpio_set_t));
+ 
+-		if (b_en) {
++		if (b_en)
+ 			gpio_info->mul_sel = 2;
+-		} else {
++		else
+ 			gpio_info->mul_sel = 0;
+-		}
++
+ 		hdl = OSAL_GPIO_Request(gpio_info, 1);
+ 		OSAL_GPIO_Release(hdl, 2);
+ 	}
+ 
+ 	if (channel == 0) {
+ 		tmp = pwm_read_reg(0x200);
+-		if (b_en) {
++		if (b_en)
+ 			tmp |= (1 << 4);
+-		} else {
++		else
+ 			tmp &= (~(1 << 4));
+-		}
++
+ 		pwm_write_reg(0x200, tmp);
+ 	} else {
+ 		tmp = pwm_read_reg(0x200);
+-		if (b_en) {
++		if (b_en)
+ 			tmp |= (1 << 19);
+-		} else {
++		else
+ 			tmp &= (~(1 << 19));
+-		}
++
+ 		pwm_write_reg(0x200, tmp);
+ 	}
+ 
+@@ -776,12 +773,15 @@ pwm_enable(__u32 channel, __bool b_en)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(pwm_enable);
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+-//channel: pwm channel,0/1
+-//pwm_info->freq:  pwm freq, in hz
+-//pwm_info->active_state: 0:low level; 1:high level
+-__s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info)
++/*
++ * channel: pwm channel,0/1
++ * pwm_info->freq:  pwm freq, in hz
++ * pwm_info->active_state: 0:low level; 1:high level
++ */
++__s32 pwm_set_para(__u32 channel, __pwm_info_t *pwm_info)
+ {
+ 	__u32 pre_scal[10] = { 120, 180, 240, 360, 480,
+ 			       12000, 24000, 36000, 48000, 72000 };
+@@ -831,9 +831,8 @@ __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info)
+ 	gdisp.pwm[channel].entire_cycle = entire_cycle;
+ 	gdisp.pwm[channel].active_cycle = active_cycle;
+ 
+-	if (pre_scal_id >= 5) {
++	if (pre_scal_id >= 5)
+ 		pre_scal_id += 3;
+-	}
+ 
+ 	if (channel == 0) {
+ 		pwm_write_reg(0x204, ((entire_cycle - 1) << 16) | active_cycle);
+@@ -863,10 +862,12 @@ __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info)
+ 	return 0;
+ }
+ #else
+-//channel: pwm channel,0/1
+-//pwm_info->freq:  pwm freq, in hz
+-//pwm_info->active_state: 0:low level; 1:high level
+-__s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info)
++/*
++ * channel: pwm channel,0/1
++ * pwm_info->freq:  pwm freq, in hz
++ * pwm_info->active_state: 0:low level; 1:high level
++ */
++__s32 pwm_set_para(__u32 channel, __pwm_info_t *pwm_info)
+ {
+ 	__u32 pre_scal[11][2] = {
+ 		{1, 0xf},
+@@ -945,8 +946,9 @@ __s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info)
+ 	return 0;
+ }
+ #endif /* CONFIG_ARCH_SUN4I */
++EXPORT_SYMBOL(pwm_set_para);
+ 
+-__s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info)
++__s32 pwm_get_para(__u32 channel, __pwm_info_t *pwm_info)
+ {
+ 	pwm_info->enable = gdisp.pwm[channel].enable;
+ 	pwm_info->active_state = gdisp.pwm[channel].active_state;
+@@ -955,6 +957,7 @@ __s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(pwm_get_para);
+ 
+ static __s32
+ pwm_set_duty_ns(__u32 channel, __u32 duty_ns)
+@@ -981,6 +984,7 @@ pwm_set_duty_ns(__u32 channel, __u32 duty_ns)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(pwm_set_duty_ns);
+ 
+ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
+ {
+@@ -993,9 +997,9 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
+ 
+ 		if (!sunxi_is_version_A() &&
+ 		    (gpanel_info[sel].lcd_pwm_not_used == 0)) {
+-			if (b_en) {
++			if (b_en)
+ 				pwm_enable(gpanel_info[sel].lcd_pwm_ch, b_en);
+-			} else {
++			else {
+ 				gpio_info->mul_sel = 0;
+ 				hdl = OSAL_GPIO_Request(gpio_info, 1);
+ 				OSAL_GPIO_Release(hdl, 2);
+@@ -1017,6 +1021,7 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(LCD_PWM_EN);
+ 
+ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
+ {
+@@ -1027,9 +1032,8 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
+ 		memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_bl_en),
+ 		       sizeof(user_gpio_set_t));
+ 
+-		if (!b_en) {
++		if (!b_en)
+ 			gpio_info->data = (gpio_info->data == 0) ? 1 : 0;
+-		}
+ 
+ 		hdl = OSAL_GPIO_Request(gpio_info, 1);
+ 		OSAL_GPIO_Release(hdl, 2);
+@@ -1037,6 +1041,7 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(LCD_BL_EN);
+ 
+ __s32
+ LCD_POWER_EN(__u32 sel, __bool b_en)
+@@ -1048,9 +1053,8 @@ LCD_POWER_EN(__u32 sel, __bool b_en)
+ 		memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_power),
+ 		       sizeof(user_gpio_set_t));
+ 
+-		if (!b_en) {
++		if (!b_en)
+ 			gpio_info->data = (gpio_info->data == 0) ? 1 : 0;
+-		}
+ 
+ 		hdl = OSAL_GPIO_Request(gpio_info, 1);
+ 		OSAL_GPIO_Release(hdl, 2);
+@@ -1058,18 +1062,21 @@ LCD_POWER_EN(__u32 sel, __bool b_en)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(LCD_POWER_EN);
+ 
+ __s32
+ LCD_GPIO_request(__u32 sel, __u32 io_index)
+ {
+ 	return 0;
+ }
++EXPORT_SYMBOL(LCD_GPIO_request);
+ 
+ __s32
+ LCD_GPIO_release(__u32 sel, __u32 io_index)
+ {
+ 	return 0;
+ }
++EXPORT_SYMBOL(LCD_GPIO_release);
+ 
+ __s32
+ LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output)
+@@ -1081,6 +1088,7 @@ LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output)
+ 						gpio_hdl[io_index], b_output,
+ 						gpio_name);
+ }
++EXPORT_SYMBOL(LCD_GPIO_set_attr);
+ 
+ __s32
+ LCD_GPIO_read(__u32 sel, __u32 io_index)
+@@ -1091,6 +1099,7 @@ LCD_GPIO_read(__u32 sel, __u32 io_index)
+ 	return OSAL_GPIO_DevREAD_ONEPIN_DATA(gdisp.screen[sel].
+ 					     gpio_hdl[io_index], gpio_name);
+ }
++EXPORT_SYMBOL(LCD_GPIO_read);
+ 
+ __s32
+ LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data)
+@@ -1102,6 +1111,7 @@ LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data)
+ 					      gpio_hdl[io_index], data,
+ 					      gpio_name);
+ }
++EXPORT_SYMBOL(LCD_GPIO_write);
+ 
+ static __s32
+ LCD_GPIO_init(__u32 sel)
+@@ -1130,11 +1140,9 @@ LCD_GPIO_exit(__u32 sel)
+ {
+ 	__u32 i = 0;
+ 
+-	for (i = 0; i < 4; i++) {
+-		if (gdisp.screen[sel].gpio_hdl[i]) {
++	for (i = 0; i < 4; i++)
++		if (gdisp.screen[sel].gpio_hdl[i])
+ 			OSAL_GPIO_Release(gdisp.screen[sel].gpio_hdl[i], 2);
+-		}
+-	}
+ 
+ 	return 0;
+ }
+@@ -1144,6 +1152,7 @@ LCD_CPU_register_irq(__u32 sel, void (*Lcd_cpuisr_proc) (void))
+ {
+ 	gdisp.screen[sel].LCD_CPUIF_ISR = Lcd_cpuisr_proc;
+ }
++EXPORT_SYMBOL(LCD_CPU_register_irq);
+ 
+ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
+ {
+@@ -1158,13 +1167,12 @@ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
+ 				memcpy(gpio_info,
+ 				       &(gdisp.screen[sel].lcd_cfg.lcd_io[i]),
+ 				       sizeof(user_gpio_set_t));
+-				if (!bon) {
++				if (!bon)
+ 					gpio_info->mul_sel = 0;
+-				} else {
++				else {
+ 					if ((gpanel_info[sel].lcd_if == 3) &&
+-					    (gpio_info->mul_sel == 2)) {
++					    (gpio_info->mul_sel == 2))
+ 						gpio_info->mul_sel = 3;
+-					}
+ 				}
+ 				lcd_pin_hdl = OSAL_GPIO_Request(gpio_info, 1);
+ 				OSAL_GPIO_Release(lcd_pin_hdl, 2);
+@@ -1174,11 +1182,10 @@ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
+ 		__u32 reg_start = 0;
+ 		__u32 tmp = 0;
+ 
+-		if (sel == 0) {
++		if (sel == 0)
+ 			reg_start = gdisp.init_para.base_pioc + 0x6c;
+-		} else {
++		else
+ 			reg_start = gdisp.init_para.base_pioc + 0xfc;
+-		}
+ 
+ 		if (bon) {
+ 			tmp = sys_get_wvalue(reg_start + 0x0c) & 0xffff00ff;
+@@ -1200,12 +1207,11 @@ static irqreturn_t Disp_lcdc_event_proc(int irq, void *parg)
+ 	lcdc_flags = LCDC_query_int(sel);
+ 	LCDC_clear_int(sel, lcdc_flags);
+ 
+-	if (lcdc_flags & LCDC_VBI_LCD) {
++	if (lcdc_flags & LCDC_VBI_LCD)
+ 		LCD_vbi_event_proc(sel, 0);
+-	}
+-	if (lcdc_flags & LCDC_VBI_HD) {
++
++	if (lcdc_flags & LCDC_VBI_HD)
+ 		LCD_vbi_event_proc(sel, 1);
+-	}
+ 
+ 	return OSAL_IRQ_RETURN;
+ }
+@@ -1222,20 +1228,19 @@ __s32 Disp_lcdc_init(__u32 sel)
+ 	LCDC_init(sel);
+ 	lcdc_clk_off(sel);
+ 
+-	if (sel == 0) {
++	if (sel == 0)
+ 		ret = request_irq(INTC_IRQNO_LCDC0, Disp_lcdc_event_proc,
+ 				  IRQF_DISABLED, "sunxi lcd0", (void *)sel);
+-	} else {
++	else
+ 		ret = request_irq(INTC_IRQNO_LCDC1, Disp_lcdc_event_proc,
+ 				  IRQF_DISABLED, "sunxi lcd1", (void *)sel);
+-	}
+ 
+ 	if (gdisp.screen[sel].lcd_cfg.lcd_used) {
+-		if (lcd_panel_fun[sel].cfg_panel_info) {
++		if (lcd_panel_fun[sel].cfg_panel_info)
+ 			lcd_panel_fun[sel].cfg_panel_info(&gpanel_info[sel]);
+-		} else {
++		else
+ 			LCD_get_panel_para(sel, &gpanel_info[sel]);
+-		}
++
+ 		gpanel_info[sel].tcon_index = 0;
+ 
+ 		if (!sunxi_is_version_A() &&
+@@ -1246,16 +1251,16 @@ __s32 Disp_lcdc_init(__u32 sel)
+ 			pwm_info.active_state = 1;
+ 			pwm_info.period_ns =
+ 			    1000000 / gpanel_info[sel].lcd_pwm_freq;
+-			if (gpanel_info[sel].lcd_pwm_pol == 0) {
++			if (gpanel_info[sel].lcd_pwm_pol == 0)
+ 				pwm_info.duty_ns =
+ 				    (gdisp.screen[sel].lcd_cfg.init_bright *
+ 				     pwm_info.period_ns) / 256;
+-			} else {
++			else
+ 				pwm_info.duty_ns =
+ 				    ((256 -
+ 				      gdisp.screen[sel].lcd_cfg.init_bright) *
+ 				     pwm_info.period_ns) / 256;
+-			}
++
+ 			pwm_set_para(gpanel_info[sel].lcd_pwm_ch, &pwm_info);
+ 		}
+ 		LCD_GPIO_init(sel);
+@@ -1527,21 +1532,17 @@ __s32 BSP_disp_get_screen_height(__u32 sel)
+ 
+ __s32 BSP_disp_get_output_type(__u32 sel)
+ {
+-	if (gdisp.screen[sel].status & TV_ON) {
++	if (gdisp.screen[sel].status & TV_ON)
+ 		return (__s32) DISP_OUTPUT_TYPE_TV;
+-	}
+ 
+-	if (gdisp.screen[sel].status & LCD_ON) {
++	if (gdisp.screen[sel].status & LCD_ON)
+ 		return (__s32) DISP_OUTPUT_TYPE_LCD;
+-	}
+ 
+-	if (gdisp.screen[sel].status & HDMI_ON) {
++	if (gdisp.screen[sel].status & HDMI_ON)
+ 		return (__s32) DISP_OUTPUT_TYPE_HDMI;
+-	}
+ 
+-	if (gdisp.screen[sel].status & VGA_ON) {
++	if (gdisp.screen[sel].status & VGA_ON)
+ 		return (__s32) DISP_OUTPUT_TYPE_VGA;
+-	}
+ 
+ 	return (__s32) DISP_OUTPUT_TYPE_NONE;
+ }
+@@ -1626,11 +1627,11 @@ __s32 BSP_disp_lcd_open_before(__u32 sel)
+ 	Image_open(sel);
+ 	Disp_lcdc_pin_cfg(sel, DISP_OUTPUT_TYPE_LCD, 1);
+ 
+-	if (gpanel_info[sel].tcon_index == 0) {
+-		TCON0_cfg(sel, (__panel_para_t *) & gpanel_info[sel]);
+-	} else {
+-		TCON1_cfg_ex(sel, (__panel_para_t *) & gpanel_info[sel]);
+-	}
++	if (gpanel_info[sel].tcon_index == 0)
++		TCON0_cfg(sel, (__panel_para_t *) &gpanel_info[sel]);
++	else
++		TCON1_cfg_ex(sel, (__panel_para_t *) &gpanel_info[sel]);
++
+ #ifdef CONFIG_ARCH_SUN4I
+ 	BSP_disp_set_output_csc(sel, DISP_OUTPUT_TYPE_LCD);
+ #else
+@@ -1665,7 +1666,7 @@ __s32 BSP_disp_lcd_open_after(__u32 sel)
+ 
+ __lcd_flow_t *BSP_disp_lcd_get_open_flow(__u32 sel)
+ {
+-	return (&open_flow[sel]);
++	return &open_flow[sel];
+ }
+ 
+ __s32 BSP_disp_lcd_close_befor(__u32 sel)
+@@ -1699,7 +1700,7 @@ __s32 BSP_disp_lcd_close_after(__u32 sel)
+ 
+ __lcd_flow_t *BSP_disp_lcd_get_close_flow(__u32 sel)
+ {
+-	return (&close_flow[sel]);
++	return &close_flow[sel];
+ }
+ 
+ __s32 BSP_disp_lcd_xy_switch(__u32 sel, __s32 mode)
+@@ -1722,15 +1723,14 @@ __s32 BSP_disp_lcd_set_bright(__u32 sel, __u32 bright
+ #ifdef CONFIG_ARCH_SUN5I
+ 			      , __u32 from_iep
+ #endif
+-    )
++)
+ {
+ 	__u32 duty_ns;
+ 
+ 	if (!sunxi_is_version_A() && (gpanel_info[sel].lcd_pwm_not_used == 0)) {
+ #ifdef CONFIG_ARCH_SUN4I
+-		if (bright != 0) {
++		if (bright != 0)
+ 			bright += 1;
+-		}
+ #endif
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+@@ -1775,7 +1775,7 @@ __s32 BSP_disp_lcd_get_bright(__u32 sel)
+ 	return gdisp.screen[sel].lcd_bright;
+ }
+ 
+-__s32 BSP_disp_set_gamma_table(__u32 sel, __u32 * gamtbl_addr,
++__s32 BSP_disp_set_gamma_table(__u32 sel, __u32 *gamtbl_addr,
+ 			       __u32 gamtbl_size)
+ {
+ 	if ((gamtbl_addr == NULL) || (gamtbl_size > 1024)) {
+@@ -1840,8 +1840,8 @@ __s32 BSP_disp_lcd_user_defined_func(__u32 sel, __u32 para1, __u32 para2,
+ 							para3);
+ }
+ 
+-void LCD_set_panel_funs(__lcd_panel_fun_t * lcd0_cfg,
+-			__lcd_panel_fun_t * lcd1_cfg)
++void LCD_set_panel_funs(__lcd_panel_fun_t *lcd0_cfg,
++			__lcd_panel_fun_t *lcd1_cfg)
+ {
+ 	memset(&lcd_panel_fun[0], 0, sizeof(__lcd_panel_fun_t));
+ 	memset(&lcd_panel_fun[1], 0, sizeof(__lcd_panel_fun_t));
+@@ -1857,8 +1857,9 @@ void LCD_set_panel_funs(__lcd_panel_fun_t * lcd0_cfg,
+ 	lcd_panel_fun[1].lcd_user_defined_func =
+ 		lcd1_cfg->lcd_user_defined_func;
+ }
++EXPORT_SYMBOL(LCD_set_panel_funs);
+ 
+-__s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t * tt)
++__s32 BSP_disp_get_timing(__u32 sel, __disp_tcon_timing_t *tt)
+ {
+ 	memset(tt, 0, sizeof(__disp_tcon_timing_t));
+ 
+@@ -1949,28 +1950,3 @@ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+ }
+ #endif /* CONFIG_ARCH_SUN5I */
+ 
+-EXPORT_SYMBOL(LCD_OPEN_FUNC);
+-EXPORT_SYMBOL(LCD_CLOSE_FUNC);
+-EXPORT_SYMBOL(LCD_get_reg_bases);
+-EXPORT_SYMBOL(LCD_delay_ms);
+-EXPORT_SYMBOL(LCD_delay_us);
+-EXPORT_SYMBOL(TCON_open);
+-EXPORT_SYMBOL(TCON_close);
+-EXPORT_SYMBOL(LCD_PWM_EN);
+-EXPORT_SYMBOL(LCD_BL_EN);
+-EXPORT_SYMBOL(LCD_POWER_EN);
+-EXPORT_SYMBOL(LCD_CPU_register_irq);
+-EXPORT_SYMBOL(LCD_CPU_WR);
+-EXPORT_SYMBOL(LCD_CPU_WR_INDEX);
+-EXPORT_SYMBOL(LCD_CPU_WR_DATA);
+-EXPORT_SYMBOL(LCD_CPU_AUTO_FLUSH);
+-EXPORT_SYMBOL(LCD_GPIO_request);
+-EXPORT_SYMBOL(LCD_GPIO_release);
+-EXPORT_SYMBOL(LCD_GPIO_set_attr);
+-EXPORT_SYMBOL(LCD_GPIO_read);
+-EXPORT_SYMBOL(LCD_GPIO_write);
+-EXPORT_SYMBOL(LCD_set_panel_funs);
+-EXPORT_SYMBOL(pwm_set_para);
+-EXPORT_SYMBOL(pwm_get_para);
+-EXPORT_SYMBOL(pwm_set_duty_ns);
+-EXPORT_SYMBOL(pwm_enable);
+diff --git a/drivers/video/sunxi/disp/disp_lcd.h b/drivers/video/sunxi/disp/disp_lcd.h
+index 31ab198..f4b6e27 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.h
++++ b/drivers/video/sunxi/disp/disp_lcd.h
+@@ -45,13 +45,13 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en);
+ __s32 LCD_POWER_EN(__u32 sel, __bool b_en);
+ 
+ __s32 LCD_GPIO_request(__u32 sel, __u32 io_index);
+-__s32 LCD_GPIO_release(__u32 sel,__u32 io_index);
+-__s32 LCD_GPIO_set_attr(__u32 sel,__u32 io_index, __bool b_output);
+-__s32 LCD_GPIO_read(__u32 sel,__u32 io_index);
+-__s32 LCD_GPIO_write(__u32 sel,__u32 io_index, __u32 data);
++__s32 LCD_GPIO_release(__u32 sel, __u32 io_index);
++__s32 LCD_GPIO_set_attr(__u32 sel, __u32 io_index, __bool b_output);
++__s32 LCD_GPIO_read(__u32 sel, __u32 io_index);
++__s32 LCD_GPIO_write(__u32 sel, __u32 io_index, __u32 data);
+ 
+-__s32 pwm_set_para(__u32 channel, __pwm_info_t * pwm_info);
+-__s32 pwm_get_para(__u32 channel, __pwm_info_t * pwm_info);
++__s32 pwm_set_para(__u32 channel, __pwm_info_t *pwm_info);
++__s32 pwm_get_para(__u32 channel, __pwm_info_t *pwm_info);
+ 
+ void LCD_set_panel_funs(__lcd_panel_fun_t *lcd0_cfg,
+ 			__lcd_panel_fun_t *lcd1_cfg);
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index c388049..4f04f0d 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -35,82 +35,82 @@
+  */
+ __s32 Scaler_sw_para_to_reg(__u8 type, __u8 value)
+ {
+-	if (type == 0) { /* scaler input  pixel format */
+-		if (value == DISP_FORMAT_YUV444) {
++	if (type == 0) { /* scaler input pixel format */
++		if (value == DISP_FORMAT_YUV444)
+ 			return DE_SCAL_INYUV444;
+-		} else if (value == DISP_FORMAT_YUV420) {
++		else if (value == DISP_FORMAT_YUV420)
+ 			return DE_SCAL_INYUV420;
+-		} else if (value == DISP_FORMAT_YUV422) {
++		else if (value == DISP_FORMAT_YUV422)
+ 			return DE_SCAL_INYUV422;
+-		} else if (value == DISP_FORMAT_YUV411) {
++		else if (value == DISP_FORMAT_YUV411)
+ 			return DE_SCAL_INYUV411;
+-		} else if (value == DISP_FORMAT_CSIRGB) {
++		else if (value == DISP_FORMAT_CSIRGB)
+ 			return DE_SCAL_INCSIRGB;
+-		} else if (value == DISP_FORMAT_ARGB8888) {
++		else if (value == DISP_FORMAT_ARGB8888)
+ 			return DE_SCAL_INRGB888;
+-		} else if (value == DISP_FORMAT_RGB888) {
++		else if (value == DISP_FORMAT_RGB888)
+ 			return DE_SCAL_INRGB888;
+-		} else {
++		else
+ 			DE_WRN("not supported scaler input pixel format:%d in "
+ 			       "Scaler_sw_para_to_reg\n", value);
+-		}
++
+ 	} else if (type == 1) { /* scaler input mode */
+-		if (value == DISP_MOD_INTERLEAVED) {
++		if (value == DISP_MOD_INTERLEAVED)
+ 			return DE_SCAL_INTER_LEAVED;
+-		} else if (value == DISP_MOD_MB_PLANAR) {
++		else if (value == DISP_MOD_MB_PLANAR)
+ 			return DE_SCAL_PLANNARMB;
+-		} else if (value == DISP_MOD_NON_MB_PLANAR) {
++		else if (value == DISP_MOD_NON_MB_PLANAR)
+ 			return DE_SCAL_PLANNAR;
+-		} else if (value == DISP_MOD_NON_MB_UV_COMBINED) {
++		else if (value == DISP_MOD_NON_MB_UV_COMBINED)
+ 			return DE_SCAL_UVCOMBINED;
+-		} else if (value == DISP_MOD_MB_UV_COMBINED) {
++		else if (value == DISP_MOD_MB_UV_COMBINED)
+ 			return DE_SCAL_UVCOMBINEDMB;
+-		} else {
++		else
+ 			DE_WRN("not supported scaler input mode:%d in "
+ 			       "Scaler_sw_para_to_reg\n", value);
+-		}
++
+ 	} else if (type == 2) { /* scaler input pixel sequence */
+-		if (value == DISP_SEQ_UYVY) {
++		if (value == DISP_SEQ_UYVY)
+ 			return DE_SCAL_UYVY;
+-		} else if (value == DISP_SEQ_YUYV) {
++		else if (value == DISP_SEQ_YUYV)
+ 			return DE_SCAL_YUYV;
+-		} else if (value == DISP_SEQ_VYUY) {
++		else if (value == DISP_SEQ_VYUY)
+ 			return DE_SCAL_VYUY;
+-		} else if (value == DISP_SEQ_YVYU) {
++		else if (value == DISP_SEQ_YVYU)
+ 			return DE_SCAL_YVYU;
+-		} else if (value == DISP_SEQ_AYUV) {
++		else if (value == DISP_SEQ_AYUV)
+ 			return DE_SCAL_AYUV;
+-		} else if (value == DISP_SEQ_UVUV) {
++		else if (value == DISP_SEQ_UVUV)
+ 			return DE_SCAL_UVUV;
+-		} else if (value == DISP_SEQ_VUVU) {
++		else if (value == DISP_SEQ_VUVU)
+ 			return DE_SCAL_VUVU;
+-		} else if (value == DISP_SEQ_ARGB) {
++		else if (value == DISP_SEQ_ARGB)
+ 			return DE_SCAL_ARGB;
+-		} else if (value == DISP_SEQ_BGRA) {
++		else if (value == DISP_SEQ_BGRA)
+ 			return DE_SCAL_BGRA;
+-		} else if (value == DISP_SEQ_P3210) {
++		else if (value == DISP_SEQ_P3210)
+ 			return 0;
+-		} else {
++		else
+ 			DE_WRN("not supported scaler input pixel sequence:%d "
+ 			       "in Scaler_sw_para_to_reg\n", value);
+-		}
++
+ 	} else if (type == 3) { /* scaler output value */
+-		if (value == DISP_FORMAT_YUV444) {
++		if (value == DISP_FORMAT_YUV444)
+ 			return DE_SCAL_OUTPYUV444;
+-		} else if (value == DISP_FORMAT_YUV422) {
++		else if (value == DISP_FORMAT_YUV422)
+ 			return DE_SCAL_OUTPYUV422;
+-		} else if (value == DISP_FORMAT_YUV420) {
++		else if (value == DISP_FORMAT_YUV420)
+ 			return DE_SCAL_OUTPYUV420;
+-		} else if (value == DISP_FORMAT_YUV411) {
++		else if (value == DISP_FORMAT_YUV411)
+ 			return DE_SCAL_OUTPYUV411;
+-		} else if (value == DISP_FORMAT_ARGB8888) {
++		else if (value == DISP_FORMAT_ARGB8888)
+ 			return DE_SCAL_OUTI0RGB888;
+-		} else if (value == DISP_FORMAT_RGB888) {
++		else if (value == DISP_FORMAT_RGB888)
+ 			return DE_SCAL_OUTPRGB888;
+-		} else {
++		else
+ 			DE_WRN("not supported scaler output value:%d in "
+ 			       "Scaler_sw_para_to_reg\n", value);
+-		}
++
+ 	}
+ 	DE_WRN("not supported type:%d in Scaler_sw_para_to_reg\n", type);
+ 	return DIS_FAIL;
+@@ -165,11 +165,10 @@ __s32 Scaler_3d_sw_para_to_reg(__u32 type, __u32 mode, __bool b_out_interlace)
+ 			return DE_SCAL_3DOUT_HDMI_TB;
+ 
+ 		case DISP_3D_OUT_MODE_FP:
+-			if (b_out_interlace == TRUE) {
++			if (b_out_interlace == TRUE)
+ 				return DE_SCAL_3DOUT_HDMI_FPI;
+-			} else {
++			else
+ 				return DE_SCAL_3DOUT_HDMI_FPP;
+-			}
+ 
+ 		case DISP_3D_OUT_MODE_SSF:
+ 			return DE_SCAL_3DOUT_HDMI_SSF;
+@@ -206,9 +205,8 @@ static irqreturn_t Scaler_event_proc(int irq, void *parg)
+ 	DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel,
+ 	       fe_intflags);
+ 
+-	if (be_intflags & DE_IMG_REG_LOAD_FINISH) {
++	if (be_intflags & DE_IMG_REG_LOAD_FINISH)
+ 		LCD_line_event_proc(sel);
+-	}
+ 
+ 	if (fe_intflags & DE_WB_END_IE) {
+ 		DE_SCAL_DisableINT(sel, DE_FE_INTEN_ALL);
+@@ -217,10 +215,9 @@ static irqreturn_t Scaler_event_proc(int irq, void *parg)
+ 		    (&gdisp.scaler[sel].scaler_queue != NULL)) {
+ 			gdisp.scaler[sel].b_scaler_finished = 2;
+ 			wake_up_interruptible(&gdisp.scaler[sel].scaler_queue);
+-		} else {
++		} else
+ 			__wrn("not scaler %d begin in DRV_scaler_finish\n",
+ 			      sel);
+-		}
+ 	}
+ 
+ 	return OSAL_IRQ_RETURN;
+@@ -233,13 +230,13 @@ __s32 Scaler_Init(__u32 sel)
+ 	scaler_clk_init(sel);
+ 	DE_SCAL_EnableINT(sel, DE_WB_END_IE);
+ 
+-	if (sel == 0) {
++	if (sel == 0)
+ 		ret = request_irq(INTC_IRQNO_SCALER0, Scaler_event_proc,
+ 				  IRQF_DISABLED, "sunxi scaler0", (void *)sel);
+-	} else if (sel == 1) {
++	else if (sel == 1)
+ 		ret = request_irq(INTC_IRQNO_SCALER1, Scaler_event_proc,
+ 				  IRQF_DISABLED, "sunxi scaler1", (void *)sel);
+-	}
++
+ 	return DIS_SUCCESS;
+ }
+ 
+@@ -300,28 +297,25 @@ __s32 Scaler_Request(__u32 sel)
+ #endif
+ 
+ 	if (sel == 0) { /* request scaler0 */
+-		if (!(gdisp.scaler[0].status & SCALER_USED)) {
++		if (!(gdisp.scaler[0].status & SCALER_USED))
+ 			ret = 0;
+-		}
+ 	} else if (sel == 1) { /* request scaler1 */
+-		if (!(gdisp.scaler[1].status & SCALER_USED)) {
++		if (!(gdisp.scaler[1].status & SCALER_USED))
+ 			ret = 1;
+-		}
+ 	} else { /* request any scaler */
+-		if (!(gdisp.scaler[0].status & SCALER_USED)) {
++		if (!(gdisp.scaler[0].status & SCALER_USED))
+ 			ret = 0;
+-		} else if (!(gdisp.scaler[1].status & SCALER_USED)) {
++		else if (!(gdisp.scaler[1].status & SCALER_USED))
+ 			ret = 1;
+-		}
+ 	}
+ 
+ 	if (ret == 0 || ret == 1) {
+ 		Scaler_open(ret);
+ 		gdisp.scaler[ret].b_close = FALSE;
+ 		gdisp.scaler[ret].status |= SCALER_USED;
+-	} else {
++	} else
+ 		DE_WRN("request scaler fail\n");
+-	}
++
+ 	return ret;
+ }
+ 
+@@ -423,21 +417,20 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)
+ 		DE_SCAL_Set_3D_Ctrl(sel, scaler->b_trd_out, inmode, outmode);
+ 		DE_SCAL_Config_3D_Src(sel, &scal_addr, &in_size, &in_type,
+ 				      inmode, &scal_addr_right);
+-	} else {
++	} else
+ 		DE_SCAL_Config_Src(sel, &scal_addr, &in_size, &in_type, FALSE,
+ 				   FALSE);
+-	}
++
+ 	DE_SCAL_Set_Scaling_Factor(sel, &in_scan, &in_size, &in_type, &out_scan,
+ 				   &out_size, &out_type);
+-	if (scaler->enhance_en == TRUE) {
++	if (scaler->enhance_en == TRUE)
+ 		Scaler_Set_Enhance(sel, scaler->bright, scaler->contrast,
+ 				   scaler->saturation, scaler->hue);
+-	} else {
++	else
+ 		DE_SCAL_Set_CSC_Coef(sel, scaler->in_fb.cs_mode, DISP_BT601,
+ 				     get_fb_type(scaler->in_fb.format),
+ 				     DISP_FB_TYPE_RGB, scaler->in_fb.br_swap,
+ 				     0);
+-	}
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+ 	DE_SCAL_Set_Scaling_Coef(sel, &in_scan, &in_size, &in_type, &out_scan,
+@@ -449,25 +442,23 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Scaler_Get_Framebuffer(__u32 sel, __disp_fb_t * pfb)
++__s32 Scaler_Get_Framebuffer(__u32 sel, __disp_fb_t *pfb)
+ {
+ 	__disp_scaler_t *scaler;
+ 
+-	if (pfb == NULL) {
++	if (pfb == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	scaler = &(gdisp.scaler[sel]);
+-	if (scaler->status & SCALER_USED) {
++	if (scaler->status & SCALER_USED)
+ 		memcpy(pfb, &scaler->in_fb, sizeof(__disp_fb_t));
+-	} else {
++	else
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t * size)
++__s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t *size)
+ {
+ 	__disp_scaler_t *scaler;
+ 	__scal_src_size_t in_size;
+@@ -518,15 +509,14 @@ __s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t * size)
+ 
+ 	DE_SCAL_Set_Scaling_Factor(sel, &in_scan, &in_size, &in_type, &out_scan,
+ 				   &out_size, &out_type);
+-	if (scaler->enhance_en == TRUE) {
++	if (scaler->enhance_en == TRUE)
+ 		Scaler_Set_Enhance(sel, scaler->bright, scaler->contrast,
+ 				   scaler->saturation, scaler->hue);
+-	} else {
++	else
+ 		DE_SCAL_Set_CSC_Coef(sel, scaler->in_fb.cs_mode, DISP_BT601,
+ 				     get_fb_type(scaler->in_fb.format),
+ 				     DISP_FB_TYPE_RGB, scaler->in_fb.br_swap,
+ 				     0);
+-	}
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+ 	DE_SCAL_Set_Scaling_Coef(sel, &in_scan, &in_size, &in_type, &out_scan,
+@@ -540,7 +530,7 @@ __s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t * size)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t * scl_rect)
++__s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+ {
+ 	__disp_scaler_t *scaler;
+ 	__scal_buf_addr_t scal_addr;
+@@ -596,9 +586,8 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t * scl_rect)
+ 		FALSE : gdisp.screen[screen_index].b_out_interlace;
+ #endif
+ 
+-	if (scaler->in_fb.cs_mode > DISP_VXYCC) {
++	if (scaler->in_fb.cs_mode > DISP_VXYCC)
+ 		scaler->in_fb.cs_mode = DISP_BT601;
+-	}
+ 
+ 	if (scaler->in_fb.b_trd_src) {
+ 		__scal_3d_inmode_t inmode;
+@@ -640,13 +629,12 @@ __s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t * scl_rect)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Scaler_Get_SclRegn(__u32 sel, __disp_rect_t * scl_rect)
++__s32 Scaler_Get_SclRegn(__u32 sel, __disp_rect_t *scl_rect)
+ {
+ 	__disp_scaler_t *scaler;
+ 
+-	if (scl_rect == NULL) {
++	if (scl_rect == NULL)
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	scaler = &(gdisp.scaler[sel]);
+ 	if (scaler->status & SCALER_USED) {
+@@ -654,14 +642,13 @@ __s32 Scaler_Get_SclRegn(__u32 sel, __disp_rect_t * scl_rect)
+ 		scl_rect->y = scaler->src_win.y;
+ 		scl_rect->width = scaler->src_win.width;
+ 		scl_rect->height = scaler->src_win.height;
+-	} else {
++	} else
+ 		return DIS_PARA_FAILED;
+-	}
+ 
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t * scl)
++__s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl)
+ {
+ 	__disp_scaler_t *scaler;
+ 	__scal_buf_addr_t scal_addr;
+@@ -716,9 +703,8 @@ __s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t * scl)
+ 		FALSE : gdisp.screen[screen_index].b_out_interlace;
+ #endif
+ 
+-	if (scaler->in_fb.cs_mode > DISP_VXYCC) {
++	if (scaler->in_fb.cs_mode > DISP_VXYCC)
+ 		scaler->in_fb.cs_mode = DISP_BT601;
+-	}
+ 
+ 	if (scaler->in_fb.b_trd_src) {
+ 		__scal_3d_inmode_t inmode;
+@@ -910,7 +896,7 @@ __s32 BSP_disp_scaler_release(__u32 handle)
+ 	return Scaler_Release(sel, FALSE);
+ }
+ 
+-__s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t * para)
++__s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t *para)
+ {
+ 	__scal_buf_addr_t in_addr;
+ 	__scal_buf_addr_t out_addr;
+@@ -1135,7 +1121,7 @@ __s32 BSP_disp_scaler_start(__u32 handle, __disp_scaler_para_t * para)
+ 	return ret;
+ }
+ 
+-__s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para)
++__s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t *para)
+ {
+ 	__scal_buf_addr_t in_addr;
+ 	__scal_buf_addr_t out_addr;
+diff --git a/drivers/video/sunxi/disp/disp_scaler.h b/drivers/video/sunxi/disp/disp_scaler.h
+index a58bb72..3a07401 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.h
++++ b/drivers/video/sunxi/disp/disp_scaler.h
+@@ -81,12 +81,12 @@ __s32 Scaler_open(__u32 sel);
+ __s32 Scaler_close(__u32 sel);
+ __s32 Scaler_Request(__u32 sel);
+ __s32 Scaler_Release(__u32 sel, __bool b_display);
+-__s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t * vfb_info);
+-__s32 Scaler_Get_Framebuffer(__u32 sel, __disp_fb_t * vfb_info);
+-__s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t * scl_rect);
+-__s32 Scaler_Get_SclRegn(__u32 sel, __disp_rect_t * scl_rect);
+-__s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t * out_size);
+-__s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t * scl);
++__s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *vfb_info);
++__s32 Scaler_Get_Framebuffer(__u32 sel, __disp_fb_t *vfb_info);
++__s32 Scaler_Set_SclRegn(__u32 sel, __disp_rect_t *scl_rect);
++__s32 Scaler_Get_SclRegn(__u32 sel, __disp_rect_t *scl_rect);
++__s32 Scaler_Set_Output_Size(__u32 sel, __disp_rectsz_t *out_size);
++__s32 Scaler_Set_Para(__u32 sel, __disp_scaler_t *scl);
+ __s32 Scaler_Set_Outitl(__u32 sel, __bool enable);
+ __s32 Scaler_sw_para_to_reg(__u8 type, __u8 value);
+ __s32 Scaler_Set_Enhance(__u32 sel, __u32 bright, __u32 contrast,
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 06962a5..47f76f0 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -39,23 +39,21 @@ static __s32 Sprite_Get_Idle_Block_id(__u32 sel)
+ 
+ static __s32 Sprite_Id_To_Hid(__u32 sel, __s32 id)
+ {
+-	if (id == -1) {
++	if (id == -1)
+ 		return 0;
+-	} else {
++	else
+ 		return gsprite[sel].sprite_hid[id];
+-	}
+ }
+ 
+ static __s32 Sprite_Hid_To_Id(__u32 sel, __s32 hid)
+ {
+-	if (hid == 0) {
++	if (hid == 0)
+ 		return -1;
+-	} else {
++	else {
+ 		__s32 i = 0;
+ 		for (i = 0; i < MAX_SPRITE_BLOCKS; i++) {
+-			if (gsprite[sel].sprite_hid[i] == hid) {
++			if (gsprite[sel].sprite_hid[i] == hid)
+ 				return i;
+-			}
+ 		}
+ 		return -1;
+ 	}
+@@ -64,7 +62,7 @@ static __s32 Sprite_Hid_To_Id(__u32 sel, __s32 hid)
+ /*
+  * With this premise: prev, next must be there, otherwise collapse.
+  */
+-static __inline void ___list_add(list_head_t *node, list_head_t *prev,
++static inline void ___list_add(list_head_t *node, list_head_t *prev,
+ 				 list_head_t *next)
+ {
+ 	node->next = next;
+@@ -76,19 +74,18 @@ static __inline void ___list_add(list_head_t *node, list_head_t *prev,
+ /*
+  * Node is added to the list of the last surface, also both front
+  */
+-static __inline void list_add_node_tail(list_head_t *node, list_head_t **head)
++static inline void list_add_node_tail(list_head_t *node, list_head_t **head)
+ {
+-	if (*head == NULL) {
++	if (*head == NULL)
+ 		*head = node;
+-	} else {
++	else
+ 		___list_add(node, (*head)->prev, *head);
+-	}
+ }
+ 
+ /*
+  * Delete the entry from the list in
+  */
+-static __inline void list_del_node(list_head_t *entry)
++static inline void list_del_node(list_head_t *entry)
+ {
+ 	entry->prev->next = entry->next;
+ 	entry->next->prev = entry->prev;
+@@ -99,11 +96,11 @@ static __inline void list_del_node(list_head_t *entry)
+ /*
+  * Internal function, the release space of the node
+  */
+-static __inline void list_free_node(list_head_t *node)
++static inline void list_free_node(list_head_t *node)
+ {
+ 	if (node != NULL) {
+-		vfree((void *)(node->data));
+-		vfree((void *)node);
++		vfree((void *) node->data);
++		vfree((void *) node);
+ 		node = NULL;
+ 	}
+ }
+@@ -171,12 +168,11 @@ static list_head_t *List_Find_Sprite_Block(__u32 sel, __s32 id)
+ 
+ 	if (guard != NULL) {
+ 		do {
+-			if (guard->data->id == id) {
++			if (guard->data->id == id)
+ 				return guard;
+-			}
++
+ 			guard = guard->next;
+-		}
+-		while (guard != gsprite[sel].header);
++		} while (guard != gsprite[sel].header);
+ 	}
+ 
+ 	return NULL;
+@@ -218,9 +214,8 @@ static list_head_t *List_Delete_Sprite_Block(__u32 sel, list_head_t *node)
+ 		list_del_node(node);
+ 
+ 		return node;
+-	} else {
++	} else
+ 		return NULL;
+-	}
+ }
+ 
+ /*
+@@ -264,9 +259,9 @@ static __s32 List_Assert_Sprite_Block(__u32 sel, list_head_t *dst_node,
+ 		gsprite[sel].header = node;
+ 
+ 		dst_node = next_node->prev;
+-	} else {
++	} else
+ 		next_node = dst_node->next;
+-	}
++
+ 	___list_add(node, dst_node, next_node);
+ 
+ 	return DIS_SUCCESS;
+@@ -274,20 +269,18 @@ static __s32 List_Assert_Sprite_Block(__u32 sel, list_head_t *dst_node,
+ 
+ static __s32 List_Get_First_Sprite_Block_Id(__u32 sel)
+ {
+-	if (gsprite[sel].header == NULL) {
++	if (gsprite[sel].header == NULL)
+ 		return -1;
+-	} else {
++	else
+ 		return gsprite[sel].header->data->id;
+-	}
+ }
+ 
+ static __s32 List_Get_Last_Sprite_Block_Id(__u32 sel)
+ {
+-	if (gsprite[sel].header == NULL) {
++	if (gsprite[sel].header == NULL)
+ 		return -1;
+-	} else {
++	else
+ 		return gsprite[sel].header->prev->data->id;
+-	}
+ }
+ 
+ static __s32 sprite_set_sprite_block_para(__u32 sel, __u32 id, __u32 next_id,
+@@ -297,9 +290,9 @@ static __s32 sprite_set_sprite_block_para(__u32 sel, __u32 id, __u32 next_id,
+ 
+ 	bpp = de_format_to_bpp(gsprite[sel].format);
+ 
+-	addr =
+-	    DE_BE_Offset_To_Addr((__u32) para->fb.addr[0], para->fb.size.width,
+-				 para->src_win.x, para->src_win.y, bpp);
++	addr = DE_BE_Offset_To_Addr((__u32) para->fb.addr[0],
++				    para->fb.size.width,
++				    para->src_win.x, para->src_win.y, bpp);
+ 	DE_BE_Sprite_Block_Set_fb(sel, id, addr,
+ 				  para->fb.size.width * (bpp >> 3));
+ 	DE_BE_Sprite_Block_Set_Pos(sel, id, para->scn_win.x, para->scn_win.y);
+@@ -414,7 +407,7 @@ __s32 BSP_disp_sprite_set_format(__u32 sel, __disp_pixel_fmt_t format,
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_sprite_set_palette_table(__u32 sel, __u32 * buffer, __u32 offset,
++__s32 BSP_disp_sprite_set_palette_table(__u32 sel, __u32 *buffer, __u32 offset,
+ 					__u32 size)
+ {
+ 	if ((buffer == NULL) || ((offset + size) > 1024)) {
+@@ -442,31 +435,27 @@ __s32 BSP_disp_sprite_set_order(__u32 sel, __s32 hid, __s32 dst_hid)
+ 	if ((gsprite[sel].block_status[id] & SPRITE_BLOCK_USED) &&
+ 	    (dst_id == -1 ||
+ 	     (gsprite[sel].block_status[dst_id] & SPRITE_BLOCK_USED))) {
+-		if (id == dst_id) { /* same block,not need to move */
++		if (id == dst_id) /* same block,not need to move */
+ 			return DIS_SUCCESS;
+-		}
++
+ 		if (dst_id != -1) {
+ 			dst_node = List_Find_Sprite_Block(sel, dst_id);
+ 			/* it is the order,not need to move */
+-			if (dst_node->next->data->id == id && id != 0) {
++			if (dst_node->next->data->id == id && id != 0)
+ 				return DIS_SUCCESS;
+-			}
+-		} else {
++		} else
+ 			dst_node = NULL;
+-		}
+ 
+ 		node = List_Find_Sprite_Block(sel, id);
+-		if (id == 0) { /* the block is the first block */
++		if (id == 0) /* the block is the first block */
+ 			chg_node0 = node->next;
+-		} else {
++		else
+ 			chg_node0 = node->prev;
+-		}
+ 
+-		if (dst_id == -1) { /* move to the front of the list */
++		if (dst_id == -1) /* move to the front of the list */
+ 			chg_node1 = gsprite[sel].header;
+-		} else {
++		else
+ 			chg_node1 = List_Find_Sprite_Block(sel, dst_id);
+-		}
+ 
+ 		List_Delete_Sprite_Block(sel, node);
+ 		List_Assert_Sprite_Block(sel, dst_node, node);
+@@ -477,9 +466,9 @@ __s32 BSP_disp_sprite_set_order(__u32 sel, __s32 hid, __s32 dst_hid)
+ 		para.src_win.y = node->data->src_win.y;
+ 		memcpy(&para.scn_win, &node->data->scn_win,
+ 		       sizeof(__disp_rect_t));
+-		if (node->data->enable == FALSE) {
++		if (node->data->enable == FALSE)
+ 			para.scn_win.y = -2000;
+-		}
++
+ 		sprite_set_sprite_block_para(sel, node->data->id,
+ 					     node->next->data->id, &para);
+ 
+@@ -489,9 +478,9 @@ __s32 BSP_disp_sprite_set_order(__u32 sel, __s32 hid, __s32 dst_hid)
+ 		para.src_win.y = chg_node0->data->src_win.y;
+ 		memcpy(&para.scn_win, &chg_node0->data->scn_win,
+ 		       sizeof(__disp_rect_t));
+-		if (chg_node0->data->enable == FALSE) {
++		if (chg_node0->data->enable == FALSE)
+ 			para.scn_win.y = -2000;
+-		}
++
+ 		sprite_set_sprite_block_para(sel, chg_node0->data->id,
+ 					     chg_node0->next->data->id, &para);
+ 
+@@ -501,9 +490,9 @@ __s32 BSP_disp_sprite_set_order(__u32 sel, __s32 hid, __s32 dst_hid)
+ 		para.src_win.y = chg_node1->data->src_win.y;
+ 		memcpy(&para.scn_win, &chg_node1->data->scn_win,
+ 		       sizeof(__disp_rect_t));
+-		if (chg_node1->data->enable == FALSE) {
++		if (chg_node1->data->enable == FALSE)
+ 			para.scn_win.y = -2000;
+-		}
++
+ 		sprite_set_sprite_block_para(sel, chg_node1->data->id,
+ 					     chg_node1->next->data->id, &para);
+ 
+@@ -563,9 +552,8 @@ BSP_disp_sprite_block_request(__u32 sel, __disp_sprite_block_para_t *para)
+ 	}
+ 
+ 	node = List_Add_Sprite_Block(sel, para);
+-	if (node == NULL) {
++	if (node == NULL)
+ 		return (__s32) NULL;
+-	}
+ 
+ 	id = node->data->id;
+ 	node->data->address = (__u32) para->fb.addr[0];
+@@ -628,11 +616,11 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+ 			para.src_win.x = next_node->data->src_win.x;
+ 			para.src_win.y = next_node->data->src_win.y;
+ 			para.scn_win.x = next_node->data->scn_win.x;
+-			if (next_node->data->enable == FALSE) {
++			if (next_node->data->enable == FALSE)
+ 				para.scn_win.y = -2000;
+-			} else {
++			else
+ 				para.scn_win.y = next_node->data->scn_win.y;
+-			}
++
+ 			para.scn_win.width = next_node->data->scn_win.width;
+ 			para.scn_win.height = next_node->data->scn_win.height;
+ 			sprite_set_sprite_block_para(sel, 0,
+@@ -656,11 +644,11 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+ 			para.src_win.x = pre_node->data->src_win.x;
+ 			para.src_win.y = pre_node->data->src_win.y;
+ 			para.scn_win.x = pre_node->data->scn_win.x;
+-			if (node->data->enable == FALSE) {
++			if (node->data->enable == FALSE)
+ 				para.scn_win.y = -2000;
+-			} else {
++			else
+ 				para.scn_win.y = pre_node->data->scn_win.y;
+-			}
++
+ 			para.scn_win.width = pre_node->data->scn_win.width;
+ 			para.scn_win.height = pre_node->data->scn_win.height;
+ 			sprite_set_sprite_block_para(sel, pre_id, next_id,
+@@ -690,7 +678,7 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+  * setting srceen window(x,y,width,height)
+  */
+ __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid,
+-					   __disp_rect_t * scn_win)
++					   __disp_rect_t *scn_win)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -716,18 +704,17 @@ __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid,
+ 		}
+ 
+ 		node = List_Find_Sprite_Block(sel, id);
+-		if (node == NULL) {
++		if (node == NULL)
+ 			return DIS_PARA_FAILED;
+-		}
+ 
+ 		cur_scn.x = scn_win->x;
+ 		cur_scn.y = scn_win->y;
+ 		cur_scn.width = scn_win->width;
+ 		cur_scn.height = scn_win->height;
+ 
+-		if (node->data->enable == FALSE) {
++		if (node->data->enable == FALSE)
+ 			cur_scn.y = -2000;
+-		}
++
+ 		DE_BE_Sprite_Block_Set_Pos(sel, id, cur_scn.x, cur_scn.y);
+ 		DE_BE_Sprite_Block_Set_Size(sel, id, cur_scn.width,
+ 					    cur_scn.height);
+@@ -744,7 +731,7 @@ __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid,
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_srceen_win(__u32 sel, __s32 hid,
+-					   __disp_rect_t * scn_win)
++					   __disp_rect_t *scn_win)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -768,7 +755,7 @@ __s32 BSP_disp_sprite_block_get_srceen_win(__u32 sel, __s32 hid,
+  * setting source x/y offset
+  */
+ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid,
+-					__disp_rect_t * src_win)
++					__disp_rect_t *src_win)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -797,7 +784,7 @@ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid,
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_src_win(__u32 sel, __s32 hid,
+-					__disp_rect_t * src_win)
++					__disp_rect_t *src_win)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -821,7 +808,7 @@ __s32 BSP_disp_sprite_block_get_src_win(__u32 sel, __s32 hid,
+  * setting fb address,fb width,fb height;keep the source x/y offset
+  */
+ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid,
+-					    __disp_fb_t * fb)
++					    __disp_fb_t *fb)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -851,7 +838,7 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid,
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_framebufer(__u32 sel, __s32 hid,
+-					   __disp_fb_t * fb)
++					   __disp_fb_t *fb)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -876,7 +863,7 @@ __s32 BSP_disp_sprite_block_get_framebufer(__u32 sel, __s32 hid,
+  * setting fb address,fb width,fb height,source x/y offset,screen window
+  */
+ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,
+-				     __disp_sprite_block_para_t * para)
++				     __disp_sprite_block_para_t *para)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -887,9 +874,8 @@ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,
+ 		node = List_Find_Sprite_Block(sel, id);
+ 
+ 		memcpy(&cur_para, para, sizeof(__disp_sprite_block_para_t));
+-		if (node->data->enable == FALSE) {
++		if (node->data->enable == FALSE)
+ 			cur_para.scn_win.y = -2000;
+-		}
+ 
+ 		sprite_set_sprite_block_para(sel, id, node->next->data->id,
+ 					     &cur_para);
+@@ -904,13 +890,12 @@ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,
+ 		node->data->scn_win.width = para->scn_win.width;
+ 		node->data->scn_win.height = para->scn_win.height;
+ 		return DIS_SUCCESS;
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_para(__u32 sel, __u32 hid,
+-				     __disp_sprite_block_para_t * para)
++				     __disp_sprite_block_para_t *para)
+ {
+ 	__s32 id = 0;
+ 	list_head_t *node = NULL;
+@@ -933,9 +918,8 @@ __s32 BSP_disp_sprite_block_get_para(__u32 sel, __u32 hid,
+ 		para->scn_win.height = node->data->scn_win.height;
+ 
+ 		return DIS_SUCCESS;
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_set_top(__u32 sel, __u32 hid)
+@@ -960,14 +944,13 @@ __s32 BSP_disp_sprite_block_get_pre_block(__u32 sel, __u32 hid)
+ 
+ 	if (gsprite[sel].block_status[id] & SPRITE_BLOCK_USED) {
+ 		node = List_Find_Sprite_Block(sel, id);
+-		if (node == gsprite[sel].header)	//the block is the first
+-		{
++		/* the block is the first */
++		if (node == gsprite[sel].header)
+ 			return 0;
+-		}
++
+ 		return Sprite_Id_To_Hid(sel, node->prev->data->id);
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_next_block(__u32 sel, __u32 hid)
+@@ -979,14 +962,13 @@ __s32 BSP_disp_sprite_block_get_next_block(__u32 sel, __u32 hid)
+ 
+ 	if (gsprite[sel].block_status[id] & SPRITE_BLOCK_USED) {
+ 		node = List_Find_Sprite_Block(sel, id);
+-		if (node == gsprite[sel].header->prev)	//the block is the last
+-		{
++		/* the block is the last */
++		if (node == gsprite[sel].header->prev)
+ 			return 0;
+-		}
++
+ 		return Sprite_Id_To_Hid(sel, node->next->data->id);
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_get_prio(__u32 sel, __u32 hid)
+@@ -1001,17 +983,16 @@ __s32 BSP_disp_sprite_block_get_prio(__u32 sel, __u32 hid)
+ 		guard = gsprite[sel].header;
+ 		if (guard != NULL) {
+ 			do {
+-				if (guard->data->id == id) {
++				if (guard->data->id == id)
+ 					return prio;
+-				}
++
+ 				guard = guard->next;
+ 				prio++;
+ 			} while (guard != gsprite[sel].header);
+ 		}
+ 		return DIS_FAIL;
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_open(__u32 sel, __u32 hid)
+@@ -1033,9 +1014,8 @@ __s32 BSP_disp_sprite_block_open(__u32 sel, __u32 hid)
+ 		}
+ 		gsprite[sel].block_status[id] |= SPRITE_BLOCK_OPENED;
+ 		return DIS_SUCCESS;
+-	} else {
++	} else
+ 		return DIS_OBJ_NOT_INITED;
+-	}
+ }
+ 
+ __s32 BSP_disp_sprite_block_close(__u32 sel, __u32 hid)
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index ecc7250..ff4cbe7 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -309,7 +309,8 @@ __s32 BSP_disp_tv_close(__u32 sel)
+ 		lcdc_clk_off(sel);
+ 
+ #ifdef CONFIG_ARCH_SUN5I
+-		Disp_de_flicker_enable(sel, 2);	//must close immediately, because vbi may not come
++		/* must close immediately, because vbi may not come */
++		Disp_de_flicker_enable(sel, 2);
+ 		DE_BE_Set_Outitl_enable(sel, FALSE);
+ 		{
+ 			int scaler_index;
+@@ -422,9 +423,8 @@ __s32 BSP_disp_tv_set_dac_source(__u32 sel, __u32 index,
+ {
+ 	gdisp.screen[sel].dac_source[index] = source;
+ 
+-	if (gdisp.screen[sel].status & TV_ON) {
++	if (gdisp.screen[sel].status & TV_ON)
+ 		Disp_TVEC_DacCfg(sel, gdisp.screen[sel].tv_mode);
+-	}
+ 
+ 	return 0;
+ }
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+index f88c988..3402e80 100644
+--- a/drivers/video/sunxi/disp/disp_ump.c
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -36,11 +36,11 @@ static int _disp_get_ump_secure_id(struct fb_info *info, fb_info_t *g_fbi,
+ 	u32 __user *psecureid = (u32 __user *) arg;
+ 	int buf_len = info->fix.smem_len;
+ 	ump_secure_id secure_id;
+-	if (info->var.yres * 2 == info->var.yres_virtual) {
++
++	if (info->var.yres * 2 == info->var.yres_virtual)
+ 		buf_len = buf_len >> 1;	/* divide by two */
+-	} else {
++	else
+ 		__wrn("UMP: Double-buffering not enabled");
+-	}
+ 
+ 	if (!g_fbi->ump_wrapped_buffer[info->node][buf]) {
+ 		ump_dd_physical_block ump_memory_description;
+diff --git a/drivers/video/sunxi/disp/disp_video.c b/drivers/video/sunxi/disp/disp_video.c
+index c9faac0..3dd3f18 100644
+--- a/drivers/video/sunxi/disp/disp_video.c
++++ b/drivers/video/sunxi/disp/disp_video.c
+@@ -68,12 +68,12 @@ static __s32 video_enhancement_start(__u32 sel, __u32 id)
+ 	};
+ 
+ 	/* !!! assume open HDMI before video start */
+-	if (gdisp.screen[sel].output_type == DISP_OUTPUT_TYPE_HDMI)
+-	{
++	if (gdisp.screen[sel].output_type == DISP_OUTPUT_TYPE_HDMI) {
+ 		scaler_index = gdisp.screen[sel].layer_manage[id].scaler_index;
+ 		scaleuprate =
+-		    gdisp.screen[sel].layer_manage[id].para.scn_win.width * 2 /
+-		    gdisp.screen[sel].layer_manage[id].para.src_win.width;
++			gdisp.screen[sel].layer_manage[id].para.scn_win.width *
++			2 /
++			gdisp.screen[sel].layer_manage[id].para.src_win.width;
+ 
+ 		switch (scaleuprate) {
+ 		case 0:	/* scale down, do noting */
+@@ -117,18 +117,17 @@ static __s32 video_enhancement_stop(__u32 sel, __u32 id)
+ 		DE_SCAL_Vpp_Enable(scaler_index, 0);
+ 		DE_SCAL_Vpp_Set_Luma_Sharpness_Level(scaler_index, 0);
+ 
+-		if (gdisp.screen[sel].output_type != DISP_OUTPUT_TYPE_LCD) {
++		if (gdisp.screen[sel].output_type != DISP_OUTPUT_TYPE_LCD)
+ 			TCON1_set_gamma_Enable(sel, 0);
+-		}
+ 
+-		gdisp.screen[sel].layer_manage[id].video_enhancement_en = 0;;
++		gdisp.screen[sel].layer_manage[id].video_enhancement_en = 0;
+ 	}
+ 
+ 	return 0;
+ }
+ #endif /* CONFIG_ARCH_SUN4I */
+ 
+-static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
++static inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+ {
+ 	__u32 cur_line = 0, start_delay = 0;
+ 
+@@ -280,9 +279,8 @@ static __inline __s32 Hal_Set_Frame(__u32 sel, __u32 tcon_index, __u32 id)
+ 			0 : gdisp.screen[sel].b_out_interlace;
+ #endif
+ 
+-		if (scaler->out_fb.cs_mode > DISP_VXYCC) {
++		if (scaler->out_fb.cs_mode > DISP_VXYCC)
+ 			scaler->out_fb.cs_mode = DISP_BT601;
+-		}
+ 
+ 		if (scaler->in_fb.b_trd_src) {
+ 			__scal_3d_inmode_t inmode;
+@@ -405,7 +403,7 @@ __s32 Video_Operation_In_Vblanking(__u32 sel, __u32 tcon_index)
+ 	return DIS_SUCCESS;
+ }
+ 
+-__s32 BSP_disp_video_set_fb(__u32 sel, __u32 hid, __disp_video_fb_t * in_addr)
++__s32 BSP_disp_video_set_fb(__u32 sel, __u32 hid, __disp_video_fb_t *in_addr)
+ {
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+@@ -417,9 +415,8 @@ __s32 BSP_disp_video_set_fb(__u32 sel, __u32 hid, __disp_video_fb_t * in_addr)
+ 		g_video[sel][hid].display_cnt = 0;
+ 
+ 		return DIS_SUCCESS;
+-	} else {
++	} else
+ 		return DIS_FAIL;
+-	}
+ }
+ 
+ /*
+@@ -431,18 +428,16 @@ __s32 BSP_disp_video_get_frame_id(__u32 sel, __u32 hid)
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+ 
+ 	if (g_video[sel][hid].enable) {
+-		if (g_video[sel][hid].have_got_frame == TRUE) {
++		if (g_video[sel][hid].have_got_frame == TRUE)
+ 			return g_video[sel][hid].video_cur.id;
+-		} else {
++		else
+ 			return DIS_FAIL;
+-		}
+-	} else {
++	} else
+ 		return DIS_FAIL;
+-	}
+ }
+ 
+ __s32 BSP_disp_video_get_dit_info(__u32 sel, __u32 hid,
+-				  __disp_dit_info_t * dit_info)
++				  __disp_dit_info_t *dit_info)
+ {
+ 	hid = HANDTOID(hid);
+ 	HLID_ASSERT(hid, gdisp.screen[sel].max_layers);
+@@ -452,17 +447,15 @@ __s32 BSP_disp_video_get_dit_info(__u32 sel, __u32 hid,
+ 		dit_info->pre_frame_enable = FALSE;
+ 
+ 		if (g_video[sel][hid].dit_enable) {
+-			if (g_video[sel][hid].dit_mode == DIT_MODE_MAF) {
++			if (g_video[sel][hid].dit_mode == DIT_MODE_MAF)
+ 				dit_info->maf_enable = TRUE;
+-			}
+-			if (g_video[sel][hid].tempdiff_en) {
++
++			if (g_video[sel][hid].tempdiff_en)
+ 				dit_info->pre_frame_enable = TRUE;
+-			}
+ 		}
+ 		return DIS_SUCCESS;
+-	} else {
++	} else
+ 		return DIS_FAIL;
+-	}
+ }
+ 
+ __s32 BSP_disp_video_start(__u32 sel, __u32 hid)
+diff --git a/drivers/video/sunxi/disp/ebios_de.h b/drivers/video/sunxi/disp/ebios_de.h
+index b03ebf5..6acace3 100644
+--- a/drivers/video/sunxi/disp/ebios_de.h
++++ b/drivers/video/sunxi/disp/ebios_de.h
+@@ -284,8 +284,8 @@ typedef struct _SCAL_SCAN_MOD {
+ 
+ __s32 DE_SCAL_Set_Reg_Base(__u8 sel, __u32 base);
+ __u32 DE_SCAL_Get_Reg_Base(__u8 sel);
+-__s32 DE_SCAL_Config_Src(__u8 sel, __scal_buf_addr_t * addr,
+-			 __scal_src_size_t * size, __scal_src_type_t * type,
++__s32 DE_SCAL_Config_Src(__u8 sel, __scal_buf_addr_t *addr,
++			 __scal_src_size_t *size, __scal_src_type_t *type,
+ 			 __u8 field, __u8 dien);
+ __s32 DE_SCAL_Set_Fb_Addr(__u8 sel, __scal_buf_addr_t *addr);
+ __s32 DE_SCAL_Set_Init_Phase(__u8 sel, __scal_scan_mod_t *in_scan,
+@@ -309,10 +309,10 @@ __s32 DE_SCAL_Set_Scaling_Coef(__u8 sel, __scal_scan_mod_t *in_scan,
+ __s32 DE_SCAL_Set_CSC_Coef(__u8 sel, __u8 in_csc_mode, __u8 out_csc_mode,
+ 			   __u8 incs, __u8 outcs, __u32 in_br_swap,
+ 			   __u32 out_br_swap);
+-__s32 DE_SCAL_Set_Out_Format(__u8 sel, __scal_out_type_t * out_type);
+-__s32 DE_SCAL_Set_Out_Size(__u8 sel, __scal_scan_mod_t * out_scan,
+-			   __scal_out_type_t * out_type,
+-			   __scal_out_size_t * out_size);
++__s32 DE_SCAL_Set_Out_Format(__u8 sel, __scal_out_type_t *out_type);
++__s32 DE_SCAL_Set_Out_Size(__u8 sel, __scal_scan_mod_t *out_scan,
++			   __scal_out_type_t *out_type,
++			   __scal_out_size_t *out_size);
+ __s32 DE_SCAL_Set_Trig_Line(__u8 sel, __u32 line);
+ __s32 DE_SCAL_Set_Int_En(__u8 sel, __u32 int_num);
+ __s32 DE_SCAL_Set_Di_Ctrl(__u8 sel, __u8 en, __u8 mode, __u8 diagintp_en,
+@@ -323,7 +323,7 @@ __s32 DE_SCAL_Set_Filtercoef_Ready(__u8 sel);
+ __s32 DE_SCAL_Output_Select(__u8 sel, __u8 out);
+ __s32 DE_SCAL_Writeback_Enable(__u8 sel);
+ __s32 DE_SCAL_Writeback_Disable(__u8 sel);
+-__s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t * addr);
++__s32 DE_SCAL_Set_Writeback_Addr(__u8 sel, __scal_buf_addr_t *addr);
+ #ifdef CONFIG_ARCH_SUN5I
+ __s32 DE_SCAL_Set_Writeback_Chnl(__u8 sel, __u32 channel);
+ #endif
+@@ -333,22 +333,22 @@ __s32 DE_SCAL_Set_CSC_Coef_Enhance(__u8 sel, __u8 in_csc_mode,
+ 				   __s32 saturation, __s32 hue,
+ 				   __u32 in_br_swap, __u32 out_br_swap);
+ __s32 DE_SCAL_Get_3D_In_Single_Size(__scal_3d_inmode_t inmode,
+-				    __scal_src_size_t * fullsize,
+-				    __scal_src_size_t * singlesize);
++				    __scal_src_size_t *fullsize,
++				    __scal_src_size_t *singlesize);
+ __s32 DE_SCAL_Get_3D_Out_Single_Size(__scal_3d_outmode_t outmode,
+-				     __scal_out_size_t * singlesize,
+-				     __scal_out_size_t * fullsize);
++				     __scal_out_size_t *singlesize,
++				     __scal_out_size_t *fullsize);
+ __s32 DE_SCAL_Get_3D_Out_Full_Size(__scal_3d_outmode_t outmode,
+-				   __scal_out_size_t * singlesize,
+-				   __scal_out_size_t * fullsize);
+-__s32 DE_SCAL_Set_3D_Fb_Addr(__u8 sel, __scal_buf_addr_t * addr,
+-			     __scal_buf_addr_t * addrtrd);
++				   __scal_out_size_t *singlesize,
++				   __scal_out_size_t *fullsize);
++__s32 DE_SCAL_Set_3D_Fb_Addr(__u8 sel, __scal_buf_addr_t *addr,
++			     __scal_buf_addr_t *addrtrd);
+ __s32 DE_SCAL_Set_3D_Ctrl(__u8 sel, __u8 trden, __scal_3d_inmode_t inmode,
+ 			  __scal_3d_outmode_t outmode);
+-__s32 DE_SCAL_Config_3D_Src(__u8 sel, __scal_buf_addr_t * addr,
+-			    __scal_src_size_t * size, __scal_src_type_t * type,
++__s32 DE_SCAL_Config_3D_Src(__u8 sel, __scal_buf_addr_t *addr,
++			    __scal_src_size_t *size, __scal_src_type_t *type,
+ 			    __scal_3d_inmode_t trdinmode,
+-			    __scal_buf_addr_t * addrtrd);
++			    __scal_buf_addr_t *addrtrd);
+ __s32 DE_SCAL_Input_Port_Select(__u8 sel, __u8 port);
+ 
+ __s32 DE_SCAL_Vpp_Enable(__u8 sel, __u32 enable);
+@@ -378,9 +378,9 @@ __s32 DE_BE_Set_BkColor(__u32 sel, __disp_color_t bkcolor);
+ __s32 DE_BE_Set_ColorKey(__u32 sel, __disp_color_t ck_max,
+ 			 __disp_color_t ck_min, __u32 ck_red_match,
+ 			 __u32 ck_green_match, __u32 ck_blue_match);
+-__s32 DE_BE_Set_SystemPalette(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 DE_BE_Set_SystemPalette(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 			      __u32 size);
+-__s32 DE_BE_Get_SystemPalette(__u32 sel, __u32 * pbuffer, __u32 offset,
++__s32 DE_BE_Get_SystemPalette(__u32 sel, __u32 *pbuffer, __u32 offset,
+ 			      __u32 size);
+ __s32 DE_BE_Cfg_Ready(__u32 sel);
+ __s32 DE_BE_EnableINT(__u8 sel, __u32 irqsrc);
+@@ -393,8 +393,8 @@ __s32 DE_BE_Layer_Enable(__u32 sel, __u8 layidx, __bool enable);
+ __s32 DE_BE_Layer_Set_Format(__u32 sel, __u8 layidx, __u8 format,
+ 			     __bool br_swap, __u8 order);
+ __s32 DE_BE_Layer_Set_Framebuffer(__u32 sel, __u8 layidx,
+-				  layer_src_t * layer_fb);
+-__s32 DE_BE_Layer_Set_Screen_Win(__u32 sel, __u8 layidx, __disp_rect_t * win);
++				  layer_src_t *layer_fb);
++__s32 DE_BE_Layer_Set_Screen_Win(__u32 sel, __u8 layidx, __disp_rect_t *win);
+ __s32 DE_BE_Layer_Video_Enable(__u32 sel, __u8 layidx, __bool video_en);
+ __s32 DE_BE_Layer_Video_Ch_Sel(__u32 sel, __u8 layidx, __bool scaler_index);
+ __s32 DE_BE_Layer_Yuv_Ch_Enable(__u32 sel, __u8 layidx, __bool yuv_en);
+@@ -406,14 +406,14 @@ __s32 DE_BE_Layer_ColorKey_Enable(__u32 sel, __u8 layidx, __bool enable);
+ __s32 DE_BE_Layer_Set_Work_Mode(__u32 sel, __u8 layidx, __u8 mode);
+ 
+ __s32 DE_BE_YUV_CH_Enable(__u32 sel, __bool enable);
+-__s32 DE_BE_YUV_CH_Set_Src(__u32 sel, de_yuv_ch_src_t * in_src);
++__s32 DE_BE_YUV_CH_Set_Src(__u32 sel, de_yuv_ch_src_t *in_src);
+ 
+ __s32 DE_BE_HWC_Enable(__u32 sel, __bool enable);
+-__s32 DE_BE_HWC_Set_Pos(__u32 sel, __disp_pos_t * pos);
+-__s32 DE_BE_HWC_Get_Pos(__u32 sel, __disp_pos_t * pos);
++__s32 DE_BE_HWC_Set_Pos(__u32 sel, __disp_pos_t *pos);
++__s32 DE_BE_HWC_Get_Pos(__u32 sel, __disp_pos_t *pos);
+ __s32 DE_BE_HWC_Set_Palette(__u32 sel, __u32 address, __u32 offset, __u32 size);
+ __s32 DE_BE_HWC_Get_Format(void);
+-__s32 DE_BE_HWC_Set_Src(__u32 sel, de_hwc_src_t * hwc_pat);
++__s32 DE_BE_HWC_Set_Src(__u32 sel, de_hwc_src_t *hwc_pat);
+ 
+ __s32 DE_BE_Sprite_Enable(__u32 sel, __bool enable);
+ __s32 DE_BE_Sprite_Set_Format(__u32 sel, __u8 pixel_seq, __u8 format);
+@@ -449,6 +449,6 @@ __s32 DE_BE_Format_To_Bpp(__u32 sel, __u8 format);
+ __u32 DE_BE_Offset_To_Addr(__u32 src_addr, __u32 width, __u32 x, __u32 y,
+ 			   __u32 bpp);
+ __u32 DE_BE_Addr_To_Offset(__u32 src_addr, __u32 off_addr, __u32 width,
+-			   __u32 bpp, __disp_pos_t * pos);
++			   __u32 bpp, __disp_pos_t *pos);
+ 
+ #endif /* __EBIOS_DE_H__ */
+diff --git a/drivers/video/sunxi/disp/ebios_lcdc_tve.h b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+index b2242c2..e1b9eaf 100644
+--- a/drivers/video/sunxi/disp/ebios_lcdc_tve.h
++++ b/drivers/video/sunxi/disp/ebios_lcdc_tve.h
+@@ -133,7 +133,7 @@ void LCDC_open(__u32 sel);
+ void LCDC_close(__u32 sel);
+ __s32 LCDC_set_int_line(__u32 sel, __u32 tcon_index, __u32 num);
+ __s32 LCDC_clear_int(__u32 sel, __u32 irqsrc);
+-__s32 LCDC_get_timing(__u32 sel, __u32 index, __disp_tcon_timing_t * tt);
++__s32 LCDC_get_timing(__u32 sel, __u32 index, __disp_tcon_timing_t *tt);
+ __s32 LCDC_enable_int(__u32 sel, __u32 irqsrc);
+ __s32 LCDC_disable_int(__u32 sel, __u32 irqsrc);
+ __u32 LCDC_query_int(__u32 sel);
+@@ -147,7 +147,7 @@ __s32 LCDC_set_output(__u32 sel, __bool value);
+ void LCD_CPU_WR(__u32 sel, __u32 index, __u32 data);
+ void LCD_CPU_WR_INDEX(__u32 sel, __u32 index);
+ void LCD_CPU_WR_DATA(__u32 sel, __u32 data);
+-void LCD_CPU_RD(__u32 sel, __u32 index, __u32 * data);
++void LCD_CPU_RD(__u32 sel, __u32 index, __u32 *data);
+ void LCD_CPU_AUTO_FLUSH(__u32 sel, __u8 en);
+ void LCD_CPU_DMA_FLUSH(__u32 sel, __u8 en);
+ void LCD_XY_SWAP(__u32 sel);
+@@ -156,7 +156,7 @@ __s32 LCD_LVDS_close(__u32 sel);
+ 
+ __s32 TCON0_open(__u32 sel);
+ __s32 TCON0_close(__u32 sel);
+-void TCON0_cfg(__u32 sel, __panel_para_t * info);
++void TCON0_cfg(__u32 sel, __panel_para_t *info);
+ __s32 TCON0_get_width(__u32 sel);
+ __s32 TCON0_get_height(__u32 sel);
+ __s32 TCON0_set_dclk_div(__u32 sel, __u8 div);
+@@ -165,8 +165,8 @@ __u32 TCON0_get_dclk_div(__u32 sel);
+ 
+ __u32 TCON1_open(__u32 sel);
+ __u32 TCON1_close(__u32 sel);
+-__u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t * cfg);
+-__u32 TCON1_cfg_ex(__u32 sel, __panel_para_t * info);
++__u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t *cfg);
++__u32 TCON1_cfg_ex(__u32 sel, __panel_para_t *info);
+ __u32 TCON1_set_hdmi_mode(__u32 sel, __u8 mode);
+ __u32 TCON1_set_tv_mode(__u32 sel, __u8 mode);
+ __s32 TCON1_set_vga_mode(__u32 sel, __u8 mode);
+-- 
+1.8.0
+

@@ -1,0 +1,2225 @@
+From d6bdf26e543ecba63b75368332f1037b16091120 Mon Sep 17 00:00:00 2001
+From: huangxin <huangxin@LServer.(none)>
+Date: Wed, 16 Nov 2011 09:08:59 +0800
+Subject: [PATCH 314/944] i2s:add the i2s drv
+
+---
+ arch/arm/configs/sun4i_defconfig   |   1 +
+ sound/soc/Kconfig                  |   1 +
+ sound/soc/Makefile                 |   1 +
+ sound/soc/sun4i/i2s/Kconfig        |   8 +
+ sound/soc/sun4i/i2s/Makefile       |   5 +
+ sound/soc/sun4i/i2s/sndi2s.c       | 205 +++++++++++
+ sound/soc/sun4i/i2s/sndi2s.h       |  58 ++++
+ sound/soc/sun4i/i2s/sun4i-i2s.c    | 696 +++++++++++++++++++++++++++++++++++++
+ sound/soc/sun4i/i2s/sun4i-i2s.h    | 304 ++++++++++++++++
+ sound/soc/sun4i/i2s/sun4i-i2sdma.c | 441 +++++++++++++++++++++++
+ sound/soc/sun4i/i2s/sun4i-i2sdma.h |  43 +++
+ sound/soc/sun4i/i2s/sun4i-sndi2s.c | 309 ++++++++++++++++
+ sound/soc/sun4i/i2s/sun4i-sndi2s.h |  26 ++
+ 13 files changed, 2098 insertions(+)
+ create mode 100644 sound/soc/sun4i/i2s/Kconfig
+ create mode 100644 sound/soc/sun4i/i2s/Makefile
+ create mode 100644 sound/soc/sun4i/i2s/sndi2s.c
+ create mode 100644 sound/soc/sun4i/i2s/sndi2s.h
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-i2s.c
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-i2s.h
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-i2sdma.c
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-i2sdma.h
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-sndi2s.c
+ create mode 100644 sound/soc/sun4i/i2s/sun4i-sndi2s.h
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 914f4c5..d748b7c 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -924,6 +924,7 @@ CONFIG_SND_SOC=y
+ CONFIG_SND_SUN4I_SOC_CODEC=y
+ CONFIG_SND_SUN4I_SOC_HDMIAUDIO=y
+ CONFIG_SND_SUN4I_SOC_SPDIF=m
++CONFIG_SND_SUN4I_SOC_I2S_INTERFACE=m
+ CONFIG_SND_SOC_I2C_AND_SPI=y
+ # CONFIG_SND_SOC_ALL_CODECS is not set
+ # CONFIG_SOUND_PRIME is not set
+diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
+index d65129a..ae0d2e2 100644
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -51,6 +51,7 @@ source "sound/soc/txx9/Kconfig"
+ source "sound/soc/sun4i/Kconfig"
+ source "sound/soc/sun4i/hdmiaudio/Kconfig"
+ source "sound/soc/sun4i/spdif/Kconfig"
++source "sound/soc/sun4i/i2s/Kconfig"
+ 
+ # Supported codecs
+ source "sound/soc/codecs/Kconfig"
+diff --git a/sound/soc/Makefile b/sound/soc/Makefile
+index b6313d3..6913301 100644
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -28,5 +28,6 @@ obj-$(CONFIG_SND_SOC)	+= txx9/
+ obj-$(CONFIG_SND_SOC)	+= sun4i/
+ obj-$(CONFIG_SND_SOC)	+= sun4i/hdmiaudio/
+ obj-$(CONFIG_SND_SOC)	+= sun4i/spdif/
++obj-$(CONFIG_SND_SOC)	+= sun4i/i2s/
+ 
+ 
+diff --git a/sound/soc/sun4i/i2s/Kconfig b/sound/soc/sun4i/i2s/Kconfig
+new file mode 100644
+index 0000000..620e186
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/Kconfig
+@@ -0,0 +1,8 @@
++
++config SND_SUN4I_SOC_I2S_INTERFACE
++	tristate "SoC i2s interface for the AllWinner SUN4I chips"
++	default n
++	help
++	  Say Y or M if you want to add support for codecs attached to
++	  the SUN4I AC97, I2S or PCM interface. You will also need
++	  to select the audio interfaces to support below.
+diff --git a/sound/soc/sun4i/i2s/Makefile b/sound/soc/sun4i/i2s/Makefile
+new file mode 100644
+index 0000000..aff68f5
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/Makefile
+@@ -0,0 +1,5 @@
++obj-$(CONFIG_SND_SUN4I_SOC_I2S_INTERFACE) += sun4i-i2s.o
++obj-$(CONFIG_SND_SUN4I_SOC_I2S_INTERFACE) += sun4i-i2sdma.o
++obj-$(CONFIG_SND_SUN4I_SOC_I2S_INTERFACE) += sndi2s.o
++obj-$(CONFIG_SND_SUN4I_SOC_I2S_INTERFACE) += sun4i-sndi2s.o
++
+diff --git a/sound/soc/sun4i/i2s/sndi2s.c b/sound/soc/sun4i/i2s/sndi2s.c
+new file mode 100644
+index 0000000..ba621089
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sndi2s.c
+@@ -0,0 +1,205 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sndi2s.c   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++#include <linux/module.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/soc-dapm.h>
++#include <sound/initval.h>
++#include <mach/sys_config.h>
++#include <linux/io.h>
++
++#include "sndi2s.h"
++
++struct sndi2s_priv {
++	int sysclk;
++	int dai_fmt;
++
++	struct snd_pcm_substream *master_substream;
++	struct snd_pcm_substream *slave_substream;
++};
++
++static int i2s_used = 0;
++#define sndi2s_RATES  (SNDRV_PCM_RATE_8000_192000|SNDRV_PCM_RATE_KNOT)
++#define sndi2s_FORMATS (SNDRV_PCM_FMTBIT_S8 | SNDRV_PCM_FMTBIT_S16_LE | \
++		                     SNDRV_PCM_FMTBIT_S18_3LE | SNDRV_PCM_FMTBIT_S20_3LE)
++
++hdmi_audio_t hdmi_parameter;
++
++static int sndi2s_mute(struct snd_soc_dai *dai, int mute)
++{
++	return 0;
++}
++
++static int sndi2s_startup(struct snd_pcm_substream *substream,
++	struct snd_soc_dai *dai)
++{
++	return 0;
++}
++
++static void sndi2s_shutdown(struct snd_pcm_substream *substream,
++	struct snd_soc_dai *dai)
++{
++
++}
++
++static int sndi2s_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params,
++	struct snd_soc_dai *dai)
++{
++	hdmi_parameter.sample_rate = params_rate(params);
++
++	return 0;
++}
++
++static int sndi2s_set_dai_sysclk(struct snd_soc_dai *codec_dai,
++				  int clk_id, unsigned int freq, int dir)
++{
++	return 0;
++}
++
++static int sndi2s_set_dai_clkdiv(struct snd_soc_dai *codec_dai, int div_id, int div)
++{
++
++	hdmi_parameter.fs_between = div;
++
++	return 0;
++}
++
++static int sndi2s_set_dai_fmt(struct snd_soc_dai *codec_dai,
++			       unsigned int fmt)
++{
++	return 0;
++}
++
++struct snd_soc_dai_ops sndi2s_dai_ops = {
++	.startup = sndi2s_startup,
++	.shutdown = sndi2s_shutdown,
++	.hw_params = sndi2s_hw_params,
++	.digital_mute = sndi2s_mute,
++	.set_sysclk = sndi2s_set_dai_sysclk,
++	.set_clkdiv = sndi2s_set_dai_clkdiv,
++	.set_fmt = sndi2s_set_dai_fmt,
++};
++
++struct snd_soc_dai_driver sndi2s_dai = {
++	.name = "sndi2s",
++	/* playback capabilities */
++	.playback = {
++		.stream_name = "Playback",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = sndi2s_RATES,
++		.formats = sndi2s_FORMATS,
++	},
++	/* pcm operations */
++	.ops = &sndi2s_dai_ops,
++	.symmetric_rates = 1,
++};
++EXPORT_SYMBOL(sndi2s_dai);
++
++static int sndi2s_soc_probe(struct snd_soc_codec *codec)
++{
++	struct sndi2s_priv *sndi2s;
++
++	sndi2s = kzalloc(sizeof(struct sndi2s_priv), GFP_KERNEL);
++	if(sndi2s == NULL){
++		return -ENOMEM;
++	}
++	snd_soc_codec_set_drvdata(codec, sndi2s);
++
++	return 0;
++}
++
++/* power down chip */
++static int sndi2s_soc_remove(struct snd_soc_codec *codec)
++{
++	struct sndhdmi_priv *sndi2s = snd_soc_codec_get_drvdata(codec);
++
++	kfree(sndi2s);
++
++	return 0;
++}
++
++static struct snd_soc_codec_driver soc_codec_dev_sndi2s = {
++	.probe =        sndi2s_soc_probe,
++	.remove =       sndi2s_soc_remove,
++};
++
++static int __devinit sndi2s_codec_probe(struct platform_device *pdev)
++{
++	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_sndi2s, &sndi2s_dai, 1);
++}
++
++static int __devexit sndi2s_codec_remove(struct platform_device *pdev)
++{
++	snd_soc_unregister_codec(&pdev->dev);
++	return 0;
++}
++/*data relating*/
++static struct platform_device sndi2s_codec_device = {
++	.name = "sun4i-i2s-codec",
++};
++
++/*method relating*/
++static struct platform_driver sndi2s_codec_driver = {
++	.driver = {
++		.name = "sun4i-i2s-codec",
++		.owner = THIS_MODULE,
++	},
++	.probe = sndi2s_codec_probe,
++	.remove = __devexit_p(sndi2s_codec_remove),
++};
++
++static int __init sndi2s_codec_init(void)
++{
++	int err = 0;
++	int ret = 0;
++
++	ret = script_parser_fetch("i2s_para","i2s_used", &i2s_used, sizeof(int));
++	if (ret) {
++        printk("[I2S]sndi2s_init fetch i2s using configuration failed\n");
++    }
++
++	if (i2s_used) {
++		if((platform_device_register(&sndi2s_codec_device))<0)
++			return err;
++
++		if ((err = platform_driver_register(&sndi2s_codec_driver)) < 0)
++			return err;
++	} else {
++       printk("[I2S]sndi2s cannot find any using configuration for controllers, return directly!\n");
++       return 0;
++    }
++
++	return 0;
++}
++module_init(sndi2s_codec_init);
++
++static void __exit sndi2s_codec_exit(void)
++{
++	if (i2s_used) {
++		i2s_used = 0;
++		platform_driver_unregister(&sndi2s_codec_driver);
++	}
++}
++module_exit(sndi2s_codec_exit);
++
++MODULE_DESCRIPTION("SNDI2S ALSA soc codec driver");
++MODULE_AUTHOR("Zoltan Devai, Christian Pellegrin <chripell@evolware.org>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:sun4i-i2s-codec");
+diff --git a/sound/soc/sun4i/i2s/sndi2s.h b/sound/soc/sun4i/i2s/sndi2s.h
+new file mode 100644
+index 0000000..d78d033
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sndi2s.h
+@@ -0,0 +1,58 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-sndi2s.h   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#ifndef SNDI2S_H_
++#define SNDI2S_H_
++
++typedef struct hdmi_audio
++{
++	__u8    hw_intf;        /* 0:iis  1:spdif 2:pcm */
++	__u16	fs_between;     /* fs */
++	__u32   sample_rate;    /*sample rate*/
++	__u8    clk_edge;       /* 0:*/
++	__u8    ch0_en;         /* 1 */
++	__u8    ch1_en;         /* 0 */
++	__u8 	ch2_en;         /* 0 */
++	__u8 	ch3_en;         /* 0 */
++	__u8	word_length;    /* 32 */
++	__u8    shift_ctl;      /* 0 */
++	__u8    dir_ctl;        /* 0 */
++	__u8    ws_pol;
++	__u8    just_pol;
++}hdmi_audio_t;
++
++
++typedef struct
++{
++    __s32 (*hdmi_audio_enable)(__u8 mode, __u8 channel);
++    __s32 (*hdmi_set_audio_para)(hdmi_audio_t * audio_para);
++}__audio_hdmi_func;
++
++
++/*define display driver command*/
++typedef enum tag_HDMI_CMD
++{
++    /* command cache on/off                         */
++		HDMI_CMD_SET_VIDEO_MOD,
++		HDMI_CMD_GET_VIDEO_MOD,
++		HDMI_CMD_SET_AUDIO_PARA,
++		HDMI_CMD_AUDIO_RESET_NOTIFY,            /*iis reset finish notify    */
++		HDMI_CMD_CLOSE,                         /*iis reset finish notify    */
++		HDMI_CMD_MOD_SUPPORT,                   /*判断某一种hdmi模式是否支持*/
++		HDMI_CMD_AUDIO_ENABLE,
++		HDMI_CMD_GET_HPD_STATUS,
++}__hdmi_cmd_t;
++
++#endif
+diff --git a/sound/soc/sun4i/i2s/sun4i-i2s.c b/sound/soc/sun4i/i2s/sun4i-i2s.c
+new file mode 100644
+index 0000000..3fca274
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-i2s.c
+@@ -0,0 +1,696 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-i2s.c   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/delay.h>
++#include <linux/clk.h>
++#include <linux/jiffies.h>
++#include <linux/io.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/initval.h>
++#include <sound/soc.h>
++
++#include <mach/clock.h>
++#include <mach/sys_config.h>
++
++#include <mach/hardware.h>
++#include <asm/dma.h>
++#include <mach/dma.h>
++
++#include "sun4i-i2sdma.h"
++#include "sun4i-i2s.h"
++
++static int regsave[8];
++static int i2s_used = 0;
++static struct sw_dma_client sun4i_dma_client_out = {
++	.name = "I2S PCM Stereo out"
++};
++
++static struct sw_dma_client sun4i_dma_client_in = {
++	.name = "I2S PCM Stereo in"
++};
++
++static struct sun4i_dma_params sun4i_i2s_pcm_stereo_out = {
++	.client		=	&sun4i_dma_client_out,
++	.channel	=	DMACH_NIIS,
++	.dma_addr 	=	SUN4I_IISBASE + SUN4I_IISTXFIFO,
++	.dma_size 	=   4,               /* dma transfer 32bits */
++};
++
++static struct sun4i_dma_params sun4i_i2s_pcm_stereo_in = {
++	.client		=	&sun4i_dma_client_in,
++	.channel	=	DMACH_NIIS,
++	.dma_addr 	=	SUN4I_IISBASE + SUN4I_IISRXFIFO,
++	.dma_size 	=   4,               /* dma transfer 32bits */
++};
++
++
++ struct sun4i_i2s_info sun4i_iis;
++static u32 i2s_handle = 0;
++ static struct clk *i2s_apbclk, *i2s_pll2clk, *i2s_pllx8, *i2s_moduleclk;
++
++void sun4i_snd_txctrl_i2s(struct snd_pcm_substream *substream, int on)
++{
++	u32 reg_val;
++
++	reg_val = readl(sun4i_iis.regs + SUN4I_TXCHSEL);
++	reg_val &= ~0x7;
++	reg_val |= SUN4I_TXCHSEL_CHNUM(substream->runtime->channels);
++	writel(reg_val, sun4i_iis.regs + SUN4I_TXCHSEL);
++
++	reg_val = readl(sun4i_iis.regs + SUN4I_TXCHMAP);
++	reg_val = 0;
++	if(substream->runtime->channels == 1)
++	{
++		reg_val = 0x76543200;
++	}
++	else
++	{
++		reg_val = 0x76543210;
++	}
++	writel(reg_val, sun4i_iis.regs + SUN4I_TXCHMAP);
++
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val &= ~SUN4I_IISCTL_SDO3EN;
++	reg_val &= ~SUN4I_IISCTL_SDO2EN;
++	reg_val &= ~SUN4I_IISCTL_SDO1EN;
++	reg_val &= ~SUN4I_IISCTL_SDO0EN;
++	switch(substream->runtime->channels)
++	{
++		case 1:
++		case 2:
++			reg_val |= SUN4I_IISCTL_SDO0EN; break;
++		case 3:
++		case 4:
++			reg_val |= SUN4I_IISCTL_SDO0EN | SUN4I_IISCTL_SDO1EN; break;
++		case 5:
++		case 6:
++			reg_val |= SUN4I_IISCTL_SDO0EN | SUN4I_IISCTL_SDO1EN | SUN4I_IISCTL_SDO2EN; break;
++		case 7:
++		case 8:
++			reg_val |= SUN4I_IISCTL_SDO0EN | SUN4I_IISCTL_SDO1EN | SUN4I_IISCTL_SDO2EN | SUN4I_IISCTL_SDO3EN; break;
++		default:
++			reg_val |= SUN4I_IISCTL_SDO0EN; break;
++	}
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	//flush TX FIFO
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISFCTL);
++	reg_val |= SUN4I_IISFCTL_FTX;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISFCTL);
++
++	//clear TX counter
++	writel(0, sun4i_iis.regs + SUN4I_IISTXCNT);
++
++	if(on){
++		/* IIS TX ENABLE */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val |= SUN4I_IISCTL_TXEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++		/* enable DMA DRQ mode for play */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISINT);
++		reg_val |= SUN4I_IISINT_TXDRQEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISINT);
++
++		//Global Enable Digital Audio Interface
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val |= SUN4I_IISCTL_GEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	}else{
++		/* IIS TX DISABLE */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val &= ~SUN4I_IISCTL_TXEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++		/* DISBALE dma DRQ mode */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISINT);
++		reg_val &= ~SUN4I_IISINT_TXDRQEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISINT);
++
++		//Global disable Digital Audio Interface
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val &= ~SUN4I_IISCTL_GEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++	}
++
++}
++
++void sun4i_snd_rxctrl_i2s(int on)
++{
++	u32 reg_val;
++
++	//flush RX FIFO
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISFCTL);
++	reg_val |= SUN4I_IISFCTL_FRX;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISFCTL);
++
++	//clear RX counter
++	writel(0, sun4i_iis.regs + SUN4I_IISRXCNT);
++
++	if(on){
++		/* IIS RX ENABLE */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val |= SUN4I_IISCTL_RXEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++		/* enable DMA DRQ mode for record */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISINT);
++		reg_val |= SUN4I_IISINT_RXDRQEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISINT);
++
++		//Global Enable Digital Audio Interface
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val |= SUN4I_IISCTL_GEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	}else{
++		/* IIS RX DISABLE */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val &= ~SUN4I_IISCTL_RXEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++		/* DISBALE dma DRQ mode */
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISINT);
++		reg_val &= ~SUN4I_IISINT_RXDRQEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISINT);
++
++		//Global disable Digital Audio Interface
++		reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++		reg_val &= ~SUN4I_IISCTL_GEN;
++		writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++	}
++
++}
++
++static inline int sun4i_snd_is_clkmaster(void)
++{
++	return ((readl(sun4i_iis.regs + SUN4I_IISCTL) & SUN4I_IISCTL_MS) ? 0 : 1);
++}
++
++static int sun4i_i2s_set_fmt(struct snd_soc_dai *cpu_dai, unsigned int fmt)
++{
++	u32 reg_val;
++	u32 reg_val1;
++
++	//SDO ON
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val |= (SUN4I_IISCTL_SDO0EN | SUN4I_IISCTL_SDO1EN | SUN4I_IISCTL_SDO2EN | SUN4I_IISCTL_SDO3EN);
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	/* master or slave selection */
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	switch(fmt & SND_SOC_DAIFMT_MASTER_MASK){
++		case SND_SOC_DAIFMT_CBM_CFM:   /* codec clk & frm master */
++			reg_val |= SUN4I_IISCTL_MS;
++			break;
++		case SND_SOC_DAIFMT_CBS_CFS:   /* codec clk & frm slave */
++			reg_val &= ~SUN4I_IISCTL_MS;
++			break;
++		default:
++			return -EINVAL;
++	}
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	/* pcm or i2s mode selection */
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val1 = readl(sun4i_iis.regs + SUN4I_IISFAT0);
++	reg_val1 &= ~SUN4I_IISFAT0_FMT_RVD;
++	switch(fmt & SND_SOC_DAIFMT_FORMAT_MASK){
++		case SND_SOC_DAIFMT_I2S:        /* I2S mode */
++			reg_val &= ~SUN4I_IISCTL_PCM;
++			reg_val1 |= SUN4I_IISFAT0_FMT_I2S;
++			break;
++		case SND_SOC_DAIFMT_RIGHT_J:    /* Right Justified mode */
++			reg_val &= ~SUN4I_IISCTL_PCM;
++			reg_val1 |= SUN4I_IISFAT0_FMT_RGT;
++			break;
++		case SND_SOC_DAIFMT_LEFT_J:     /* Left Justified mode */
++			reg_val &= ~SUN4I_IISCTL_PCM;
++			reg_val1 |= SUN4I_IISFAT0_FMT_LFT;
++			break;
++		case SND_SOC_DAIFMT_DSP_A:      /* L data msb after FRM LRC */
++			reg_val |= SUN4I_IISCTL_PCM;
++			reg_val1 &= ~SUN4I_IISFAT0_LRCP;
++			break;
++		case SND_SOC_DAIFMT_DSP_B:      /* L data msb during FRM LRC */
++			reg_val |= SUN4I_IISCTL_PCM;
++			reg_val1 |= SUN4I_IISFAT0_LRCP;
++			break;
++		default:
++			return -EINVAL;
++	}
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++	writel(reg_val1, sun4i_iis.regs + SUN4I_IISFAT0);
++
++	/* DAI signal inversions */
++	reg_val1 = readl(sun4i_iis.regs + SUN4I_IISFAT0);
++	switch(fmt & SND_SOC_DAIFMT_INV_MASK){
++		case SND_SOC_DAIFMT_NB_NF:     /* normal bit clock + frame */
++			reg_val1 &= ~SUN4I_IISFAT0_LRCP;
++			reg_val1 &= ~SUN4I_IISFAT0_BCP;
++			break;
++		case SND_SOC_DAIFMT_NB_IF:     /* normal bclk + inv frm */
++			reg_val1 |= SUN4I_IISFAT0_LRCP;
++			reg_val1 &= ~SUN4I_IISFAT0_BCP;
++			break;
++		case SND_SOC_DAIFMT_IB_NF:     /* invert bclk + nor frm */
++			reg_val1 &= ~SUN4I_IISFAT0_LRCP;
++			reg_val1 |= SUN4I_IISFAT0_BCP;
++			break;
++		case SND_SOC_DAIFMT_IB_IF:     /* invert bclk + frm */
++			reg_val1 |= SUN4I_IISFAT0_LRCP;
++			reg_val1 |= SUN4I_IISFAT0_BCP;
++			break;
++	}
++	writel(reg_val1, sun4i_iis.regs + SUN4I_IISFAT0);
++
++	/* word select size */
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISFAT0);
++	reg_val &= ~SUN4I_IISFAT0_WSS_32BCLK;
++	if(sun4i_iis.ws_size == 16)
++		reg_val |= SUN4I_IISFAT0_WSS_16BCLK;
++	else if(sun4i_iis.ws_size == 20)
++		reg_val |= SUN4I_IISFAT0_WSS_20BCLK;
++	else if(sun4i_iis.ws_size == 24)
++		reg_val |= SUN4I_IISFAT0_WSS_24BCLK;
++	else
++		reg_val |= SUN4I_IISFAT0_WSS_32BCLK;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISFAT0);
++
++	/* PCM REGISTER setup */
++	reg_val = sun4i_iis.pcm_txtype&0x3;
++	reg_val |= sun4i_iis.pcm_rxtype<<2;
++
++	if(!sun4i_iis.pcm_sync_type)
++		reg_val |= SUN4I_IISFAT1_SSYNC;							//short sync
++	if(sun4i_iis.pcm_sw == 16)
++		reg_val |= SUN4I_IISFAT1_SW;
++
++	reg_val |=((sun4i_iis.pcm_start_slot - 1)&0x3)<<6;		//start slot index
++
++	reg_val |= sun4i_iis.pcm_lsb_first<<9;			//MSB or LSB first
++
++	if(sun4i_iis.pcm_sync_period == 256)
++		reg_val |= 0x4<<12;
++	else if (sun4i_iis.pcm_sync_period == 128)
++		reg_val |= 0x3<<12;
++	else if (sun4i_iis.pcm_sync_period == 64)
++		reg_val |= 0x2<<12;
++	else if (sun4i_iis.pcm_sync_period == 32)
++		reg_val |= 0x1<<12;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISFAT1);
++
++	/* set FIFO control register */
++	reg_val = 0 & 0x3;
++	reg_val |= (1 & 0x1)<<2;
++	reg_val |= SUN4I_IISFCTL_RXTL(0xf);				//RX FIFO trigger level
++	reg_val |= SUN4I_IISFCTL_TXTL(0x40);				//TX FIFO empty trigger level
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISFCTL);
++	return 0;
++}
++
++static int sun4i_i2s_hw_params(struct snd_pcm_substream *substream,
++																struct snd_pcm_hw_params *params,
++																struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sun4i_dma_params *dma_data;
++
++	/* play or record */
++	if(substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		dma_data = &sun4i_i2s_pcm_stereo_out;
++	else
++		dma_data = &sun4i_i2s_pcm_stereo_in;
++
++	snd_soc_dai_set_dma_data(rtd->cpu_dai, substream, dma_data);
++	return 0;
++}
++
++static int sun4i_i2s_trigger(struct snd_pcm_substream *substream,
++                              int cmd, struct snd_soc_dai *dai)
++{
++	int ret = 0;
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sun4i_dma_params *dma_data =
++					snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
++
++	switch (cmd) {
++		case SNDRV_PCM_TRIGGER_START:
++		case SNDRV_PCM_TRIGGER_RESUME:
++		case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
++				sun4i_snd_rxctrl_i2s(1);
++			} else {
++				sun4i_snd_txctrl_i2s(substream, 1);
++			}
++			sw_dma_ctrl(dma_data->channel, SW_DMAOP_STARTED);
++			break;
++		case SNDRV_PCM_TRIGGER_STOP:
++		case SNDRV_PCM_TRIGGER_SUSPEND:
++		case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++			if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
++				sun4i_snd_rxctrl_i2s(0);
++			} else {
++			  sun4i_snd_txctrl_i2s(substream, 0);
++			}
++			break;
++		default:
++			ret = -EINVAL;
++			break;
++	}
++
++	return ret;
++}
++
++//freq:   1: 22.5792MHz   0: 24.576MHz
++static int sun4i_i2s_set_sysclk(struct snd_soc_dai *cpu_dai, int clk_id,
++                                 unsigned int freq, int dir)
++{
++	if (!freq) {
++		clk_set_rate(i2s_pll2clk, 24576000);
++	} else {
++		clk_set_rate(i2s_pll2clk, 22579200);
++	}
++
++	return 0;
++}
++
++static int sun4i_i2s_set_clkdiv(struct snd_soc_dai *cpu_dai, int div_id, int div)
++{
++	u32 reg;
++//	printk("[IIS]Entered %s\n", __func__);
++	switch (div_id) {
++		case SUN4I_DIV_MCLK:
++			if(div <= 8)
++				div  = (div >>1);
++			else if(div  == 12)
++				div  = 0x5;
++			else if(div  == 16)
++				div  = 0x6;
++			else if(div == 24)
++				div = 0x7;
++			else if(div == 32)
++				div = 0x8;
++			else if(div == 48)
++				div = 0x9;
++			else if(div == 64)
++				div = 0xa;
++			reg = (readl(sun4i_iis.regs + SUN4I_IISCLKD) & ~SUN4I_IISCLKD_MCLK_MASK) | (div << SUN4I_IISCLKD_MCLK_OFFS);
++			writel(reg, sun4i_iis.regs + SUN4I_IISCLKD);
++			break;
++		case SUN4I_DIV_BCLK:
++			if(div <= 8)
++				div = (div>>1) - 1;
++			else if(div == 12)
++				div = 0x4;
++			else if(div == 16)
++				div = 0x5;
++			else if(div == 32)
++				div = 0x6;
++			else if(div == 64)
++				div = 0x7;
++			reg = (readl(sun4i_iis.regs + SUN4I_IISCLKD) & ~SUN4I_IISCLKD_BCLK_MASK) | (div <<SUN4I_IISCLKD_BCLK_OFFS);
++			writel(reg, sun4i_iis.regs + SUN4I_IISCLKD);
++			break;
++		default:
++			return -EINVAL;
++	}
++
++	//diable MCLK output when high samplerate
++	reg = readl(sun4i_iis.regs + SUN4I_IISCLKD);
++	if (!(reg & 0xF)) {
++		reg &= ~SUN4I_IISCLKD_MCLKOEN;
++		writel(reg, sun4i_iis.regs + SUN4I_IISCLKD);
++	} else {
++		reg |= SUN4I_IISCLKD_MCLKOEN;
++		writel(reg, sun4i_iis.regs + SUN4I_IISCLKD);
++	}
++
++	return 0;
++}
++
++static int sun4i_i2s_dai_probe(struct snd_soc_dai *dai)
++{
++	return 0;
++}
++static int sun4i_i2s_dai_remove(struct snd_soc_dai *dai)
++{
++	return 0;
++}
++
++static void iisregsave(void)
++{
++	regsave[0] = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	regsave[1] = readl(sun4i_iis.regs + SUN4I_IISFAT0);
++	regsave[2] = readl(sun4i_iis.regs + SUN4I_IISFAT1);
++	regsave[3] = readl(sun4i_iis.regs + SUN4I_IISFCTL) | (0x3<<24);
++	regsave[4] = readl(sun4i_iis.regs + SUN4I_IISINT);
++	regsave[5] = readl(sun4i_iis.regs + SUN4I_IISCLKD);
++	regsave[6] = readl(sun4i_iis.regs + SUN4I_TXCHSEL);
++	regsave[7] = readl(sun4i_iis.regs + SUN4I_TXCHMAP);
++}
++
++static void iisregrestore(void)
++{
++	writel(regsave[0], sun4i_iis.regs + SUN4I_IISCTL);
++	writel(regsave[1], sun4i_iis.regs + SUN4I_IISFAT0);
++	writel(regsave[2], sun4i_iis.regs + SUN4I_IISFAT1);
++	writel(regsave[3], sun4i_iis.regs + SUN4I_IISFCTL);
++	writel(regsave[4], sun4i_iis.regs + SUN4I_IISINT);
++	writel(regsave[5], sun4i_iis.regs + SUN4I_IISCLKD);
++	writel(regsave[6], sun4i_iis.regs + SUN4I_TXCHSEL);
++	writel(regsave[7], sun4i_iis.regs + SUN4I_TXCHMAP);
++}
++
++static int sun4i_i2s_suspend(struct snd_soc_dai *cpu_dai)
++{
++	u32 reg_val;
++	printk("[IIS]Entered %s\n", __func__);
++
++	//Global Enable Digital Audio Interface
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val &= ~SUN4I_IISCTL_GEN;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	iisregsave();
++
++	//release the module clock
++	clk_disable(i2s_moduleclk);
++
++	clk_disable(i2s_apbclk);
++
++	//printk("[IIS]PLL2 0x01c20008 = %#x\n", *(volatile int*)0xF1C20008);
++	printk("[IIS]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
++	printk("[IIS]SPECIAL CLK 0x01c200B8 = %#x, line = %d\n", *(volatile int*)0xF1C200B8, __LINE__);
++
++	return 0;
++}
++static int sun4i_i2s_resume(struct snd_soc_dai *cpu_dai)
++{
++	u32 reg_val;
++	printk("[IIS]Entered %s\n", __func__);
++
++	//release the module clock
++	clk_enable(i2s_apbclk);
++
++	//release the module clock
++	clk_enable(i2s_moduleclk);
++
++	iisregrestore();
++
++	//Global Enable Digital Audio Interface
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val |= SUN4I_IISCTL_GEN;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	//printk("[IIS]PLL2 0x01c20008 = %#x\n", *(volatile int*)0xF1C20008);
++	printk("[IIS]SPECIAL CLK 0x01c20068 = %#x, line= %d\n", *(volatile int*)0xF1C20068, __LINE__);
++	printk("[IIS]SPECIAL CLK 0x01c200B8 = %#x, line = %d\n", *(volatile int*)0xF1C200B8, __LINE__);
++
++	return 0;
++}
++
++#define SUN4I_I2S_RATES (SNDRV_PCM_RATE_8000_192000 | SNDRV_PCM_RATE_KNOT)
++static struct snd_soc_dai_ops sun4i_iis_dai_ops = {
++	.trigger 	= sun4i_i2s_trigger,
++	.hw_params 	= sun4i_i2s_hw_params,
++	.set_fmt 	= sun4i_i2s_set_fmt,
++	.set_clkdiv = sun4i_i2s_set_clkdiv,
++	.set_sysclk = sun4i_i2s_set_sysclk,
++};
++
++static struct snd_soc_dai_driver sun4i_iis_dai = {
++	.probe 		= sun4i_i2s_dai_probe,
++	.suspend 	= sun4i_i2s_suspend,
++	.resume 	= sun4i_i2s_resume,
++	.remove 	= sun4i_i2s_dai_remove,
++	.playback 	= {
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SUN4I_I2S_RATES,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE,
++	},
++	.capture 	= {
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SUN4I_I2S_RATES,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE,
++	},
++	.symmetric_rates = 1,
++	.ops 		= &sun4i_iis_dai_ops,
++};
++
++static int __devinit sun4i_i2s_dev_probe(struct platform_device *pdev)
++{
++	int reg_val = 0;
++	int ret;
++
++	sun4i_iis.regs = ioremap(SUN4I_IISBASE, 0x100);
++	if (sun4i_iis.regs == NULL)
++		return -ENXIO;
++
++	//i2s apbclk
++	i2s_apbclk = clk_get(NULL, "apb_i2s");
++	if(-1 == clk_enable(i2s_apbclk)){
++		printk("i2s_apbclk failed! line = %d\n", __LINE__);
++		goto out;
++	}
++
++	i2s_pllx8 = clk_get(NULL, "audio_pllx8");
++
++	//i2s pll2clk
++	i2s_pll2clk = clk_get(NULL, "audio_pll");
++
++	//i2s module clk
++	i2s_moduleclk = clk_get(NULL, "i2s");
++
++	if(clk_set_parent(i2s_moduleclk, i2s_pll2clk)){
++		printk("try to set parent of i2s_moduleclk to i2s_pll2ck failed! line = %d\n",__LINE__);
++		goto out1;
++	}
++
++	if(clk_set_rate(i2s_moduleclk, 24576000/8)){
++		printk("set i2s_moduleclk clock freq to 24576000 failed! line = %d\n", __LINE__);
++		goto out1;
++	}
++
++	if(-1 == clk_enable(i2s_moduleclk)){
++		printk("open i2s_moduleclk failed! line = %d\n", __LINE__);
++		goto out1;
++	}
++
++	reg_val = readl(sun4i_iis.regs + SUN4I_IISCTL);
++	reg_val |= SUN4I_IISCTL_GEN;
++	writel(reg_val, sun4i_iis.regs + SUN4I_IISCTL);
++
++	iounmap(sun4i_iis.ioregs);
++	ret = snd_soc_register_dai(&pdev->dev, &sun4i_iis_dai);
++	if (ret) {
++		dev_err(&pdev->dev, "Failed to register DAI\n");
++		goto out2;
++	}
++
++	goto out;
++	out2:
++		clk_disable(i2s_moduleclk);
++	out1:
++		clk_disable(i2s_apbclk);
++	out:
++	return 0;
++}
++
++static int __devexit sun4i_i2s_dev_remove(struct platform_device *pdev)
++{
++	if(i2s_used) {
++		i2s_used = 0;
++		//release the module clock
++		clk_disable(i2s_moduleclk);
++
++		//release pllx8clk
++		clk_put(i2s_pllx8);
++
++		//release pll2clk
++		clk_put(i2s_pll2clk);
++
++		//release apbclk
++		clk_put(i2s_apbclk);
++
++		gpio_release(i2s_handle, 2);
++		snd_soc_unregister_dai(&pdev->dev);
++		platform_set_drvdata(pdev, NULL);
++	}
++	return 0;
++}
++
++/*data relating*/
++static struct platform_device sun4i_i2s_device = {
++	.name = "sun4i-i2s",
++};
++
++/*method relating*/
++static struct platform_driver sun4i_i2s_driver = {
++	.probe = sun4i_i2s_dev_probe,
++	.remove = __devexit_p(sun4i_i2s_dev_remove),
++	.driver = {
++		.name = "sun4i-i2s",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init sun4i_i2s_init(void)
++{
++	int err = 0;
++	int ret;
++
++	ret = script_parser_fetch("i2s_para","i2s_used", &i2s_used, sizeof(int));
++	if (ret) {
++        printk("[I2S]sun4i_i2s_init fetch i2s using configuration failed\n");
++    }
++
++ 	if (i2s_used) {
++		i2s_handle = gpio_request_ex("i2s_para", NULL);
++
++		if((platform_device_register(&sun4i_i2s_device))<0)
++			return err;
++
++		if ((err = platform_driver_register(&sun4i_i2s_driver)) < 0)
++			return err;
++	} else {
++        printk("[I2S]sun4i-i2s cannot find any using configuration for controllers, return directly!\n");
++        return 0;
++    }
++	return 0;
++}
++module_init(sun4i_i2s_init);
++
++static void __exit sun4i_i2s_exit(void)
++{
++	platform_driver_unregister(&sun4i_i2s_driver);
++}
++module_exit(sun4i_i2s_exit);
++
++/* Module information */
++MODULE_AUTHOR("ALLWINNER");
++MODULE_DESCRIPTION("sun4i I2S SoC Interface");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:sun4i-i2s");
++
+diff --git a/sound/soc/sun4i/i2s/sun4i-i2s.h b/sound/soc/sun4i/i2s/sun4i-i2s.h
+new file mode 100644
+index 0000000..1c9a163
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-i2s.h
+@@ -0,0 +1,304 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-i2s.h   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#ifndef SUN4I_I2S_H_
++#define SUN4I_I2S_H_
++
++/*------------------------------------------------------------*/
++/* REGISTER definition */
++
++/* IIS REGISTER */
++#define SUN4I_IISBASE 		(0x01C22400)
++
++#define SUN4I_IISCTL 	  (0x00)
++	#define SUN4I_IISCTL_SDO3EN		(1<<11)
++	#define SUN4I_IISCTL_SDO2EN		(1<<10)
++	#define SUN4I_IISCTL_SDO1EN		(1<<9)
++	#define SUN4I_IISCTL_SDO0EN		(1<<8)
++	#define SUN4I_IISCTL_ASS			(1<<6)
++	#define SUN4I_IISCTL_MS			(1<<5)
++	#define SUN4I_IISCTL_PCM			(1<<4)
++	#define SUN4I_IISCTL_LOOP			(1<<3)
++	#define SUN4I_IISCTL_TXEN			(1<<2)
++	#define SUN4I_IISCTL_RXEN			(1<<1)
++	#define SUN4I_IISCTL_GEN			(1<<0)
++
++#define SUN4I_IISFAT0 		(0x04)
++	#define SUN4I_IISFAT0_LRCP					(1<<7)
++	#define SUN4I_IISFAT0_BCP					(1<<6)
++	#define SUN4I_IISFAT0_SR_RVD				(3<<4)
++	#define SUN4I_IISFAT0_SR_16BIT				(0<<4)
++	#define	SUN4I_IISFAT0_SR_20BIT				(1<<4)
++	#define SUN4I_IISFAT0_SR_24BIT				(2<<4)
++	#define SUN4I_IISFAT0_WSS_16BCLK			(0<<2)
++	#define SUN4I_IISFAT0_WSS_20BCLK			(1<<2)
++	#define SUN4I_IISFAT0_WSS_24BCLK			(2<<2)
++	#define SUN4I_IISFAT0_WSS_32BCLK			(3<<2)
++	#define SUN4I_IISFAT0_FMT_I2S				(0<<0)
++	#define SUN4I_IISFAT0_FMT_LFT				(1<<0)
++	#define SUN4I_IISFAT0_FMT_RGT				(2<<0)
++	#define SUN4I_IISFAT0_FMT_RVD				(3<<0)
++
++#define SUN4I_IISFAT1		(0x08)
++	#define SUN4I_IISFAT1_SYNCLEN_16BCLK		(0<<12)
++	#define SUN4I_IISFAT1_SYNCLEN_32BCLK		(1<<12)
++	#define SUN4I_IISFAT1_SYNCLEN_64BCLK		(2<<12)
++	#define SUN4I_IISFAT1_SYNCLEN_128BCLK		(3<<12)
++	#define SUN4I_IISFAT1_SYNCLEN_256BCLK		(4<<12)
++	#define SUN4I_IISFAT1_SYNCOUTEN			(1<<11)
++	#define SUN4I_IISFAT1_OUTMUTE 				(1<<10)
++	#define SUN4I_IISFAT1_MLS		 			(1<<9)
++	#define SUN4I_IISFAT1_SEXT		 			(1<<8)
++	#define SUN4I_IISFAT1_SI_1ST				(0<<6)
++	#define SUN4I_IISFAT1_SI_2ND			 	(1<<6)
++	#define SUN4I_IISFAT1_SI_3RD			 	(2<<6)
++	#define SUN4I_IISFAT1_SI_4TH			 	(3<<6)
++	#define SUN4I_IISFAT1_SW			 		(1<<5)
++	#define SUN4I_IISFAT1_SSYNC	 			(1<<4)
++	#define SUN4I_IISFAT1_RXPDM_16PCM			(0<<2)
++	#define SUN4I_IISFAT1_RXPDM_8PCM			(1<<2)
++	#define SUN4I_IISFAT1_RXPDM_8ULAW			(2<<2)
++	#define SUN4I_IISFAT1_RXPDM_8ALAW  		(3<<2)
++	#define SUN4I_IISFAT1_TXPDM_16PCM			(0<<0)
++	#define SUN4I_IISFAT1_TXPDM_8PCM			(1<<0)
++	#define SUN4I_IISFAT1_TXPDM_8ULAW			(2<<0)
++	#define SUN4I_IISFAT1_TXPDM_8ALAW  		(3<<0)
++
++#define SUN4I_IISTXFIFO 	(0x0C)
++
++#define SUN4I_IISRXFIFO 	(0x10)
++
++#define SUN4I_IISFCTL  	(0x14)
++	#define SUN4I_IISFCTL_FIFOSRC			(1<<31)
++	#define SUN4I_IISFCTL_FTX				(1<<25)
++	#define SUN4I_IISFCTL_FRX				(1<<24)
++	#define SUN4I_IISFCTL_TXTL(v)			((v)<<12)
++	#define SUN4I_IISFCTL_RXTL(v)  		((v)<<4)
++	#define SUN4I_IISFCTL_TXIM_MOD0		(0<<2)
++	#define SUN4I_IISFCTL_TXIM_MOD1		(1<<2)
++	#define SUN4I_IISFCTL_RXOM_MOD0		(0<<0)
++	#define SUN4I_IISFCTL_RXOM_MOD1		(1<<0)
++	#define SUN4I_IISFCTL_RXOM_MOD2		(2<<0)
++	#define SUN4I_IISFCTL_RXOM_MOD3		(3<<0)
++
++#define SUN4I_IISFSTA   	(0x18)
++	#define SUN4I_IISFSTA_TXE				(1<<28)
++	#define SUN4I_IISFSTA_TXECNT(v)		((v)<<16)
++	#define SUN4I_IISFSTA_RXA				(1<<8)
++	#define SUN4I_IISFSTA_RXACNT(v)		((v)<<0)
++
++#define SUN4I_IISINT    	(0x1C)
++	#define SUN4I_IISINT_TXDRQEN				(1<<7)
++	#define SUN4I_IISINT_TXUIEN				(1<<6)
++	#define SUN4I_IISINT_TXOIEN				(1<<5)
++	#define SUN4I_IISINT_TXEIEN				(1<<4)
++	#define SUN4I_IISINT_RXDRQEN				(1<<2)
++	#define SUN4I_IISINT_RXOIEN				(1<<1)
++	#define SUN4I_IISINT_RXAIEN				(1<<0)
++
++#define SUN4I_IISISTA   	(0x20)
++	#define SUN4I_IISISTA_TXUISTA			(1<<6)
++	#define SUN4I_IISISTA_TXOISTA			(1<<5)
++	#define SUN4I_IISISTA_TXEISTA			(1<<4)
++	#define SUN4I_IISISTA_RXOISTA			(1<<1)
++	#define SUN4I_IISISTA_RXAISTA			(1<<0)
++
++#define SUN4I_IISCLKD   	(0x24)
++	#define SUN4I_IISCLKD_MCLKOEN			(1<<7)
++	#define SUN4I_IISCLKD_BCLKDIV_2		(0<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_4		(1<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_6		(2<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_8		(3<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_12		(4<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_16		(5<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_32		(6<<4)
++	#define SUN4I_IISCLKD_BCLKDIV_64		(7<<4)
++	#define SUN4I_IISCLKD_MCLKDIV_1		(0<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_2		(1<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_4		(2<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_6		(3<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_8		(4<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_12		(5<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_16		(6<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_24		(7<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_32		(8<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_48		(9<<0)
++	#define SUN4I_IISCLKD_MCLKDIV_64		(10<<0)
++
++#define SUN4I_IISTXCNT  	(0x28)
++
++#define SUN4I_IISRXCNT  	(0x2C)
++
++#define SUN4I_TXCHSEL		(0x30)
++	#define SUN4I_TXCHSEL_CHNUM(v)			(((v)-1)<<0)
++
++#define SUN4I_TXCHMAP		(0x34)
++	#define SUN4I_TXCHMAP_CH7(v)			(((v)-1)<<28)
++	#define SUN4I_TXCHMAP_CH6(v)			(((v)-1)<<24)
++	#define SUN4I_TXCHMAP_CH5(v)			(((v)-1)<<20)
++	#define SUN4I_TXCHMAP_CH4(v)			(((v)-1)<<16)
++	#define SUN4I_TXCHMAP_CH3(v)			(((v)-1)<<12)
++	#define SUN4I_TXCHMAP_CH2(v)			(((v)-1)<<8)
++	#define SUN4I_TXCHMAP_CH1(v)			(((v)-1)<<4)
++	#define SUN4I_TXCHMAP_CH0(v)			(((v)-1)<<0)
++
++#define SUN4I_RXCHSEL		(0x38)
++	#define SUN4I_RXCHSEL_CHNUM(v)			(((v)-1)<<0)
++
++#define SUN4I_RXCHMAP		(0x3C)
++	#define SUN4I_RXCHMAP_CH3(v)			(((v)-1)<<12)
++	#define SUN4I_RXCHMAP_CH2(v)			(((v)-1)<<8)
++	#define SUN4I_RXCHMAP_CH1(v)			(((v)-1)<<4)
++	#define SUN4I_RXCHMAP_CH0(v)			(((v)-1)<<0)
++
++
++/* DMA REGISTER */
++#define SUN4I_DMABASE	(0x01C02000)
++
++#define SUN4I_DMAIRQEN						(0x0)
++	#define SUN4I_DMAIRQEN_NDMA_FULLEN(v)				(1<<((v)*2+1))
++	#define SUN4I_DMAIRQEN_NDMA_HALFEN(v)				(1<<((v)*2))
++
++#define SUN4I_DMAIRQPENDING	 		(0x4)
++	#define SUN4I_DMAIRQPENGDING_NDMA_FULLPEND(v)		(1<<((v)*2+1))
++	#define SUN4I_DMAIRQPENGDING_NDMA_HALFPEND(v)		(1<<((v)*2))
++
++#define SUN4I_NDMACFG(v)				((v)*0x20+0x100)
++	#define SUN4I_NDMACFG_DMALOAD					(1<<31)
++	#define SUN4I_NDMACFG_BUSY						(1<<30)
++	#define SUN4I_NDMACFG_CONTINUOUS				(1<<29)
++	#define SUN4I_NDMACFG_WAIT(v)					(((v)-1)<<26)   //wait clock = 2^n  example: 8 clocks = 2^3
++	#define SUN4I_NDMACFG_DSTDATAWIDTH_8BIT		(0<<24)
++	#define SUN4I_NDMACFG_DSTDATAWIDTH_16BIT		(1<<24)
++	#define SUN4I_NDMACFG_DSTDATAWIDTH_32BIT		(2<<24)
++	#define SUN4I_NDMACFG_DSTDATAWIDTH_RVD			(3<<24)
++	#define SUN4I_NDMACFG_DSTBURST4				(1<<23)
++	#define SUN4I_NDMACFG_DSTADDRTYPE_INC			(0<<21)
++	#define SUN4I_NDMACFG_DSTADDRTYPE_CON 			(1<<21)
++	#define SUN4I_NDMACFG_DSTTYPE_IRTX				(0x0<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_SPDIFTX			(0x1<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_IISTX			(0x2<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_AC97TX			(0x3<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_SPI0TX 			(0x4<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_SPI1TX			(0x5<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_SPI2TX			(0x6<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART0TX			(0x8<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART1TX			(0x9<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART2TX			(0xA<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART3TX			(0xB<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_AUDIODA			(0xC<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_NFC				(0xF<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_SRAM				(0x10<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_DRAM				(0x11<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART4TX			(0x12<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART5TX          (0x13<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART6TX			(0x14<<16)
++	#define SUN4I_NDMACFG_DSTTYPE_UART7TX			(0x15<<16)
++	#define SUN4I_NDMACFG_SRCDATAWIDTH_8BIT		(0<<8)
++	#define SUN4I_NDMACFG_SRCDATAWIDTH_16BIT		(1<<8)
++	#define SUN4I_NDMACFG_SRCDATAWIDTH_32BIT		(2<<8)
++	#define SUN4I_NDMACFG_SRCDATAWIDTH_RVD			(3<<8)
++	#define SUN4I_NDMACFG_SRCBURST4				(1<<7)
++	#define SUN4I_NDMACFG_SRCADDRTYPE_INC			(0<<5)
++	#define SUN4I_NDMACFG_SRCADDRTYPE_CON 			(1<<5)
++	#define SUN4I_NDMACFG_SRCTYPE_IRRX				(0x0<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_SPDIFRX			(0x1<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_IISRX			(0x2<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_AC97RX			(0x3<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_SPI0RX 			(0x4<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_SPI1RX			(0x5<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_SPI2RX			(0x6<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART0RX			(0x8<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART1RX			(0x9<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART2RX			(0xA<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART3RX			(0xB<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_AUDIOAD			(0xC<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_TPAD				(0xD<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_NFC				(0xF<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_SRAM				(0x10<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_DRAM				(0x11<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART4RX			(0x12<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART5RX			(0x13<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART6RX			(0x14<<0)
++	#define SUN4I_NDMACFG_SRCTYPE_UART7RX			(0x15<<0)
++
++#define SUN4I_NDMASRCADDR(v)				((v)*0x20 + 0x100 + 4)
++
++#define SUN4I_NDMADSTADDR(v)				((v)*0x20 + 0x100 + 8)
++
++#define SUN4I_NDMACNT(v)				((v)*0x20 + 0x100 + 0xC)
++
++
++/* CCM REGISTER */
++#define SUN4I_CCMBASE    (0x01C20000)
++
++#define SUN4I_CCM_AUDIO_HOSC_PLL_REG   (0x08)
++	#define SUN4I_CCM_AUDIO_HOSC_PLL_REG_AUDIOEN		(1<<31)
++	#define SUN4I_CCM_AUDIO_HOSC_PLL_REG_FRE225792MHZ	(0<<27)
++	#define SUN4I_CCM_AUDIO_HOSC_PLL_REG_FRE24576MHZ	(1<<27)
++
++#define SUN4I_CCM_APB_GATE_REG    		 (0x68)
++	#define SUN4I_CCM_APB_GATE_REG_IISGATE				(1<<3)
++
++#define SUN4I_CCM_AUDIO_CLK_REG				(0xb8)
++	#define SUN4I_CCM_AUDIO_CLK_REG_IISSPECIALGATE		(1<<31)
++	#define SUN4I_CCM_AUDIO_CLK_REG_DIV(v)					((v)<<16)
++/*------------------------------------------------------------*/
++
++/*------------------------------------------------------------*/
++/* Clock dividers */
++#define SUN4I_DIV_MCLK	0
++#define SUN4I_DIV_BCLK	1
++
++#define SUN4I_IISCLKD_MCLK_MASK   0x0f
++#define SUN4I_IISCLKD_MCLK_OFFS   0
++#define SUN4I_IISCLKD_BCLK_MASK   0x070
++#define SUN4I_IISCLKD_BCLK_OFFS   4
++#define SUN4I_IISCLKD_MCLKEN_OFFS 7
++
++unsigned int sun4i_i2s_get_clockrate(void);
++extern struct sun4i_i2s_info sun4i_i2s;
++//extern struct snd_soc_dai sun4i_iis_dai;
++
++extern void sun4i_snd_txctrl_i2s(struct snd_pcm_substream *substream, int on);
++extern void sun4i_snd_rxctrl_i2s(int on);
++
++struct sun4i_i2s_info {
++	void __iomem   *regs;    /* IIS BASE */
++	void __iomem   *ccmregs;  //CCM BASE
++	void __iomem   *ioregs;   //IO BASE
++
++	u32 slave;					//0: master, 1: slave
++	u32 mono;					//0: stereo, 1: mono
++	u32 samp_fs;				//audio sample rate (unit in kHz)
++	u32 samp_res;			//16 bits, 20 bits , 24 bits, 32 bits)
++	u32 samp_format;		//audio sample format (0: standard I2S, 1: left-justified, 2: right-justified, 3: pcm)
++	u32 ws_size;				//16 BCLK, 20 BCLK, 24 BCLK, 32 BCLK)
++	u32 mclk_rate;			//mclk frequency divide by fs (128fs, 192fs, 256fs, 384fs, 512fs, 768fs)
++	u32 lrc_pol;				//LRC clock polarity (0: normal ,1: inverted)
++	u32 bclk_pol;			//BCLK polarity (0: normal, 1: inverted)
++	u32 pcm_txtype;		//PCM transmitter type (0: 16-bits linear mode, 1: 8-bits linear mode, 2: u-law, 3: A-law)
++	u32 pcm_rxtype;		//PCM receiver type  (0: 16-bits linear mode, 1: 8-bits linear mode, 2: u-law, 3: A-law)
++	u32 pcm_sw;				//PCM slot width (8: 8 bits, 16: 16 bits)
++	u32 pcm_sync_period;//PCM sync period (16/32/64/128/256)
++	u32 pcm_sync_type;	//PCM sync symbol size (0: short sync, 1: long sync)
++	u32 pcm_start_slot;//PCM start slot index (1--4)
++	u32 pcm_lsb_first;	//0: MSB first, 1: LSB first
++	u32 pcm_ch_num;		//PCM channel number (1: one channel, 2: two channel)
++
++};
++
++extern struct sun4i_i2s_info sun4i_i2s;
++#endif
+diff --git a/sound/soc/sun4i/i2s/sun4i-i2sdma.c b/sound/soc/sun4i/i2s/sun4i-i2sdma.c
+new file mode 100644
+index 0000000..3c1d748
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-i2sdma.c
+@@ -0,0 +1,441 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-pcm.c   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/dma-mapping.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++#include <asm/dma.h>
++#include <mach/hardware.h>
++#include <mach/dma.h>
++
++
++#include "sun4i-i2s.h"
++#include "sun4i-i2sdma.h"
++
++static volatile unsigned int dmasrc = 0;
++static volatile unsigned int dmadst = 0;
++
++static const struct snd_pcm_hardware sun4i_pcm_hardware = {
++	.info			= SNDRV_PCM_INFO_INTERLEAVED | SNDRV_PCM_INFO_BLOCK_TRANSFER |
++				      SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_MMAP_VALID |
++				      SNDRV_PCM_INFO_PAUSE | SNDRV_PCM_INFO_RESUME,
++	.formats		= SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | SNDRV_PCM_FMTBIT_S24_LE,
++	.rates			= SNDRV_PCM_RATE_8000_192000 | SNDRV_PCM_RATE_KNOT,
++	.rate_min		= 8000,
++	.rate_max		= 192000,
++	.channels_min		= 1,
++	.channels_max		= 2,
++	.buffer_bytes_max	= 128*1024,    /* value must be (2^n)Kbyte size */
++	.period_bytes_min	= 1024*16,//1024*16,
++	.period_bytes_max	= 1024*32,//1024*32,
++	.periods_min		= 4,//4,
++	.periods_max		= 8,//8,
++	.fifo_size		= 128,//32,
++};
++
++struct sun4i_runtime_data {
++	spinlock_t lock;
++	int state;
++	unsigned int dma_loaded;
++	unsigned int dma_limit;
++	unsigned int dma_period;
++	dma_addr_t dma_start;
++	dma_addr_t dma_pos;
++	dma_addr_t dma_end;
++	struct sun4i_dma_params *params;
++};
++
++static void sun4i_pcm_enqueue(struct snd_pcm_substream *substream)
++{
++	struct sun4i_runtime_data *prtd = substream->runtime->private_data;
++	dma_addr_t pos = prtd->dma_pos;
++	unsigned int limit;
++	int ret;
++
++	unsigned long len = prtd->dma_period;
++  	limit = prtd->dma_limit;
++  	while(prtd->dma_loaded < limit) {
++		if((pos + len) > prtd->dma_end) {
++			len  = prtd->dma_end - pos;
++		}
++
++		ret = sw_dma_enqueue(prtd->params->channel, substream, __bus_to_virt(pos),  len);
++		if(ret == 0) {
++			prtd->dma_loaded++;
++			pos += prtd->dma_period;
++			if(pos >= prtd->dma_end)
++				pos = prtd->dma_start;
++		}else {
++			break;
++		}
++
++	}
++	prtd->dma_pos = pos;
++}
++
++static void sun4i_audio_buffdone(struct sw_dma_chan *channel,
++		                                  void *dev_id, int size,
++		                                  enum sw_dma_buffresult result)
++{
++	struct sun4i_runtime_data *prtd;
++	struct snd_pcm_substream *substream = dev_id;
++
++	if (result == SW_RES_ABORT || result == SW_RES_ERR)
++		return;
++
++	prtd = substream->runtime->private_data;
++	if (substream) {
++		snd_pcm_period_elapsed(substream);
++	}
++
++	spin_lock(&prtd->lock);
++	{
++		prtd->dma_loaded--;
++		sun4i_pcm_enqueue(substream);
++	}
++	spin_unlock(&prtd->lock);
++}
++
++static int sun4i_pcm_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sun4i_runtime_data *prtd = runtime->private_data;
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	unsigned long totbytes = params_buffer_bytes(params);
++	struct sun4i_dma_params *dma =
++					snd_soc_dai_get_dma_data(rtd->cpu_dai, substream);
++
++	int ret = 0;
++	if (!dma)
++		return 0;
++
++	if (prtd->params == NULL) {
++		prtd->params = dma;
++		ret = sw_dma_request(prtd->params->channel,
++					  prtd->params->client, NULL);
++		if (ret < 0) {
++				return ret;
++		}
++	}
++
++	sw_dma_set_buffdone_fn(prtd->params->channel,
++				    sun4i_audio_buffdone);
++
++	snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
++
++	runtime->dma_bytes = totbytes;
++
++	spin_lock_irq(&prtd->lock);
++	prtd->dma_loaded = 0;
++	prtd->dma_limit = runtime->hw.periods_min;
++	prtd->dma_period = params_period_bytes(params);
++	prtd->dma_start = runtime->dma_addr;
++	prtd->dma_pos = prtd->dma_start;
++	prtd->dma_end = prtd->dma_start + totbytes;
++	spin_unlock_irq(&prtd->lock);
++	return 0;
++}
++
++static int sun4i_pcm_hw_free(struct snd_pcm_substream *substream)
++{
++	struct sun4i_runtime_data *prtd = substream->runtime->private_data;
++
++	/* TODO - do we need to ensure DMA flushed */
++	if(prtd->params)
++  	sw_dma_ctrl(prtd->params->channel, SW_DMAOP_FLUSH);
++
++	snd_pcm_set_runtime_buffer(substream, NULL);
++
++	if (prtd->params) {
++		sw_dma_free(prtd->params->channel, prtd->params->client);
++		prtd->params = NULL;
++	}
++
++	return 0;
++}
++
++static int sun4i_pcm_prepare(struct snd_pcm_substream *substream)
++{
++	struct sun4i_runtime_data *prtd = substream->runtime->private_data;
++	struct dma_hw_conf *codec_dma_conf;
++	int ret = 0;
++
++	codec_dma_conf = kmalloc(sizeof(struct dma_hw_conf), GFP_KERNEL);
++	if (!codec_dma_conf) {
++	   ret =  - ENOMEM;
++	   return ret;
++	}
++	if (!prtd->params)
++		return 0;
++
++   if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		codec_dma_conf->drqsrc_type  = DRQ_TYPE_SDRAM;
++		codec_dma_conf->drqdst_type  = DRQ_TYPE_IIS;
++		codec_dma_conf->xfer_type    = DMAXFER_D_BHALF_S_BHALF;
++		codec_dma_conf->address_type = DMAADDRT_D_FIX_S_INC;
++		codec_dma_conf->dir          = SW_DMA_WDEV;
++		codec_dma_conf->reload       = 0;
++		codec_dma_conf->hf_irq       = SW_DMA_IRQ_FULL;
++		codec_dma_conf->from         = prtd->dma_start;
++		codec_dma_conf->to           = prtd->params->dma_addr;
++		ret = sw_dma_config(prtd->params->channel,codec_dma_conf);
++	}
++
++	/* flush the DMA channel */
++	sw_dma_ctrl(prtd->params->channel, SW_DMAOP_FLUSH);
++	prtd->dma_loaded = 0;
++	prtd->dma_pos = prtd->dma_start;
++
++	/* enqueue dma buffers */
++	sun4i_pcm_enqueue(substream);
++
++	return ret;
++}
++
++static int sun4i_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
++{
++	struct sun4i_runtime_data *prtd = substream->runtime->private_data;
++	int ret ;
++	spin_lock(&prtd->lock);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		printk("[IIS] dma trigger start\n");
++		printk("[IIS] 0x01c22400+0x24 = %#x, line= %d\n", readl(0xf1c22400+0x24), __LINE__);
++		sw_dma_ctrl(prtd->params->channel, SW_DMAOP_START);
++		break;
++
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++        printk("[IIS] dma trigger stop\n");
++		sw_dma_ctrl(prtd->params->channel, SW_DMAOP_STOP);
++		break;
++
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	spin_unlock(&prtd->lock);
++	return 0;
++}
++
++static snd_pcm_uframes_t sun4i_pcm_pointer(struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sun4i_runtime_data *prtd = runtime->private_data;
++	unsigned long res = 0;
++	snd_pcm_uframes_t offset = 0;
++
++	spin_lock(&prtd->lock);
++	sw_dma_getcurposition(DMACH_NIIS, (dma_addr_t*)&dmasrc, (dma_addr_t*)&dmadst);
++
++	if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++		res = dmadst - prtd->dma_start;
++	else
++	{
++		offset = bytes_to_frames(runtime, dmasrc + prtd->dma_period - runtime->dma_addr);
++	}
++	spin_unlock(&prtd->lock);
++
++	if(offset >= runtime->buffer_size)
++		offset = 0;
++		return offset;
++}
++
++static int sun4i_pcm_open(struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sun4i_runtime_data *prtd;
++
++	snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
++	snd_soc_set_runtime_hwparams(substream, &sun4i_pcm_hardware);
++
++	prtd = kzalloc(sizeof(struct sun4i_runtime_data), GFP_KERNEL);
++	if (prtd == NULL)
++		return -ENOMEM;
++
++	spin_lock_init(&prtd->lock);
++
++	runtime->private_data = prtd;
++	return 0;
++}
++
++static int sun4i_pcm_close(struct snd_pcm_substream *substream)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++	struct sun4i_runtime_data *prtd = runtime->private_data;
++
++	kfree(prtd);
++
++	return 0;
++}
++
++static int sun4i_pcm_mmap(struct snd_pcm_substream *substream,
++	struct vm_area_struct *vma)
++{
++	struct snd_pcm_runtime *runtime = substream->runtime;
++
++	return dma_mmap_writecombine(substream->pcm->card->dev, vma,
++				     runtime->dma_area,
++				     runtime->dma_addr,
++				     runtime->dma_bytes);
++}
++
++static struct snd_pcm_ops sun4i_pcm_ops = {
++	.open			= sun4i_pcm_open,
++	.close			= sun4i_pcm_close,
++	.ioctl			= snd_pcm_lib_ioctl,
++	.hw_params		= sun4i_pcm_hw_params,
++	.hw_free		= sun4i_pcm_hw_free,
++	.prepare		= sun4i_pcm_prepare,
++	.trigger		= sun4i_pcm_trigger,
++	.pointer		= sun4i_pcm_pointer,
++	.mmap			= sun4i_pcm_mmap,
++};
++
++static int sun4i_pcm_preallocate_dma_buffer(struct snd_pcm *pcm, int stream)
++{
++	struct snd_pcm_substream *substream = pcm->streams[stream].substream;
++	struct snd_dma_buffer *buf = &substream->dma_buffer;
++	size_t size = sun4i_pcm_hardware.buffer_bytes_max;
++
++	buf->dev.type = SNDRV_DMA_TYPE_DEV;
++	buf->dev.dev = pcm->card->dev;
++	buf->private_data = NULL;
++	buf->area = dma_alloc_writecombine(pcm->card->dev, size,
++					   &buf->addr, GFP_KERNEL);
++	if (!buf->area)
++		return -ENOMEM;
++	buf->bytes = size;
++	return 0;
++}
++
++static void sun4i_pcm_free_dma_buffers(struct snd_pcm *pcm)
++{
++	struct snd_pcm_substream *substream;
++	struct snd_dma_buffer *buf;
++	int stream;
++
++	for (stream = 0; stream < 2; stream++) {
++		substream = pcm->streams[stream].substream;
++		if (!substream)
++			continue;
++
++		buf = &substream->dma_buffer;
++		if (!buf->area)
++			continue;
++
++		dma_free_writecombine(pcm->card->dev, buf->bytes,
++				      buf->area, buf->addr);
++		buf->area = NULL;
++	}
++}
++
++static u64 sun4i_pcm_mask = DMA_BIT_MASK(32);
++
++static int sun4i_pcm_new(struct snd_card *card,
++			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++{
++	int ret = 0;
++	if (!card->dev->dma_mask)
++		card->dev->dma_mask = &sun4i_pcm_mask;
++	if (!card->dev->coherent_dma_mask)
++		card->dev->coherent_dma_mask = 0xffffffff;
++
++	if (dai->driver->playback.channels_min) {
++		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
++			SNDRV_PCM_STREAM_PLAYBACK);
++		if (ret)
++			goto out;
++	}
++
++	if (dai->driver->capture.channels_min) {
++		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
++			SNDRV_PCM_STREAM_CAPTURE);
++		if (ret)
++			goto out;
++	}
++ out:
++	return ret;
++}
++
++static struct snd_soc_platform_driver sun4i_soc_platform = {
++		.ops		= &sun4i_pcm_ops,
++		.pcm_new	= sun4i_pcm_new,
++		.pcm_free	= sun4i_pcm_free_dma_buffers,
++};
++
++static int __devinit sun4i_i2s_pcm_probe(struct platform_device *pdev)
++{
++	return snd_soc_register_platform(&pdev->dev, &sun4i_soc_platform);
++}
++
++static int __devexit sun4i_i2s_pcm_remove(struct platform_device *pdev)
++{
++	snd_soc_unregister_platform(&pdev->dev);
++	return 0;
++}
++
++/*data relating*/
++static struct platform_device sun4i_i2s_pcm_device = {
++	.name = "sun4i-i2s-pcm-audio",
++};
++
++/*method relating*/
++static struct platform_driver sun4i_i2s_pcm_driver = {
++	.probe = sun4i_i2s_pcm_probe,
++	.remove = __devexit_p(sun4i_i2s_pcm_remove),
++	.driver = {
++		.name = "sun4i-i2s-pcm-audio",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init sun4i_soc_platform_i2s_init(void)
++{
++	int err = 0;
++	if((platform_device_register(&sun4i_i2s_pcm_device))<0)
++		return err;
++
++	if ((err = platform_driver_register(&sun4i_i2s_pcm_driver)) < 0)
++		return err;
++	return 0;
++}
++module_init(sun4i_soc_platform_i2s_init);
++
++static void __exit sun4i_soc_platform_i2s_exit(void)
++{
++	return platform_driver_unregister(&sun4i_i2s_pcm_driver);
++}
++module_exit(sun4i_soc_platform_i2s_exit);
++
++MODULE_AUTHOR("All winner");
++MODULE_DESCRIPTION("SUN4I PCM DMA module");
++MODULE_LICENSE("GPL");
++
+diff --git a/sound/soc/sun4i/i2s/sun4i-i2sdma.h b/sound/soc/sun4i/i2s/sun4i-i2sdma.h
+new file mode 100644
+index 0000000..12e7a9a
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-i2sdma.h
+@@ -0,0 +1,43 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-pcm.h   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#ifndef SUN4I_PCM_H_
++#define SUN4I_PCM_H_
++
++#define ST_RUNNING    (1<<0)
++#define ST_OPENED     (1<<1)
++
++struct sun4i_dma_params {
++	struct sw_dma_client *client;
++	int channel;
++	dma_addr_t dma_addr;
++	int dma_size;
++};
++
++#define SUN4I_DAI_I2S			1
++
++enum sun4i_dma_buffresult {
++	SUN4I_RES_OK,
++	SUN4I_RES_ERR,
++	SUN4I_RES_ABORT
++};
++
++/* platform data */
++extern struct snd_soc_platform sun4i_soc_platform_i2s;
++extern int sw_dma_enqueue(unsigned int channel, void *id,
++			dma_addr_t data, int size);
++extern struct sun4i_i2s_info sun4i_iis;
++
++#endif //SUN4I_PCM_H_
+diff --git a/sound/soc/sun4i/i2s/sun4i-sndi2s.c b/sound/soc/sun4i/i2s/sun4i-sndi2s.c
+new file mode 100644
+index 0000000..9aa1bd7
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-sndi2s.c
+@@ -0,0 +1,309 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-sndi2s.c   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++
++#include <linux/module.h>
++#include <linux/clk.h>
++#include <linux/mutex.h>
++
++#include <sound/pcm.h>
++#include <sound/soc.h>
++#include <sound/pcm_params.h>
++#include <sound/soc-dapm.h>
++#include <mach/sys_config.h>
++#include <linux/io.h>
++
++#include "sun4i-i2s.h"
++#include "sun4i-i2sdma.h"
++
++#include "sndi2s.h"
++
++
++static int i2s_used = 0;
++static struct clk *xtal;
++static int clk_users;
++static DEFINE_MUTEX(clk_lock);
++
++#ifdef ENFORCE_RATES
++static struct snd_pcm_hw_constraint_list hw_constraints_rates = {
++	.count	= ARRAY_SIZE(rates),
++	.list	= rates,
++	.mask	= 0,
++};
++#endif
++
++static int sun4i_sndi2s_startup(struct snd_pcm_substream *substream)
++{
++	int ret = 0;
++	#ifdef ENFORCE_RATES
++		struct snd_pcm_runtime *runtime = substream->runtime;;
++	#endif
++	mutex_lock(&clk_lock);
++	mutex_unlock(&clk_lock);
++	if (!ret) {
++	#ifdef ENFORCE_RATES
++		ret = snd_pcm_hw_constraint_list(runtime, 0,
++						 SNDRV_PCM_HW_PARAM_RATE,
++						 &hw_constraints_rates);
++		if (ret < 0)
++
++	#endif
++	}
++	return ret;
++}
++
++static void sun4i_sndi2s_shutdown(struct snd_pcm_substream *substream)
++{
++	mutex_lock(&clk_lock);
++	clk_users -= 1;
++	if (clk_users == 0) {
++		clk_put(xtal);
++		xtal = NULL;
++
++	}
++	mutex_unlock(&clk_lock);
++}
++
++typedef struct __MCLK_SET_INF
++{
++    __u32       samp_rate;      // sample rate
++    __u16       mult_fs;        // multiply of smaple rate
++
++    __u8        clk_div;        // mpll division
++    __u8        mpll;           // select mpll, 0 - 24.576 Mhz, 1 - 22.5792 Mhz
++
++} __mclk_set_inf;
++
++
++typedef struct __BCLK_SET_INF
++{
++    __u8        bitpersamp;     // bits per sample
++    __u8        clk_div;        // clock division
++    __u16       mult_fs;        // multiplay of sample rate
++
++} __bclk_set_inf;
++
++
++static __bclk_set_inf BCLK_INF[] =
++{
++    // 16bits per sample
++    {16,  4, 128}, {16,  6, 192}, {16,  8, 256},
++    {16, 12, 384}, {16, 16, 512},
++
++    //24 bits per sample
++    {24,  4, 192}, {24,  8, 384}, {24, 16, 768},
++
++    //32 bits per sample
++    {32,  2, 128}, {32,  4, 256}, {32,  6, 384},
++    {32,  8, 512}, {32, 12, 768},
++
++    //end flag
++    {0xff, 0, 0},
++};
++
++static __mclk_set_inf  MCLK_INF[] =
++{
++    // 8k bitrate
++    {  8000, 128, 24, 0}, {  8000, 192, 16, 0}, {  8000, 256, 12, 0},
++    {  8000, 384,  8, 0}, {  8000, 512,  6, 0}, {  8000, 768,  4, 0},
++
++    // 16k bitrate
++    { 16000, 128, 12, 0}, { 16000, 192,  8, 0}, { 16000, 256,  6, 0},
++    { 16000, 384,  4, 0}, { 16000, 768,  2, 0},
++
++    // 32k bitrate
++    { 32000, 128,  6, 0}, { 32000, 192,  4, 0}, { 32000, 384,  2, 0},
++    { 32000, 768,  1, 0},
++
++    // 64k bitrate
++    { 64000, 192,  2, 0}, { 64000, 384,  1, 0},
++
++    //128k bitrate
++    {128000, 192,  1, 0},
++
++    // 12k bitrate
++    { 12000, 128, 16, 0}, { 12000, 256, 8, 0}, { 12000, 512, 4, 0},
++
++    // 24k bitrate
++    { 24000, 128,  8, 0}, { 24000, 256, 4, 0}, { 24000, 512, 2, 0},
++
++    // 48K bitrate
++    { 48000, 128,  4, 0}, { 48000, 256,  2, 0}, { 48000, 512, 1, 0},
++
++    // 96k bitrate
++    { 96000, 128 , 2, 0}, { 96000, 256,  1, 0},
++
++    //192k bitrate
++    {192000, 128,  1, 0},
++
++    //11.025k bitrate
++    { 11025, 128, 16, 1}, { 11205, 256,  8, 1}, { 11205, 512,  4, 1},
++
++    //22.05k bitrate
++    { 22050, 128,  8, 1}, { 22050, 256,  4, 1},
++    { 22050, 512,  2, 1},
++
++    //44.1k bitrate
++    { 44100, 128,  4, 1}, { 44100, 256,  2, 1}, { 44100, 512,  1, 1},
++
++    //88.2k bitrate
++    { 88200, 128,  2, 1}, { 88200, 256,  1, 1},
++
++    //176.4k bitrate
++    {176400, 128, 1, 1},
++
++    //end flag 0xffffffff
++    {0xffffffff, 0, 0, 0},
++};
++
++static s32 get_clock_divder(u32 sample_rate, u32 sample_width, u32 * mclk_div, u32* mpll, u32* bclk_div, u32* mult_fs)
++{
++	u32 i, j, ret = -EINVAL;
++
++	for(i=0; i< 100; i++)
++	{
++		 if((MCLK_INF[i].samp_rate == sample_rate) && ((MCLK_INF[i].mult_fs == 256) || (MCLK_INF[i].mult_fs == 128)))
++		 {
++			  for(j=0; j<ARRAY_SIZE(BCLK_INF); j++)
++			  {
++					if((BCLK_INF[j].bitpersamp == sample_width) && (BCLK_INF[j].mult_fs == MCLK_INF[i].mult_fs))
++					{
++						 //set mclk and bclk division
++						 *mclk_div = MCLK_INF[i].clk_div;
++						 *mpll = MCLK_INF[i].mpll;
++						 *bclk_div = BCLK_INF[j].clk_div;
++						 *mult_fs = MCLK_INF[i].mult_fs;
++						 ret = 0;
++						 break;
++					}
++			  }
++		 }
++		 else if(MCLK_INF[i].samp_rate == 0xffffffff)
++		 	break;
++	}
++
++	return ret;
++}
++
++static int sun4i_sndi2s_hw_params(struct snd_pcm_substream *substream,
++					struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *codec_dai = rtd->codec_dai;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	int ret = 0;
++	unsigned long rate = params_rate(params);
++	u32 mclk_div=0, mpll=0, bclk_div=0, mult_fs=0;
++
++	get_clock_divder(rate, 32, &mclk_div, &mpll, &bclk_div, &mult_fs);
++
++	ret = snd_soc_dai_set_fmt(codec_dai, SND_SOC_DAIFMT_I2S |
++			SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_fmt(cpu_dai, SND_SOC_DAIFMT_I2S |
++			SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_CBS_CFS);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_sysclk(cpu_dai, 0 , mpll, 0);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_sysclk(codec_dai, 0 , mpll, 0);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_clkdiv(cpu_dai, SUN4I_DIV_MCLK, mclk_div);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_clkdiv(cpu_dai, SUN4I_DIV_BCLK, bclk_div);
++	if (ret < 0)
++		return ret;
++
++	ret = snd_soc_dai_set_clkdiv(codec_dai, 0, mult_fs);
++	if (ret < 0)
++		return ret;
++
++	return 0;
++}
++
++static struct snd_soc_ops sun4i_sndi2s_ops = {
++	.startup 		= sun4i_sndi2s_startup,
++	.shutdown 		= sun4i_sndi2s_shutdown,
++	.hw_params 		= sun4i_sndi2s_hw_params,
++};
++
++static struct snd_soc_dai_link sun4i_sndi2s_dai_link = {
++	.name 			= "I2S",
++	.stream_name 	= "SUN4I-I2S",
++	.cpu_dai_name 	= "sun4i-i2s.0",
++	.codec_dai_name = "sndi2s",
++	.platform_name 	= "sun4i-i2s-pcm-audio.0",
++	.codec_name 	= "sun4i-i2s-codec.0",
++	.ops 			= &sun4i_sndi2s_ops,
++};
++
++static struct snd_soc_card snd_soc_sun4i_sndi2s = {
++	.name = "sun4i-sndi2s",
++	.dai_link = &sun4i_sndi2s_dai_link,
++	.num_links = 1,
++};
++
++static struct platform_device *sun4i_sndi2s_device;
++
++static int __init sun4i_sndi2s_init(void)
++{
++	int ret;
++	int ret2;
++
++	ret2 = script_parser_fetch("i2s_para","i2s_used", &i2s_used, sizeof(int));
++	if (ret2){
++        printk("[I2S]sun4i_sndi2s_init fetch i2s using configuration failed\n");
++    }
++
++    if (i2s_used) {
++		sun4i_sndi2s_device = platform_device_alloc("soc-audio", 2);
++		if(!sun4i_sndi2s_device)
++			return -ENOMEM;
++		platform_set_drvdata(sun4i_sndi2s_device, &snd_soc_sun4i_sndi2s);
++		ret = platform_device_add(sun4i_sndi2s_device);
++		printk("\n\n%s,%d\n", __func__, __LINE__);
++		if(ret){
++			printk("%s,%d\n", __func__, __LINE__);
++			platform_device_put(sun4i_sndi2s_device);
++			}
++	}else{
++		printk("[I2S]sun4i_sndi2s cannot find any using configuration for controllers, return directly!\n");
++        return 0;
++	}
++	return ret;
++}
++
++static void __exit sun4i_sndi2s_exit(void)
++{
++	if(i2s_used) {
++		i2s_used = 0;
++		platform_device_unregister(sun4i_sndi2s_device);
++}
++}
++
++module_init(sun4i_sndi2s_init);
++module_exit(sun4i_sndi2s_exit);
++
++MODULE_AUTHOR("ALL WINNER");
++MODULE_DESCRIPTION("SUN4I_sndi2s ALSA SoC audio driver");
++MODULE_LICENSE("GPL");
+diff --git a/sound/soc/sun4i/i2s/sun4i-sndi2s.h b/sound/soc/sun4i/i2s/sun4i-sndi2s.h
+new file mode 100644
+index 0000000..9836e851
+--- /dev/null
++++ b/sound/soc/sun4i/i2s/sun4i-sndi2s.h
+@@ -0,0 +1,26 @@
++/*
++********************************************************************************************************
++*                          SUN4I----HDMI AUDIO
++*                   (c) Copyright 2002-2004, All winners Co,Ld.
++*                          All Right Reserved
++*
++* FileName: sun4i-codechip.h   author:chenpailin  date:2011-07-19
++* Description:
++* Others:
++* History:
++*   <author>      <time>      <version>   <desc>
++*   chenpailin   2011-07-19     1.0      modify this module
++********************************************************************************************************
++*/
++#ifndef SUN4I_SNDI2S_H_
++#define SUN4I_SNDI2S_H_
++
++struct sun4i_sndi2s_platform_data {
++	int iis_bclk;
++	int iis_ws;
++	int iis_data;
++	void (*power)(int);
++	int model;
++}
++
++#endif
+\ No newline at end of file
+-- 
+1.8.0
+

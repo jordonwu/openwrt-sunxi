@@ -1,0 +1,165 @@
+From 26d2321b3fdcca2c1b7b062ad4a726ca961416d5 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 7 Sep 2011 17:28:58 -0700
+Subject: [PATCH 065/944] mmc: core: host: only use wakelock for detect work
+
+There is no need to take a wakelock for delayed lazy disable
+work, it will be cancelled in the suspend handler and force
+disabled.  Only take the wakelock when the detect work is
+queued, and make sure to drop the wakelock if the work is
+cancelled.
+
+Change-Id: I1e507a5f98848954ea21d45e23b6192c3132a349
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/mmc/core/core.c  | 26 +++++++++++++-------------
+ drivers/mmc/core/host.c  |  3 +++
+ include/linux/mmc/host.h |  2 ++
+ 3 files changed, 18 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index b848a188..06aab78 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -43,7 +43,6 @@
+ #include "sdio_ops.h"
+ 
+ static struct workqueue_struct *workqueue;
+-static struct wake_lock mmc_delayed_work_wake_lock;
+ 
+ /*
+  * Enabling software CRCs on the data blocks can be a significant (30%)
+@@ -76,7 +75,6 @@ MODULE_PARM_DESC(
+ static int mmc_schedule_delayed_work(struct delayed_work *work,
+ 				     unsigned long delay)
+ {
+-	wake_lock(&mmc_delayed_work_wake_lock);
+ 	return queue_delayed_work(workqueue, work, delay);
+ }
+ 
+@@ -1383,6 +1381,8 @@ void mmc_detect_change(struct mmc_host *host, unsigned long delay)
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ #endif
+ 	host->detect_change = 1;
++
++	wake_lock(&host->detect_wake_lock);
+ 	mmc_schedule_delayed_work(&host->detect, delay);
+ }
+ 
+@@ -2097,11 +2097,13 @@ void mmc_rescan(struct work_struct *work)
+ 
+  out:
+ 	if (extend_wakelock)
+-		wake_lock_timeout(&mmc_delayed_work_wake_lock, HZ / 2);
++		wake_lock_timeout(&host->detect_wake_lock, HZ / 2);
+ 	else
+-		wake_unlock(&mmc_delayed_work_wake_lock);
+-	if (host->caps & MMC_CAP_NEEDS_POLL)
++		wake_unlock(&host->detect_wake_lock);
++	if (host->caps & MMC_CAP_NEEDS_POLL) {
++		wake_lock(&host->detect_wake_lock);
+ 		mmc_schedule_delayed_work(&host->detect, HZ);
++	}
+ }
+ 
+ void mmc_start_host(struct mmc_host *host)
+@@ -2119,7 +2121,8 @@ void mmc_stop_host(struct mmc_host *host)
+ 	spin_unlock_irqrestore(&host->lock, flags);
+ #endif
+ 
+-	cancel_delayed_work_sync(&host->detect);
++	if (cancel_delayed_work_sync(&host->detect))
++		wake_unlock(&host->detect_wake_lock);
+ 	mmc_flush_scheduled_work();
+ 
+ 	/* clear pm flags now and let card drivers set them as needed */
+@@ -2316,7 +2319,8 @@ int mmc_suspend_host(struct mmc_host *host)
+ 	if (mmc_bus_needs_resume(host))
+ 		return 0;
+ 
+-	cancel_delayed_work(&host->detect);
++	if (cancel_delayed_work(&host->detect))
++		wake_unlock(&host->detect_wake_lock);
+ 	mmc_flush_scheduled_work();
+ 	if (mmc_try_claim_host(host)) {
+ 		err = mmc_cache_ctrl(host, 0);
+@@ -2446,7 +2450,8 @@ int mmc_pm_notify(struct notifier_block *notify_block,
+ 		host->rescan_disable = 1;
+ 		host->power_notify_type = MMC_HOST_PW_NOTIFY_SHORT;
+ 		spin_unlock_irqrestore(&host->lock, flags);
+-		cancel_delayed_work_sync(&host->detect);
++		if (cancel_delayed_work_sync(&host->detect))
++			wake_unlock(&host->detect_wake_lock);
+ 
+ 		if (!host->bus_ops || host->bus_ops->suspend)
+ 			break;
+@@ -2506,9 +2511,6 @@ static int __init mmc_init(void)
+ 	if (!workqueue)
+ 		return -ENOMEM;
+ 
+-	wake_lock_init(&mmc_delayed_work_wake_lock, WAKE_LOCK_SUSPEND,
+-		       "mmc_delayed_work");
+-
+ 	ret = mmc_register_bus();
+ 	if (ret)
+ 		goto destroy_workqueue;
+@@ -2529,7 +2531,6 @@ unregister_bus:
+ 	mmc_unregister_bus();
+ destroy_workqueue:
+ 	destroy_workqueue(workqueue);
+-	wake_lock_destroy(&mmc_delayed_work_wake_lock);
+ 
+ 	return ret;
+ }
+@@ -2540,7 +2541,6 @@ static void __exit mmc_exit(void)
+ 	mmc_unregister_host_class();
+ 	mmc_unregister_bus();
+ 	destroy_workqueue(workqueue);
+-	wake_lock_destroy(&mmc_delayed_work_wake_lock);
+ }
+ 
+ subsys_initcall(mmc_init);
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 80f0176..dd7b120 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -329,6 +329,8 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
+ 
+ 	spin_lock_init(&host->lock);
+ 	init_waitqueue_head(&host->wq);
++	wake_lock_init(&host->detect_wake_lock, WAKE_LOCK_SUSPEND,
++		kasprintf(GFP_KERNEL, "%s_detect", mmc_hostname(host)));
+ 	INIT_DELAYED_WORK(&host->detect, mmc_rescan);
+ #ifdef CONFIG_PM
+ 	host->pm_notify.notifier_call = mmc_pm_notify;
+@@ -428,6 +430,7 @@ void mmc_free_host(struct mmc_host *host)
+ 	spin_lock(&mmc_host_lock);
+ 	idr_remove(&mmc_host_idr, host->index);
+ 	spin_unlock(&mmc_host_lock);
++	wake_lock_destroy(&host->detect_wake_lock);
+ 
+ 	put_device(&host->class_dev);
+ }
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index b1f116f..a1f7a4f 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -14,6 +14,7 @@
+ #include <linux/sched.h>
+ #include <linux/device.h>
+ #include <linux/fault-inject.h>
++#include <linux/wakelock.h>
+ 
+ #include <linux/mmc/core.h>
+ #include <linux/mmc/pm.h>
+@@ -289,6 +290,7 @@ struct mmc_host {
+ 	int			claim_cnt;	/* "claim" nesting count */
+ 
+ 	struct delayed_work	detect;
++	struct wake_lock	detect_wake_lock;
+ 	int			detect_change;	/* card detect flag */
+ 	struct mmc_hotplug	hotplug;
+ 
+-- 
+1.8.0
+

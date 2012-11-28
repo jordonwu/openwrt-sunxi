@@ -1,0 +1,40 @@
+From 544068dfe87f6de93ac4295cbb77ea4d6f3ccd71 Mon Sep 17 00:00:00 2001
+From: kevin <kevin@allwinnertech.com>
+Date: Thu, 17 Nov 2011 16:53:31 +0800
+Subject: [PATCH 345/944] support suspend
+
+---
+ arch/arm/mach-sun4i/pm/pm.c              | 2 +-
+ arch/arm/mach-sun4i/pm/standby/standby.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/pm/pm.c b/arch/arm/mach-sun4i/pm/pm.c
+index 04e5a1e..1a9857f 100644
+--- a/arch/arm/mach-sun4i/pm/pm.c
++++ b/arch/arm/mach-sun4i/pm/pm.c
+@@ -183,7 +183,7 @@ static int aw_pm_enter(suspend_state_t state)
+ 
+     /*FIXME: cannot wakeup */
+     /* goto sram and run */
+-    //standby(&standby_info);
++    standby(&standby_info);
+ 
+     return 0;
+ }
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby.c b/arch/arm/mach-sun4i/pm/standby/standby.c
+index 5516966..5cdc741 100644
+--- a/arch/arm/mach-sun4i/pm/standby/standby.c
++++ b/arch/arm/mach-sun4i/pm/standby/standby.c
+@@ -185,8 +185,8 @@ static void standby(void)
+     dcdc3 = standby_get_voltage(POWER_VOL_DCDC3);
+ 
+     /* adjust voltage */
+-    standby_set_voltage(POWER_VOL_DCDC2, STANDBY_DCDC2_VOL);
+     standby_set_voltage(POWER_VOL_DCDC3, STANDBY_DCDC3_VOL);
++    standby_set_voltage(POWER_VOL_DCDC2, STANDBY_DCDC2_VOL);
+ 
+     /* set clock division cpu:axi:ahb:apb = 2:2:2:1 */
+     standby_clk_getdiv(&clk_div);
+-- 
+1.8.0
+

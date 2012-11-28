@@ -1,0 +1,59 @@
+From bec4ab42f9d12aab2849aca47908e1aabb930987 Mon Sep 17 00:00:00 2001
+From: John Stultz <john.stultz@linaro.org>
+Date: Fri, 9 Dec 2011 18:44:02 -0800
+Subject: [PATCH 155/944] alarmtimer: Provide accessor to alarmtimer rtc
+ device
+
+The Android alarm interface provides a settime call that sets both
+the alarmtimer RTC device and CLOCK_REALTIME to the same value.
+
+Since there may be multiple rtc devices, provide a hook to access the
+one the alarmtimer infrastructure is using.
+
+Signed-off-by: John Stultz <john.stultz@linaro.org>
+---
+ include/linux/alarmtimer.h | 7 +++++++
+ kernel/time/alarmtimer.c   | 4 ++--
+ 2 files changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/alarmtimer.h b/include/linux/alarmtimer.h
+index 975009e..efbf678 100644
+--- a/include/linux/alarmtimer.h
++++ b/include/linux/alarmtimer.h
+@@ -76,4 +76,11 @@ static inline int alarmtimer_callback_running(struct alarm *timer)
+ }
+ 
+ 
++/* Provide way to access the rtc device being used by alarmtimers */
++#ifdef CONFIG_RTC_CLASS
++struct rtc_device *alarmtimer_get_rtcdev(void);
++#else
++#define alarmtimer_get_rtcdev() (0)
++#endif
++
+ #endif
+diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
+index 8a538c5..aa27d39 100644
+--- a/kernel/time/alarmtimer.c
++++ b/kernel/time/alarmtimer.c
+@@ -59,7 +59,7 @@ static DEFINE_SPINLOCK(rtcdev_lock);
+  * If one has not already been chosen, it checks to see if a
+  * functional rtc device is available.
+  */
+-static struct rtc_device *alarmtimer_get_rtcdev(void)
++struct rtc_device *alarmtimer_get_rtcdev(void)
+ {
+ 	unsigned long flags;
+ 	struct rtc_device *ret;
+@@ -115,7 +115,7 @@ static void alarmtimer_rtc_interface_remove(void)
+ 	class_interface_unregister(&alarmtimer_rtc_interface);
+ }
+ #else
+-static inline struct rtc_device *alarmtimer_get_rtcdev(void)
++struct rtc_device *alarmtimer_get_rtcdev(void)
+ {
+ 	return NULL;
+ }
+-- 
+1.8.0
+

@@ -1,0 +1,38 @@
+From 7ff2b9319283b099206af52364a19a6be20ed7c9 Mon Sep 17 00:00:00 2001
+From: "hongmin.son" <hongmin.son@samsung.com>
+Date: Wed, 15 Aug 2012 15:18:02 -0700
+Subject: [PATCH 647/944] power: smb347: mask old value when setting float
+ voltage
+
+Fixed set float voltage function to mask off previous value in
+register before OR'ing in new value.
+
+Change-Id: I7b413a8c0190c1b011e8f142b95ca79e9188cebc
+Signed-off-by: hongmin.son <hongmin.son@samsung.com>
+---
+ drivers/power/smb347-charger.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index cb7b183..5b464c4 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -43,6 +43,7 @@
+ #define CFG_INPUT_SOURCE_PRIORITY               BIT(2)
+ #define CFG_FLOAT_VOLTAGE			0x03
+ #define CFG_FLOAT_VOLTAGE_THRESHOLD_MASK	0xc0
++#define CFG_FLOAT_VOLTAGE_MASK			0x3F
+ #define CFG_FLOAT_VOLTAGE_THRESHOLD_SHIFT	6
+ #define CFG_STAT				0x05
+ #define CFG_STAT_DISABLED			BIT(5)
+@@ -490,6 +491,7 @@ static int smb347_set_voltage_limits(struct smb347_charger *smb)
+ 		val = clamp_val(val, 3500000, 4500000) - 3500000;
+ 		val /= 20000;
+ 
++		ret &= ~CFG_FLOAT_VOLTAGE_MASK;
+ 		ret |= val;
+ 	}
+ 
+-- 
+1.8.0
+

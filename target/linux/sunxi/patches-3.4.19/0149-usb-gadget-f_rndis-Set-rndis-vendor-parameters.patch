@@ -1,0 +1,97 @@
+From da8a44a522f36114e0a44a6553e78a717b304b8e Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Fri, 16 Dec 2011 20:00:01 -0800
+Subject: [PATCH 149/944] usb: gadget: f_rndis: Set rndis vendor parameters
+
+Add a variant of rndis_bind_config to let gadget drivers change
+rndis vendorID and manufacturer parameters.
+
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/usb/gadget/f_rndis.c | 21 +++++++++++++++------
+ drivers/usb/gadget/u_ether.h |  9 +++++++++
+ 2 files changed, 24 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/usb/gadget/f_rndis.c b/drivers/usb/gadget/f_rndis.c
+index f377c10..b284cae 100644
+--- a/drivers/usb/gadget/f_rndis.c
++++ b/drivers/usb/gadget/f_rndis.c
+@@ -71,6 +71,8 @@ struct f_rndis {
+ 	struct gether			port;
+ 	u8				ctrl_id, data_id;
+ 	u8				ethaddr[ETH_ALEN];
++	u32				vendorID;
++	const char			*manufacturer;
+ 	int				config;
+ 
+ 	struct usb_ep			*notify;
+@@ -767,12 +769,10 @@ rndis_bind(struct usb_configuration *c, struct usb_function *f)
+ 	rndis_set_param_medium(rndis->config, NDIS_MEDIUM_802_3, 0);
+ 	rndis_set_host_mac(rndis->config, rndis->ethaddr);
+ 
+-#if 0
+-// FIXME
+-	if (rndis_set_param_vendor(rndis->config, vendorID,
+-				manufacturer))
+-		goto fail0;
+-#endif
++	if (rndis->manufacturer && rndis->vendorID &&
++			rndis_set_param_vendor(rndis->config, rndis->vendorID,
++					       rndis->manufacturer))
++		goto fail;
+ 
+ 	/* NOTE:  all that is done without knowing or caring about
+ 	 * the network link ... which is unavailable to this code
+@@ -855,6 +855,13 @@ static inline bool can_support_rndis(struct usb_configuration *c)
+ int
+ rndis_bind_config(struct usb_configuration *c, u8 ethaddr[ETH_ALEN])
+ {
++	return rndis_bind_config_vendor(c, ethaddr, 0, NULL);
++}
++
++int
++rndis_bind_config_vendor(struct usb_configuration *c, u8 ethaddr[ETH_ALEN],
++				u32 vendorID, const char *manufacturer)
++{
+ 	struct f_rndis	*rndis;
+ 	int		status;
+ 
+@@ -898,6 +905,8 @@ rndis_bind_config(struct usb_configuration *c, u8 ethaddr[ETH_ALEN])
+ 		goto fail;
+ 
+ 	memcpy(rndis->ethaddr, ethaddr, ETH_ALEN);
++	rndis->vendorID = vendorID;
++	rndis->manufacturer = manufacturer;
+ 
+ 	/* RNDIS activates when the host changes this filter */
+ 	rndis->port.cdc_filter = 0;
+diff --git a/drivers/usb/gadget/u_ether.h b/drivers/usb/gadget/u_ether.h
+index 059d017..37431f5 100644
+--- a/drivers/usb/gadget/u_ether.h
++++ b/drivers/usb/gadget/u_ether.h
+@@ -103,6 +103,8 @@ int eem_bind_config(struct usb_configuration *c);
+ #ifdef USB_ETH_RNDIS
+ 
+ int rndis_bind_config(struct usb_configuration *c, u8 ethaddr[ETH_ALEN]);
++int rndis_bind_config_vendor(struct usb_configuration *c, u8 ethaddr[ETH_ALEN],
++				u32 vendorID, const char *manufacturer);
+ 
+ #else
+ 
+@@ -112,6 +114,13 @@ rndis_bind_config(struct usb_configuration *c, u8 ethaddr[ETH_ALEN])
+ 	return 0;
+ }
+ 
++static inline int
++rndis_bind_config_vendor(struct usb_configuration *c, u8 ethaddr[ETH_ALEN],
++				u32 vendorID, const char *manufacturer)
++{
++	return 0;
++}
++
+ #endif
+ 
+ #endif /* __U_ETHER_H */
+-- 
+1.8.0
+

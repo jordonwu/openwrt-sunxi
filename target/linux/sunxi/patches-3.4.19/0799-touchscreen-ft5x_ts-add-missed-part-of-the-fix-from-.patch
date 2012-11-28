@@ -1,0 +1,31 @@
+From b7a0bbc1791807dfcb333fbe9f949d8e9b477507 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 14 Oct 2012 17:47:35 +0200
+Subject: [PATCH 799/944] touchscreen: ft5x_ts: add missed part of the fix
+ from A13-SDK
+
+Reported-By: Alexsey Shestacov <wingrime@gmail.com>
+---
+ drivers/input/touchscreen/ft5x_ts.c | 6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/drivers/input/touchscreen/ft5x_ts.c b/drivers/input/touchscreen/ft5x_ts.c
+index 0442795..ca8db2c 100644
+--- a/drivers/input/touchscreen/ft5x_ts.c
++++ b/drivers/input/touchscreen/ft5x_ts.c
+@@ -110,11 +110,7 @@ static int key_val = 0;
+ #endif
+ ///////////////////////////////////////////////
+ //specific tp related macro: need be configured for specific tp
+-#ifdef CONFIG_ARCH_SUN4I
+-#define CTP_IRQ_NO			(IRQ_EINT21)
+-#elif defined(CONFIG_ARCH_SUN5I)
+-#define CTP_IRQ_NO			(IRQ_EINT9)
+-#endif
++#define CTP_IRQ_NO			(gpio_int_info[0].port_num)
+ 
+ #define CTP_IRQ_MODE			(NEGATIVE_EDGE)
+ #define CTP_NAME			FT5X_NAME
+-- 
+1.8.0
+

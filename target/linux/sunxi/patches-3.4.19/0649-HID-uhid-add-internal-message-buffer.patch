@@ -1,0 +1,172 @@
+From 0ab00ef6a3fe9457f370fc77840e95bd8335ea90 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:14 +0200
+Subject: [PATCH 649/944] HID: uhid: add internal message buffer
+
+When receiving messages from the HID subsystem, we need to process them
+and store them in an internal buffer so user-space can read() on the char
+device to retrieve the messages.
+
+This adds a static buffer for 32 messages to each uhid device. Each
+message is dynamically allocated so the uhid_device structure does not get
+too big.
+
+uhid_queue() adds a message to the buffer. If the buffer is full, the
+message is discarded. uhid_queue_event() is an helper for messages without
+payload.
+
+This also adds a public header: uhid.h. It contains the declarations for
+the user-space API. It is built around "struct uhid_event" which contains
+a type field which specifies the event type and each event can then add a
+variable-length payload. For now, there is only a dummy event but later
+patches will add new event types and payloads.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c   | 65 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/Kbuild |  1 +
+ include/linux/uhid.h | 33 ++++++++++++++++++++++++++
+ 3 files changed, 99 insertions(+)
+ create mode 100644 include/linux/uhid.h
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index 5b02d6c..05ef4b0 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -25,16 +25,81 @@
+ #include <linux/wait.h>
+ 
+ #define UHID_NAME	"uhid"
++#define UHID_BUFSIZE	32
++
++struct uhid_device {
++	struct hid_device *hid;
++
++	wait_queue_head_t waitq;
++	spinlock_t qlock;
++	__u8 head;
++	__u8 tail;
++	struct uhid_event *outq[UHID_BUFSIZE];
++};
+ 
+ static struct miscdevice uhid_misc;
+ 
++static void uhid_queue(struct uhid_device *uhid, struct uhid_event *ev)
++{
++	__u8 newhead;
++
++	newhead = (uhid->head + 1) % UHID_BUFSIZE;
++
++	if (newhead != uhid->tail) {
++		uhid->outq[uhid->head] = ev;
++		uhid->head = newhead;
++		wake_up_interruptible(&uhid->waitq);
++	} else {
++		hid_warn(uhid->hid, "Output queue is full\n");
++		kfree(ev);
++	}
++}
++
++static int uhid_queue_event(struct uhid_device *uhid, __u32 event)
++{
++	unsigned long flags;
++	struct uhid_event *ev;
++
++	ev = kzalloc(sizeof(*ev), GFP_KERNEL);
++	if (!ev)
++		return -ENOMEM;
++
++	ev->type = event;
++
++	spin_lock_irqsave(&uhid->qlock, flags);
++	uhid_queue(uhid, ev);
++	spin_unlock_irqrestore(&uhid->qlock, flags);
++
++	return 0;
++}
++
+ static int uhid_char_open(struct inode *inode, struct file *file)
+ {
++	struct uhid_device *uhid;
++
++	uhid = kzalloc(sizeof(*uhid), GFP_KERNEL);
++	if (!uhid)
++		return -ENOMEM;
++
++	spin_lock_init(&uhid->qlock);
++	init_waitqueue_head(&uhid->waitq);
++
++	file->private_data = uhid;
++	nonseekable_open(inode, file);
++
+ 	return 0;
+ }
+ 
+ static int uhid_char_release(struct inode *inode, struct file *file)
+ {
++	struct uhid_device *uhid = file->private_data;
++	unsigned int i;
++
++	for (i = 0; i < UHID_BUFSIZE; ++i)
++		kfree(uhid->outq[i]);
++
++	kfree(uhid);
++
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/Kbuild b/include/linux/Kbuild
+index 1a6173c..fb53cda 100644
+--- a/include/linux/Kbuild
++++ b/include/linux/Kbuild
+@@ -376,6 +376,7 @@ header-y += tty.h
+ header-y += types.h
+ header-y += udf_fs_i.h
+ header-y += udp.h
++header-y += uhid.h
+ header-y += uinput.h
+ header-y += uio.h
+ header-y += ultrasound.h
+diff --git a/include/linux/uhid.h b/include/linux/uhid.h
+new file mode 100644
+index 0000000..16b786a
+--- /dev/null
++++ b/include/linux/uhid.h
+@@ -0,0 +1,33 @@
++#ifndef __UHID_H_
++#define __UHID_H_
++
++/*
++ * User-space I/O driver support for HID subsystem
++ * Copyright (c) 2012 David Herrmann
++ */
++
++/*
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the Free
++ * Software Foundation; either version 2 of the License, or (at your option)
++ * any later version.
++ */
++
++/*
++ * Public header for user-space communication. We try to keep every structure
++ * aligned but to be safe we also use __attribute__((__packed__)). Therefore,
++ * the communication should be ABI compatible even between architectures.
++ */
++
++#include <linux/input.h>
++#include <linux/types.h>
++
++enum uhid_event_type {
++	UHID_DUMMY,
++};
++
++struct uhid_event {
++	__u32 type;
++} __attribute__((__packed__));
++
++#endif /* __UHID_H_ */
+-- 
+1.8.0
+

@@ -1,0 +1,116 @@
+From 8297fecd85234130da161f99e013bc8d95c30634 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 29 May 2012 14:26:34 +0200
+Subject: [PATCH 489/944] arm: sun5i: update to 3.3
+
+---
+ arch/arm/mach-sun5i/core.c             | 11 ++++++-----
+ arch/arm/mach-sun5i/dma/dma.c          |  2 +-
+ arch/arm/mach-sun5i/dma/dma_15.c       |  3 ++-
+ arch/arm/mach-sun5i/include/mach/dma.h |  4 ++--
+ 4 files changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 2b85cb4..7349c66 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -17,7 +17,7 @@
+ #include <linux/device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/interrupt.h>
+ #include <linux/amba/bus.h>
+ #include <linux/amba/clcd.h>
+@@ -29,6 +29,7 @@
+ #include <linux/clockchips.h>
+ #include <linux/memblock.h>
+ #include <linux/bootmem.h>
++#include <linux/export.h>
+ 
+ #include <asm/clkdev.h>
+ #include <asm/system.h>
+@@ -45,6 +46,7 @@
+ #include <asm/mach/irq.h>
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
++#include <mach/memory.h>
+ #include <mach/system.h>
+ #include <mach/timex.h>
+ #include <mach/sys_config.h>
+@@ -95,9 +97,8 @@ static u32 DRAMC_get_dram_size(void)
+ 	return dram_size;
+ }
+ 
+-static void __init sw_core_fixup(struct machine_desc *desc,
+-                  struct tag *tags, char **cmdline,
+-                  struct meminfo *mi)
++static void __init sw_core_fixup(struct tag *tags, char **cmdline,
++				 struct meminfo *mi)
+ {
+ 	u32 size;
+ 
+@@ -435,7 +436,7 @@ EXPORT_SYMBOL(sw_get_ic_ver);
+ 
+ 
+ MACHINE_START(SUN5I, "sun5i")
+-	.boot_params    = PLAT_PHYS_OFFSET + 0x100,
++	.atag_offset	= 0x100,
+ 	.timer          = &sw_sys_timer,
+ 	.fixup          = sw_core_fixup,
+ 	.map_io         = sw_core_map_io,
+diff --git a/arch/arm/mach-sun5i/dma/dma.c b/arch/arm/mach-sun5i/dma/dma.c
+index 3dbd303..cc86e68 100644
+--- a/arch/arm/mach-sun5i/dma/dma.c
++++ b/arch/arm/mach-sun5i/dma/dma.c
+@@ -19,7 +19,7 @@
+ #include <linux/sched.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/slab.h>
+ #include <linux/errno.h>
+ #include <linux/io.h>
+diff --git a/arch/arm/mach-sun5i/dma/dma_15.c b/arch/arm/mach-sun5i/dma/dma_15.c
+index 4082a0e..4049440 100644
+--- a/arch/arm/mach-sun5i/dma/dma_15.c
++++ b/arch/arm/mach-sun5i/dma/dma_15.c
+@@ -12,9 +12,10 @@
+  * the License, or (at your option) any later version.
+  *
+  */
++#include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/dma.h b/arch/arm/mach-sun5i/include/mach/dma.h
+index d354712..4c0e35a 100644
+--- a/arch/arm/mach-sun5i/include/mach/dma.h
++++ b/arch/arm/mach-sun5i/include/mach/dma.h
+@@ -15,7 +15,7 @@
+ #ifndef __ASM_ARCH_DMA_H
+ #define __ASM_ARCH_DMA_H __FILE__
+ 
+-#include <linux/sysdev.h>
++#include <linux/device.h>
+ #include <mach/hardware.h>
+ 
+ 
+@@ -515,7 +515,7 @@ struct sw_dma_chan {
+ 	struct sw_dma_buf	*end;		/* end of queue */
+ 
+ 	/* system device */
+-	struct sys_device	dev;
++	struct device	dev;
+ 	void * dev_id;
+ };
+ 
+-- 
+1.8.0
+

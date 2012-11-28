@@ -1,0 +1,2494 @@
+From 0c38bfd0ed302ce7e061f3a31ccfdd77560d483b Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Wed, 29 Jun 2011 19:44:29 -0700
+Subject: [PATCH 130/944] gpu: ion: Add ION Memory Manager
+
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/Makefile                |    2 +-
+ drivers/gpu/ion/Kconfig             |   12 +
+ drivers/gpu/ion/Makefile            |    2 +
+ drivers/gpu/ion/ion.c               | 1187 +++++++++++++++++++++++++++++++++++
+ drivers/gpu/ion/ion_carveout_heap.c |  162 +++++
+ drivers/gpu/ion/ion_heap.c          |   72 +++
+ drivers/gpu/ion/ion_priv.h          |  184 ++++++
+ drivers/gpu/ion/ion_system_heap.c   |  198 ++++++
+ drivers/gpu/ion/ion_system_mapper.c |  114 ++++
+ drivers/gpu/ion/tegra/Makefile      |    1 +
+ drivers/gpu/ion/tegra/tegra_ion.c   |   96 +++
+ drivers/video/Kconfig               |    2 +
+ include/linux/ion.h                 |  344 ++++++++++
+ 13 files changed, 2375 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/gpu/ion/Kconfig
+ create mode 100644 drivers/gpu/ion/Makefile
+ create mode 100644 drivers/gpu/ion/ion.c
+ create mode 100644 drivers/gpu/ion/ion_carveout_heap.c
+ create mode 100644 drivers/gpu/ion/ion_heap.c
+ create mode 100644 drivers/gpu/ion/ion_priv.h
+ create mode 100644 drivers/gpu/ion/ion_system_heap.c
+ create mode 100644 drivers/gpu/ion/ion_system_mapper.c
+ create mode 100644 drivers/gpu/ion/tegra/Makefile
+ create mode 100644 drivers/gpu/ion/tegra/tegra_ion.c
+ create mode 100644 include/linux/ion.h
+
+diff --git a/drivers/gpu/Makefile b/drivers/gpu/Makefile
+index cc92778..ca2d3b3 100644
+--- a/drivers/gpu/Makefile
++++ b/drivers/gpu/Makefile
+@@ -1 +1 @@
+-obj-y			+= drm/ vga/ stub/
++obj-y			+= drm/ vga/ stub/ ion/
+diff --git a/drivers/gpu/ion/Kconfig b/drivers/gpu/ion/Kconfig
+new file mode 100644
+index 0000000..5b48b4e
+--- /dev/null
++++ b/drivers/gpu/ion/Kconfig
+@@ -0,0 +1,12 @@
++menuconfig ION
++	tristate "Ion Memory Manager"
++	select GENERIC_ALLOCATOR
++	help
++	  Chose this option to enable the ION Memory Manager.
++
++config ION_TEGRA
++	tristate "Ion for Tegra"
++	depends on ARCH_TEGRA && ION
++	help
++	  Choose this option if you wish to use ion on an nVidia Tegra.
++
+diff --git a/drivers/gpu/ion/Makefile b/drivers/gpu/ion/Makefile
+new file mode 100644
+index 0000000..73fe3fa
+--- /dev/null
++++ b/drivers/gpu/ion/Makefile
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_ION) +=	ion.o ion_heap.o ion_system_heap.o ion_carveout_heap.o
++obj-$(CONFIG_ION_TEGRA) += tegra/
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+new file mode 100644
+index 0000000..1002ec0
+--- /dev/null
++++ b/drivers/gpu/ion/ion.c
+@@ -0,0 +1,1187 @@
++/*
++ * drivers/gpu/ion/ion.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/device.h>
++#include <linux/file.h>
++#include <linux/fs.h>
++#include <linux/anon_inodes.h>
++#include <linux/ion.h>
++#include <linux/list.h>
++#include <linux/miscdevice.h>
++#include <linux/export.h>
++#include <linux/mm.h>
++#include <linux/mm_types.h>
++#include <linux/rbtree.h>
++#include <linux/sched.h>
++#include <linux/slab.h>
++#include <linux/seq_file.h>
++#include <linux/uaccess.h>
++#include <linux/debugfs.h>
++
++#include "ion_priv.h"
++#define DEBUG
++
++/**
++ * struct ion_device - the metadata of the ion device node
++ * @dev:		the actual misc device
++ * @buffers:	an rb tree of all the existing buffers
++ * @lock:		lock protecting the buffers & heaps trees
++ * @heaps:		list of all the heaps in the system
++ * @user_clients:	list of all the clients created from userspace
++ */
++struct ion_device {
++	struct miscdevice dev;
++	struct rb_root buffers;
++	struct mutex lock;
++	struct rb_root heaps;
++	long (*custom_ioctl) (struct ion_client *client, unsigned int cmd,
++			      unsigned long arg);
++	struct rb_root user_clients;
++	struct rb_root kernel_clients;
++	struct dentry *debug_root;
++};
++
++/**
++ * struct ion_client - a process/hw block local address space
++ * @ref:		for reference counting the client
++ * @node:		node in the tree of all clients
++ * @dev:		backpointer to ion device
++ * @handles:		an rb tree of all the handles in this client
++ * @lock:		lock protecting the tree of handles
++ * @heap_mask:		mask of all supported heaps
++ * @name:		used for debugging
++ * @task:		used for debugging
++ *
++ * A client represents a list of buffers this client may access.
++ * The mutex stored here is used to protect both handles tree
++ * as well as the handles themselves, and should be held while modifying either.
++ */
++struct ion_client {
++	struct kref ref;
++	struct rb_node node;
++	struct ion_device *dev;
++	struct rb_root handles;
++	struct mutex lock;
++	unsigned int heap_mask;
++	const char *name;
++	struct task_struct *task;
++	pid_t pid;
++	struct dentry *debug_root;
++};
++
++/**
++ * ion_handle - a client local reference to a buffer
++ * @ref:		reference count
++ * @client:		back pointer to the client the buffer resides in
++ * @buffer:		pointer to the buffer
++ * @node:		node in the client's handle rbtree
++ * @kmap_cnt:		count of times this client has mapped to kernel
++ * @dmap_cnt:		count of times this client has mapped for dma
++ * @usermap_cnt:	count of times this client has mapped for userspace
++ *
++ * Modifications to node, map_cnt or mapping should be protected by the
++ * lock in the client.  Other fields are never changed after initialization.
++ */
++struct ion_handle {
++	struct kref ref;
++	struct ion_client *client;
++	struct ion_buffer *buffer;
++	struct rb_node node;
++	unsigned int kmap_cnt;
++	unsigned int dmap_cnt;
++	unsigned int usermap_cnt;
++};
++
++/* this function should only be called while dev->lock is held */
++static void ion_buffer_add(struct ion_device *dev,
++			   struct ion_buffer *buffer)
++{
++	struct rb_node **p = &dev->buffers.rb_node;
++	struct rb_node *parent = NULL;
++	struct ion_buffer *entry;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct ion_buffer, node);
++
++		if (buffer < entry) {
++			p = &(*p)->rb_left;
++		} else if (buffer > entry) {
++			p = &(*p)->rb_right;
++		} else {
++			pr_err("%s: buffer already found.", __func__);
++			BUG();
++		}
++	}
++
++	rb_link_node(&buffer->node, parent, p);
++	rb_insert_color(&buffer->node, &dev->buffers);
++}
++
++/* this function should only be called while dev->lock is held */
++static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
++				     struct ion_device *dev,
++				     unsigned long len,
++				     unsigned long align,
++				     unsigned long flags)
++{
++	struct ion_buffer *buffer;
++	int ret;
++
++	buffer = kzalloc(sizeof(struct ion_buffer), GFP_KERNEL);
++	if (!buffer)
++		return ERR_PTR(-ENOMEM);
++
++	buffer->heap = heap;
++	kref_init(&buffer->ref);
++
++	ret = heap->ops->allocate(heap, buffer, len, align, flags);
++	if (ret) {
++		kfree(buffer);
++		return ERR_PTR(ret);
++	}
++	buffer->dev = dev;
++	buffer->size = len;
++	mutex_init(&buffer->lock);
++	ion_buffer_add(dev, buffer);
++	return buffer;
++}
++
++static void ion_buffer_destroy(struct kref *kref)
++{
++	struct ion_buffer *buffer = container_of(kref, struct ion_buffer, ref);
++	struct ion_device *dev = buffer->dev;
++
++	buffer->heap->ops->free(buffer);
++	mutex_lock(&dev->lock);
++	rb_erase(&buffer->node, &dev->buffers);
++	mutex_unlock(&dev->lock);
++	kfree(buffer);
++}
++
++static void ion_buffer_get(struct ion_buffer *buffer)
++{
++	kref_get(&buffer->ref);
++}
++
++static int ion_buffer_put(struct ion_buffer *buffer)
++{
++	return kref_put(&buffer->ref, ion_buffer_destroy);
++}
++
++static struct ion_handle *ion_handle_create(struct ion_client *client,
++				     struct ion_buffer *buffer)
++{
++	struct ion_handle *handle;
++
++	handle = kzalloc(sizeof(struct ion_handle), GFP_KERNEL);
++	if (!handle)
++		return ERR_PTR(-ENOMEM);
++	kref_init(&handle->ref);
++	rb_init_node(&handle->node);
++	handle->client = client;
++	ion_buffer_get(buffer);
++	handle->buffer = buffer;
++
++	return handle;
++}
++
++static void ion_handle_destroy(struct kref *kref)
++{
++	struct ion_handle *handle = container_of(kref, struct ion_handle, ref);
++	/* XXX Can a handle be destroyed while it's map count is non-zero?:
++	   if (handle->map_cnt) unmap
++	 */
++	ion_buffer_put(handle->buffer);
++	mutex_lock(&handle->client->lock);
++	if (!RB_EMPTY_NODE(&handle->node))
++		rb_erase(&handle->node, &handle->client->handles);
++	mutex_unlock(&handle->client->lock);
++	kfree(handle);
++}
++
++struct ion_buffer *ion_handle_buffer(struct ion_handle *handle)
++{
++	return handle->buffer;
++}
++
++static void ion_handle_get(struct ion_handle *handle)
++{
++	kref_get(&handle->ref);
++}
++
++static int ion_handle_put(struct ion_handle *handle)
++{
++	return kref_put(&handle->ref, ion_handle_destroy);
++}
++
++static struct ion_handle *ion_handle_lookup(struct ion_client *client,
++					    struct ion_buffer *buffer)
++{
++	struct rb_node *n;
++
++	for (n = rb_first(&client->handles); n; n = rb_next(n)) {
++		struct ion_handle *handle = rb_entry(n, struct ion_handle,
++						     node);
++		if (handle->buffer == buffer)
++			return handle;
++	}
++	return NULL;
++}
++
++static bool ion_handle_validate(struct ion_client *client, struct ion_handle *handle)
++{
++	struct rb_node *n = client->handles.rb_node;
++
++	while (n) {
++		struct ion_handle *handle_node = rb_entry(n, struct ion_handle,
++							  node);
++		if (handle < handle_node)
++			n = n->rb_left;
++		else if (handle > handle_node)
++			n = n->rb_right;
++		else
++			return true;
++	}
++	return false;
++}
++
++static void ion_handle_add(struct ion_client *client, struct ion_handle *handle)
++{
++	struct rb_node **p = &client->handles.rb_node;
++	struct rb_node *parent = NULL;
++	struct ion_handle *entry;
++
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct ion_handle, node);
++
++		if (handle < entry)
++			p = &(*p)->rb_left;
++		else if (handle > entry)
++			p = &(*p)->rb_right;
++		else
++			WARN(1, "%s: buffer already found.", __func__);
++	}
++
++	rb_link_node(&handle->node, parent, p);
++	rb_insert_color(&handle->node, &client->handles);
++}
++
++struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
++			     size_t align, unsigned int flags)
++{
++	struct rb_node *n;
++	struct ion_handle *handle;
++	struct ion_device *dev = client->dev;
++	struct ion_buffer *buffer = NULL;
++
++	/*
++	 * traverse the list of heaps available in this system in priority
++	 * order.  If the heap type is supported by the client, and matches the
++	 * request of the caller allocate from it.  Repeat until allocate has
++	 * succeeded or all heaps have been tried
++	 */
++	mutex_lock(&dev->lock);
++	for (n = rb_first(&dev->heaps); n != NULL; n = rb_next(n)) {
++		struct ion_heap *heap = rb_entry(n, struct ion_heap, node);
++		/* if the client doesn't support this heap type */
++		if (!((1 << heap->type) & client->heap_mask))
++			continue;
++		/* if the caller didn't specify this heap type */
++		if (!((1 << heap->id) & flags))
++			continue;
++		buffer = ion_buffer_create(heap, dev, len, align, flags);
++		if (!IS_ERR_OR_NULL(buffer))
++			break;
++	}
++	mutex_unlock(&dev->lock);
++
++	if (IS_ERR_OR_NULL(buffer))
++		return ERR_PTR(PTR_ERR(buffer));
++
++	handle = ion_handle_create(client, buffer);
++
++	if (IS_ERR_OR_NULL(handle))
++		goto end;
++
++	/*
++	 * ion_buffer_create will create a buffer with a ref_cnt of 1,
++	 * and ion_handle_create will take a second reference, drop one here
++	 */
++	ion_buffer_put(buffer);
++
++	mutex_lock(&client->lock);
++	ion_handle_add(client, handle);
++	mutex_unlock(&client->lock);
++	return handle;
++
++end:
++	ion_buffer_put(buffer);
++	return handle;
++}
++
++void ion_free(struct ion_client *client, struct ion_handle *handle)
++{
++	bool valid_handle;
++
++	BUG_ON(client != handle->client);
++
++	mutex_lock(&client->lock);
++	valid_handle = ion_handle_validate(client, handle);
++	mutex_unlock(&client->lock);
++
++	if (!valid_handle) {
++		WARN("%s: invalid handle passed to free.\n", __func__);
++		return;
++	}
++	ion_handle_put(handle);
++}
++
++static void ion_client_get(struct ion_client *client);
++static int ion_client_put(struct ion_client *client);
++
++static bool _ion_map(int *buffer_cnt, int *handle_cnt)
++{
++	bool map;
++
++	BUG_ON(*handle_cnt != 0 && *buffer_cnt == 0);
++
++	if (*buffer_cnt)
++		map = false;
++	else
++		map = true;
++	if (*handle_cnt == 0)
++		(*buffer_cnt)++;
++	(*handle_cnt)++;
++	return map;
++}
++
++static bool _ion_unmap(int *buffer_cnt, int *handle_cnt)
++{
++	BUG_ON(*handle_cnt == 0);
++	(*handle_cnt)--;
++	if (*handle_cnt != 0)
++		return false;
++	BUG_ON(*buffer_cnt == 0);
++	(*buffer_cnt)--;
++	if (*buffer_cnt == 0)
++		return true;
++	return false;
++}
++
++int ion_phys(struct ion_client *client, struct ion_handle *handle,
++	     ion_phys_addr_t *addr, size_t *len)
++{
++	struct ion_buffer *buffer;
++	int ret;
++
++	mutex_lock(&client->lock);
++	if (!ion_handle_validate(client, handle)) {
++		mutex_unlock(&client->lock);
++		return -EINVAL;
++	}
++
++	buffer = handle->buffer;
++
++	if (!buffer->heap->ops->phys) {
++		pr_err("%s: ion_phys is not implemented by this heap.\n",
++		       __func__);
++		mutex_unlock(&client->lock);
++		return -ENODEV;
++	}
++	mutex_unlock(&client->lock);
++	ret = buffer->heap->ops->phys(buffer->heap, buffer, addr, len);
++	return ret;
++}
++
++void *ion_map_kernel(struct ion_client *client, struct ion_handle *handle)
++{
++	struct ion_buffer *buffer;
++	void *vaddr;
++
++	mutex_lock(&client->lock);
++	if (!ion_handle_validate(client, handle)) {
++		pr_err("%s: invalid handle passed to map_kernel.\n",
++		       __func__);
++		mutex_unlock(&client->lock);
++		return ERR_PTR(-EINVAL);
++	}
++
++	buffer = handle->buffer;
++	mutex_lock(&buffer->lock);
++
++	if (!handle->buffer->heap->ops->map_kernel) {
++		pr_err("%s: map_kernel is not implemented by this heap.\n",
++		       __func__);
++		mutex_unlock(&buffer->lock);
++		mutex_unlock(&client->lock);
++		return ERR_PTR(-ENODEV);
++	}
++
++	if (_ion_map(&buffer->kmap_cnt, &handle->kmap_cnt)) {
++		vaddr = buffer->heap->ops->map_kernel(buffer->heap, buffer);
++		if (IS_ERR_OR_NULL(vaddr))
++			_ion_unmap(&buffer->kmap_cnt, &handle->kmap_cnt);
++		buffer->vaddr = vaddr;
++	} else {
++		vaddr = buffer->vaddr;
++	}
++	mutex_unlock(&buffer->lock);
++	mutex_unlock(&client->lock);
++	return vaddr;
++}
++
++struct scatterlist *ion_map_dma(struct ion_client *client,
++				struct ion_handle *handle)
++{
++	struct ion_buffer *buffer;
++	struct scatterlist *sglist;
++
++	mutex_lock(&client->lock);
++	if (!ion_handle_validate(client, handle)) {
++		pr_err("%s: invalid handle passed to map_dma.\n",
++		       __func__);
++		mutex_unlock(&client->lock);
++		return ERR_PTR(-EINVAL);
++	}
++	buffer = handle->buffer;
++	mutex_lock(&buffer->lock);
++
++	if (!handle->buffer->heap->ops->map_dma) {
++		pr_err("%s: map_kernel is not implemented by this heap.\n",
++		       __func__);
++		mutex_unlock(&buffer->lock);
++		mutex_unlock(&client->lock);
++		return ERR_PTR(-ENODEV);
++	}
++	if (_ion_map(&buffer->dmap_cnt, &handle->dmap_cnt)) {
++		sglist = buffer->heap->ops->map_dma(buffer->heap, buffer);
++		if (IS_ERR_OR_NULL(sglist))
++			_ion_unmap(&buffer->dmap_cnt, &handle->dmap_cnt);
++		buffer->sglist = sglist;
++	} else {
++		sglist = buffer->sglist;
++	}
++	mutex_unlock(&buffer->lock);
++	mutex_unlock(&client->lock);
++	return sglist;
++}
++
++void ion_unmap_kernel(struct ion_client *client, struct ion_handle *handle)
++{
++	struct ion_buffer *buffer;
++
++	mutex_lock(&client->lock);
++	buffer = handle->buffer;
++	mutex_lock(&buffer->lock);
++	if (_ion_unmap(&buffer->kmap_cnt, &handle->kmap_cnt)) {
++		buffer->heap->ops->unmap_kernel(buffer->heap, buffer);
++		buffer->vaddr = NULL;
++	}
++	mutex_unlock(&buffer->lock);
++	mutex_unlock(&client->lock);
++}
++
++void ion_unmap_dma(struct ion_client *client, struct ion_handle *handle)
++{
++	struct ion_buffer *buffer;
++
++	mutex_lock(&client->lock);
++	buffer = handle->buffer;
++	mutex_lock(&buffer->lock);
++	if (_ion_unmap(&buffer->dmap_cnt, &handle->dmap_cnt)) {
++		buffer->heap->ops->unmap_dma(buffer->heap, buffer);
++		buffer->sglist = NULL;
++	}
++	mutex_unlock(&buffer->lock);
++	mutex_unlock(&client->lock);
++}
++
++
++struct ion_buffer *ion_share(struct ion_client *client,
++				 struct ion_handle *handle)
++{
++	bool valid_handle;
++
++	mutex_lock(&client->lock);
++	valid_handle = ion_handle_validate(client, handle);
++	mutex_unlock(&client->lock);
++	if (!valid_handle) {
++		WARN("%s: invalid handle passed to share.\n", __func__);
++		return ERR_PTR(-EINVAL);
++	}
++
++	/* do not take an extra reference here, the burden is on the caller
++	 * to make sure the buffer doesn't go away while it's passing it
++	 * to another client -- ion_free should not be called on this handle
++	 * until the buffer has been imported into the other client
++	 */
++	return handle->buffer;
++}
++
++struct ion_handle *ion_import(struct ion_client *client,
++			      struct ion_buffer *buffer)
++{
++	struct ion_handle *handle = NULL;
++
++	mutex_lock(&client->lock);
++	/* if a handle exists for this buffer just take a reference to it */
++	handle = ion_handle_lookup(client, buffer);
++	if (!IS_ERR_OR_NULL(handle)) {
++		ion_handle_get(handle);
++		goto end;
++	}
++	handle = ion_handle_create(client, buffer);
++	if (IS_ERR_OR_NULL(handle))
++		goto end;
++	ion_handle_add(client, handle);
++end:
++	mutex_unlock(&client->lock);
++	return handle;
++}
++
++static const struct file_operations ion_share_fops;
++
++struct ion_handle *ion_import_fd(struct ion_client *client, int fd)
++{
++	struct file *file = fget(fd);
++	struct ion_handle *handle;
++
++	if (!file) {
++		pr_err("%s: imported fd not found in file table.\n", __func__);
++		return ERR_PTR(-EINVAL);
++	}
++	if (file->f_op != &ion_share_fops) {
++		pr_err("%s: imported file is not a shared ion file.\n",
++		       __func__);
++		handle = ERR_PTR(-EINVAL);
++		goto end;
++	}
++	handle = ion_import(client, file->private_data);
++end:
++	fput(file);
++	return handle;
++}
++
++static int ion_debug_client_show(struct seq_file *s, void *unused)
++{
++	struct ion_client *client = s->private;
++	struct rb_node *n;
++	size_t sizes[ION_NUM_HEAPS] = {0};
++	const char *names[ION_NUM_HEAPS] = {0};
++	int i;
++
++	mutex_lock(&client->lock);
++	for (n = rb_first(&client->handles); n; n = rb_next(n)) {
++		struct ion_handle *handle = rb_entry(n, struct ion_handle,
++						     node);
++		enum ion_heap_type type = handle->buffer->heap->type;
++
++		if (!names[type])
++			names[type] = handle->buffer->heap->name;
++		sizes[type] += handle->buffer->size;
++	}
++	mutex_unlock(&client->lock);
++
++	seq_printf(s, "%16.16s: %16.16s\n", "heap_name", "size_in_bytes");
++	for (i = 0; i < ION_NUM_HEAPS; i++) {
++		if (!names[i])
++			continue;
++		seq_printf(s, "%16.16s: %16u %d\n", names[i], sizes[i],
++			   atomic_read(&client->ref.refcount));
++	}
++	return 0;
++}
++
++static int ion_debug_client_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, ion_debug_client_show, inode->i_private);
++}
++
++static const struct file_operations debug_client_fops = {
++	.open = ion_debug_client_open,
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
++static struct ion_client *ion_client_lookup(struct ion_device *dev,
++					    struct task_struct *task)
++{
++	struct rb_node *n = dev->user_clients.rb_node;
++	struct ion_client *client;
++
++	mutex_lock(&dev->lock);
++	while (n) {
++		client = rb_entry(n, struct ion_client, node);
++		if (task == client->task) {
++			ion_client_get(client);
++			mutex_unlock(&dev->lock);
++			return client;
++		} else if (task < client->task) {
++			n = n->rb_left;
++		} else if (task > client->task) {
++			n = n->rb_right;
++		}
++	}
++	mutex_unlock(&dev->lock);
++	return NULL;
++}
++
++struct ion_client *ion_client_create(struct ion_device *dev,
++				     unsigned int heap_mask,
++				     const char *name)
++{
++	struct ion_client *client;
++	struct task_struct *task;
++	struct rb_node **p;
++	struct rb_node *parent = NULL;
++	struct ion_client *entry;
++	char debug_name[64];
++	pid_t pid;
++
++	get_task_struct(current->group_leader);
++	task_lock(current->group_leader);
++	pid = task_pid_nr(current->group_leader);
++	/* don't bother to store task struct for kernel threads,
++	   they can't be killed anyway */
++	if (current->group_leader->flags & PF_KTHREAD) {
++		put_task_struct(current->group_leader);
++		task = NULL;
++	} else {
++		task = current->group_leader;
++	}
++	task_unlock(current->group_leader);
++
++	/* if this isn't a kernel thread, see if a client already
++	   exists */
++	if (task) {
++		client = ion_client_lookup(dev, task);
++		if (!IS_ERR_OR_NULL(client)) {
++			put_task_struct(current->group_leader);
++			return client;
++		}
++	}
++
++	client = kzalloc(sizeof(struct ion_client), GFP_KERNEL);
++	if (!client) {
++		put_task_struct(current->group_leader);
++		return ERR_PTR(-ENOMEM);
++	}
++
++	client->dev = dev;
++	client->handles = RB_ROOT;
++	mutex_init(&client->lock);
++	client->name = name;
++	client->heap_mask = heap_mask;
++	client->task = task;
++	client->pid = pid;
++	kref_init(&client->ref);
++
++	mutex_lock(&dev->lock);
++	if (task) {
++		p = &dev->user_clients.rb_node;
++		while (*p) {
++			parent = *p;
++			entry = rb_entry(parent, struct ion_client, node);
++
++			if (task < entry->task)
++				p = &(*p)->rb_left;
++			else if (task > entry->task)
++				p = &(*p)->rb_right;
++		}
++		rb_link_node(&client->node, parent, p);
++		rb_insert_color(&client->node, &dev->user_clients);
++	} else {
++		p = &dev->kernel_clients.rb_node;
++		while (*p) {
++			parent = *p;
++			entry = rb_entry(parent, struct ion_client, node);
++
++			if (client < entry)
++				p = &(*p)->rb_left;
++			else if (client > entry)
++				p = &(*p)->rb_right;
++		}
++		rb_link_node(&client->node, parent, p);
++		rb_insert_color(&client->node, &dev->kernel_clients);
++	}
++
++	snprintf(debug_name, 64, "%u", client->pid);
++	client->debug_root = debugfs_create_file(debug_name, 0664,
++						 dev->debug_root, client,
++						 &debug_client_fops);
++	mutex_unlock(&dev->lock);
++
++	return client;
++}
++
++static void _ion_client_destroy(struct kref *kref)
++{
++	struct ion_client *client = container_of(kref, struct ion_client, ref);
++	struct ion_device *dev = client->dev;
++	struct rb_node *n;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	while ((n = rb_first(&client->handles))) {
++		struct ion_handle *handle = rb_entry(n, struct ion_handle,
++						     node);
++		ion_handle_destroy(&handle->ref);
++	}
++	mutex_lock(&dev->lock);
++	if (client->task) {
++		rb_erase(&client->node, &dev->user_clients);
++		put_task_struct(client->task);
++	} else {
++		rb_erase(&client->node, &dev->kernel_clients);
++	}
++	debugfs_remove_recursive(client->debug_root);
++	mutex_unlock(&dev->lock);
++
++	kfree(client);
++}
++
++static void ion_client_get(struct ion_client *client)
++{
++	kref_get(&client->ref);
++}
++
++static int ion_client_put(struct ion_client *client)
++{
++	return kref_put(&client->ref, _ion_client_destroy);
++}
++
++void ion_client_destroy(struct ion_client *client)
++{
++	ion_client_put(client);
++}
++
++static int ion_share_release(struct inode *inode, struct file* file)
++{
++	struct ion_buffer *buffer = file->private_data;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	/* drop the reference to the buffer -- this prevents the
++	   buffer from going away because the client holding it exited
++	   while it was being passed */
++	ion_buffer_put(buffer);
++	return 0;
++}
++
++static void ion_vma_open(struct vm_area_struct *vma)
++{
++
++	struct ion_buffer *buffer = vma->vm_file->private_data;
++	struct ion_handle *handle = vma->vm_private_data;
++	struct ion_client *client;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	/* check that the client still exists and take a reference so
++	   it can't go away until this vma is closed */
++	client = ion_client_lookup(buffer->dev, current->group_leader);
++	if (IS_ERR_OR_NULL(client)) {
++		vma->vm_private_data = NULL;
++		return;
++	}
++	pr_debug("%s: %d client_cnt %d handle_cnt %d alloc_cnt %d\n",
++		 __func__, __LINE__,
++		 atomic_read(&client->ref.refcount),
++		 atomic_read(&handle->ref.refcount),
++		 atomic_read(&buffer->ref.refcount));
++}
++
++static void ion_vma_close(struct vm_area_struct *vma)
++{
++	struct ion_handle *handle = vma->vm_private_data;
++	struct ion_buffer *buffer = vma->vm_file->private_data;
++	struct ion_client *client;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	/* this indicates the client is gone, nothing to do here */
++	if (!handle)
++		return;
++	client = handle->client;
++	pr_debug("%s: %d client_cnt %d handle_cnt %d alloc_cnt %d\n",
++		 __func__, __LINE__,
++		 atomic_read(&client->ref.refcount),
++		 atomic_read(&handle->ref.refcount),
++		 atomic_read(&buffer->ref.refcount));
++	ion_handle_put(handle);
++	ion_client_put(client);
++	pr_debug("%s: %d client_cnt %d handle_cnt %d alloc_cnt %d\n",
++		 __func__, __LINE__,
++		 atomic_read(&client->ref.refcount),
++		 atomic_read(&handle->ref.refcount),
++		 atomic_read(&buffer->ref.refcount));
++}
++
++static struct vm_operations_struct ion_vm_ops = {
++	.open = ion_vma_open,
++	.close = ion_vma_close,
++};
++
++static int ion_share_mmap(struct file *file, struct vm_area_struct *vma)
++{
++	struct ion_buffer *buffer = file->private_data;
++	unsigned long size = vma->vm_end - vma->vm_start;
++	struct ion_client *client;
++	struct ion_handle *handle;
++	int ret;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	/* make sure the client still exists, it's possible for the client to
++	   have gone away but the map/share fd still to be around, take
++	   a reference to it so it can't go away while this mapping exists */
++	client = ion_client_lookup(buffer->dev, current->group_leader);
++	if (IS_ERR_OR_NULL(client)) {
++		pr_err("%s: trying to mmap an ion handle in a process with no "
++		       "ion client\n", __func__);
++		return -EINVAL;
++	}
++
++	if ((size > buffer->size) || (size + (vma->vm_pgoff << PAGE_SHIFT) >
++				     buffer->size)) {
++		pr_err("%s: trying to map larger area than handle has available"
++		       "\n", __func__);
++		ret = -EINVAL;
++		goto err;
++	}
++
++	/* find the handle and take a reference to it */
++	handle = ion_import(client, buffer);
++	if (IS_ERR_OR_NULL(handle)) {
++		ret = -EINVAL;
++		goto err;
++	}
++
++	if (!handle->buffer->heap->ops->map_user) {
++		pr_err("%s: this heap does not define a method for mapping "
++		       "to userspace\n", __func__);
++		ret = -EINVAL;
++		goto err1;
++	}
++
++	mutex_lock(&buffer->lock);
++	/* now map it to userspace */
++	ret = buffer->heap->ops->map_user(buffer->heap, buffer, vma);
++	mutex_unlock(&buffer->lock);
++	if (ret) {
++		pr_err("%s: failure mapping buffer to userspace\n",
++		       __func__);
++		goto err1;
++	}
++
++	vma->vm_ops = &ion_vm_ops;
++	/* move the handle into the vm_private_data so we can access it from
++	   vma_open/close */
++	vma->vm_private_data = handle;
++	pr_debug("%s: %d client_cnt %d handle_cnt %d alloc_cnt %d\n",
++		 __func__, __LINE__,
++		 atomic_read(&client->ref.refcount),
++		 atomic_read(&handle->ref.refcount),
++		 atomic_read(&buffer->ref.refcount));
++	return 0;
++
++err1:
++	/* drop the reference to the handle */
++	ion_handle_put(handle);
++err:
++	/* drop the reference to the client */
++	ion_client_put(client);
++	return ret;
++}
++
++static const struct file_operations ion_share_fops = {
++	.owner		= THIS_MODULE,
++	.release	= ion_share_release,
++	.mmap		= ion_share_mmap,
++};
++
++static int ion_ioctl_share(struct file *parent, struct ion_client *client,
++			   struct ion_handle *handle)
++{
++	int fd = get_unused_fd();
++	struct file *file;
++
++	if (fd < 0)
++		return -ENFILE;
++
++	file = anon_inode_getfile("ion_share_fd", &ion_share_fops,
++				  handle->buffer, O_RDWR);
++	if (IS_ERR_OR_NULL(file))
++		goto err;
++	ion_buffer_get(handle->buffer);
++	fd_install(fd, file);
++
++	return fd;
++
++err:
++	put_unused_fd(fd);
++	return -ENFILE;
++}
++
++static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
++{
++	struct ion_client *client = filp->private_data;
++
++	switch (cmd) {
++	case ION_IOC_ALLOC:
++	{
++		struct ion_allocation_data data;
++
++		if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
++			return -EFAULT;
++		data.handle = ion_alloc(client, data.len, data.align,
++					     data.flags);
++		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
++			return -EFAULT;
++		break;
++	}
++	case ION_IOC_FREE:
++	{
++		struct ion_handle_data data;
++		bool valid;
++
++		if (copy_from_user(&data, (void __user *)arg,
++				   sizeof(struct ion_handle_data)))
++			return -EFAULT;
++		mutex_lock(&client->lock);
++		valid = ion_handle_validate(client, data.handle);
++		mutex_unlock(&client->lock);
++		if (!valid)
++			return -EINVAL;
++		ion_free(client, data.handle);
++		break;
++	}
++	case ION_IOC_MAP:
++	case ION_IOC_SHARE:
++	{
++		struct ion_fd_data data;
++
++		if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
++			return -EFAULT;
++		mutex_lock(&client->lock);
++		if (!ion_handle_validate(client, data.handle)) {
++			pr_err("%s: invalid handle passed to share ioctl.\n",
++			       __func__);
++			mutex_unlock(&client->lock);
++			return -EINVAL;
++		}
++		data.fd = ion_ioctl_share(filp, client, data.handle);
++		mutex_unlock(&client->lock);
++		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
++			return -EFAULT;
++		break;
++	}
++	case ION_IOC_IMPORT:
++	{
++		struct ion_fd_data data;
++		if (copy_from_user(&data, (void __user *)arg,
++				   sizeof(struct ion_fd_data)))
++			return -EFAULT;
++
++		data.handle = ion_import_fd(client, data.fd);
++		if (IS_ERR(data.handle))
++			data.handle = NULL;
++		if (copy_to_user((void __user *)arg, &data,
++				 sizeof(struct ion_fd_data)))
++			return -EFAULT;
++		break;
++	}
++	case ION_IOC_CUSTOM:
++	{
++		struct ion_device *dev = client->dev;
++		struct ion_custom_data data;
++
++		if (!dev->custom_ioctl)
++			return -ENOTTY;
++		if (copy_from_user(&data, (void __user *)arg,
++				sizeof(struct ion_custom_data)))
++			return -EFAULT;
++		return dev->custom_ioctl(client, data.cmd, data.arg);
++	}
++	default:
++		return -ENOTTY;
++	}
++	return 0;
++}
++
++static int ion_release(struct inode *inode, struct file *file)
++{
++	struct ion_client *client = file->private_data;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	ion_client_put(client);
++	return 0;
++}
++
++static int ion_open(struct inode *inode, struct file *file)
++{
++	struct miscdevice *miscdev = file->private_data;
++	struct ion_device *dev = container_of(miscdev, struct ion_device, dev);
++	struct ion_client *client;
++
++	pr_debug("%s: %d\n", __func__, __LINE__);
++	client = ion_client_create(dev, -1, "user");
++	if (IS_ERR_OR_NULL(client))
++		return PTR_ERR(client);
++	file->private_data = client;
++
++	return 0;
++}
++
++static const struct file_operations ion_fops = {
++	.owner          = THIS_MODULE,
++	.open           = ion_open,
++	.release        = ion_release,
++	.unlocked_ioctl = ion_ioctl,
++};
++
++static size_t ion_debug_heap_total(struct ion_client *client,
++				   enum ion_heap_type type)
++{
++	size_t size = 0;
++	struct rb_node *n;
++
++	mutex_lock(&client->lock);
++	for (n = rb_first(&client->handles); n; n = rb_next(n)) {
++		struct ion_handle *handle = rb_entry(n,
++						     struct ion_handle,
++						     node);
++		if (handle->buffer->heap->type == type)
++			size += handle->buffer->size;
++	}
++	mutex_unlock(&client->lock);
++	return size;
++}
++
++static int ion_debug_heap_show(struct seq_file *s, void *unused)
++{
++	struct ion_heap *heap = s->private;
++	struct ion_device *dev = heap->dev;
++	struct rb_node *n;
++
++	seq_printf(s, "%16.s %16.s %16.s\n", "client", "pid", "size");
++	for (n = rb_first(&dev->user_clients); n; n = rb_next(n)) {
++		struct ion_client *client = rb_entry(n, struct ion_client,
++						     node);
++		char task_comm[TASK_COMM_LEN];
++		size_t size = ion_debug_heap_total(client, heap->type);
++		if (!size)
++			continue;
++
++		get_task_comm(task_comm, client->task);
++		seq_printf(s, "%16.s %16u %16u\n", task_comm, client->pid,
++			   size);
++	}
++
++	for (n = rb_first(&dev->kernel_clients); n; n = rb_next(n)) {
++		struct ion_client *client = rb_entry(n, struct ion_client,
++						     node);
++		size_t size = ion_debug_heap_total(client, heap->type);
++		if (!size)
++			continue;
++		seq_printf(s, "%16.s %16u %16u\n", client->name, client->pid,
++			   size);
++	}
++	return 0;
++}
++
++static int ion_debug_heap_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, ion_debug_heap_show, inode->i_private);
++}
++
++static const struct file_operations debug_heap_fops = {
++	.open = ion_debug_heap_open,
++	.read = seq_read,
++	.llseek = seq_lseek,
++	.release = single_release,
++};
++
++void ion_device_add_heap(struct ion_device *dev, struct ion_heap *heap)
++{
++	struct rb_node **p = &dev->heaps.rb_node;
++	struct rb_node *parent = NULL;
++	struct ion_heap *entry;
++
++	heap->dev = dev;
++	mutex_lock(&dev->lock);
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct ion_heap, node);
++
++		if (heap->id < entry->id) {
++			p = &(*p)->rb_left;
++		} else if (heap->id > entry->id ) {
++			p = &(*p)->rb_right;
++		} else {
++			pr_err("%s: can not insert multiple heaps with "
++				"id %d\n", __func__, heap->id);
++			goto end;
++		}
++	}
++
++	rb_link_node(&heap->node, parent, p);
++	rb_insert_color(&heap->node, &dev->heaps);
++	debugfs_create_file(heap->name, 0664, dev->debug_root, heap,
++			    &debug_heap_fops);
++end:
++	mutex_unlock(&dev->lock);
++}
++
++struct ion_device *ion_device_create(long (*custom_ioctl)
++				     (struct ion_client *client,
++				      unsigned int cmd,
++				      unsigned long arg))
++{
++	struct ion_device *idev;
++	int ret;
++
++	idev = kzalloc(sizeof(struct ion_device), GFP_KERNEL);
++	if (!idev)
++		return ERR_PTR(-ENOMEM);
++
++	idev->dev.minor = MISC_DYNAMIC_MINOR;
++	idev->dev.name = "ion";
++	idev->dev.fops = &ion_fops;
++	idev->dev.parent = NULL;
++	ret = misc_register(&idev->dev);
++	if (ret) {
++		pr_err("ion: failed to register misc device.\n");
++		return ERR_PTR(ret);
++	}
++
++	idev->debug_root = debugfs_create_dir("ion", NULL);
++	if (IS_ERR_OR_NULL(idev->debug_root))
++		pr_err("ion: failed to create debug files.\n");
++
++	idev->custom_ioctl = custom_ioctl;
++	idev->buffers = RB_ROOT;
++	mutex_init(&idev->lock);
++	idev->heaps = RB_ROOT;
++	idev->user_clients = RB_ROOT;
++	idev->kernel_clients = RB_ROOT;
++	return idev;
++}
++
++void ion_device_destroy(struct ion_device *dev)
++{
++	misc_deregister(&dev->dev);
++	/* XXX need to free the heaps and clients ? */
++	kfree(dev);
++}
+diff --git a/drivers/gpu/ion/ion_carveout_heap.c b/drivers/gpu/ion/ion_carveout_heap.c
+new file mode 100644
+index 0000000..606adae
+--- /dev/null
++++ b/drivers/gpu/ion/ion_carveout_heap.c
+@@ -0,0 +1,162 @@
++/*
++ * drivers/gpu/ion/ion_carveout_heap.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++#include <linux/spinlock.h>
++
++#include <linux/err.h>
++#include <linux/genalloc.h>
++#include <linux/io.h>
++#include <linux/ion.h>
++#include <linux/mm.h>
++#include <linux/scatterlist.h>
++#include <linux/slab.h>
++#include <linux/vmalloc.h>
++#include "ion_priv.h"
++
++#include <asm/mach/map.h>
++
++struct ion_carveout_heap {
++	struct ion_heap heap;
++	struct gen_pool *pool;
++	ion_phys_addr_t base;
++};
++
++ion_phys_addr_t ion_carveout_allocate(struct ion_heap *heap,
++				      unsigned long size,
++				      unsigned long align)
++{
++	struct ion_carveout_heap *carveout_heap =
++		container_of(heap, struct ion_carveout_heap, heap);
++	unsigned long offset = gen_pool_alloc(carveout_heap->pool, size);
++
++	if (!offset)
++		return ION_CARVEOUT_ALLOCATE_FAIL;
++
++	return offset;
++}
++
++void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
++		       unsigned long size)
++{
++	struct ion_carveout_heap *carveout_heap =
++		container_of(heap, struct ion_carveout_heap, heap);
++
++	if (addr == ION_CARVEOUT_ALLOCATE_FAIL)
++		return;
++	gen_pool_free(carveout_heap->pool, addr, size);
++}
++
++static int ion_carveout_heap_phys(struct ion_heap *heap,
++				  struct ion_buffer *buffer,
++				  ion_phys_addr_t *addr, size_t *len)
++{
++	*addr = buffer->priv_phys;
++	*len = buffer->size;
++	return 0;
++}
++
++static int ion_carveout_heap_allocate(struct ion_heap *heap,
++				      struct ion_buffer *buffer,
++				      unsigned long size, unsigned long align,
++				      unsigned long flags)
++{
++	buffer->priv_phys = ion_carveout_allocate(heap, size, align);
++	return buffer->priv_phys == ION_CARVEOUT_ALLOCATE_FAIL ? -ENOMEM : 0;
++}
++
++static void ion_carveout_heap_free(struct ion_buffer *buffer)
++{
++	struct ion_heap *heap = buffer->heap;
++
++	ion_carveout_free(heap, buffer->priv_phys, buffer->size);
++	buffer->priv_phys = ION_CARVEOUT_ALLOCATE_FAIL;
++}
++
++struct scatterlist *ion_carveout_heap_map_dma(struct ion_heap *heap,
++					      struct ion_buffer *buffer)
++{
++	return ERR_PTR(-EINVAL);
++}
++
++void ion_carveout_heap_unmap_dma(struct ion_heap *heap,
++				 struct ion_buffer *buffer)
++{
++	return;
++}
++
++void *ion_carveout_heap_map_kernel(struct ion_heap *heap,
++				   struct ion_buffer *buffer)
++{
++	return __arch_ioremap(buffer->priv_phys, buffer->size,
++			      MT_MEMORY_NONCACHED);
++}
++
++void ion_carveout_heap_unmap_kernel(struct ion_heap *heap,
++				    struct ion_buffer *buffer)
++{
++	__arch_iounmap(buffer->vaddr);
++	buffer->vaddr = NULL;
++	return;
++}
++
++int ion_carveout_heap_map_user(struct ion_heap *heap, struct ion_buffer *buffer,
++			       struct vm_area_struct *vma)
++{
++	return remap_pfn_range(vma, vma->vm_start,
++			       __phys_to_pfn(buffer->priv_phys) + vma->vm_pgoff,
++			       buffer->size,
++			       pgprot_noncached(vma->vm_page_prot));
++}
++
++static struct ion_heap_ops carveout_heap_ops = {
++	.allocate = ion_carveout_heap_allocate,
++	.free = ion_carveout_heap_free,
++	.phys = ion_carveout_heap_phys,
++	.map_user = ion_carveout_heap_map_user,
++	.map_kernel = ion_carveout_heap_map_kernel,
++	.unmap_kernel = ion_carveout_heap_unmap_kernel,
++};
++
++struct ion_heap *ion_carveout_heap_create(struct ion_platform_heap *heap_data)
++{
++	struct ion_carveout_heap *carveout_heap;
++
++	carveout_heap = kzalloc(sizeof(struct ion_carveout_heap), GFP_KERNEL);
++	if (!carveout_heap)
++		return ERR_PTR(-ENOMEM);
++
++	carveout_heap->pool = gen_pool_create(12, -1);
++	if (!carveout_heap->pool) {
++		kfree(carveout_heap);
++		return ERR_PTR(-ENOMEM);
++	}
++	carveout_heap->base = heap_data->base;
++	gen_pool_add(carveout_heap->pool, carveout_heap->base, heap_data->size,
++		     -1);
++	carveout_heap->heap.ops = &carveout_heap_ops;
++	carveout_heap->heap.type = ION_HEAP_TYPE_CARVEOUT;
++
++	return &carveout_heap->heap;
++}
++
++void ion_carveout_heap_destroy(struct ion_heap *heap)
++{
++	struct ion_carveout_heap *carveout_heap =
++	     container_of(heap, struct  ion_carveout_heap, heap);
++
++	gen_pool_destroy(carveout_heap->pool);
++	kfree(carveout_heap);
++	carveout_heap = NULL;
++}
+diff --git a/drivers/gpu/ion/ion_heap.c b/drivers/gpu/ion/ion_heap.c
+new file mode 100644
+index 0000000..8ce3c19
+--- /dev/null
++++ b/drivers/gpu/ion/ion_heap.c
+@@ -0,0 +1,72 @@
++/*
++ * drivers/gpu/ion/ion_heap.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/err.h>
++#include <linux/ion.h>
++#include "ion_priv.h"
++
++struct ion_heap *ion_heap_create(struct ion_platform_heap *heap_data)
++{
++	struct ion_heap *heap = NULL;
++
++	switch (heap_data->type) {
++	case ION_HEAP_TYPE_SYSTEM_CONTIG:
++		heap = ion_system_contig_heap_create(heap_data);
++		break;
++	case ION_HEAP_TYPE_SYSTEM:
++		heap = ion_system_heap_create(heap_data);
++		break;
++	case ION_HEAP_TYPE_CARVEOUT:
++		heap = ion_carveout_heap_create(heap_data);
++		break;
++	default:
++		pr_err("%s: Invalid heap type %d\n", __func__,
++		       heap_data->type);
++		return ERR_PTR(-EINVAL);
++	}
++
++	if (IS_ERR_OR_NULL(heap)) {
++		pr_err("%s: error creating heap %s type %d base %lu size %u\n",
++		       __func__, heap_data->name, heap_data->type,
++		       heap_data->base, heap_data->size);
++		return ERR_PTR(-EINVAL);
++	}
++
++	heap->name = heap_data->name;
++	heap->id = heap_data->id;
++	return heap;
++}
++
++void ion_heap_destroy(struct ion_heap *heap)
++{
++	if (!heap)
++		return;
++
++	switch (heap->type) {
++	case ION_HEAP_TYPE_SYSTEM_CONTIG:
++		ion_system_contig_heap_destroy(heap);
++		break;
++	case ION_HEAP_TYPE_SYSTEM:
++		ion_system_heap_destroy(heap);
++		break;
++	case ION_HEAP_TYPE_CARVEOUT:
++		ion_carveout_heap_destroy(heap);
++		break;
++	default:
++		pr_err("%s: Invalid heap type %d\n", __func__,
++		       heap->type);
++	}
++}
+diff --git a/drivers/gpu/ion/ion_priv.h b/drivers/gpu/ion/ion_priv.h
+new file mode 100644
+index 0000000..3323954
+--- /dev/null
++++ b/drivers/gpu/ion/ion_priv.h
+@@ -0,0 +1,184 @@
++/*
++ * drivers/gpu/ion/ion_priv.h
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _ION_PRIV_H
++#define _ION_PRIV_H
++
++#include <linux/kref.h>
++#include <linux/mm_types.h>
++#include <linux/mutex.h>
++#include <linux/rbtree.h>
++#include <linux/ion.h>
++
++struct ion_mapping;
++
++struct ion_dma_mapping {
++	struct kref ref;
++	struct scatterlist *sglist;
++};
++
++struct ion_kernel_mapping {
++	struct kref ref;
++	void *vaddr;
++};
++
++struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
++
++/**
++ * struct ion_buffer - metadata for a particular buffer
++ * @ref:		refernce count
++ * @node:		node in the ion_device buffers tree
++ * @dev:		back pointer to the ion_device
++ * @heap:		back pointer to the heap the buffer came from
++ * @flags:		buffer specific flags
++ * @size:		size of the buffer
++ * @priv_virt:		private data to the buffer representable as
++ *			a void *
++ * @priv_phys:		private data to the buffer representable as
++ *			an ion_phys_addr_t (and someday a phys_addr_t)
++ * @lock:		protects the buffers cnt fields
++ * @kmap_cnt:		number of times the buffer is mapped to the kernel
++ * @vaddr:		the kenrel mapping if kmap_cnt is not zero
++ * @dmap_cnt:		number of times the buffer is mapped for dma
++ * @sglist:		the scatterlist for the buffer is dmap_cnt is not zero
++*/
++struct ion_buffer {
++	struct kref ref;
++	struct rb_node node;
++	struct ion_device *dev;
++	struct ion_heap *heap;
++	unsigned long flags;
++	size_t size;
++	union {
++		void *priv_virt;
++		ion_phys_addr_t priv_phys;
++	};
++	struct mutex lock;
++	int kmap_cnt;
++	void *vaddr;
++	int dmap_cnt;
++	struct scatterlist *sglist;
++};
++
++/**
++ * struct ion_heap_ops - ops to operate on a given heap
++ * @allocate:		allocate memory
++ * @free:		free memory
++ * @phys		get physical address of a buffer (only define on
++ *			physically contiguous heaps)
++ * @map_dma		map the memory for dma to a scatterlist
++ * @unmap_dma		unmap the memory for dma
++ * @map_kernel		map memory to the kernel
++ * @unmap_kernel	unmap memory to the kernel
++ * @map_user		map memory to userspace
++ */
++struct ion_heap_ops {
++	int (*allocate) (struct ion_heap *heap,
++			 struct ion_buffer *buffer, unsigned long len,
++			 unsigned long align, unsigned long flags);
++	void (*free) (struct ion_buffer *buffer);
++	int (*phys) (struct ion_heap *heap, struct ion_buffer *buffer,
++		     ion_phys_addr_t *addr, size_t *len);
++	struct scatterlist *(*map_dma) (struct ion_heap *heap,
++					struct ion_buffer *buffer);
++	void (*unmap_dma) (struct ion_heap *heap, struct ion_buffer *buffer);
++	void * (*map_kernel) (struct ion_heap *heap, struct ion_buffer *buffer);
++	void (*unmap_kernel) (struct ion_heap *heap, struct ion_buffer *buffer);
++	int (*map_user) (struct ion_heap *mapper, struct ion_buffer *buffer,
++			 struct vm_area_struct *vma);
++};
++
++/**
++ * struct ion_heap - represents a heap in the system
++ * @node:		rb node to put the heap on the device's tree of heaps
++ * @dev:		back pointer to the ion_device
++ * @type:		type of heap
++ * @ops:		ops struct as above
++ * @id:			id of heap, also indicates priority of this heap when
++ *			allocating.  These are specified by platform data and
++ *			MUST be unique
++ * @name:		used for debugging
++ *
++ * Represents a pool of memory from which buffers can be made.  In some
++ * systems the only heap is regular system memory allocated via vmalloc.
++ * On others, some blocks might require large physically contiguous buffers
++ * that are allocated from a specially reserved heap.
++ */
++struct ion_heap {
++	struct rb_node node;
++	struct ion_device *dev;
++	enum ion_heap_type type;
++	struct ion_heap_ops *ops;
++	int id;
++	const char *name;
++};
++
++/**
++ * ion_device_create - allocates and returns an ion device
++ * @custom_ioctl:	arch specific ioctl function if applicable
++ *
++ * returns a valid device or -PTR_ERR
++ */
++struct ion_device *ion_device_create(long (*custom_ioctl)
++				     (struct ion_client *client,
++				      unsigned int cmd,
++				      unsigned long arg));
++
++/**
++ * ion_device_destroy - free and device and it's resource
++ * @dev:		the device
++ */
++void ion_device_destroy(struct ion_device *dev);
++
++/**
++ * ion_device_add_heap - adds a heap to the ion device
++ * @dev:		the device
++ * @heap:		the heap to add
++ */
++void ion_device_add_heap(struct ion_device *dev, struct ion_heap *heap);
++
++/**
++ * functions for creating and destroying the built in ion heaps.
++ * architectures can add their own custom architecture specific
++ * heaps as appropriate.
++ */
++
++struct ion_heap *ion_heap_create(struct ion_platform_heap *);
++void ion_heap_destroy(struct ion_heap *);
++
++struct ion_heap *ion_system_heap_create(struct ion_platform_heap *);
++void ion_system_heap_destroy(struct ion_heap *);
++
++struct ion_heap *ion_system_contig_heap_create(struct ion_platform_heap *);
++void ion_system_contig_heap_destroy(struct ion_heap *);
++
++struct ion_heap *ion_carveout_heap_create(struct ion_platform_heap *);
++void ion_carveout_heap_destroy(struct ion_heap *);
++/**
++ * kernel api to allocate/free from carveout -- used when carveout is
++ * used to back an architecture specific custom heap
++ */
++ion_phys_addr_t ion_carveout_allocate(struct ion_heap *heap, unsigned long size,
++				      unsigned long align);
++void ion_carveout_free(struct ion_heap *heap, ion_phys_addr_t addr,
++		       unsigned long size);
++/**
++ * The carveout heap returns physical addresses, since 0 may be a valid
++ * physical address, this is used to indicate allocation failed
++ */
++#define ION_CARVEOUT_ALLOCATE_FAIL -1
++
++#endif /* _ION_PRIV_H */
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+new file mode 100644
+index 0000000..c046cf1
+--- /dev/null
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -0,0 +1,198 @@
++/*
++ * drivers/gpu/ion/ion_system_heap.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/err.h>
++#include <linux/ion.h>
++#include <linux/mm.h>
++#include <linux/scatterlist.h>
++#include <linux/slab.h>
++#include <linux/vmalloc.h>
++#include "ion_priv.h"
++
++static int ion_system_heap_allocate(struct ion_heap *heap,
++				     struct ion_buffer *buffer,
++				     unsigned long size, unsigned long align,
++				     unsigned long flags)
++{
++	buffer->priv_virt = vmalloc_user(size);
++	if (!buffer->priv_virt)
++		return -ENOMEM;
++	return 0;
++}
++
++void ion_system_heap_free(struct ion_buffer *buffer)
++{
++	vfree(buffer->priv_virt);
++}
++
++struct scatterlist *ion_system_heap_map_dma(struct ion_heap *heap,
++					    struct ion_buffer *buffer)
++{
++	struct scatterlist *sglist;
++	struct page *page;
++	int i;
++	int npages = PAGE_ALIGN(buffer->size) / PAGE_SIZE;
++	void *vaddr = buffer->priv_virt;
++
++	sglist = vmalloc(npages * sizeof(struct scatterlist));
++	if (!sglist)
++		return ERR_PTR(-ENOMEM);
++	memset(sglist, 0, npages * sizeof(struct scatterlist));
++	sg_init_table(sglist, npages);
++	for (i = 0; i < npages; i++) {
++		page = vmalloc_to_page(vaddr);
++		if (!page)
++			goto end;
++		sg_set_page(&sglist[i], page, PAGE_SIZE, 0);
++		vaddr += PAGE_SIZE;
++	}
++	/* XXX do cache maintenance for dma? */
++	return sglist;
++end:
++	vfree(sglist);
++	return NULL;
++}
++
++void ion_system_heap_unmap_dma(struct ion_heap *heap,
++			       struct ion_buffer *buffer)
++{
++	/* XXX undo cache maintenance for dma? */
++	if (buffer->sglist)
++		vfree(buffer->sglist);
++}
++
++void *ion_system_heap_map_kernel(struct ion_heap *heap,
++				 struct ion_buffer *buffer)
++{
++	return buffer->priv_virt;
++}
++
++void ion_system_heap_unmap_kernel(struct ion_heap *heap,
++				  struct ion_buffer *buffer)
++{
++}
++
++int ion_system_heap_map_user(struct ion_heap *heap, struct ion_buffer *buffer,
++			     struct vm_area_struct *vma)
++{
++	return remap_vmalloc_range(vma, buffer->priv_virt, vma->vm_pgoff);
++}
++
++static struct ion_heap_ops vmalloc_ops = {
++	.allocate = ion_system_heap_allocate,
++	.free = ion_system_heap_free,
++	.map_dma = ion_system_heap_map_dma,
++	.unmap_dma = ion_system_heap_unmap_dma,
++	.map_kernel = ion_system_heap_map_kernel,
++	.unmap_kernel = ion_system_heap_unmap_kernel,
++	.map_user = ion_system_heap_map_user,
++};
++
++struct ion_heap *ion_system_heap_create(struct ion_platform_heap *unused)
++{
++	struct ion_heap *heap;
++
++	heap = kzalloc(sizeof(struct ion_heap), GFP_KERNEL);
++	if (!heap)
++		return ERR_PTR(-ENOMEM);
++	heap->ops = &vmalloc_ops;
++	heap->type = ION_HEAP_TYPE_SYSTEM;
++	return heap;
++}
++
++void ion_system_heap_destroy(struct ion_heap *heap)
++{
++	kfree(heap);
++}
++
++static int ion_system_contig_heap_allocate(struct ion_heap *heap,
++					   struct ion_buffer *buffer,
++					   unsigned long len,
++					   unsigned long align,
++					   unsigned long flags)
++{
++	buffer->priv_virt = kzalloc(len, GFP_KERNEL);
++	if (!buffer->priv_virt)
++		return -ENOMEM;
++	return 0;
++}
++
++void ion_system_contig_heap_free(struct ion_buffer *buffer)
++{
++	kfree(buffer->priv_virt);
++}
++
++static int ion_system_contig_heap_phys(struct ion_heap *heap,
++				       struct ion_buffer *buffer,
++				       ion_phys_addr_t *addr, size_t *len)
++{
++	*addr = virt_to_phys(buffer->priv_virt);
++	*len = buffer->size;
++	return 0;
++}
++
++struct scatterlist *ion_system_contig_heap_map_dma(struct ion_heap *heap,
++						   struct ion_buffer *buffer)
++{
++	struct scatterlist *sglist;
++
++	sglist = vmalloc(sizeof(struct scatterlist));
++	if (!sglist)
++		return ERR_PTR(-ENOMEM);
++	sg_init_table(sglist, 1);
++	sg_set_page(sglist, virt_to_page(buffer->priv_virt), buffer->size, 0);
++	return sglist;
++}
++
++int ion_system_contig_heap_map_user(struct ion_heap *heap,
++				    struct ion_buffer *buffer,
++				    struct vm_area_struct *vma)
++{
++	unsigned long pfn = __phys_to_pfn(virt_to_phys(buffer->priv_virt));
++	return remap_pfn_range(vma, vma->vm_start, pfn + vma->vm_pgoff,
++			       vma->vm_end - vma->vm_start,
++			       vma->vm_page_prot);
++
++}
++
++static struct ion_heap_ops kmalloc_ops = {
++	.allocate = ion_system_contig_heap_allocate,
++	.free = ion_system_contig_heap_free,
++	.phys = ion_system_contig_heap_phys,
++	.map_dma = ion_system_contig_heap_map_dma,
++	.unmap_dma = ion_system_heap_unmap_dma,
++	.map_kernel = ion_system_heap_map_kernel,
++	.unmap_kernel = ion_system_heap_unmap_kernel,
++	.map_user = ion_system_contig_heap_map_user,
++};
++
++struct ion_heap *ion_system_contig_heap_create(struct ion_platform_heap *unused)
++{
++	struct ion_heap *heap;
++
++	heap = kzalloc(sizeof(struct ion_heap), GFP_KERNEL);
++	if (!heap)
++		return ERR_PTR(-ENOMEM);
++	heap->ops = &kmalloc_ops;
++	heap->type = ION_HEAP_TYPE_SYSTEM_CONTIG;
++	return heap;
++}
++
++void ion_system_contig_heap_destroy(struct ion_heap *heap)
++{
++	kfree(heap);
++}
++
+diff --git a/drivers/gpu/ion/ion_system_mapper.c b/drivers/gpu/ion/ion_system_mapper.c
+new file mode 100644
+index 0000000..692458e
+--- /dev/null
++++ b/drivers/gpu/ion/ion_system_mapper.c
+@@ -0,0 +1,114 @@
++/*
++ * drivers/gpu/ion/ion_system_mapper.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/err.h>
++#include <linux/ion.h>
++#include <linux/memory.h>
++#include <linux/mm.h>
++#include <linux/slab.h>
++#include <linux/vmalloc.h>
++#include "ion_priv.h"
++/*
++ * This mapper is valid for any heap that allocates memory that already has
++ * a kernel mapping, this includes vmalloc'd memory, kmalloc'd memory,
++ * pages obtained via io_remap, etc.
++ */
++static void *ion_kernel_mapper_map(struct ion_mapper *mapper,
++				   struct ion_buffer *buffer,
++				   struct ion_mapping **mapping)
++{
++	if (!((1 << buffer->heap->type) & mapper->heap_mask)) {
++		pr_err("%s: attempting to map an unsupported heap\n", __func__);
++		return ERR_PTR(-EINVAL);
++	}
++	/* XXX REVISIT ME!!! */
++	*((unsigned long *)mapping) = (unsigned long)buffer->priv;
++	return buffer->priv;
++}
++
++static void ion_kernel_mapper_unmap(struct ion_mapper *mapper,
++				    struct ion_buffer *buffer,
++				    struct ion_mapping *mapping)
++{
++	if (!((1 << buffer->heap->type) & mapper->heap_mask))
++		pr_err("%s: attempting to unmap an unsupported heap\n",
++		       __func__);
++}
++
++static void *ion_kernel_mapper_map_kernel(struct ion_mapper *mapper,
++					struct ion_buffer *buffer,
++					struct ion_mapping *mapping)
++{
++	if (!((1 << buffer->heap->type) & mapper->heap_mask)) {
++		pr_err("%s: attempting to unmap an unsupported heap\n",
++		       __func__);
++		return ERR_PTR(-EINVAL);
++	}
++	return buffer->priv;
++}
++
++static int ion_kernel_mapper_map_user(struct ion_mapper *mapper,
++				      struct ion_buffer *buffer,
++				      struct vm_area_struct *vma,
++				      struct ion_mapping *mapping)
++{
++	int ret;
++
++	switch (buffer->heap->type) {
++	case ION_HEAP_KMALLOC:
++	{
++		unsigned long pfn = __phys_to_pfn(virt_to_phys(buffer->priv));
++		ret = remap_pfn_range(vma, vma->vm_start, pfn + vma->vm_pgoff,
++				      vma->vm_end - vma->vm_start,
++				      vma->vm_page_prot);
++		break;
++	}
++	case ION_HEAP_VMALLOC:
++		ret = remap_vmalloc_range(vma, buffer->priv, vma->vm_pgoff);
++		break;
++	default:
++		pr_err("%s: attempting to map unsupported heap to userspace\n",
++		       __func__);
++		return -EINVAL;
++	}
++
++	return ret;
++}
++
++static struct ion_mapper_ops ops = {
++	.map = ion_kernel_mapper_map,
++	.map_kernel = ion_kernel_mapper_map_kernel,
++	.map_user = ion_kernel_mapper_map_user,
++	.unmap = ion_kernel_mapper_unmap,
++};
++
++struct ion_mapper *ion_system_mapper_create(void)
++{
++	struct ion_mapper *mapper;
++	mapper = kzalloc(sizeof(struct ion_mapper), GFP_KERNEL);
++	if (!mapper)
++		return ERR_PTR(-ENOMEM);
++	mapper->type = ION_SYSTEM_MAPPER;
++	mapper->ops = &ops;
++	mapper->heap_mask = (1 << ION_HEAP_VMALLOC) | (1 << ION_HEAP_KMALLOC);
++	return mapper;
++}
++
++void ion_system_mapper_destroy(struct ion_mapper *mapper)
++{
++	kfree(mapper);
++}
++
+diff --git a/drivers/gpu/ion/tegra/Makefile b/drivers/gpu/ion/tegra/Makefile
+new file mode 100644
+index 0000000..11cd003
+--- /dev/null
++++ b/drivers/gpu/ion/tegra/Makefile
+@@ -0,0 +1 @@
++obj-y += tegra_ion.o
+diff --git a/drivers/gpu/ion/tegra/tegra_ion.c b/drivers/gpu/ion/tegra/tegra_ion.c
+new file mode 100644
+index 0000000..7af6e16
+--- /dev/null
++++ b/drivers/gpu/ion/tegra/tegra_ion.c
+@@ -0,0 +1,96 @@
++/*
++ * drivers/gpu/tegra/tegra_ion.c
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/err.h>
++#include <linux/ion.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include "../ion_priv.h"
++
++struct ion_device *idev;
++struct ion_mapper *tegra_user_mapper;
++int num_heaps;
++struct ion_heap **heaps;
++
++int tegra_ion_probe(struct platform_device *pdev)
++{
++	struct ion_platform_data *pdata = pdev->dev.platform_data;
++	int err;
++	int i;
++
++	num_heaps = pdata->nr;
++
++	heaps = kzalloc(sizeof(struct ion_heap *) * pdata->nr, GFP_KERNEL);
++
++	idev = ion_device_create(NULL);
++	if (IS_ERR_OR_NULL(idev)) {
++		kfree(heaps);
++		return PTR_ERR(idev);
++	}
++
++	/* create the heaps as specified in the board file */
++	for (i = 0; i < num_heaps; i++) {
++		struct ion_platform_heap *heap_data = &pdata->heaps[i];
++
++		heaps[i] = ion_heap_create(heap_data);
++		if (IS_ERR_OR_NULL(heaps[i])) {
++			err = PTR_ERR(heaps[i]);
++			goto err;
++		}
++		ion_device_add_heap(idev, heaps[i]);
++	}
++	platform_set_drvdata(pdev, idev);
++	return 0;
++err:
++	for (i = 0; i < num_heaps; i++) {
++		if (heaps[i])
++			ion_heap_destroy(heaps[i]);
++	}
++	kfree(heaps);
++	return err;
++}
++
++int tegra_ion_remove(struct platform_device *pdev)
++{
++	struct ion_device *idev = platform_get_drvdata(pdev);
++	int i;
++
++	ion_device_destroy(idev);
++	for (i = 0; i < num_heaps; i++)
++		ion_heap_destroy(heaps[i]);
++	kfree(heaps);
++	return 0;
++}
++
++static struct platform_driver ion_driver = {
++	.probe = tegra_ion_probe,
++	.remove = tegra_ion_remove,
++	.driver = { .name = "ion-tegra" }
++};
++
++static int __init ion_init(void)
++{
++	return platform_driver_register(&ion_driver);
++}
++
++static void __exit ion_exit(void)
++{
++	platform_driver_unregister(&ion_driver);
++}
++
++module_init(ion_init);
++module_exit(ion_exit);
++
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index a290be5..65b07f4 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -23,6 +23,8 @@ source "drivers/gpu/drm/Kconfig"
+ 
+ source "drivers/gpu/stub/Kconfig"
+ 
++source "drivers/gpu/ion/Kconfig"
++
+ config VGASTATE
+        tristate
+        default n
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+new file mode 100644
+index 0000000..aed8349
+--- /dev/null
++++ b/include/linux/ion.h
+@@ -0,0 +1,344 @@
++/*
++ * include/linux/ion.h
++ *
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _LINUX_ION_H
++#define _LINUX_ION_H
++
++#include <linux/types.h>
++
++struct ion_handle;
++/**
++ * enum ion_heap_types - list of all possible types of heaps
++ * @ION_HEAP_TYPE_SYSTEM:	 memory allocated via vmalloc
++ * @ION_HEAP_TYPE_SYSTEM_CONTIG: memory allocated via kmalloc
++ * @ION_HEAP_TYPE_CARVEOUT:	 memory allocated from a prereserved
++ * 				 carveout heap, allocations are physically
++ * 				 contiguous
++ * @ION_HEAP_END:		 helper for iterating over heaps
++ */
++enum ion_heap_type {
++	ION_HEAP_TYPE_SYSTEM,
++	ION_HEAP_TYPE_SYSTEM_CONTIG,
++	ION_HEAP_TYPE_CARVEOUT,
++	ION_HEAP_TYPE_CUSTOM, /* must be last so device specific heaps always
++				 are at the end of this enum */
++	ION_NUM_HEAPS,
++};
++
++#define ION_HEAP_SYSTEM_MASK		(1 << ION_HEAP_TYPE_SYSTEM)
++#define ION_HEAP_SYSTEM_CONTIG_MASK	(1 << ION_HEAP_TYPE_SYSTEM_CONTIG)
++#define ION_HEAP_CARVEOUT_MASK		(1 << ION_HEAP_TYPE_CARVEOUT)
++
++#ifdef __KERNEL__
++struct ion_device;
++struct ion_heap;
++struct ion_mapper;
++struct ion_client;
++struct ion_buffer;
++
++/* This should be removed some day when phys_addr_t's are fully
++   plumbed in the kernel, and all instances of ion_phys_addr_t should
++   be converted to phys_addr_t.  For the time being many kernel interfaces
++   do not accept phys_addr_t's that would have to */
++#define ion_phys_addr_t unsigned long
++
++/**
++ * struct ion_platform_heap - defines a heap in the given platform
++ * @type:	type of the heap from ion_heap_type enum
++ * @id:		unique identifier for heap.  When allocating (lower numbers 
++ * 		will be allocated from first)
++ * @name:	used for debug purposes
++ * @base:	base address of heap in physical memory if applicable
++ * @size:	size of the heap in bytes if applicable
++ *
++ * Provided by the board file.
++ */
++struct ion_platform_heap {
++	enum ion_heap_type type;
++	unsigned int id;
++	const char *name;
++	ion_phys_addr_t base;
++	size_t size;
++};
++
++/**
++ * struct ion_platform_data - array of platform heaps passed from board file
++ * @nr:		number of structures in the array
++ * @heaps:	array of platform_heap structions
++ *
++ * Provided by the board file in the form of platform data to a platform device.
++ */
++struct ion_platform_data {
++	int nr;
++	struct ion_platform_heap heaps[];
++};
++
++/**
++ * ion_client_create() -  allocate a client and returns it
++ * @dev:	the global ion device
++ * @heap_mask:	mask of heaps this client can allocate from
++ * @name:	used for debugging
++ */
++struct ion_client *ion_client_create(struct ion_device *dev,
++				     unsigned int heap_mask, const char *name);
++
++/**
++ * ion_client_destroy() -  free's a client and all it's handles
++ * @client:	the client
++ *
++ * Free the provided client and all it's resources including
++ * any handles it is holding.
++ */
++void ion_client_destroy(struct ion_client *client);
++
++/**
++ * ion_alloc - allocate ion memory
++ * @client:	the client
++ * @len:	size of the allocation
++ * @align:	requested allocation alignment, lots of hardware blocks have
++ *		alignment requirements of some kind
++ * @flags:	mask of heaps to allocate from, if multiple bits are set
++ *		heaps will be tried in order from lowest to highest order bit
++ *
++ * Allocate memory in one of the heaps provided in heap mask and return
++ * an opaque handle to it.
++ */
++struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
++			     size_t align, unsigned int flags);
++
++/**
++ * ion_free - free a handle
++ * @client:	the client
++ * @handle:	the handle to free
++ *
++ * Free the provided handle.
++ */
++void ion_free(struct ion_client *client, struct ion_handle *handle);
++
++/**
++ * ion_phys - returns the physical address and len of a handle
++ * @client:	the client
++ * @handle:	the handle
++ * @addr:	a pointer to put the address in
++ * @len:	a pointer to put the length in
++ *
++ * This function queries the heap for a particular handle to get the
++ * handle's physical address.  It't output is only correct if
++ * a heap returns physically contiguous memory -- in other cases
++ * this api should not be implemented -- ion_map_dma should be used
++ * instead.  Returns -EINVAL if the handle is invalid.  This has
++ * no implications on the reference counting of the handle --
++ * the returned value may not be valid if the caller is not
++ * holding a reference.
++ */
++int ion_phys(struct ion_client *client, struct ion_handle *handle,
++	     ion_phys_addr_t *addr, size_t *len);
++
++/**
++ * ion_map_kernel - create mapping for the given handle
++ * @client:	the client
++ * @handle:	handle to map
++ *
++ * Map the given handle into the kernel and return a kernel address that
++ * can be used to access this address.
++ */
++void *ion_map_kernel(struct ion_client *client, struct ion_handle *handle);
++
++/**
++ * ion_unmap_kernel() - destroy a kernel mapping for a handle
++ * @client:	the client
++ * @handle:	handle to unmap
++ */
++void ion_unmap_kernel(struct ion_client *client, struct ion_handle *handle);
++
++/**
++ * ion_map_dma - create a dma mapping for a given handle
++ * @client:	the client
++ * @handle:	handle to map
++ *
++ * Return an sglist describing the given handle
++ */
++struct scatterlist *ion_map_dma(struct ion_client *client,
++				struct ion_handle *handle);
++
++/**
++ * ion_unmap_dma() - destroy a dma mapping for a handle
++ * @client:	the client
++ * @handle:	handle to unmap
++ */
++void ion_unmap_dma(struct ion_client *client, struct ion_handle *handle);
++
++/**
++ * ion_share() - given a handle, obtain a buffer to pass to other clients
++ * @client:	the client
++ * @handle:	the handle to share
++ *
++ * Given a handle, return a buffer, which exists in a global name
++ * space, and can be passed to other clients.  Should be passed into ion_import
++ * to obtain a new handle for this buffer.
++ *
++ * NOTE: This function does do not an extra reference.  The burden is on the
++ * caller to make sure the buffer doesn't go away while it's being passed to
++ * another client.  That is, ion_free should not be called on this handle until
++ * the buffer has been imported into the other client.
++ */
++struct ion_buffer *ion_share(struct ion_client *client,
++			     struct ion_handle *handle);
++
++/**
++ * ion_import() - given an buffer in another client, import it
++ * @client:	this blocks client
++ * @buffer:	the buffer to import (as obtained from ion_share)
++ *
++ * Given a buffer, add it to the client and return the handle to use to refer
++ * to it further.  This is called to share a handle from one kernel client to
++ * another.
++ */
++struct ion_handle *ion_import(struct ion_client *client,
++			      struct ion_buffer *buffer);
++
++/**
++ * ion_import_fd() - given an fd obtained via ION_IOC_SHARE ioctl, import it
++ * @client:	this blocks client
++ * @fd:		the fd
++ *
++ * A helper function for drivers that will be recieving ion buffers shared
++ * with them from userspace.  These buffers are represented by a file
++ * descriptor obtained as the return from the ION_IOC_SHARE ioctl.
++ * This function coverts that fd into the underlying buffer, and returns
++ * the handle to use to refer to it further.
++ */
++struct ion_handle *ion_import_fd(struct ion_client *client, int fd);
++#endif /* __KERNEL__ */
++
++/**
++ * DOC: Ion Userspace API
++ *
++ * create a client by opening /dev/ion
++ * most operations handled via following ioctls
++ *
++ */
++
++/**
++ * struct ion_allocation_data - metadata passed from userspace for allocations
++ * @len:	size of the allocation
++ * @align:	required alignment of the allocation
++ * @flags:	flags passed to heap
++ * @handle:	pointer that will be populated with a cookie to use to refer
++ *		to this allocation
++ *
++ * Provided by userspace as an argument to the ioctl
++ */
++struct ion_allocation_data {
++	size_t len;
++	size_t align;
++	unsigned int flags;
++	struct ion_handle *handle;
++};
++
++/**
++ * struct ion_fd_data - metadata passed to/from userspace for a handle/fd pair
++ * @handle:	a handle
++ * @fd:		a file descriptor representing that handle
++ *
++ * For ION_IOC_SHARE or ION_IOC_MAP userspace populates the handle field with
++ * the handle returned from ion alloc, and the kernel returns the file
++ * descriptor to share or map in the fd field.  For ION_IOC_IMPORT, userspace
++ * provides the file descriptor and the kernel returns the handle.
++ */
++struct ion_fd_data {
++	struct ion_handle *handle;
++	int fd;
++};
++
++/**
++ * struct ion_handle_data - a handle passed to/from the kernel
++ * @handle:	a handle
++ */
++struct ion_handle_data {
++	struct ion_handle *handle;
++};
++
++/**
++ * struct ion_custom_data - metadata passed to/from userspace for a custom ioctl
++ * @cmd:	the custom ioctl function to call
++ * @arg:	additional data to pass to the custom ioctl, typically a user
++ *		pointer to a predefined structure
++ *
++ * This works just like the regular cmd and arg fields of an ioctl.
++ */
++struct ion_custom_data {
++	unsigned int cmd;
++	unsigned long arg;
++};
++
++#define ION_IOC_MAGIC		'I'
++
++/**
++ * DOC: ION_IOC_ALLOC - allocate memory
++ *
++ * Takes an ion_allocation_data struct and returns it with the handle field
++ * populated with the opaque handle for the allocation.
++ */
++#define ION_IOC_ALLOC		_IOWR(ION_IOC_MAGIC, 0, \
++				      struct ion_allocation_data)
++
++/**
++ * DOC: ION_IOC_FREE - free memory
++ *
++ * Takes an ion_handle_data struct and frees the handle.
++ */
++#define ION_IOC_FREE		_IOWR(ION_IOC_MAGIC, 1, struct ion_handle_data)
++
++/**
++ * DOC: ION_IOC_MAP - get a file descriptor to mmap
++ *
++ * Takes an ion_fd_data struct with the handle field populated with a valid
++ * opaque handle.  Returns the struct with the fd field set to a file
++ * descriptor open in the current address space.  This file descriptor
++ * can then be used as an argument to mmap.
++ */
++#define ION_IOC_MAP		_IOWR(ION_IOC_MAGIC, 2, struct ion_fd_data)
++
++/**
++ * DOC: ION_IOC_SHARE - creates a file descriptor to use to share an allocation
++ *
++ * Takes an ion_fd_data struct with the handle field populated with a valid
++ * opaque handle.  Returns the struct with the fd field set to a file
++ * descriptor open in the current address space.  This file descriptor
++ * can then be passed to another process.  The corresponding opaque handle can
++ * be retrieved via ION_IOC_IMPORT.
++ */
++#define ION_IOC_SHARE		_IOWR(ION_IOC_MAGIC, 4, struct ion_fd_data)
++
++/**
++ * DOC: ION_IOC_IMPORT - imports a shared file descriptor
++ *
++ * Takes an ion_fd_data struct with the fd field populated with a valid file
++ * descriptor obtained from ION_IOC_SHARE and returns the struct with the handle
++ * filed set to the corresponding opaque handle.
++ */
++#define ION_IOC_IMPORT		_IOWR(ION_IOC_MAGIC, 5, int)
++
++/**
++ * DOC: ION_IOC_CUSTOM - call architecture specific ion ioctl
++ *
++ * Takes the argument of the architecture specific ioctl to call and
++ * passes appropriate userdata for that ioctl
++ */
++#define ION_IOC_CUSTOM		_IOWR(ION_IOC_MAGIC, 6, struct ion_custom_data)
++
++#endif /* _LINUX_ION_H */
+-- 
+1.8.0
+

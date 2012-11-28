@@ -1,0 +1,31 @@
+From b8acb0350dff5f73943690a51251dab6a68bf2d7 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 7 Sep 2012 10:24:49 -0700
+Subject: [PATCH 711/944] net: wireless: bcmdhd: Fix filtering call during
+ dhcp session
+
+Change-Id: I38e426ef0e3a73481269b7d2c842201a24894901
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd_linux.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 4113d70..7c47f45 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -587,8 +587,9 @@ void dhd_enable_packet_filter(int value, dhd_pub_t *dhd)
+ 	DHD_TRACE(("%s: enter, value = %d\n", __FUNCTION__, value));
+ 	/* 1 - Enable packet filter, only allow unicast packet to send up */
+ 	/* 0 - Disable packet filter */
+-	if ((dhd_pkt_filter_enable && !dhd->dhcp_in_progress) &&
+-	    (!value || (dhd_check_ap_wfd_mode_set(dhd) == FALSE))) {
++	if (dhd_pkt_filter_enable && (!value ||
++	    ((dhd_check_ap_wfd_mode_set(dhd) == FALSE) &&
++	    !dhd->dhcp_in_progress))) {
+ 		for (i = 0; i < dhd->pktfilter_count; i++) {
+ 			dhd_pktfilter_offload_enable(dhd, dhd->pktfilter[i],
+ 				value, dhd_master_mode);
+-- 
+1.8.0
+

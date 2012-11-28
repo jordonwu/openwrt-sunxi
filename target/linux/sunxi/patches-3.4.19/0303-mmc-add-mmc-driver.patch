@@ -1,0 +1,3400 @@
+From 8f399ab10b13706ac0bb42dd18b5e15b0aaa551e Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Tue, 15 Nov 2011 16:12:00 +0800
+Subject: [PATCH 303/944] mmc: add mmc driver
+
+---
+ drivers/mmc/Kconfig                  |    3 +-
+ drivers/mmc/Makefile                 |    1 +
+ drivers/mmc/sunxi-host/Kconfig       |   19 +
+ drivers/mmc/sunxi-host/Makefile      |   13 +
+ drivers/mmc/sunxi-host/host_fs.c     |  228 ++++++
+ drivers/mmc/sunxi-host/host_op.c     |  985 ++++++++++++++++++++++++++
+ drivers/mmc/sunxi-host/host_op.h     |  163 +++++
+ drivers/mmc/sunxi-host/host_plat.h   |   98 +++
+ drivers/mmc/sunxi-host/sdxc.c        | 1291 ++++++++++++++++++++++++++++++++++
+ drivers/mmc/sunxi-host/sdxc.h        |  245 +++++++
+ drivers/mmc/sunxi-host/smc_syscall.h |  251 +++++++
+ 11 files changed, 3296 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/mmc/sunxi-host/Kconfig
+ create mode 100644 drivers/mmc/sunxi-host/Makefile
+ create mode 100644 drivers/mmc/sunxi-host/host_fs.c
+ create mode 100644 drivers/mmc/sunxi-host/host_op.c
+ create mode 100644 drivers/mmc/sunxi-host/host_op.h
+ create mode 100644 drivers/mmc/sunxi-host/host_plat.h
+ create mode 100644 drivers/mmc/sunxi-host/sdxc.c
+ create mode 100644 drivers/mmc/sunxi-host/sdxc.h
+ create mode 100644 drivers/mmc/sunxi-host/smc_syscall.h
+
+diff --git a/drivers/mmc/Kconfig b/drivers/mmc/Kconfig
+index f2eeb38..3e11627 100644
+--- a/drivers/mmc/Kconfig
++++ b/drivers/mmc/Kconfig
+@@ -25,6 +25,7 @@ source "drivers/mmc/core/Kconfig"
+ 
+ source "drivers/mmc/card/Kconfig"
+ 
+-source "drivers/mmc/host/Kconfig"
++#source "drivers/mmc/host/Kconfig"
++source "drivers/mmc/sunxi-host/Kconfig"
+ 
+ endif # MMC
+diff --git a/drivers/mmc/Makefile b/drivers/mmc/Makefile
+index 400756e..ffd48ac 100644
+--- a/drivers/mmc/Makefile
++++ b/drivers/mmc/Makefile
+@@ -7,3 +7,4 @@ subdir-ccflags-$(CONFIG_MMC_DEBUG) := -DDEBUG
+ obj-$(CONFIG_MMC)		+= core/
+ obj-$(CONFIG_MMC)		+= card/
+ obj-$(subst m,y,$(CONFIG_MMC))	+= host/
++obj-$(CONFIG_MMC)		+= sunxi-host/
+diff --git a/drivers/mmc/sunxi-host/Kconfig b/drivers/mmc/sunxi-host/Kconfig
+new file mode 100644
+index 0000000..0dbfc44
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/Kconfig
+@@ -0,0 +1,19 @@
++#
++# MMC/SD host controller drivers
++#
++
++comment "SUNXI MMC/SD/SDIO Host Controller Drivers"
++
++config MMC_SUNXI
++	tristate "SUNXI MMC Card Interface support"
++	depends on MMC
++	help
++	  This selects Allwinner SUNXI card support.  If you have an SUNXI
++	  platform with a Multimedia Card slot, say Y or M here.
++
++	  If unsure, say N.
++
++config MMC_SUNXI_DBG
++	bool "SUNXI MMC Card Host driver debug control"
++	depends on MMC_SUNXI
++
+diff --git a/drivers/mmc/sunxi-host/Makefile b/drivers/mmc/sunxi-host/Makefile
+new file mode 100644
+index 0000000..e134f16
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/Makefile
+@@ -0,0 +1,13 @@
++
++#
++# Makefile for MMC/SD host controller drivers
++#
++
++ifeq ($(CONFIG_MMC_DEBUG),y)
++	EXTRA_CFLAGS		+= -DDEBUG
++endif
++
++
++obj-$(CONFIG_MMC_SUNXI)    += mmc_host.o
++
++mmc_host-y := sdxc.o host_op.o host_fs.o
+diff --git a/drivers/mmc/sunxi-host/host_fs.c b/drivers/mmc/sunxi-host/host_fs.c
+new file mode 100644
+index 0000000..32d638d
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/host_fs.c
+@@ -0,0 +1,228 @@
++/*
++ * drivers/mmc/sunxi-host/host_fs.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
++#ifdef CONFIG_PROC_FS
++#include <linux/proc_fs.h>
++#endif
++
++#include "host_op.h"
++
++extern unsigned int smc_debug;
++
++void hexdump(char* name, char* base, int len)
++{
++    __u32 i;
++
++    printk("dump %s registers:", name);
++    for (i=0; i<len; i+=4)
++    {
++        if (!(i&0xf))
++            printk("\n0x%p : ", base + i);
++        printk("0x%08x ", readl(base + i));
++    }
++    printk("\n");
++}
++
++#ifdef CONFIG_PROC_FS
++static const char sunximmc_drv_version[] = DRIVER_VERSION;
++
++static int sunximmc_proc_read_drvversion(char *page, char **start, off_t off, int count, int *eof, void *data)
++{
++    char *p = page;
++
++    p += sprintf(p, "%s\n", sunximmc_drv_version);
++    return p - page;
++}
++
++static int sunximmc_proc_read_hostinfo(char *page, char **start, off_t off, int count, int *eof, void *data)
++{
++    char *p = page;
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *)data;
++    struct device* dev = &smc_host->pdev->dev;
++    char* clksrc[] = {"hosc", "satapll_2", "sdrampll_p", "hosc"};
++    char* cd_mode[] = {"none", "gpio mode", "data3 mode", "always in", "manual"};
++
++    p += sprintf(p, "%s controller information:\n", dev_name(dev));
++    p += sprintf(p, "reg base \t : %p\n", smc_host->smc_base);
++    p += sprintf(p, "clock source\t : %s\n", clksrc[smc_host->clk_source]);
++    p += sprintf(p, "mod clock\t : %d\n", smc_host->mod_clk);
++    p += sprintf(p, "card clock\t : %d\n", smc_host->real_cclk);
++    p += sprintf(p, "bus width\t : %d\n", smc_host->bus_width);
++    p += sprintf(p, "present  \t : %d\n", smc_host->present);
++    p += sprintf(p, "cd mode  \t : %s\n", cd_mode[smc_host->cd_mode]);
++    p += sprintf(p, "read only\t : %d\n", smc_host->read_only);
++
++    return p - page;
++}
++
++
++static int sunximmc_proc_read_regs(char *page, char **start, off_t off, int count, int *eof, void *data)
++{
++    char *p = page;
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *)data;
++    u32 i;
++
++    p += sprintf(p, "Dump smc regs:\n");
++
++    for (i=0; i<0x100; i+=4)
++    {
++        if (!(i&0xf))
++            p += sprintf(p, "\n0x%08x : ", i);
++        p += sprintf(p, "%08x ", readl(smc_host->smc_base + i));
++    }
++    p += sprintf(p, "\n");
++
++    p += sprintf(p, "Dump ccmu regs:\n");
++    for (i=0; i<0x200; i+=4)
++    {
++        if (!(i&0xf))
++            p += sprintf(p, "\n0x%08x : ", i);
++        p += sprintf(p, "%08x ", readl(SW_VA_CCM_IO_BASE + i));
++    }
++    p += sprintf(p, "\n");
++
++    p += sprintf(p, "Dump gpio regs:\n");
++    for (i=0; i<0x200; i+=4)
++    {
++        if (!(i&0xf))
++            p += sprintf(p, "\n0x%08x : ", i);
++        p += sprintf(p, "%08x ", readl(SW_VA_PORTC_IO_BASE+ i));
++    }
++    p += sprintf(p, "\n");
++
++
++    return p - page;
++}
++
++static int sunximmc_proc_read_dbglevel(char *page, char **start, off_t off, int count, int *eof, void *data)
++{
++    char *p = page;
++
++    p += sprintf(p, "debug-level : %d\n", smc_debug);
++    return p - page;
++}
++
++static int sunximmc_proc_write_dbglevel(struct file *file, const char __user *buffer, unsigned long count, void *data)
++{
++    smc_debug = simple_strtoul(buffer, NULL, 10);
++
++    return sizeof(smc_debug);
++}
++
++static int sunximmc_proc_read_insert_status(char *page, char **start, off_t off, int coutn, int *eof, void *data)
++{
++	char *p = page;
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *)data;
++
++	p += sprintf(p, "Usage: \"echo 1 > insert\" to scan card and \"echo 0 > insert\" to remove card\n");
++	if (smc_host->cd_mode != CARD_DETECT_BY_FS)
++	{
++		p += sprintf(p, "Sorry, this node if only for manual attach mode(cd mode 4)\n");
++	}
++
++	p += sprintf(p, "card attach status: %s\n", smc_host->present ? "inserted" : "removed");
++
++
++	return p - page;
++}
++
++static int sunximmc_proc_card_insert_ctrl(struct file *file, const char __user *buffer, unsigned long count, void *data)
++{
++	u32 insert = simple_strtoul(buffer, NULL, 10);
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *)data;
++	u32 present = insert ? 1 : 0;
++
++	if (smc_host->present ^ present)
++	{
++		smc_host->present = present;
++		mmc_detect_change(smc_host->mmc, msecs_to_jiffies(300));
++	}
++
++	return sizeof(insert);
++}
++
++void sunximmc_procfs_attach(struct sunxi_mmc_host *smc_host)
++{
++    struct device *dev = &smc_host->pdev->dev;
++    char sunximmc_proc_rootname[16] = {0};
++
++    //make mmc dir in proc fs path
++    sprintf(sunximmc_proc_rootname, "driver/%s", dev_name(dev));
++    smc_host->proc_root = proc_mkdir(sunximmc_proc_rootname, NULL);
++    if (IS_ERR(smc_host->proc_root))
++    {
++        SMC_MSG("%s: failed to create procfs \"driver/mmc\".\n", dev_name(dev));
++    }
++
++    smc_host->proc_drvver = create_proc_read_entry("drv-version", 0444, smc_host->proc_root, sunximmc_proc_read_drvversion, NULL);
++    if (IS_ERR(smc_host->proc_root))
++    {
++        SMC_MSG("%s: failed to create procfs \"drv-version\".\n", dev_name(dev));
++    }
++
++    smc_host->proc_hostinfo = create_proc_read_entry("hostinfo", 0444, smc_host->proc_root, sunximmc_proc_read_hostinfo, smc_host);
++    if (IS_ERR(smc_host->proc_hostinfo))
++    {
++        SMC_MSG("%s: failed to create procfs \"hostinfo\".\n", dev_name(dev));
++    }
++
++    smc_host->proc_regs = create_proc_read_entry("register", 0444, smc_host->proc_root, sunximmc_proc_read_regs, smc_host);
++    if (IS_ERR(smc_host->proc_regs))
++    {
++        SMC_MSG("%s: failed to create procfs \"hostinfo\".\n", dev_name(dev));
++    }
++
++    smc_host->proc_dbglevel = create_proc_entry("debug-level", 0644, smc_host->proc_root);
++    if (IS_ERR(smc_host->proc_dbglevel))
++    {
++        SMC_MSG("%s: failed to create procfs \"debug-level\".\n", dev_name(dev));
++    }
++    smc_host->proc_dbglevel->data = smc_host;
++    smc_host->proc_dbglevel->read_proc = sunximmc_proc_read_dbglevel;
++    smc_host->proc_dbglevel->write_proc = sunximmc_proc_write_dbglevel;
++
++	smc_host->proc_insert = create_proc_entry("insert", 0644, smc_host->proc_root);
++	if (IS_ERR(smc_host->proc_insert))
++	{
++		SMC_MSG("%s: failed to create procfs \"insert\".\n", dev_name(dev));
++	}
++	smc_host->proc_insert->data = smc_host;
++	smc_host->proc_insert->read_proc = sunximmc_proc_read_insert_status;
++	smc_host->proc_insert->write_proc = sunximmc_proc_card_insert_ctrl;
++
++}
++
++void sunximmc_procfs_remove(struct sunxi_mmc_host *smc_host)
++{
++    struct device *dev = &smc_host->pdev->dev;
++    char sunximmc_proc_rootname[16] = {0};
++    sprintf(sunximmc_proc_rootname, "driver/%s", dev_name(dev));
++
++    remove_proc_entry("insert", smc_host->proc_root);
++    remove_proc_entry("debug-level", smc_host->proc_root);
++    remove_proc_entry("register", smc_host->proc_root);
++    remove_proc_entry("hostinfo", smc_host->proc_root);
++    remove_proc_entry("drv-version", smc_host->proc_root);
++    remove_proc_entry(sunximmc_proc_rootname, NULL);
++}
++
++#else
++
++void sunximmc_procfs_attach(struct sunxi_mmc_host *smc_host) { }
++void sunximmc_procfs_remove(struct sunxi_mmc_host *smc_host) { }
++
++#endif
++
++
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+new file mode 100644
+index 0000000..2f2e516
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -0,0 +1,985 @@
++/*
++ * drivers/mmc/sunxi-host/host_op.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
++#include "smc_syscall.h"
++#include "host_op.h"
++#include "sdxc.h"
++#include <asm/uaccess.h>
++#include <mach/clock.h>
++
++struct sunxi_mmc_host* sw_host[4] = {NULL, NULL, NULL, NULL};
++static int sdc_used;
++
++unsigned int smc_debug = 0;
++module_param_named(debuglevel, smc_debug, int, 0);
++
++/* Module parameters */
++static unsigned int smc_mclk_source = SMC_MCLK_SRC_DRAMPLL;
++module_param_named(mclk_source, smc_mclk_source, int, 0);
++
++static unsigned int smc_io_clock = SMC_MAX_IO_CLOCK;
++module_param_named(io_clock, smc_io_clock, int, 0);
++
++static unsigned int smc_mod_clock = SMC_MAX_MOD_CLOCK;
++module_param_named(mod_clock, smc_mod_clock, int, 0);
++
++s32 sunximmc_init_controller(struct sunxi_mmc_host* smc_host)
++{
++    SMC_INFO("MMC Driver init host %d\n", smc_host->pdev->id);
++
++    sdxc_init(smc_host);
++
++    return 0;
++}
++
++/* static s32 sunximmc_set_src_clk(struct sunxi_mmc_host* smc_host)
++ * 设置SD卡控制器源时钟频率, 目标为100MHz，clock源有smc_host的clk_source决定
++ * clk_source: 0-video PLL, 2-dram PLL, 3-core pll
++ */
++static int sunximmc_set_src_clk(struct sunxi_mmc_host* smc_host)
++{
++    struct clk *source_clock = NULL;
++    char* name[] = {"hosc", "sata_pll_2", "sdram_pll_p", "hosc"};
++    int ret;
++
++    switch (smc_host->clk_source)
++    {
++        case 0:
++        case 3:
++            source_clock = clk_get(&smc_host->pdev->dev, "hosc");
++            break;
++        case 1:
++            source_clock = clk_get(&smc_host->pdev->dev, "sata_pll_2");
++            break;
++        case 2:
++            source_clock = clk_get(&smc_host->pdev->dev, "sdram_pll_p");
++            break;
++    }
++    if (IS_ERR(source_clock))
++    {
++    	ret = PTR_ERR(source_clock);
++    	SMC_ERR("Error to get source clock %s\n", name[smc_host->clk_source]);
++    	return ret;
++    }
++
++    clk_set_parent(smc_host->mclk, source_clock);
++    clk_set_rate(smc_host->mclk, smc_host->mod_clk);
++    clk_enable(smc_host->mclk);
++
++    #ifdef CONFIG_SUN5I_FPGA
++    smc_host->mod_clk = 24000000;
++    #else
++    smc_host->mod_clk = clk_get_rate(smc_host->mclk);
++    #endif
++    clk_enable(smc_host->hclk);
++
++    SMC_INFO("smc %d, source = %s, src_clk = %u, mclk %u, \n", smc_host->pdev->id, name[smc_host->clk_source], (unsigned)clk_get_rate(source_clock), smc_host->mod_clk);
++    clk_put(source_clock);
++
++    return 0;
++}
++
++static int sunximmc_resource_request(struct sunxi_mmc_host *smc_host)
++{
++    struct platform_device *pdev = smc_host->pdev;
++    u32 smc_no = pdev->id;
++    char hclk_name[16] = {0};
++    char mclk_name[8] = {0};
++    char pio_para[16] = {0};
++    u32 pio_hdle = 0;
++    s32 ret = 0;
++
++    sprintf(pio_para, "mmc%d_para", smc_no);
++    pio_hdle = gpio_request_ex(pio_para, NULL);
++    if (!pio_hdle)
++    {
++        SMC_ERR("sdc %d request pio parameter failed\n", smc_no);
++        goto out;
++    }
++    smc_host->pio_hdle = pio_hdle;
++
++    //iomap
++    smc_host->smc_base_res  = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++    if (!smc_host->smc_base_res)
++    {
++    	SMC_ERR("Failed to get io memory region resouce.\n");
++
++    	ret = -ENOENT;
++    	goto release_pin;
++    }
++    /* smc address remap */
++    smc_host->smc_base_res = request_mem_region(smc_host->smc_base_res->start, RESSIZE(smc_host->smc_base_res), pdev->name);
++    if (!smc_host->smc_base_res)
++    {
++    	SMC_ERR("Failed to request io memory region.\n");
++    	ret = -ENOENT;
++    	goto release_pin;
++    }
++    smc_host->smc_base = ioremap(smc_host->smc_base_res->start, RESSIZE(smc_host->smc_base_res));
++    if (!smc_host->smc_base)
++    {
++    	SMC_ERR("Failed to ioremap() io memory region.\n");
++    	ret = -EINVAL;
++    	goto free_mem_region;
++    }
++
++    //get hclock
++    sprintf(hclk_name, "ahb_sdc%d", smc_no);
++    smc_host->hclk = clk_get(&pdev->dev, hclk_name);
++    if (IS_ERR(smc_host->hclk))
++    {
++    	ret = PTR_ERR(smc_host->hclk);
++    	SMC_ERR("Error to get ahb clk for %s\n", hclk_name);
++    	goto iounmap;
++    }
++
++    sprintf(mclk_name, "sdc%d", smc_no);
++    smc_host->mclk = clk_get(&pdev->dev, mclk_name);
++    if (IS_ERR(smc_host->mclk))
++    {
++    	ret = PTR_ERR(smc_host->mclk);
++    	SMC_ERR("Error to get clk for mux_mmc\n");
++    	goto free_hclk;
++    }
++
++    goto out;
++
++free_hclk:
++    clk_put(smc_host->hclk);
++
++iounmap:
++    iounmap(smc_host->smc_base);
++
++free_mem_region:
++    release_mem_region(smc_host->smc_base_res->start, RESSIZE(smc_host->smc_base_res));
++
++release_pin:
++    gpio_release(smc_host->pio_hdle, 1);
++
++out:
++    return ret;
++}
++
++
++static int sunximmc_resource_release(struct sunxi_mmc_host *smc_host)
++{
++    //close clock resource
++    clk_disable(smc_host->hclk);
++    clk_put(smc_host->hclk);
++
++    clk_disable(smc_host->mclk);
++    clk_put(smc_host->mclk);
++
++    //free memory region
++    iounmap(smc_host->smc_base);
++    release_mem_region(smc_host->smc_base_res->start, RESSIZE(smc_host->smc_base_res));
++
++    gpio_release(smc_host->pio_hdle, 1);
++    return 0;
++}
++
++
++static inline void sunximmc_suspend_pins(struct sunxi_mmc_host* smc_host)
++{
++    int ret;
++    user_gpio_set_t suspend_gpio_set = {"suspend_pins_sdio", 0, 0, 0, 2, 1, 0};     //for sdio
++    user_gpio_set_t suspend_gpio_set_card = {"suspend_pins_mmc", 0, 0, 0, 0, 1, 0};    //for mmc card
++    u32 i;
++
++    SMC_DBG("mmc %d suspend pins\n", smc_host->pdev->id);
++    /* backup gpios' current config */
++    ret = gpio_get_all_pin_status(smc_host->pio_hdle, smc_host->bak_gpios, 6, 1);
++    if (ret)
++    {
++        SMC_ERR("fail to fetch current gpio cofiguration\n");
++        return;
++    }
++
++//    {
++//        SMC_MSG("printk backup gpio configuration: \n");
++//        for (i=0; i<6; i++)
++//        {
++//            SMC_MSG("gpio[%d]: name %s, port %c[%d], cfg %d, pull %d, drvl %d, data %d\n",
++//                         i, smc_host->bak_gpios[i].gpio_name,
++//                            smc_host->bak_gpios[i].port + 'A' - 1,
++//                            smc_host->bak_gpios[i].port_num,
++//                            smc_host->bak_gpios[i].mul_sel,
++//                            smc_host->bak_gpios[i].pull,
++//                            smc_host->bak_gpios[i].drv_level,
++//                            smc_host->bak_gpios[i].data);
++//        }
++//    }
++
++    switch(smc_host->pdev->id)
++    {
++        case 0:
++        case 1:
++        case 2:
++            /* setup all pins to input and no pull to save power */
++            for (i=0; i<6; i++)
++            {
++                ret = gpio_set_one_pin_status(smc_host->pio_hdle, &suspend_gpio_set_card, smc_host->bak_gpios[i].gpio_name, 1);
++                if (ret)
++                {
++                    SMC_ERR("fail to set IO(%s) into suspend status\n", smc_host->bak_gpios[i].gpio_name);
++                }
++            }
++            break;
++        case 3:
++            /* setup all pins to input and pulldown to save power */
++            for (i=0; i<6; i++)
++            {
++                ret = gpio_set_one_pin_status(smc_host->pio_hdle, &suspend_gpio_set, smc_host->bak_gpios[i].gpio_name, 1);
++                if (ret)
++                {
++                    SMC_ERR("fail to set IO(%s) into suspend status\n", smc_host->bak_gpios[i].gpio_name);
++                }
++            }
++            break;
++    }
++
++//    {
++//        user_gpio_set_t post_cfg[6];
++//
++//        gpio_get_all_pin_status(smc_host->pio_hdle, post_cfg, 6, 1);
++//        for (i=0; i<6; i++)
++//        {
++//            SMC_MSG("post suspend, gpio[%d]: name %s, port %c[%d], cfg %d, pull %d, drvl %d, data %d\n",
++//                         i, post_cfg[i].gpio_name,
++//                            post_cfg[i].port + 'A' - 1,
++//                            post_cfg[i].port_num,
++//                            post_cfg[i].mul_sel,
++//                            post_cfg[i].pull,
++//                            post_cfg[i].drv_level,
++//                            post_cfg[i].data);
++//        }
++//    }
++
++    smc_host->gpio_suspend_ok = 1;
++    return;
++}
++
++static inline void sunximmc_resume_pins(struct sunxi_mmc_host* smc_host)
++{
++    int ret;
++    u32 i;
++
++    SMC_DBG("mmc %d resume pins\n", smc_host->pdev->id);
++    switch(smc_host->pdev->id)
++    {
++        case 0:
++        case 1:
++        case 2:
++        case 3:
++            /* restore gpios' backup configuration */
++            if (smc_host->gpio_suspend_ok)
++            {
++                smc_host->gpio_suspend_ok = 0;
++                for (i=0; i<6; i++)
++                {
++                    ret = gpio_set_one_pin_status(smc_host->pio_hdle, &smc_host->bak_gpios[i], smc_host->bak_gpios[i].gpio_name, 1);
++                    if (ret)
++                    {
++                        SMC_ERR("fail to restore IO(%s) to resume status\n", smc_host->bak_gpios[i].gpio_name);
++                    }
++                }
++            }
++
++            break;
++    }
++}
++
++
++static void sunximmc_finalize_request(struct sunxi_mmc_host *smc_host)
++{
++    struct mmc_request* mrq = smc_host->mrq;
++
++    if (smc_host->wait != SDC_WAIT_FINALIZE)
++    {
++	    SMC_MSG("nothing finalize\n");
++        return;
++	}
++
++    SMC_DBG("request finalize !!\n");
++    sdxc_request_done(smc_host);
++
++    if (smc_host->error)
++    {
++        mrq->cmd->error = ETIMEDOUT;
++        if (mrq->data)
++        {
++        	mrq->data->error = ETIMEDOUT;
++        }
++    }
++    else
++    {
++    	if (mrq->data)
++        {
++    		if (mrq->data)
++    		{
++    	        mrq->data->bytes_xfered = (mrq->data->blocks * mrq->data->blksz);
++    		}
++        }
++    }
++
++    smc_host->wait = SDC_WAIT_NONE;
++    smc_host->mrq = NULL;
++    smc_host->error = 0;
++    smc_host->todma = 0;
++    smc_host->pio_active = XFER_NONE;
++    mmc_request_done(smc_host->mmc, mrq);
++
++    return;
++}
++
++static s32 sunximmc_get_ro(struct mmc_host *mmc)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++    char mmc_para[4] = {0};
++    int card_wp = 0;
++    int ret;
++    u32 gpio_val;
++
++    sprintf(mmc_para, "mmc%d_para", smc_host->pdev->id);
++    ret = script_parser_fetch(mmc_para, "sdc_use_wp", &card_wp, sizeof(int));
++    if (ret)
++    {
++    	SMC_ERR("sdc fetch card write protect mode failed\n");
++    }
++    if (card_wp)
++    {
++        gpio_val = gpio_read_one_pin_value(smc_host->pio_hdle, "sdc_wp");
++        SMC_DBG("sdc fetch card write protect pin status val = %d \n", gpio_val);
++        if (!gpio_val)
++        {
++            smc_host->read_only = 0;
++            return 0;
++        }
++        else
++        {
++            SMC_MSG("Card is write-protected\n");
++            smc_host->read_only = 1;
++            return 1;
++        }
++    }
++    else
++    {
++        smc_host->read_only = 0;
++        return 0;
++    }
++}
++
++static void sunximmc_cd_timer(unsigned long data)
++{
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *)data;
++    u32 gpio_val;
++    u32 present;
++
++    gpio_val = gpio_read_one_pin_value(smc_host->pio_hdle, "sdc_det");
++    if (gpio_val)
++        present = 0;
++    else
++        present = 1;
++
++//    SMC_DBG("cd %d, host present %d, cur present %d\n", gpio_val, smc_host->present, present);
++
++    if (smc_host->present ^ present) {
++        SMC_MSG("mmc %d detect change, present %d\n", smc_host->pdev->id, present);
++        smc_host->present = present;
++        mmc_detect_change(smc_host->mmc, msecs_to_jiffies(100));
++    } else {
++//        SMC_DBG("card detect no change\n");
++    }
++
++    mod_timer(&smc_host->cd_timer, jiffies + 30);
++    return;
++}
++
++static int sunximmc_card_present(struct mmc_host *mmc)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++
++    if (smc_host->cd_mode == CARD_ALWAYS_PRESENT) {
++        return 1;
++    }
++    else
++        return smc_host->present;
++}
++
++static irqreturn_t sunximmc_irq(int irq, void *dev_id)
++{
++    struct sunxi_mmc_host *smc_host = dev_id;
++    unsigned long iflags;
++
++    spin_lock_irqsave(&smc_host->lock, iflags);
++
++    smc_host->sdio_int = 0;
++    if (smc_host->cd_mode == CARD_DETECT_BY_DATA3)
++    {
++        smc_host->change = 0;
++    }
++
++    sdxc_check_status(smc_host);
++
++    if (smc_host->wait == SDC_WAIT_FINALIZE)
++    {
++        tasklet_schedule(&smc_host->tasklet);
++    }
++
++    spin_unlock_irqrestore(&smc_host->lock, iflags);
++
++    /* sdio interrupt call */
++    if (smc_host->sdio_int)
++    {
++        mmc_signal_sdio_irq(smc_host->mmc);
++    	//SMC_DBG("- sdio int -\n");
++    }
++
++    /* card detect change */
++    if (smc_host->cd_mode == CARD_DETECT_BY_DATA3)
++    {
++        if (smc_host->change)
++        {
++            mmc_detect_change(smc_host->mmc, msecs_to_jiffies(300));
++        }
++    }
++
++    return IRQ_HANDLED;
++}
++
++static void sunximmc_tasklet(unsigned long data)
++{
++    struct sunxi_mmc_host *smc_host = (struct sunxi_mmc_host *) data;
++
++	sdxc_int_disable(smc_host);
++
++	if (smc_host->pio_active == XFER_WRITE)
++		sdxc_do_pio_write(smc_host);
++
++	if (smc_host->pio_active == XFER_READ)
++		sdxc_do_pio_read(smc_host);
++
++    if (smc_host->wait == SDC_WAIT_FINALIZE)
++    {
++        sdxc_int_enable(smc_host);
++        sunximmc_finalize_request(smc_host);
++    }
++    else
++        sdxc_int_enable(smc_host);
++}
++
++static void sunximmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++    s32 ret = -1;
++
++    /* Set the power state */
++    switch (ios->power_mode)
++    {
++        case MMC_POWER_ON:
++        case MMC_POWER_UP:
++            if (!smc_host->power_on)
++            {
++                SMC_MSG("mmc %d power on !!\n", smc_host->pdev->id);
++                /* resume pins to correct status */
++                sunximmc_resume_pins(smc_host);
++            	/* enable mmc hclk */
++            	clk_enable(smc_host->hclk);
++            	/* enable mmc mclk */
++            	clk_enable(smc_host->mclk);
++                /* restore registers */
++                sdxc_regs_restore(smc_host);
++                sdxc_program_clk(smc_host);
++                /* enable irq */
++                enable_irq(smc_host->irq);
++                smc_host->power_on = 1;
++            }
++        	break;
++        case MMC_POWER_OFF:
++            if (smc_host->power_on)
++            {
++                SMC_MSG("mmc %d power off !!\n", smc_host->pdev->id);
++                /* disable irq */
++                disable_irq(smc_host->irq);
++                /* backup registers */
++                sdxc_regs_save(smc_host);
++            	/* disable mmc mclk */
++            	clk_disable(smc_host->mclk);
++            	/* disable mmc hclk */
++            	clk_disable(smc_host->hclk);
++                /* suspend pins to save power */
++                sunximmc_suspend_pins(smc_host);
++                smc_host->power_on = 0;
++                smc_host->ferror = 0;
++            }
++        default:
++        	break;
++    }
++
++    /* set clock */
++    if (smc_host->power_on)
++    {
++        /* set clock */
++        if (ios->clock)
++        {
++            smc_host->cclk = ios->clock;
++            ret = sdxc_update_clk(smc_host, smc_host->mod_clk, smc_host->cclk);
++            if (ret == -1) {
++                SMC_ERR("Fatal error, please check your pin configuration.\n");
++                smc_host->ferror = 1;
++            }
++            if ((ios->power_mode == MMC_POWER_ON) || (ios->power_mode == MMC_POWER_UP))
++            {
++            	SMC_DBG("running at %dkHz (requested: %dkHz).\n", smc_host->real_cclk/1000, ios->clock/1000);
++            }
++            else
++            {
++            	SMC_DBG("powered down.\n");
++            }
++        }
++
++        /* set bus width */
++        if (smc_host->bus_width != (1<<ios->bus_width))
++        {
++            sdxc_set_buswidth(smc_host, 1<<ios->bus_width);
++            smc_host->bus_width = 1<<ios->bus_width;
++        }
++    }
++}
++
++static void sunximmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++    unsigned long flags;
++
++    spin_lock_irqsave(&smc_host->lock, flags);
++    sdxc_enable_sdio_irq(smc_host, enable);
++    spin_unlock_irqrestore(&smc_host->lock, flags);
++}
++
++static void sunximmc_request(struct mmc_host *mmc, struct mmc_request *mrq)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++
++    smc_host->mrq = mrq;
++
++    if (sunximmc_card_present(mmc) == 0 || smc_host->ferror)
++    {
++    	SMC_DBG("no medium present, ferr %d\n", smc_host->ferror);
++    	smc_host->mrq->cmd->error = -ENOMEDIUM;
++    	mmc_request_done(mmc, mrq);
++    }
++    else
++    {
++        sdxc_request(smc_host, mrq);
++    }
++}
++
++void sunximmc_rescan_card(unsigned id, unsigned insert)
++{
++    struct sunxi_mmc_host *smc_host = NULL;
++
++    BUG_ON(id > 3);
++    BUG_ON(sw_host[id] == NULL);
++    smc_host = sw_host[id];
++
++    smc_host->present = insert ? 1 : 0;
++    mmc_detect_change(smc_host->mmc, 0);
++    return;
++}
++EXPORT_SYMBOL_GPL(sunximmc_rescan_card);
++
++int sunximmc_check_r1_ready(struct mmc_host *mmc)
++{
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++    return sdxc_check_r1_ready(smc_host);
++}
++EXPORT_SYMBOL_GPL(sunximmc_check_r1_ready);
++
++static struct mmc_host_ops sunximmc_ops = {
++    .request	     = sunximmc_request,
++    .set_ios	     = sunximmc_set_ios,
++    .get_ro		     = sunximmc_get_ro,
++    .get_cd		     = sunximmc_card_present,
++    .enable_sdio_irq = sunximmc_enable_sdio_irq
++};
++
++static int __devinit sunximmc_probe(struct platform_device *pdev)
++{
++    struct sunxi_mmc_host *smc_host = NULL;
++    struct mmc_host	*mmc = NULL;
++    int ret = 0;
++    char mmc_para[16] = {0};
++    int card_detmode = 0;
++
++    SMC_MSG("%s: pdev->name: %s, pdev->id: %d\n", dev_name(&pdev->dev), pdev->name, pdev->id);
++    mmc = mmc_alloc_host(sizeof(struct sunxi_mmc_host), &pdev->dev);
++    if (!mmc)
++    {
++        SMC_ERR("mmc alloc host failed\n");
++    	ret = -ENOMEM;
++    	goto probe_out;
++    }
++
++    smc_host = mmc_priv(mmc);
++    memset((void*)smc_host, 0, sizeof(smc_host));
++    smc_host->mmc = mmc;
++    smc_host->pdev = pdev;
++
++    spin_lock_init(&smc_host->lock);
++    tasklet_init(&smc_host->tasklet, sunximmc_tasklet, (unsigned long) smc_host);
++
++    smc_host->cclk  = 400000;
++    smc_host->mod_clk   = pdev->id == 3 ? SMC_3_MAX_MOD_CLOCK : smc_mod_clock;
++    smc_host->clk_source = smc_mclk_source;
++
++    mmc->ops        = &sunximmc_ops;
++    mmc->ocr_avail	= MMC_VDD_32_33 | MMC_VDD_33_34;
++    mmc->caps	    = MMC_CAP_4_BIT_DATA|MMC_CAP_MMC_HIGHSPEED|MMC_CAP_SD_HIGHSPEED|MMC_CAP_SDIO_IRQ;
++    mmc->f_min 	    = 400000;
++    mmc->f_max 	    = pdev->id == 3 ? SMC_3_MAX_IO_CLOCK :  smc_io_clock;
++
++    mmc->max_blk_count	= 4095;
++    mmc->max_blk_size	= 4095;
++    mmc->max_req_size	= 4095 * 512;              //32bit byte counter = 2^32 - 1
++    mmc->max_seg_size	= mmc->max_req_size;
++    mmc->max_segs	    = 256;
++
++    if (sunximmc_resource_request(smc_host))
++    {
++        SMC_ERR("%s: Failed to get resouce.\n", dev_name(&pdev->dev));
++        goto probe_free_host;
++    }
++
++    if (sunximmc_set_src_clk(smc_host))
++    {
++        goto probe_free_host;
++    }
++    sunximmc_init_controller(smc_host);
++    smc_host->power_on = 1;
++    sunximmc_procfs_attach(smc_host);
++
++    /* irq */
++    smc_host->irq = platform_get_irq(pdev, 0);
++    if (smc_host->irq == 0)
++    {
++    	dev_err(&pdev->dev, "Failed to get interrupt resouce.\n");
++    	ret = -EINVAL;
++    	goto probe_free_resource;
++    }
++
++    if (request_irq(smc_host->irq, sunximmc_irq, 0, DRIVER_NAME, smc_host))
++    {
++    	dev_err(&pdev->dev, "Failed to request smc card interrupt.\n");
++    	ret = -ENOENT;
++    	goto probe_free_irq;
++    }
++    disable_irq(smc_host->irq);
++
++    /* add host */
++    ret = mmc_add_host(mmc);
++    if (ret)
++    {
++    	dev_err(&pdev->dev, "Failed to add mmc host.\n");
++    	goto probe_free_irq;
++    }
++    platform_set_drvdata(pdev, mmc);
++
++    //fetch card detecetd mode
++    sprintf(mmc_para, "mmc%d_para", pdev->id);
++    ret = script_parser_fetch(mmc_para, "sdc_detmode", &card_detmode, sizeof(int));
++    if (ret)
++    {
++    	SMC_ERR("sdc fetch card detect mode failed\n");
++    }
++
++    smc_host->cd_mode = card_detmode;
++    if (smc_host->cd_mode == CARD_DETECT_BY_GPIO)
++    {
++        //initial card detect timer
++        init_timer(&smc_host->cd_timer);
++        smc_host->cd_timer.expires = jiffies + 1*HZ;
++        smc_host->cd_timer.function = &sunximmc_cd_timer;
++        smc_host->cd_timer.data = (unsigned long)smc_host;
++        add_timer(&smc_host->cd_timer);
++        smc_host->present = 0;
++    }
++
++    enable_irq(smc_host->irq);
++    if (smc_host->cd_mode == CARD_ALWAYS_PRESENT)
++    {
++        mmc_detect_change(smc_host->mmc, msecs_to_jiffies(300));
++    }
++
++    sw_host[pdev->id] = smc_host;
++
++    SMC_MSG("mmc%d Probe: base:0x%p irq:%u dma:%u pdes:0x%p, ret %d.\n",
++            pdev->id, smc_host->smc_base, smc_host->irq, smc_host->dma_no, smc_host->pdes, ret);
++
++    goto probe_out;
++
++probe_free_irq:
++    if (smc_host->irq)
++    {
++        free_irq(smc_host->irq, smc_host);
++    }
++
++probe_free_resource:
++    sunximmc_resource_release(smc_host);
++
++probe_free_host:
++    mmc_free_host(mmc);
++
++probe_out:
++    return ret;
++}
++
++static void sunximmc_shutdown(struct platform_device *pdev)
++{
++    struct mmc_host    *mmc = platform_get_drvdata(pdev);
++    struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++
++    SMC_MSG("%s: ShutDown.\n", dev_name(&pdev->dev));
++
++    sunximmc_procfs_remove(smc_host);
++    mmc_remove_host(mmc);
++}
++
++static int __devexit sunximmc_remove(struct platform_device *pdev)
++{
++    struct mmc_host    	*mmc  = platform_get_drvdata(pdev);
++    struct sunxi_mmc_host	*smc_host = mmc_priv(mmc);
++
++    SMC_MSG("%s: Remove.\n", dev_name(&pdev->dev));
++
++	sdxc_exit(smc_host);
++
++	sunximmc_shutdown(pdev);
++
++    //dma
++    tasklet_disable(&smc_host->tasklet);
++
++    //irq
++    free_irq(smc_host->irq, smc_host);
++
++    if (smc_host->cd_mode == CARD_DETECT_BY_GPIO)
++    {
++        del_timer(&smc_host->cd_timer);
++    }
++
++    sunximmc_resource_release(smc_host);
++
++    mmc_free_host(mmc);
++    sw_host[pdev->id] = NULL;
++
++    return 0;
++}
++
++#ifdef CONFIG_PM
++static int sunximmc_suspend(struct device *dev)
++{
++    struct platform_device *pdev = to_platform_device(dev);
++    struct mmc_host *mmc = platform_get_drvdata(pdev);
++    int ret = 0;
++
++    if (mmc)
++    {
++        struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++
++        if (mmc->card && (mmc->card->type!=MMC_TYPE_SDIO || (mmc_pm_get_mod_type()!=2 && mmc_pm_get_mod_type()!=5)))
++            ret = mmc_suspend_host(mmc);
++
++        if (smc_host->power_on) {
++            /* disable irq */
++            disable_irq(smc_host->irq);
++
++            /* backup registers */
++            sdxc_regs_save(smc_host);
++
++        	/* disable mmc mclk */
++        	clk_disable(smc_host->mclk);
++
++        	/* disable mmc hclk */
++            if (mmc->card && mmc->card->type!=MMC_TYPE_SDIO)
++        	    clk_disable(smc_host->hclk);
++
++            /* suspend pins to save power */
++            sunximmc_suspend_pins(smc_host);
++        }
++    }
++
++    SMC_DBG("smc %d suspend\n", pdev->id);
++    return ret;
++}
++
++static int sunximmc_resume(struct device *dev)
++{
++    struct platform_device *pdev = to_platform_device(dev);
++    struct mmc_host *mmc = platform_get_drvdata(pdev);
++    int ret = 0;
++
++    if (mmc)
++    {
++        struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
++
++        if (smc_host->power_on) {
++            /* resume pins to correct status */
++            sunximmc_resume_pins(smc_host);
++
++        	/* enable mmc hclk */
++            if (mmc->card && mmc->card->type!=MMC_TYPE_SDIO)
++        	    clk_enable(smc_host->hclk);
++
++        	/* enable mmc mclk */
++        	clk_enable(smc_host->mclk);
++
++            /* restore registers */
++            if (mmc->card && mmc->card->type!=MMC_TYPE_SDIO)
++                sdxc_regs_restore(smc_host);
++            sdxc_program_clk(smc_host);
++
++            /* enable irq */
++            enable_irq(smc_host->irq);
++        }
++
++        if (mmc->card && (mmc->card->type!=MMC_TYPE_SDIO || mmc_pm_get_mod_type()!=2))
++            ret = mmc_resume_host(mmc);
++    }
++
++    SMC_DBG("smc %d resume\n", pdev->id);
++    return ret;
++}
++
++static const struct dev_pm_ops sunximmc_pm = {
++    .suspend	= sunximmc_suspend,
++    .resume		= sunximmc_resume,
++};
++#define sunximmc_pm_ops &sunximmc_pm
++
++#else /* CONFIG_PM */
++
++#define sunximmc_pm_ops NULL
++
++#endif /* CONFIG_PM */
++
++static struct resource sunximmc_resources[SUNXI_MMC_HOST_NUM][2] = {
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC0_USED)
++        {/* mmc0 */
++            { .start	= SMC_BASE(0),      .end = SMC_BASE(0)+0x1000-1,  .flags	= IORESOURCE_MEM},  /* reg resource */
++            { .start	= INTC_IRQNO_SMC0,  .end = INTC_IRQNO_SMC0,     .flags	= IORESOURCE_IRQ},  /* irq resource */
++        },
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC1_USED)
++        {/* mmc1 */
++            { .start	= SMC_BASE(1),      .end = SMC_BASE(1)+0x1000-1,  .flags	= IORESOURCE_MEM},  /* reg resource */
++            { .start	= INTC_IRQNO_SMC1,  .end = INTC_IRQNO_SMC1,     .flags	= IORESOURCE_IRQ},  /* irq resource */
++        },
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC2_USED)
++        {/* mmc2 */
++            { .start	= SMC_BASE(2),      .end = SMC_BASE(2)+0x1000-1,  .flags	= IORESOURCE_MEM},  /* reg resource */
++            { .start	= INTC_IRQNO_SMC2,  .end = INTC_IRQNO_SMC2,     .flags	= IORESOURCE_IRQ},  /* irq resource */
++        },
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC3_USED)
++        {/* mmc3 */
++            { .start	= SMC_BASE(3),      .end = SMC_BASE(3)+0x1000-1,  .flags	= IORESOURCE_MEM},  /* reg resource */
++            { .start	= INTC_IRQNO_SMC3,  .end = INTC_IRQNO_SMC3,     .flags	= IORESOURCE_IRQ},  /* irq resource */
++        },
++    #endif
++};
++
++static struct platform_device awmmc_device[SUNXI_MMC_HOST_NUM] = {
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC0_USED)
++    [0] = {.name = DRIVER_NAME, .id = 0, .num_resources	= ARRAY_SIZE(sunximmc_resources[0]), .resource = &sunximmc_resources[0][0], .dev = {}},
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC1_USED)
++    [1] = {.name = DRIVER_NAME, .id = 1, .num_resources	= ARRAY_SIZE(sunximmc_resources[1]), .resource = &sunximmc_resources[1][0], .dev = {}},
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC2_USED)
++    [2] = {.name = DRIVER_NAME, .id = 2, .num_resources	= ARRAY_SIZE(sunximmc_resources[2]), .resource = &sunximmc_resources[2][0], .dev = {}},
++    #endif
++    #if (SUNXI_MMC_USED_CTRL & SUNXI_MMC3_USED)
++    [3] = {.name = DRIVER_NAME, .id = 3, .num_resources	= ARRAY_SIZE(sunximmc_resources[3]), .resource = &sunximmc_resources[3][0], .dev = {}},
++    #endif
++};
++
++static struct platform_driver sunximmc_driver = {
++    .driver.name    = DRIVER_NAME,
++    .driver.owner   = THIS_MODULE,
++    .driver.pm	    = sunximmc_pm_ops,
++    .probe          = sunximmc_probe,
++    .remove         = __devexit_p(sunximmc_remove),
++};
++
++static int __init sunximmc_init(void)
++{
++    int ret;
++    int i;
++    char mmc_para[16] = {0};
++    int used = 0;
++
++    SMC_MSG("sunximmc_init\n");
++
++    for (i=0; i<SUNXI_MMC_HOST_NUM; i++)
++    {
++        memset(mmc_para, 0, sizeof(mmc_para));
++        sprintf(mmc_para, "mmc%d_para", i);
++        used = 0;
++
++        ret = script_parser_fetch(mmc_para,"sdc_used", &used, sizeof(int));
++        if (ret)
++        {
++        	printk("sunximmc_init fetch mmc%d using configuration failed\n", i);
++        }
++
++        if (used)
++        {
++            sdc_used |= 1 << i;
++            platform_device_register(&awmmc_device[i]);
++        }
++
++    }
++
++    SMC_MSG("sunxi mmc controller using config : 0x%x\n", sdc_used);
++
++    if (sdc_used)
++    {
++        return platform_driver_register(&sunximmc_driver);
++    }
++    else
++    {
++        SMC_ERR("cannot find any using configuration for controllers, return directly!\n");
++        return 0;
++    }
++}
++
++static void __exit sunximmc_exit(void)
++{
++    if (sdc_used)
++    {
++        sdc_used = 0;
++        platform_driver_unregister(&sunximmc_driver);
++    }
++}
++
++
++module_init(sunximmc_init);
++module_exit(sunximmc_exit);
++
++MODULE_DESCRIPTION("Winner's SD/MMC Card Controller Driver");
++MODULE_LICENSE("GPL v2");
++MODULE_AUTHOR("Aaron.maoye<leafy.myeh@allwinnertech.com>");
++MODULE_ALIAS("platform:sunxi-mmc");
+diff --git a/drivers/mmc/sunxi-host/host_op.h b/drivers/mmc/sunxi-host/host_op.h
+new file mode 100644
+index 0000000..4cf1c09
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/host_op.h
+@@ -0,0 +1,163 @@
++/*
++ * drivers/mmc/sunxi-host/host_op.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++#ifndef _SW_HOST_OP_H_
++#define _SW_HOST_OP_H_ "host_op.h"
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/device.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/clk.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++#include <linux/scatterlist.h>
++#include <linux/dma-mapping.h>
++#include <linux/slab.h>
++
++#include <linux/mmc/host.h>
++#include <linux/mmc/mmc.h>
++#include <linux/mmc/core.h>
++
++#include <asm/cacheflush.h>
++#include <mach/dma.h>
++#include <mach/sys_config.h>
++
++#include "host_plat.h"
++#include "smc_syscall.h"
++
++#define CARD_DETECT_BY_GPIO     (1)
++#define CARD_DETECT_BY_DATA3    (2)        /* mmc detected by status of data3 */
++#define CARD_ALWAYS_PRESENT     (3)        /* mmc always present, without detect pin */
++#define CARD_DETECT_BY_FS		(4)		   /* mmc insert/remove by manual mode, from /proc/awsmc.x/insert node */
++
++struct sunxi_mmc_host;
++struct mmc_request;
++struct sunxi_mmc_idma_des;
++
++struct sunximmc_ctrl_regs {
++	u32		gctrl;
++	u32		clkc;
++	u32		timeout;
++	u32		buswid;
++	u32		waterlvl;
++	u32		funcsel;
++	u32		debugc;
++	u32		idmacc;
++};
++
++struct sunxi_mmc_host {
++
++    struct platform_device      *pdev;
++    struct mmc_host             *mmc;
++
++    void __iomem	            *smc_base;          /* sdc I/O base address  */
++
++    struct resource	            *smc_base_res;      /* resources found       */
++
++    /* clock management */
++    struct clk                  *hclk;              //
++    struct clk                  *mclk;              //
++    u32                         clk_source;         // clock, source, 0-video pll, 1-ac320 pll
++
++    u32                         power_on;         // power save, 0-normal, 1-power save
++    u32                         power_save;         // power save, 0-normal, 1-power save
++    u32                         mod_clk;            // source clock of controller
++    u32                         cclk;               // requested card clock frequence
++    u32                         real_cclk;          // real card clock to output
++    u32                         bus_width;
++
++    /* irq */
++    int                         irq;                // irq number
++    volatile u32				irq_flag;
++    volatile u32                sdio_int;
++    volatile u32                int_sum;
++
++    int                         dma_no;             //dma number
++    volatile u32                dodma;              //transfer with dma mode
++    volatile u32                todma;
++    volatile u32                dma_done;           //dma complete
++    volatile u32                ahb_done;           //dma complete
++    volatile u32                dataover;           //dma complete
++    struct sunxi_mmc_idma_des*  pdes;
++
++	u32                         pio_sgptr;
++	u32                         pio_bytes;
++	u32                         pio_count;
++	u32                         *pio_ptr;
++	u32                         pio_active;
++#define XFER_NONE 0
++#define XFER_READ 1
++#define XFER_WRITE 2
++
++    struct mmc_request	        *mrq;
++
++    volatile u32                with_autostop;
++    volatile u32                wait;
++#define SDC_WAIT_NONE           (1<<0)
++#define SDC_WAIT_CMD_DONE       (1<<1)
++#define SDC_WAIT_DATA_OVER      (1<<2)
++#define SDC_WAIT_AUTOCMD_DONE   (1<<3)
++#define SDC_WAIT_READ_DONE      (1<<4)
++#define SDC_WAIT_DMA_ERR        (1<<5)
++#define SDC_WAIT_ERROR          (1<<6)
++#define SDC_WAIT_FINALIZE       (1<<7)
++
++    volatile u32                error;
++    volatile u32                ferror;
++    spinlock_t		            lock;
++	struct tasklet_struct       tasklet;
++
++    volatile u32                present;
++    volatile u32                change;
++
++    struct timer_list           cd_timer;
++    s32                         cd_gpio;
++    s32                         cd_mode;
++    u32                         pio_hdle;
++    u32                         read_only;
++
++#ifdef CONFIG_PROC_FS
++	struct proc_dir_entry		*proc_root;
++	struct proc_dir_entry		*proc_drvver;
++	struct proc_dir_entry		*proc_hostinfo;
++	struct proc_dir_entry		*proc_dbglevel;
++	struct proc_dir_entry		*proc_regs;
++	struct proc_dir_entry		*proc_insert;
++#endif
++
++	/* backup register structrue */
++	struct sunximmc_ctrl_regs   bak_regs;
++	user_gpio_set_t             bak_gpios[6];
++	u32                         gpio_suspend_ok;
++};
++
++
++static __inline void eLIBs_CleanFlushDCacheRegion(void *adr, __u32 bytes)
++{
++	__cpuc_flush_dcache_area(adr, bytes + (1 << 5) * 2 - 2);
++}
++
++#define RESSIZE(res)        (((res)->end - (res)->start)+1)
++
++void hexdump(char* name, char* base, int len);
++void sunximmc_procfs_attach(struct sunxi_mmc_host *smc_host);
++void sunximmc_procfs_remove(struct sunxi_mmc_host *smc_host);
++
++#endif
+diff --git a/drivers/mmc/sunxi-host/host_plat.h b/drivers/mmc/sunxi-host/host_plat.h
+new file mode 100644
+index 0000000..1f598a0
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/host_plat.h
+@@ -0,0 +1,98 @@
++/*
++ * drivers/mmc/sunxi-host/host_plat.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++#ifndef HOST_PLAT_H
++#define HOST_PLAT_H
++
++#define DRIVER_NAME "sunxi-mmc"
++#define DRIVER_RIVISION "V2.0"
++#define DRIVER_VERSION "SUNXI MMC Controller, Version: " DRIVER_RIVISION "(Compiled in " __DATE__ " at " __TIME__ ")"
++
++/* SDMMC Control registers definition */
++#define  SMC0_BASE              0x01C0f000
++#define  SMC1_BASE              0x01C10000
++#define  SMC2_BASE              0x01C11000
++#define  SMC3_BASE              0x01C12000
++
++#define SMC_BASE_OS             (0x1000)
++#define SMC_BASE(x)             (SMC0_BASE + 0x1000 * (x))
++
++/* interrupt number */
++#define  INTC_IRQNO_SMC0       32
++#define  INTC_IRQNO_SMC1       33
++#define  INTC_IRQNO_SMC2       34
++#define  INTC_IRQNO_SMC3       35
++
++#define  SUNXI_MMC_USED_MASK       (0xf)
++#define  SUNXI_MMC0_USED           (0x1 << 0)
++#define  SUNXI_MMC1_USED           (0x1 << 1)
++#define  SUNXI_MMC2_USED           (0x1 << 2)
++#define  SUNXI_MMC3_USED           (0x1 << 3)
++
++#if CONFIG_CHIP_ID==1123
++#define  SUNXI_MMC_HOST_NUM        4
++#define  SUNXI_MMC_USED_CTRL       (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED | SUNXI_MMC3_USED)
++#define  SUNXI_MMC_MAX_DMA_DES_BIT  13
++#define  SUNXI_MMC_DMA_DES_BIT_LEFT 6
++
++enum mclk_src {
++	SMC_MCLK_SRC_HOSC,
++	SMC_MCLK_SRC_SATAPLL,
++	SMC_MCLK_SRC_DRAMPLL
++};
++#define SMC_MAX_MOD_CLOCK		(90000000)
++#define SMC_MAX_IO_CLOCK		(45000000)
++#define SMC_3_MAX_MOD_CLOCK     90000000
++#define SMC_3_MAX_IO_CLOCK      45000000
++#define SMC_3_MOD_CLK_SRC       SMC_MCLK_SRC_DRAMPLL
++
++
++#elif CONFIG_CHIP_ID==1125
++#define  SUNXI_MMC_HOST_NUM     3
++#define  SUNXI_MMC_USED_CTRL    (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED)
++#define  SUNXI_MMC_MAX_DMA_DES_BIT  16
++#define  SUNXI_MMC_DMA_DES_BIT_LEFT 0
++#define  SMC_MAX_MOD_CLOCK      (90000000)
++#define  SMC_MAX_IO_CLOCK       (45000000)
++enum mclk_src {
++	SMC_MCLK_SRC_HOSC,
++	SMC_MCLK_SRC_SATAPLL,
++	SMC_MCLK_SRC_DRAMPLL
++};
++
++#ifdef CONFIG_SUN5I_FPGA
++#undef   SMC_MAX_IO_CLOCK
++#define  SMC_MAX_IO_CLOCK       (26000000)
++#define  SUNXI_MMC_HOST_NUM     3
++#define  SUNXI_MMC_USED_CTRL    (SUNXI_MMC0_USED | SUNXI_MMC1_USED | SUNXI_MMC2_USED)
++#endif //CONFIG_SUN5I_FPGA
++
++#endif
++
++#define SMC_DBG_ERR     (1 << 0)
++#define SMC_DBG_MSG     (1 << 1)
++#define SMC_DBG_INFO	(1 << 2)
++
++#define SMC_MSG(...)    do { printk("[mmc]: "__VA_ARGS__); } while(0)
++#define SMC_ERR(...)    do { printk("[mmc]: %s(L%d): ", __FUNCTION__, __LINE__); printk(__VA_ARGS__);} while(0)
++
++#ifdef CONFIG_MMC_SUNXI_DBG
++#define SMC_INFO(...)   do {if (smc_debug) SMC_MSG(__VA_ARGS__); } while(0)
++#define SMC_DBG(...)    do {if (smc_debug) SMC_MSG(__VA_ARGS__); } while(0)
++#else  //#ifdef CONFIG_MMC_SUNXI_DBG
++#define SMC_INFO(...)
++#define SMC_DBG(...)
++#endif  //#ifdef CONFIG_MMC_SUNXI_DBG
++
++#endif
+diff --git a/drivers/mmc/sunxi-host/sdxc.c b/drivers/mmc/sunxi-host/sdxc.c
+new file mode 100644
+index 0000000..c4996d3
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/sdxc.c
+@@ -0,0 +1,1291 @@
++/*
++ * drivers/mmc/sunxi-host/sdxc.c
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ * sdxc.c - operation for register level control of mmc controller
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++#include "host_op.h"
++#include "sdxc.h"
++#include "smc_syscall.h"
++
++extern unsigned int smc_debug;
++
++/******************************************************************************************************
++ *                                       SD3.0 controller operation                                   *
++ ******************************************************************************************************/
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_fifo_reset(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_FIFOReset, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_dma_reset(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_DMAReset, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_int_enable(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_INTEnb, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_int_disable(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)&(~SDXC_INTEnb), SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_dma_enable(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_DMAEnb, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_dma_disable(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_DMAReset, SDXC_REG_GCTRL);
++    writel(readl(SDXC_REG_GCTRL)&(~SDXC_DMAEnb), SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_idma_reset(struct sunxi_mmc_host* smc_host)
++{
++    writel(SDXC_IDMACSoftRST, SDXC_REG_DMAC);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_idma_on(struct sunxi_mmc_host* smc_host)
++{
++    writel(SDXC_IDMACFixBurst | SDXC_IDMACIDMAOn, SDXC_REG_DMAC);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_idma_off(struct sunxi_mmc_host* smc_host)
++{
++    writel(0, SDXC_REG_DMAC);
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_idma_int_enable(struct sunxi_mmc_host* smc_host, u32 int_mask)
++{
++    writel(readl(SDXC_REG_IDIE)|int_mask, SDXC_REG_IDIE);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_idma_int_disable(struct sunxi_mmc_host* smc_host, u32 int_mask)
++{
++    writel(readl(SDXC_REG_IDIE) & (~int_mask), SDXC_REG_IDIE);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_cd_debounce_on(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)|SDXC_DebounceEnb, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_cd_debounce_off(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL)&(~SDXC_DebounceEnb), SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_sel_access_mode(struct sunxi_mmc_host* smc_host, u32 access_mode)
++{
++    writel((readl(SDXC_REG_GCTRL)&(~SDXC_ACCESS_BY_AHB)) | access_mode, SDXC_REG_GCTRL);
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline u32 sdxc_enable_imask(struct sunxi_mmc_host* smc_host, u32 imask)
++{
++	u32 newmask = readl(SDXC_REG_IMASK) | imask;
++
++	writel(newmask, SDXC_REG_IMASK);
++	return newmask;
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline u32 sdxc_disable_imask(struct sunxi_mmc_host* smc_host, u32 imask)
++{
++    u32 newmask = readl(SDXC_REG_IMASK) & (~imask);
++
++    writel(newmask, SDXC_REG_IMASK);
++	return newmask;
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static __inline void sdxc_clear_imask(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_IMASK)&(SDXC_SDIOInt|SDXC_CardInsert|SDXC_CardRemove), SDXC_REG_IMASK);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_enable_sdio_irq(struct sunxi_mmc_host* smc_host, u32 enable)
++{
++    if (enable)
++        sdxc_enable_imask(smc_host, SDXC_SDIOInt);
++    else
++        sdxc_disable_imask(smc_host, SDXC_SDIOInt);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_sel_ddr_mode(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL) | SDXC_DDR_MODE, SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_sel_sdr_mode(struct sunxi_mmc_host* smc_host)
++{
++    writel(readl(SDXC_REG_GCTRL) & (~SDXC_DDR_MODE), SDXC_REG_GCTRL);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_set_buswidth(struct sunxi_mmc_host* smc_host, u32 width)
++{
++    switch(width)
++    {
++        case 1:
++            writel(SDXC_WIDTH1, SDXC_REG_WIDTH);
++            break;
++        case 4:
++            writel(SDXC_WIDTH4, SDXC_REG_WIDTH);
++            break;
++        case 8:
++            writel(SDXC_WIDTH8, SDXC_REG_WIDTH);
++            break;
++    }
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_reset(struct sunxi_mmc_host* smc_host)
++{
++    u32 rval = readl(SDXC_REG_GCTRL) | SDXC_SoftReset | SDXC_FIFOReset | SDXC_DMAReset;
++    s32 time = 0xffff;
++
++    writel(rval, SDXC_REG_GCTRL);
++    while((readl(SDXC_REG_GCTRL) & 0x7) && time--);
++    if (time <= 0)
++    {
++        SMC_ERR("sdc %d reset failed\n", smc_host->pdev->id);
++        return -1;
++    }
++    return 0;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_program_clk(struct sunxi_mmc_host* smc_host)
++{
++  	u32 rval;
++  	s32 time = 0xf000;
++  	s32 ret = 0;
++
++	//disable command done interrupt
++	sdxc_disable_imask(smc_host, SDXC_CmdDone);
++
++  	rval = SDXC_Start|SDXC_UPCLKOnly|SDXC_WaitPreOver;
++  	writel(rval, SDXC_REG_CMDR);
++
++	do {
++	    rval = readl(SDXC_REG_CMDR);
++	    time--;
++	} while(time && (rval & SDXC_Start));
++
++	if (time <= 0)
++	{
++		ret = -1;
++	}
++
++	//clear command cone flag
++	rval = readl(SDXC_REG_RINTR);
++	writel(rval, SDXC_REG_RINTR);
++
++	//enable command done interrupt
++	sdxc_enable_imask(smc_host, SDXC_CmdDone);
++
++	return ret;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_update_clk(struct sunxi_mmc_host* smc_host, u32 sclk, u32 cclk)
++{
++    u32 rval;
++    u32 clk_div;
++    u32 real_clk;
++
++    //caculate new clock divider
++    clk_div = (sclk / cclk)>>1;
++    real_clk = clk_div ? sclk/(clk_div<<1) : sclk;
++    while (real_clk > cclk)
++    {
++        clk_div++;
++        real_clk = sclk/(clk_div<<1);
++    }
++
++    SMC_DBG("sdc %d change clock over, src_clk %d, req_clk %d, real_clk %d, div %d\n", smc_host->pdev->id, sclk, cclk, real_clk, clk_div);
++
++    //update new clock
++    //disable clock
++    rval = readl(SDXC_REG_CLKCR) & (~SDXC_CardClkOn) & (~SDXC_LowPowerOn);
++    writel(rval, SDXC_REG_CLKCR);
++    if (-1 == sdxc_program_clk(smc_host))
++    {
++        SMC_ERR("clock program failed in step 1\n");
++        return -1;
++    }
++
++    //update divider
++    rval = readl(SDXC_REG_CLKCR);
++    rval &= ~0xff;
++    rval |= clk_div & 0xff;
++    writel(rval, SDXC_REG_CLKCR);
++    if (-1 == sdxc_program_clk(smc_host))
++    {
++        SMC_ERR("clock program failed in step 2\n");
++        return -1;
++    }
++
++    //re-enable clock
++    rval = readl(SDXC_REG_CLKCR) | SDXC_CardClkOn ;//| SDXC_LowPowerOn;
++    writel(rval, SDXC_REG_CLKCR);
++    if (-1 == sdxc_program_clk(smc_host))
++    {
++        SMC_ERR("clock program failed in step 3\n");
++        return -1;
++    }
++
++    smc_host->real_cclk = real_clk;
++    return real_clk;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static void sdxc_send_cmd(struct sunxi_mmc_host* smc_host, struct mmc_command* cmd)
++{
++    u32 imask;
++    u32 cmd_val = SDXC_Start|(cmd->opcode&0x3f);
++
++    imask = SDXC_CmdDone|SDXC_IntErrBit|SDXC_WaitPreOver;
++
++    if (cmd->opcode == MMC_GO_IDLE_STATE)
++    {
++        cmd_val |= SDXC_SendInitSeq;
++        smc_host->wait = SDC_WAIT_CMD_DONE;
++    }
++    else
++    {
++        if ((cmd->flags & MMC_CMD_MASK) != MMC_CMD_BC) //with response
++        {
++            cmd_val |= SDXC_RspExp;
++
++            if (cmd->flags & MMC_RSP_136)                                   //long response
++                cmd_val |= SDXC_LongRsp;
++
++            if (cmd->flags & MMC_RSP_CRC)                                   //check response CRC
++                cmd_val |= SDXC_CheckRspCRC;
++
++            smc_host->wait = SDC_WAIT_CMD_DONE;
++
++            if ((cmd->flags & MMC_CMD_MASK) == MMC_CMD_ADTC)                //with data transfer
++            {
++                cmd_val |= SDXC_DataExp | SDXC_WaitPreOver;
++                smc_host->wait = SDC_WAIT_DATA_OVER;
++                imask |= SDXC_DataOver;
++
++                if (cmd->data->flags & MMC_DATA_STREAM)        //sequence mode
++                {
++                    imask |= SDXC_AutoCMDDone;
++                    cmd_val |= SDXC_Seqmod | SDXC_SendAutoStop;
++                    smc_host->wait = SDC_WAIT_AUTOCMD_DONE;
++                }
++
++                if (smc_host->with_autostop)
++                {
++                    imask |= SDXC_AutoCMDDone;
++                    cmd_val |= SDXC_SendAutoStop;
++                    smc_host->wait = SDC_WAIT_AUTOCMD_DONE;
++                }
++
++                if (cmd->data->flags & MMC_DATA_WRITE)           //read
++                {
++                    cmd_val |= SDXC_Write;
++                    if (!smc_host->dodma) {
++//                        SMC_MSG("SDXC_TxDataReq\n");
++                        imask |= SDXC_TxDataReq;
++                    }
++                }
++                else
++                {
++                    if (!smc_host->dodma) {
++                        //imask &= ~(SDXC_AutoCMDDone | SDXC_DataOver);
++                        imask |= SDXC_RxDataReq;
++                        smc_host->wait = SDC_WAIT_READ_DONE;
++//                        SMC_MSG("SDXC_RxDataReq\n");
++                    }
++                }
++            }
++        }
++    }
++
++    sdxc_enable_imask(smc_host, imask);
++
++	//SMC_INFO("smc %d send cmd %d(%08x), imask = 0x%08x, wait = %d\n", smc_host->pdev->id, cmd_val&0x3f, cmd_val, imask, smc_host->wait);
++
++    writel(cmd->arg, SDXC_REG_CARG);
++    writel(cmd_val, SDXC_REG_CMDR);
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static void  sdxc_init_idma_des(struct sunxi_mmc_host* smc_host, struct mmc_data* data)
++{
++    struct sunxi_mmc_idma_des* pdes = smc_host->pdes;
++    u32 des_idx = 0;
++    u32 buff_frag_num = 0;
++    u32 remain;
++    u32 i, j;
++
++    /* 初始化IDMA Descriptor */
++    #if SDXC_DES_MODE == 0      //chain mode
++    for (i=0; i<data->sg_len; i++)
++    {
++        buff_frag_num = data->sg[i].length >> SDXC_DES_NUM_SHIFT;   //SDXC_DES_NUM_SHIFT == 13, num = len/8192 = len>>13
++        remain = data->sg[i].length & (SDXC_DES_BUFFER_MAX_LEN-1);
++        if (remain)
++        {
++            buff_frag_num ++;
++        }
++        else
++        {
++            remain = SDXC_DES_BUFFER_MAX_LEN;
++        }
++
++        eLIBs_CleanFlushDCacheRegion(sg_virt(&data->sg[i]), data->sg[i].length);
++        for (j=0; j < buff_frag_num; j++, des_idx++)
++        {
++			memset((void*)&pdes[des_idx], 0, sizeof(struct sunxi_mmc_idma_des));
++            pdes[des_idx].des_chain = 1;
++            pdes[des_idx].own = 1;
++            pdes[des_idx].dic = 1;
++            if (buff_frag_num > 1 && j != buff_frag_num-1)
++            {
++                pdes[des_idx].data_buf1_sz = 0x1fff & SDXC_DES_BUFFER_MAX_LEN;
++            }
++            else
++            {
++                pdes[des_idx].data_buf1_sz = remain;
++            }
++
++            pdes[des_idx].buf_addr_ptr1 = sg_dma_address(&data->sg[i]) + j * SDXC_DES_BUFFER_MAX_LEN;
++            if (i==0 && j==0)
++            {
++                pdes[des_idx].first_des = 1;
++            }
++
++            if ((i == data->sg_len-1) && (j == buff_frag_num-1))
++            {
++                pdes[des_idx].dic = 0;
++                pdes[des_idx].last_des = 1;
++                pdes[des_idx].end_of_ring = 1;
++                pdes[des_idx].buf_addr_ptr2 = 0;
++            }
++            else
++            {
++                pdes[des_idx].buf_addr_ptr2 = __pa(&pdes[des_idx+1]);
++            }
++			/*
++            SMC_INFO("sg %d, frag %d, remain %d, des[%d](%08x): [0] = %08x, [1] = %08x, [2] = %08x, [3] = %08x\n", i, j, remain,
++                                                                             des_idx, (u32)&pdes[des_idx],
++                                                                             (u32)((u32*)&pdes[des_idx])[0], (u32)((u32*)&pdes[des_idx])[1],
++                                                                             (u32)((u32*)&pdes[des_idx])[2], (u32)((u32*)&pdes[des_idx])[3]);
++			*/
++        }
++    }
++    #else      //fix length skip mode
++
++    #endif
++
++    eLIBs_CleanFlushDCacheRegion(pdes, sizeof(struct sunxi_mmc_idma_des) * (des_idx+1));
++
++    return;
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++static int sdxc_prepare_dma(struct sunxi_mmc_host* smc_host, struct mmc_data* data)
++{
++    u32 dma_len;
++    u32 i;
++
++	if (smc_host->pdes == NULL)
++	{
++		return -ENOMEM;
++	}
++
++	dma_len = dma_map_sg(mmc_dev(smc_host->mmc), data->sg, data->sg_len, (data->flags & MMC_DATA_WRITE) ? DMA_TO_DEVICE : DMA_FROM_DEVICE);
++	if (dma_len == 0)
++	{
++		SMC_ERR("no dma map memory\n");
++		return -ENOMEM;
++	}
++
++    for (i=0; i<data->sg_len; i++)
++    {
++        if (sg_dma_address(&data->sg[i]) & 3)
++        {
++		    SMC_ERR("unaligned dma address[%d] %p\n", i, (void*)sg_dma_address(&data->sg[i]));
++			return -EINVAL;
++        }
++    }
++
++    sdxc_init_idma_des(smc_host, data);
++	sdxc_dma_enable(smc_host);
++    sdxc_dma_reset(smc_host);
++    sdxc_idma_reset(smc_host);
++    sdxc_idma_on(smc_host);
++    sdxc_idma_int_disable(smc_host, SDXC_IDMACTransmitInt|SDXC_IDMACReceiveInt);
++    if (data->flags & MMC_DATA_WRITE)
++    {
++        sdxc_idma_int_enable(smc_host, SDXC_IDMACTransmitInt);
++    }
++    else
++    {
++        sdxc_idma_int_enable(smc_host, SDXC_IDMACReceiveInt);
++    }
++
++    //write descriptor address to register
++    writel(__pa(smc_host->pdes), SDXC_REG_DLBA);
++
++    //write water level
++    writel((2U<<28)|(7<<16)|8, SDXC_REG_FTRGL);
++
++    return 0;
++}
++
++static inline int sdxc_get_data_buffer(struct sunxi_mmc_host *smc_host, u32 *bytes, u32 **pointer)
++{
++	struct scatterlist *sg;
++
++	if (smc_host->pio_active == XFER_NONE)
++		return -EINVAL;
++
++	if ((!smc_host->mrq) || (!smc_host->mrq->data))
++		return -EINVAL;
++
++	if (smc_host->pio_sgptr >= smc_host->mrq->data->sg_len) {
++		SMC_DBG("no more buffers (%i/%i)\n",
++		      smc_host->pio_sgptr, smc_host->mrq->data->sg_len);
++		return -EBUSY;
++	}
++	sg = &smc_host->mrq->data->sg[smc_host->pio_sgptr];
++
++	*bytes = sg->length;
++	*pointer = sg_virt(sg);
++
++	smc_host->pio_sgptr++;
++
++	SMC_DBG("new buffer (%i/%i)\n", smc_host->pio_sgptr, smc_host->mrq->data->sg_len);
++
++	return 0;
++}
++
++void sdxc_do_pio_read(struct sunxi_mmc_host* smc_host)
++{
++	int res;
++	u32 fifo;
++	u32 fifo_count;
++	u32 *ptr;
++	u32 fifo_words;
++	void __iomem *from_ptr;
++
++	from_ptr = SDXC_REG_FIFO;
++
++    fifo_count = (readl(SDXC_REG_STAS)>>17)&0x1f;
++	while (fifo_count) {
++	    fifo = fifo_count << 2;
++		if (!smc_host->pio_bytes) {
++			res = sdxc_get_data_buffer(smc_host, &smc_host->pio_bytes, &smc_host->pio_ptr);
++			if (res) {
++				smc_host->pio_active = XFER_NONE;
++				smc_host->wait = SDC_WAIT_FINALIZE;
++
++				SMC_DBG("pio_read(): complete (no more data).\n");
++				return;
++			}
++
++			SMC_DBG("pio_read(): new target: [%i]@[%p]\n",
++			    smc_host->pio_bytes, smc_host->pio_ptr);
++		}
++
++//		SMC_DBG("pio_read(): fifo:[%02i] buffer:[%03i] dcnt:[%08X]\n",
++//		    fifo, smc_host->pio_bytes, readl(SDXC_REG_BBCR));
++
++		/* If we have reached the end of the block, we can
++		 * read a word and get 1 to 3 bytes.  If we in the
++		 * middle of the block, we have to read full words,
++		 * otherwise we will write garbage, so round down to
++		 * an even multiple of 4. */
++		if (fifo >= smc_host->pio_bytes)
++			fifo = smc_host->pio_bytes;
++		else
++			fifo -= fifo & 3;
++
++		smc_host->pio_bytes -= fifo;
++		smc_host->pio_count += fifo;
++
++		fifo_words = fifo >> 2;
++		ptr = smc_host->pio_ptr;
++		while (fifo_words--)
++			*ptr++ = readl(from_ptr);
++		smc_host->pio_ptr = ptr;
++
++		if (fifo & 3) {
++			u32 n = fifo & 3;
++			u32 data = readl(from_ptr);
++			u8 *p = (u8 *)smc_host->pio_ptr;
++
++			while (n--) {
++				*p++ = data;
++				data >>= 8;
++			}
++		}
++
++        fifo_count = (readl(SDXC_REG_STAS)>>17)&0x1f;
++	}
++
++	if (!smc_host->pio_bytes) {
++		res = sdxc_get_data_buffer(smc_host, &smc_host->pio_bytes, &smc_host->pio_ptr);
++		if (res) {
++			SMC_DBG("pio_read(): complete (no more buffers).\n");
++			smc_host->pio_active = XFER_NONE;
++			smc_host->wait = SDC_WAIT_FINALIZE;
++			return;
++		}
++	}
++
++	sdxc_enable_imask(smc_host, SDXC_RxDataReq);
++}
++
++void sdxc_do_pio_write(struct sunxi_mmc_host *smc_host)
++{
++	void __iomem *to_ptr;
++	int ret;
++	u32 fifo;
++	u32 fifo_free = 0;
++	u32 *ptr;
++
++	to_ptr = SDXC_REG_FIFO;
++
++    fifo_free = SDXC_FIFO_SIZE - ((readl(SDXC_REG_STAS)>>17)&0x1f);
++	while (fifo_free) {
++	    fifo = fifo_free << 2;
++		if (!smc_host->pio_bytes) {
++			ret = sdxc_get_data_buffer(smc_host, &smc_host->pio_bytes, &smc_host->pio_ptr);
++			if (ret) {
++				SMC_DBG("pio_write(): complete (no more data).\n");
++				smc_host->pio_active = XFER_NONE;
++
++				return;
++			}
++
++			SMC_DBG("pio_write(): new source: [%i]@[%p]\n", smc_host->pio_bytes, smc_host->pio_ptr);
++		}
++
++		/* If we have reached the end of the block, we have to
++		 * write exactly the remaining number of bytes.  If we
++		 * in the middle of the block, we have to write full
++		 * words, so round down to an even multiple of 4. */
++		if (fifo >= smc_host->pio_bytes)
++			fifo = smc_host->pio_bytes;
++		else
++			fifo -= fifo & 3;
++
++		smc_host->pio_bytes -= fifo;
++		smc_host->pio_count += fifo;
++
++		fifo = (fifo + 3) >> 2;
++		ptr = smc_host->pio_ptr;
++		while (fifo--)
++			writel(*ptr++, to_ptr);
++		smc_host->pio_ptr = ptr;
++
++        fifo_free = SDXC_FIFO_SIZE - ((readl(SDXC_REG_STAS)>>17)&0x1f);
++	}
++
++	sdxc_enable_imask(smc_host, SDXC_TxDataReq);
++}
++
++#define BOTH_DIR (MMC_DATA_WRITE | MMC_DATA_READ)
++static int sdxc_prepare_pio(struct sunxi_mmc_host* smc_host, struct mmc_data* data)
++{
++	int rw = (data->flags & MMC_DATA_WRITE) ? 1 : 0;
++
++	BUG_ON((data->flags & BOTH_DIR) == BOTH_DIR);
++
++	smc_host->pio_sgptr = 0;
++	smc_host->pio_bytes = 0;
++	smc_host->pio_count = 0;
++	smc_host->pio_active = rw ? XFER_WRITE : XFER_READ;
++
++	if (rw)
++		sdxc_do_pio_write(smc_host);
++
++	return 0;
++}
++
++int sdxc_check_r1_ready(struct sunxi_mmc_host* smc_host)
++{
++    return readl(SDXC_REG_STAS) & SDXC_CardDataBusy ? 0 : 1;
++}
++
++int sdxc_send_manual_stop(struct sunxi_mmc_host* smc_host, struct mmc_request* request)
++{
++	struct mmc_data* data = request->data;
++	u32 cmd_val = SDXC_Start | SDXC_RspExp | SDXC_CheckRspCRC | MMC_STOP_TRANSMISSION;
++	u32 iflags = 0;
++	int ret = 0;
++
++	if (!data || !data->stop)
++	{
++		SMC_ERR("no stop cmd request\n");
++		return -1;
++	}
++
++	sdxc_int_disable(smc_host);
++
++	writel(0, SDXC_REG_CARG);
++	writel(cmd_val, SDXC_REG_CMDR);
++	do {
++		iflags = readl(SDXC_REG_RINTR);
++	} while(!(iflags & (SDXC_CmdDone | SDXC_IntErrBit)));
++
++	if (iflags & SDXC_IntErrBit)
++	{
++		SMC_ERR("sdc %d send stop command failed\n", smc_host->pdev->id);
++		data->stop->error = ETIMEDOUT;
++		ret = -1;
++	}
++
++	writel(iflags, SDXC_REG_RINTR);
++    data->stop->resp[0] = readl(SDXC_REG_RESP0);
++
++	sdxc_int_enable(smc_host);
++
++	return ret;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_request(struct sunxi_mmc_host* smc_host, struct mmc_request* request)
++{
++    struct mmc_command* cmd = request->cmd;
++    struct mmc_data* data = request->data;
++    struct scatterlist* sg = NULL;
++    u32 byte_cnt = 0;
++    int ret;
++
++    smc_host->mrq = request;
++    smc_host->int_sum = 0;
++    SMC_DBG("smc %d, cmd %d, arg %08x\n", smc_host->pdev->id, cmd->opcode, cmd->arg);
++    if (data)
++    {
++        sg = data->sg;
++        byte_cnt = data->blksz * data->blocks;
++
++        writel(data->blksz, SDXC_REG_BLKSZ);
++        writel(byte_cnt, SDXC_REG_BCNTR);
++
++        SMC_DBG("-> with data %d bytes, sg_len %d\n", byte_cnt, data->sg_len);
++        if (byte_cnt > 64)
++        {
++//            SMC_MSG("-> trans by dma\n");
++            sdxc_sel_access_mode(smc_host, SDXC_ACCESS_BY_DMA);
++            smc_host->todma = 0;
++            ret = sdxc_prepare_dma(smc_host, data);
++            if (ret < 0)
++            {
++                SMC_ERR("smc %d prepare DMA failed\n", smc_host->pdev->id);
++		        smc_host->dodma = 0;
++
++                SMC_ERR("data prepare error %d\n", ret);
++    			cmd->error = ret;
++    			cmd->data->error = ret;
++    			mmc_request_done(smc_host->mmc, request);
++    			return;
++            }
++            smc_host->dodma = 1;
++        }
++        else
++        {
++//            SMC_MSG("-> trans by ahb\n");
++            sdxc_sel_access_mode(smc_host, SDXC_ACCESS_BY_AHB);
++            smc_host->todma = 0;
++            ret = sdxc_prepare_pio(smc_host, data);
++            if (ret < 0)
++            {
++                SMC_ERR("smc %d prepare ahb failed\n", smc_host->pdev->id);
++    			cmd->error = ret;
++    			cmd->data->error = ret;
++    			mmc_request_done(smc_host->mmc, request);
++    			return;
++            }
++		    smc_host->dodma = 0;
++        }
++
++        if (data->stop)
++            smc_host->with_autostop = 1;
++        else
++            smc_host->with_autostop = 0;
++    }
++
++    /* disable card detect debounce */
++    sdxc_cd_debounce_off(smc_host);
++    sdxc_send_cmd(smc_host, cmd);
++}
++
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_check_status(struct sunxi_mmc_host* smc_host)
++{
++    u32 raw_int;
++    u32 msk_int;
++	u32 idma_inte;
++    u32 idma_int;
++
++    sdxc_int_disable(smc_host);
++
++    idma_int = readl(SDXC_REG_IDST);
++    idma_inte = readl(SDXC_REG_IDIE);
++    raw_int = readl(SDXC_REG_RINTR);
++    msk_int = readl(SDXC_REG_MISTA);
++
++    smc_host->int_sum |= raw_int;
++    //SMC_INFO("smc %d int, ri %08x(%08x) mi %08x ie %08x idi %08x\n", smc_host->pdev->id, raw_int, smc_host->int_sum, msk_int, idma_inte, idma_int);
++
++	if (msk_int & SDXC_SDIOInt)
++	{
++		smc_host->sdio_int = 1;
++    	writel(SDXC_SDIOInt, SDXC_REG_RINTR);
++	}
++
++	if (smc_host->cd_gpio == CARD_DETECT_BY_DATA3)
++    {
++        if (msk_int&SDXC_CardInsert)
++        {
++    	    SMC_DBG("card detect insert\n");
++    	    smc_host->present = 1;
++    	    smc_host->change = 1;
++    	    writel(SDXC_CardInsert, SDXC_REG_RINTR);
++    		goto irq_out;
++    	}
++    	if (msk_int&SDXC_CardRemove)
++    	{
++    	    SMC_DBG("card detect remove\n");
++    	    smc_host->present = 0;
++    	    smc_host->change = 1;
++    	    writel(SDXC_CardRemove, SDXC_REG_RINTR);
++    		goto irq_out;
++    	}
++    }
++
++    if (smc_host->wait == SDC_WAIT_NONE && !smc_host->sdio_int)
++    {
++    	SMC_ERR("smc %x, nothing to complete, raw_int = %08x, mask_int = %08x\n", smc_host->pdev->id, raw_int, msk_int);
++    	sdxc_clear_imask(smc_host);
++		goto irq_normal_out;
++    }
++
++    if ((raw_int & SDXC_IntErrBit) || (idma_int & SDXC_IDMA_ERR))
++    {
++        smc_host->error = raw_int & SDXC_IntErrBit;
++        smc_host->wait = SDC_WAIT_FINALIZE;
++        goto irq_normal_out;
++    }
++
++	if (!smc_host->dodma) {
++		if ((smc_host->pio_active == XFER_WRITE) && (raw_int & SDXC_TxDataReq)) {
++			sdxc_disable_imask(smc_host, SDXC_TxDataReq);
++			tasklet_schedule(&smc_host->tasklet);
++		}
++
++		if ((smc_host->pio_active == XFER_READ) && (raw_int & SDXC_RxDataReq)) {
++			sdxc_disable_imask(smc_host, SDXC_RxDataReq);
++			tasklet_schedule(&smc_host->tasklet);
++		}
++
++		if (msk_int&SDXC_DataOver) {
++		    sdxc_disable_imask(smc_host, SDXC_TxDataReq|SDXC_RxDataReq);
++			tasklet_schedule(&smc_host->tasklet);
++		}
++
++	}
++
++	if (smc_host->wait == SDC_WAIT_AUTOCMD_DONE && (msk_int&SDXC_AutoCMDDone))
++	{
++	    smc_host->wait = SDC_WAIT_FINALIZE;
++	}
++	else if (smc_host->wait == SDC_WAIT_DATA_OVER && (msk_int&SDXC_DataOver))
++	{
++	    smc_host->wait = SDC_WAIT_FINALIZE;
++	}
++	else if (smc_host->wait == SDC_WAIT_CMD_DONE && (msk_int&SDXC_CmdDone) && !(smc_host->int_sum&SDXC_IntErrBit))
++	{
++	    smc_host->wait = SDC_WAIT_FINALIZE;
++	}
++
++irq_normal_out:
++    writel((~SDXC_SDIOInt) & msk_int, SDXC_REG_RINTR);
++	writel(idma_int, SDXC_REG_IDST);
++
++irq_out:
++
++    sdxc_int_enable(smc_host);
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_request_done(struct sunxi_mmc_host* smc_host)
++{
++    struct mmc_request* req = smc_host->mrq;
++    u32 temp;
++    s32 ret = 0;
++
++    if (smc_host->int_sum & SDXC_IntErrBit)
++    {
++        SMC_ERR("smc %d err, cmd %d, %s%s%s%s%s%s%s%s%s%s !!\n",
++            smc_host->pdev->id, req->cmd->opcode,
++    		smc_host->int_sum & SDXC_RespErr     ? " RE"     : "",
++    		smc_host->int_sum & SDXC_RespCRCErr  ? " RCE"    : "",
++    		smc_host->int_sum & SDXC_DataCRCErr  ? " DCE"    : "",
++    		smc_host->int_sum & SDXC_RespTimeout ? " RTO"    : "",
++    		smc_host->int_sum & SDXC_DataTimeout ? " DTO"    : "",
++    		smc_host->int_sum & SDXC_DataStarve  ? " DS"     : "",
++    		smc_host->int_sum & SDXC_FIFORunErr  ? " FE"     : "",
++    		smc_host->int_sum & SDXC_HardWLocked ? " HL"     : "",
++    		smc_host->int_sum & SDXC_StartBitErr ? " SBE"    : "",
++    		smc_host->int_sum & SDXC_EndBitErr   ? " EBE"    : ""
++    		);
++
++        if (req->data)
++        {
++            SMC_ERR("In data %s operation\n", req->data->flags & MMC_DATA_WRITE ? "write" : "read");
++        }
++    	ret = -1;
++        goto _out_;
++    }
++
++    if (req->cmd)
++    {
++        if (req->cmd->flags & MMC_RSP_136)
++    	{
++    		req->cmd->resp[0] = readl(SDXC_REG_RESP3);
++    		req->cmd->resp[1] = readl(SDXC_REG_RESP2);
++    		req->cmd->resp[2] = readl(SDXC_REG_RESP1);
++    		req->cmd->resp[3] = readl(SDXC_REG_RESP0);
++    	}
++    	else
++    	{
++    		req->cmd->resp[0] = readl(SDXC_REG_RESP0);
++    	}
++    }
++
++_out_:
++    if (req->data)
++    {
++        if (!(req->data->flags & MMC_DATA_WRITE) && (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy))
++        {
++            printk("data fsm busy\n");
++        }
++        if (smc_host->dodma)
++        {
++    		smc_host->dma_done = 0;
++            writel(0x337, SDXC_REG_IDST);
++            writel(0, SDXC_REG_IDIE);
++            sdxc_idma_off(smc_host);
++            sdxc_dma_disable(smc_host);
++        }
++
++        sdxc_fifo_reset(smc_host);
++    }
++
++    temp = readl(SDXC_REG_STAS);
++    if ((temp & SDXC_DataFSMBusy) || (smc_host->int_sum & (SDXC_RespErr | SDXC_HardWLocked | SDXC_RespTimeout)))
++    {
++        SMC_DBG("sdc %d abnormal status: %s %s\n", smc_host->pdev->id,
++                                                  temp & SDXC_DataFSMBusy ? "DataFSMBusy" : "",
++                                                  smc_host->int_sum & SDXC_HardWLocked ? "HardWLocked" : "");
++        sdxc_reset(smc_host);
++        sdxc_program_clk(smc_host);
++    }
++
++    writel(0xffff, SDXC_REG_RINTR);
++    sdxc_clear_imask(smc_host);
++    //re-enable card detect debounce
++    if (smc_host->cd_gpio == CARD_DETECT_BY_DATA3)
++    {
++        sdxc_cd_debounce_on(smc_host);
++    }
++
++    SMC_DBG("smc %d done, resp %08x %08x %08x %08x\n", smc_host->pdev->id, req->cmd->resp[0], req->cmd->resp[1], req->cmd->resp[2], req->cmd->resp[3]);
++
++	if (req->data && req->data->stop && (smc_host->int_sum & SDXC_IntErrBit))
++	{
++		SMC_MSG("found data error, need to send stop command !!\n");
++		sdxc_send_manual_stop(smc_host, req);
++	}
++
++    return ret;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_regs_save(struct sunxi_mmc_host* smc_host)
++{
++	struct sunximmc_ctrl_regs* bak_regs = &smc_host->bak_regs;
++
++	bak_regs->gctrl		= readl(SDXC_REG_GCTRL);
++	bak_regs->clkc		= readl(SDXC_REG_CLKCR);
++	bak_regs->timeout	= readl(SDXC_REG_TMOUT);
++	bak_regs->buswid	= readl(SDXC_REG_WIDTH);
++	bak_regs->waterlvl	= readl(SDXC_REG_FTRGL);
++	bak_regs->funcsel	= readl(SDXC_REG_FUNS);
++	bak_regs->debugc	= readl(SDXC_REG_DBGC);
++	bak_regs->idmacc	= readl(SDXC_REG_DMAC);
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++void sdxc_regs_restore(struct sunxi_mmc_host* smc_host)
++{
++	struct sunximmc_ctrl_regs* bak_regs = &smc_host->bak_regs;
++
++    writel(bak_regs->gctrl   , SDXC_REG_GCTRL);
++    writel(bak_regs->clkc    , SDXC_REG_CLKCR);
++    writel(bak_regs->timeout , SDXC_REG_TMOUT);
++    writel(bak_regs->buswid  , SDXC_REG_WIDTH);
++    writel(bak_regs->waterlvl, SDXC_REG_FTRGL);
++    writel(bak_regs->funcsel , SDXC_REG_FUNS );
++    writel(bak_regs->debugc  , SDXC_REG_DBGC );
++    writel(bak_regs->idmacc  , SDXC_REG_DMAC );
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_init(struct sunxi_mmc_host* smc_host)
++{
++	struct sunxi_mmc_idma_des* pdes = NULL;
++
++    /* reset controller */
++    if (-1 == sdxc_reset(smc_host))
++    {
++        return -1;
++    }
++
++    writel(SDXC_PosedgeLatchData, SDXC_REG_GCTRL);
++
++    /* config DMA/Interrupt Trigger threshold */
++    writel(0x70008, SDXC_REG_FTRGL);
++
++    /* config timeout register */
++    writel(0xffffffff, SDXC_REG_TMOUT);
++
++    /* clear interrupt flags */
++    writel(0xffffffff, SDXC_REG_RINTR);
++
++    writel(0xdeb, SDXC_REG_DBGC);
++    writel(0xceaa0000, SDXC_REG_FUNS);
++
++    sdxc_int_enable(smc_host);
++
++   	/* alloc idma descriptor structure */
++	pdes = (struct sunxi_mmc_idma_des*)kmalloc(sizeof(struct sunxi_mmc_idma_des) * SDXC_MAX_DES_NUM, GFP_DMA | GFP_KERNEL);
++	if (pdes == NULL)
++	{
++	    SMC_ERR("alloc dma des failed\n");
++	    return -1;
++	}
++	smc_host->pdes = pdes;
++    return 0;
++}
++
++/*
++ * Method	  :
++ * Description:
++ * Parameters :
++ *
++ * Returns    :
++ * Note       :
++ */
++s32 sdxc_exit(struct sunxi_mmc_host* smc_host)
++{
++	/* free idma descriptor structrue */
++	if (smc_host->pdes)
++	{
++    	kfree((void*)smc_host->pdes);
++		smc_host->pdes = NULL;
++	}
++
++    /* reset controller */
++    if (-1 == sdxc_reset(smc_host))
++    {
++        return -1;
++    }
++
++    return 0;
++}
++
+diff --git a/drivers/mmc/sunxi-host/sdxc.h b/drivers/mmc/sunxi-host/sdxc.h
+new file mode 100644
+index 0000000..5e67089
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/sdxc.h
+@@ -0,0 +1,245 @@
++/*
++ * drivers/mmc/sunxi-host/sdxc.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ * sdxc.h -
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++#ifndef _SUNXI_SDXC_H_
++#define _SUNXI_SDXC_H_
++
++/******************************************************************************************************
++ *                                   Define For SD3.0 Controller                                      *
++ ******************************************************************************************************/
++/* register offset define */
++#define SDXC_REG_o_GCTRL              (0x00)              // SMC Global Control Register
++#define SDXC_REG_o_CLKCR              (0x04)              // SMC Clock Control Register
++#define SDXC_REG_o_TMOUT              (0x08)              // SMC Time Out Register
++#define SDXC_REG_o_WIDTH              (0x0C)              // SMC Bus Width Register
++#define SDXC_REG_o_BLKSZ              (0x10)              // SMC Block Size Register
++#define SDXC_REG_o_BCNTR              (0x14)              // SMC Byte Count Register
++#define SDXC_REG_o_CMDR               (0x18)              // SMC Command Register
++#define SDXC_REG_o_CARG               (0x1C)              // SMC Argument Register
++#define SDXC_REG_o_RESP0              (0x20)              // SMC Response Register 0
++#define SDXC_REG_o_RESP1              (0x24)              // SMC Response Register 1
++#define SDXC_REG_o_RESP2              (0x28)              // SMC Response Register 2
++#define SDXC_REG_o_RESP3              (0x2C)              // SMC Response Register 3
++#define SDXC_REG_o_IMASK              (0x30)              // SMC Interrupt Mask Register
++#define SDXC_REG_o_MISTA              (0x34)              // SMC Masked Interrupt Status Register
++#define SDXC_REG_o_RINTR              (0x38)              // SMC Raw Interrupt Status Register
++#define SDXC_REG_o_STAS               (0x3C)              // SMC Status Register
++#define SDXC_REG_o_FTRGL              (0x40)              // SMC FIFO Threshold Watermark Register
++#define SDXC_REG_o_FUNS               (0x44)              // SMC Function Select Register
++#define SDXC_REG_o_CBCR               (0x48)              // SMC CIU Byte Count Register
++#define SDXC_REG_o_BBCR               (0x4C)              // SMC BIU Byte Count Register
++#define SDXC_REG_o_DBGC               (0x50)              // SMC Debug Enable Register
++#define SDXC_REG_o_DMAC               (0x80)              // SMC IDMAC Control Register
++#define SDXC_REG_o_DLBA               (0x84)              // SMC IDMAC Descriptor List Base Address Register
++#define SDXC_REG_o_IDST               (0x88)              // SMC IDMAC Status Register
++#define SDXC_REG_o_IDIE               (0x8C)              // SMC IDMAC Interrupt Enable Register
++#define SDXC_REG_o_CHDA               (0x90)
++#define SDXC_REG_o_CBDA               (0x94)
++#define SDXC_REG_o_FIFO               (0x100)             // SMC FIFO Access Address
++
++#define SDXC_REG_GCTRL                  (smc_host->smc_base + SDXC_REG_o_GCTRL)
++#define SDXC_REG_CLKCR                  (smc_host->smc_base + SDXC_REG_o_CLKCR)
++#define SDXC_REG_TMOUT                  (smc_host->smc_base + SDXC_REG_o_TMOUT)
++#define SDXC_REG_WIDTH                  (smc_host->smc_base + SDXC_REG_o_WIDTH)
++#define SDXC_REG_BLKSZ                  (smc_host->smc_base + SDXC_REG_o_BLKSZ)
++#define SDXC_REG_BCNTR                  (smc_host->smc_base + SDXC_REG_o_BCNTR)
++#define SDXC_REG_CMDR                   (smc_host->smc_base + SDXC_REG_o_CMDR )
++#define SDXC_REG_CARG                   (smc_host->smc_base + SDXC_REG_o_CARG )
++#define SDXC_REG_RESP0                  (smc_host->smc_base + SDXC_REG_o_RESP0)
++#define SDXC_REG_RESP1                  (smc_host->smc_base + SDXC_REG_o_RESP1)
++#define SDXC_REG_RESP2                  (smc_host->smc_base + SDXC_REG_o_RESP2)
++#define SDXC_REG_RESP3                  (smc_host->smc_base + SDXC_REG_o_RESP3)
++#define SDXC_REG_IMASK                  (smc_host->smc_base + SDXC_REG_o_IMASK)
++#define SDXC_REG_MISTA                  (smc_host->smc_base + SDXC_REG_o_MISTA)
++#define SDXC_REG_RINTR                  (smc_host->smc_base + SDXC_REG_o_RINTR)
++#define SDXC_REG_STAS                   (smc_host->smc_base + SDXC_REG_o_STAS )
++#define SDXC_REG_FTRGL                  (smc_host->smc_base + SDXC_REG_o_FTRGL)
++#define SDXC_REG_FUNS                   (smc_host->smc_base + SDXC_REG_o_FUNS )
++#define SDXC_REG_CBCR                   (smc_host->smc_base + SDXC_REG_o_CBCR )
++#define SDXC_REG_BBCR                   (smc_host->smc_base + SDXC_REG_o_BBCR )
++#define SDXC_REG_DBGC                   (smc_host->smc_base + SDXC_REG_o_DBGC )
++#define SDXC_REG_DMAC                   (smc_host->smc_base + SDXC_REG_o_DMAC )
++#define SDXC_REG_DLBA                   (smc_host->smc_base + SDXC_REG_o_DLBA )
++#define SDXC_REG_IDST                   (smc_host->smc_base + SDXC_REG_o_IDST )
++#define SDXC_REG_IDIE                   (smc_host->smc_base + SDXC_REG_o_IDIE )
++#define SDXC_REG_CHDA                   (smc_host->smc_base + SDXC_REG_o_CHDA )
++#define SDXC_REG_CBDA                   (smc_host->smc_base + SDXC_REG_o_CBDA )
++#define SDXC_REG_FIFO                   (smc_host->smc_base + SDXC_REG_o_FIFO )
++
++/* bit field for registers */
++/* global control register */
++#define SDXC_SoftReset                (0x1U<<0)
++#define SDXC_FIFOReset                (0x1U<<1)
++#define SDXC_DMAReset                 (0x1U<<2)
++#define SDXC_INTEnb                   (0x1U<<4)
++#define SDXC_DMAEnb                   (0x1U<<5)
++#define SDXC_DebounceEnb              (0x1U<<8)
++#define SDXC_PosedgeLatchData         (0x1U<<9)
++#define SDXC_NegedgeLatchData         (0x0U<<9)
++#define SDXC_DDR_MODE                 (0x1U<<10)
++#define SDXC_ACCESS_BY_AHB            (0x1U<<31)
++#define SDXC_ACCESS_BY_DMA            (0x0U<<31)
++/* Clock control */
++#define SDXC_CardClkOn                (1U<<16)
++#define SDXC_LowPowerOn               (1U<<17)
++/* bus width */
++#define SDXC_WIDTH1                   (0)
++#define SDXC_WIDTH4                   (1)
++#define SDXC_WIDTH8                   (2)
++/* Struct for SMC Commands */
++#define SDXC_RspExp                   (0x1U<<6)  //0x40
++#define SDXC_LongRsp                  (0x1U<<7)  //0x80
++#define SDXC_CheckRspCRC              (0x1U<<8)  //0x100
++#define SDXC_DataExp                  (0x1U<<9)  //0x200
++#define SDXC_Read                     (0x0U<<10) //0x000
++#define SDXC_Write                    (0x1U<<10) //0x400
++#define SDXC_Blockmod                 (0x0U<<11) //0x000
++#define SDXC_Seqmod                   (0x1U<<11) //0x800
++#define SDXC_SendAutoStop             (0x1U<<12) //0x1000
++#define SDXC_WaitPreOver              (0x1U<<13) //0x2000
++#define SDXC_StopAbortCMD             (0x1U<<14) //0x4000
++#define SDXC_SendInitSeq              (0x1U<<15) //0x8000
++#define SDXC_UPCLKOnly                (0x1U<<21) //0x200000
++#define SDXC_RdCEATADev               (0x1U<<22) //0x400000
++#define SDXC_CCSExp                   (0x1U<<23) //0x800000
++#define SDXC_EnbBoot                  (0x1U<<24) //0x1000000
++#define SDXC_AltBootOpt               (0x1U<<25) //0x2000000
++#define SDXC_MandBootOpt              (0x0U<<25) //0x0000000
++#define SDXC_BootACKExp               (0x1U<<26) //0x4000000
++#define SDXC_DisableBoot              (0x1U<<27) //0x8000000
++#define SDXC_VolSwitch                (0x1U<<28) //0x10000000
++#define SDXC_Start                    (0x1U<<31) //0x80000000
++/* Struct for Intrrrupt Information */
++#define SDXC_RespErr                  (0x1U<<1)  //0x2
++#define SDXC_CmdDone                  (0x1U<<2)  //0x4
++#define SDXC_DataOver                 (0x1U<<3)  //0x8
++#define SDXC_TxDataReq                (0x1U<<4)  //0x10
++#define SDXC_RxDataReq                (0x1U<<5)  //0x20
++#define SDXC_RespCRCErr               (0x1U<<6)  //0x40
++#define SDXC_DataCRCErr               (0x1U<<7)  //0x80
++#define SDXC_RespTimeout              (0x1U<<8)  //0x100
++#define SDXC_ACKRcv                   (0x1U<<8)  //0x100
++#define SDXC_DataTimeout              (0x1U<<9)  //0x200
++#define SDXC_BootStart                (0x1U<<9)  //0x200
++#define SDXC_DataStarve               (0x1U<<10) //0x400
++#define SDXC_VolChgDone               (0x1U<<10) //0x400
++#define SDXC_FIFORunErr               (0x1U<<11) //0x800
++#define SDXC_HardWLocked              (0x1U<<12) //0x1000
++#define SDXC_StartBitErr              (0x1U<<13) //0x2000
++#define SDXC_AutoCMDDone              (0x1U<<14) //0x4000
++#define SDXC_EndBitErr                (0x1U<<15) //0x8000
++#define SDXC_SDIOInt                  (0x1U<<16) //0x10000
++#define SDXC_CardInsert               (0x1U<<30) //0x40000000
++#define SDXC_CardRemove               (0x1U<<31) //0x80000000
++#define SDXC_IntErrBit                (SDXC_RespErr | SDXC_RespCRCErr | SDXC_DataCRCErr | SDXC_RespTimeout | SDXC_DataTimeout  \
++                                        | SDXC_FIFORunErr | SDXC_HardWLocked | SDXC_StartBitErr | SDXC_EndBitErr)  //0xbfc2
++/* status */
++#define SDXC_RXWLFlag                 (0x1U<<0)
++#define SDXC_TXWLFlag                 (0x1U<<1)
++#define SDXC_FIFOEmpty                (0x1U<<2)
++#define SDXC_FIFOFull                 (0x1U<<3)
++#define SDXC_CardPresent              (0x1U<<8)
++#define SDXC_CardDataBusy             (0x1U<<9)
++#define SDXC_DataFSMBusy              (0x1U<<10)
++#define SDXC_DMAReq                   (0x1U<<31)
++#define SDXC_FIFO_SIZE                (16)
++/* Function select */
++#define SDXC_CEATAOn                  (0xceaaU<<16)
++#define SDXC_SendIrqRsp               (0x1U<<0)
++#define SDXC_SDIORdWait               (0x1U<<1)
++#define SDXC_AbtRdData                (0x1U<<2)
++#define SDXC_SendCCSD                 (0x1U<<8)
++#define SDXC_SendAutoStopCCSD         (0x1U<<9)
++#define SDXC_CEATADevIntEnb           (0x1U<<10)
++/* IDMA controller bus mod bit field */
++#define SDXC_IDMACSoftRST             (0x1U<<0)
++#define SDXC_IDMACFixBurst            (0x1U<<1)
++#define SDXC_IDMACIDMAOn              (0x1U<<7)
++#define SDXC_IDMACRefetchDES          (0x1U<<31)
++/* IDMA status bit field */
++#define SDXC_IDMACTransmitInt         (0x1U<<0)
++#define SDXC_IDMACReceiveInt          (0x1U<<1)
++#define SDXC_IDMACFatalBusErr         (0x1U<<2)
++#define SDXC_IDMACDesInvalid          (0x1U<<4)
++#define SDXC_IDMACCardErrSum          (0x1U<<5)
++#define SDXC_IDMACNormalIntSum        (0x1U<<8)
++#define SDXC_IDMACAbnormalIntSum      (0x1U<<9)
++#define SDXC_IDMACHostAbtInTx         (0x1U<<10)
++#define SDXC_IDMACHostAbtInRx         (0x1U<<10)
++#define SDXC_IDMACIdle                (0x0U<<13)
++#define SDXC_IDMACSuspend             (0x1U<<13)
++#define SDXC_IDMACDESCRd              (0x2U<<13)
++#define SDXC_IDMACDESCCheck           (0x3U<<13)
++#define SDXC_IDMACRdReqWait           (0x4U<<13)
++#define SDXC_IDMACWrReqWait           (0x5U<<13)
++#define SDXC_IDMACRd                  (0x6U<<13)
++#define SDXC_IDMACWr                  (0x7U<<13)
++#define SDXC_IDMACDESCClose           (0x8U<<13)
++
++#define SDXC_IDMA_OVER       (SDXC_IDMACTransmitInt|SDXC_IDMACReceiveInt|SDXC_IDMACNormalIntSum)
++#define SDXC_IDMA_ERR        (SDXC_IDMACFatalBusErr|SDXC_IDMACDesInvalid|SDXC_IDMACCardErrSum|SDXC_IDMACAbnormalIntSum)
++
++/*
++ * IDMA描述符中支持最大的buffer长度为8192，如果单次传输>8192需要将buffer指定到不同的描述符中
++ * 这里支持最大1024个描述符，即支持单次传输的最大长度为1024*8192 = 8M数据，在传输中一次性分配
++ * 描述符空间，避免多次分配使效率低下，描述符共占用1024*16 = 16K空间，传输完毕后释放
++ */
++#define SDXC_DES_BUFFER_MAX_LEN       (1 << SUNXI_MMC_MAX_DMA_DES_BIT) //16bits in aw1625, 13bit in aw1623
++#define SDXC_DES_NUM_SHIFT            (SUNXI_MMC_MAX_DMA_DES_BIT)  //65536 == 1<<16; change to 16bits, 13bit used in aw1623
++#define SDXC_MAX_DES_NUM              (1024)
++#define SDXC_DES_MODE                 0 //0-chain mode, 1-fix length skip
++
++struct sunxi_mmc_idma_des{
++    u32                     :1,
++            dic             :1,     //disable interrupt on completion
++            last_des        :1,     //1-this data buffer is the last buffer
++            first_des       :1,     //1-data buffer is the first buffer, 0-data buffer contained in the next descriptor is the first data buffer
++            des_chain       :1,     //1-the 2nd address in the descriptor is the next descriptor address
++            end_of_ring     :1,     //1-last descriptor flag when using dual data buffer in descriptor
++                            :24,
++            card_err_sum    :1,     //transfer error flag
++            own             :1;     //des owner:1-idma owns it, 0-host owns it
++
++    u32     data_buf1_sz    :SUNXI_MMC_MAX_DMA_DES_BIT,    //change to 16bits, 13bit used in aw1623
++            data_buf2_sz    :SUNXI_MMC_MAX_DMA_DES_BIT,    //change to 16bits, 13bit used in aw1623
++                            :SUNXI_MMC_DMA_DES_BIT_LEFT;
++    u32     buf_addr_ptr1;
++    u32     buf_addr_ptr2;
++};
++
++struct sunxi_mmc_host;
++
++s32 sdxc_init(struct sunxi_mmc_host* smc_host);
++s32 sdxc_exit(struct sunxi_mmc_host* smc_host);
++s32 sdxc_reset(struct sunxi_mmc_host* smc_host);
++void sdxc_int_enable(struct sunxi_mmc_host* smc_host);
++void sdxc_int_disable(struct sunxi_mmc_host* smc_host);
++s32 sdxc_program_clk(struct sunxi_mmc_host* smc_host);
++s32 sdxc_update_clk(struct sunxi_mmc_host* smc_host, u32 sclk, u32 cclk);
++void sdxc_request(struct sunxi_mmc_host* smc_host, struct mmc_request* request);
++void sdxc_check_status(struct sunxi_mmc_host* smc_host);
++s32 sdxc_request_done(struct sunxi_mmc_host* smc_host);
++void sdxc_set_buswidth(struct sunxi_mmc_host* smc_host, u32 width);
++void sdxc_sel_ddr_mode(struct sunxi_mmc_host* smc_host);
++void sdxc_sel_sdr_mode(struct sunxi_mmc_host* smc_host);
++u32 sdxc_check_card_busy(struct sunxi_mmc_host* smc_host);
++void sdxc_enable_sdio_irq(struct sunxi_mmc_host* smc_host, u32 enable);
++void sdxc_regs_save(struct sunxi_mmc_host* smc_host);
++void sdxc_regs_restore(struct sunxi_mmc_host* smc_host);
++int sdxc_check_r1_ready(struct sunxi_mmc_host* smc_host);
++void sdxc_do_pio_read(struct sunxi_mmc_host* smc_host);
++void sdxc_do_pio_write(struct sunxi_mmc_host *smc_host);
++
++#endif
+diff --git a/drivers/mmc/sunxi-host/smc_syscall.h b/drivers/mmc/sunxi-host/smc_syscall.h
+new file mode 100644
+index 0000000..c452282
+--- /dev/null
++++ b/drivers/mmc/sunxi-host/smc_syscall.h
+@@ -0,0 +1,251 @@
++/*
++ * drivers/mmc/sunxi-host/smc_syscall.h
++ * (C) Copyright 2007-2011
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Aaron.Maoye <leafy.myeh@allwinnertech.com>
++ *
++ * description for this code
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ */
++
++#ifndef _SUNXI_SDC_SYSCALL_H_
++#define _SUNXI_SDC_SYSCALL_H_
++
++#include <mach/platform.h>
++#include <linux/io.h>
++
++#define GPIO_BASE            		SW_PA_PORTC_IO_BASE
++
++#define PA_CFG0_REG        			(gpio_base+0x000)
++#define PA_CFG1_REG           	    (gpio_base+0x004)
++#define PA_CFG2_REG         		(gpio_base+0x008)
++#define PA_CFG3_REG         		(gpio_base+0x00C)
++#define PA_DAT_REG         			(gpio_base+0x010)
++#define PA_DRV0_REG        			(gpio_base+0x014)
++#define PA_DRV1_REG        			(gpio_base+0x018)
++#define PA_PULL0_REG     			(gpio_base+0x01C)
++#define PA_PULL1_REG     			(gpio_base+0x020)
++#define PB_CFG0_REG        			(gpio_base+0x024)
++#define PB_CFG1_REG           	    (gpio_base+0x028)
++#define PB_CFG2_REG         		(gpio_base+0x02C)
++#define PB_CFG3_REG         		(gpio_base+0x030)
++#define PB_DAT_REG         			(gpio_base+0x034)
++#define PB_DRV0_REG        			(gpio_base+0x038)
++#define PB_DRV1_REG        			(gpio_base+0x03C)
++#define PB_PULL0_REG     			(gpio_base+0x040)
++#define PB_PULL1_REG     			(gpio_base+0x044)
++#define PC_CFG0_REG        			(gpio_base+0x048)
++#define PC_CFG1_REG           	    (gpio_base+0x04C)
++#define PC_CFG2_REG         		(gpio_base+0x050)
++#define PC_CFG3_REG         		(gpio_base+0x054)
++#define PC_DAT_REG         			(gpio_base+0x058)
++#define PC_DRV0_REG        			(gpio_base+0x05C)
++#define PC_DRV1_REG        			(gpio_base+0x060)
++#define PC_PULL0_REG     			(gpio_base+0x064)
++#define PC_PULL1_REG     			(gpio_base+0x068)
++#define PD_CFG0_REG        			(gpio_base+0x06C)
++#define PD_CFG1_REG           	    (gpio_base+0x070)
++#define PD_CFG2_REG         		(gpio_base+0x074)
++#define PD_CFG3_REG         		(gpio_base+0x078)
++#define PD_DAT_REG         			(gpio_base+0x07C)
++#define PD_DRV0_REG        			(gpio_base+0x080)
++#define PD_DRV1_REG        			(gpio_base+0x084)
++#define PD_PULL0_REG     			(gpio_base+0x088)
++#define PD_PULL1_REG     			(gpio_base+0x08C)
++#define PE_CFG0_REG        			(gpio_base+0x090)
++#define PE_CFG1_REG           	    (gpio_base+0x094)
++#define PE_CFG2_REG         		(gpio_base+0x098)
++#define PE_CFG3_REG         		(gpio_base+0x09C)
++#define PE_DAT_REG         			(gpio_base+0x0A0)
++#define PE_DRV0_REG        			(gpio_base+0x0A4)
++#define PE_DRV1_REG        			(gpio_base+0x0A8)
++#define PE_PULL0_REG     			(gpio_base+0x0AC)
++#define PE_PULL1_REG     			(gpio_base+0x0B0)
++#define PF_CFG0_REG        			(gpio_base+0x0B4)
++#define PF_CFG1_REG           	    (gpio_base+0x0B8)
++#define PF_CFG2_REG         		(gpio_base+0x0BC)
++#define PF_CFG3_REG         		(gpio_base+0x0C0)
++#define PF_DAT_REG         			(gpio_base+0x0C4)
++#define PF_DRV0_REG        			(gpio_base+0x0C8)
++#define PF_DRV1_REG        			(gpio_base+0x0CC)
++#define PF_PULL0_REG     			(gpio_base+0x0D0)
++#define PF_PULL1_REG     			(gpio_base+0x0D4)
++#define PG_CFG0_REG        			(gpio_base+0x0D8)
++#define PG_CFG1_REG           	    (gpio_base+0x0DC)
++#define PG_CFG2_REG         		(gpio_base+0x0E0)
++#define PG_CFG3_REG         		(gpio_base+0x0E4)
++#define PG_DAT_REG         			(gpio_base+0x0E8)
++#define PG_DRV0_REG        			(gpio_base+0x0EC)
++#define PG_DRV1_REG        			(gpio_base+0x0F0)
++#define PG_PULL0_REG     			(gpio_base+0x0F4)
++#define PG_PULL1_REG     			(gpio_base+0x0F8)
++#define PH_CFG0_REG         		(gpio_base+0x0FC)
++#define PH_CFG1_REG           	    (gpio_base+0x100)
++#define PH_CFG2_REG         		(gpio_base+0x104)
++#define PH_CFG3_REG         		(gpio_base+0x108)
++#define PH_DAT_REG         		    (gpio_base+0x10C)
++#define PH_DRV0_REG        		    (gpio_base+0x110)
++#define PH_DRV1_REG        		    (gpio_base+0x114)
++#define PH_PULL0_REG     			(gpio_base+0x118)
++#define PH_PULL1_REG     			(gpio_base+0x11C)
++#define PI_CFG0_REG         		(gpio_base+0x120)
++#define PI_CFG1_REG           	    (gpio_base+0x124)
++#define PI_CFG2_REG         		(gpio_base+0x128)
++#define PI_CFG3_REG         		(gpio_base+0x12C)
++#define PI_DAT_REG         		    (gpio_base+0x130)
++#define PI_DRV0_REG        		    (gpio_base+0x134)
++#define PI_DRV1_REG        		    (gpio_base+0x138)
++#define PI_PULL0_REG     			(gpio_base+0x13C)
++#define PI_PULL1_REG     			(gpio_base+0x140)
++
++//SRAMC register
++#define SRAMC_BASE              0x01c00000
++#define SRAMC_CFG_REG           (SRAMC_BASE+0x00)
++#define SRAMC_ITCM_AWC_REG      (SRAMC_BASE+0xb4)
++
++static const void __iomem* gpio_base = (void __iomem*)SW_VA_PORTC_IO_BASE;;
++
++static inline void aw_gpio_trigger_single(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //config gpio to output
++    backup = readl(cfg_base);
++    rval = readl(cfg_base);
++    rval &= ~(0x7 << 12);
++    rval |= 1 << 12;
++    writel(rval, cfg_base);
++
++    rval = readl(data_base);
++ 	rval |= 1 << 3;
++    writel(rval, data_base);
++	rval &= ~(1 << 3);
++	writel(rval, data_base);
++	rval |= 1 << 3;
++	writel(rval, data_base);
++
++    //restore pio config
++    writel(backup, cfg_base);
++}
++
++static inline void aw_gpio_trigger_single1(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //config gpio to output
++    backup = readl(cfg_base);
++    rval = readl(cfg_base);
++    rval &= ~(0x7 << 8);
++    rval |= 1 << 8;
++    writel(rval, cfg_base);
++
++    rval = readl(data_base);
++ 	rval |= 1 << 2;
++    writel(rval, data_base);
++	rval &= ~(1 << 2);
++	writel(rval, data_base);
++	rval |= 1 << 2;
++	writel(rval, data_base);
++
++    //restore pio config
++    writel(backup, cfg_base);
++}
++
++
++static inline void aw_gpio_trigger_single2(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //config gpio to output
++    backup = readl(cfg_base);
++    rval = readl(cfg_base);
++    rval &= ~(0x7 << 4);
++    rval |= 1 << 4;
++    writel(rval, cfg_base);
++
++    rval = readl(data_base);
++ 	rval |= 1 << 1;
++    writel(rval, data_base);
++	rval &= ~(1 << 1);
++	writel(rval, data_base);
++	rval |= 1 << 1;
++	writel(rval, data_base);
++
++    //restore pio config
++    writel(backup, cfg_base);
++}
++
++static inline void aw_gpio_trigger_single3(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PI_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PI_DAT_REG;
++
++    //config gpio to output
++    backup = readl(cfg_base);
++    rval = readl(cfg_base);
++    rval &= ~(0x7 << 0);
++    rval |= 1 << 0;
++    writel(rval, cfg_base);
++
++    rval = readl(data_base);
++ 	rval |= 1 << 0;
++    writel(rval, data_base);
++	rval &= ~(1 << 0);
++	writel(rval, data_base);
++	rval |= 1 << 0;
++	writel(rval, data_base);
++
++    //restore pio config
++    writel(backup, cfg_base);
++}
++
++static inline void aw_gpio_trigger_by_pf4(void)
++{
++	u32 rval;
++    u32 backup;
++    void __iomem* cfg_base  = (void __iomem*)PF_CFG0_REG;
++    void __iomem* data_base = (void __iomem*)PF_DAT_REG;
++
++    //config gpio to output
++    backup = readl(cfg_base);
++    rval = readl(cfg_base);
++    rval &= ~(0x7 << 16);
++    rval |= 1 << 16;
++    writel(rval, cfg_base);
++
++    rval = readl(data_base);
++ 	rval |= 1 << 4;
++    writel(rval, data_base);
++	rval &= ~(1 << 4);
++	writel(rval, data_base);
++	rval |= 1 << 4;
++	writel(rval, data_base);
++
++    //restore pio config
++    writel(backup, cfg_base);
++}
++
++static inline void uart_send_char(char c)
++{
++    while (!(readl(SW_VA_UART0_IO_BASE + 0x7c) &  (1<<1)));
++	writel(c, SW_VA_UART0_IO_BASE);
++}
++
++#endif
++
+-- 
+1.8.0
+

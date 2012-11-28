@@ -1,0 +1,96 @@
+From 880a1faea1b5636a2513f4bf6ba18ddac9efff69 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 20 May 2012 12:35:11 +0200
+Subject: [PATCH 452/944] lichee: fix typo in build_*.sh
+
+Reported-by: Barry Kauler <bkauler@gmail.com>
+---
+ scripts/build_a12.sh         | 2 +-
+ scripts/build_a13.sh         | 2 +-
+ scripts/build_sun4i-lite.sh  | 2 +-
+ scripts/build_sun4i.sh       | 2 +-
+ scripts/build_sun4i_crane.sh | 2 +-
+ scripts/build_sun5i.sh       | 2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/scripts/build_a12.sh b/scripts/build_a12.sh
+index b26efec..5d3f0be 100755
+--- a/scripts/build_a12.sh
++++ b/scripts/build_a12.sh
+@@ -15,7 +15,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1125
+ 
+diff --git a/scripts/build_a13.sh b/scripts/build_a13.sh
+index 7dbfb46..18d185c 100755
+--- a/scripts/build_a13.sh
++++ b/scripts/build_a13.sh
+@@ -15,7 +15,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1125
+ 
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 4b9a6a6..5b5a27e 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -21,7 +21,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1123
+ 
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index 3b5b2b0..bdbf9e0 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -21,7 +21,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1123
+ 
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index 2ee868f..bd7575e 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -21,7 +21,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1123
+ 
+diff --git a/scripts/build_sun5i.sh b/scripts/build_sun5i.sh
+index 86f6caf..a917313 100755
+--- a/scripts/build_sun5i.sh
++++ b/scripts/build_sun5i.sh
+@@ -15,7 +15,7 @@ export OBJDUMP=${CROSS_COMPILE}objdump
+ 
+ KERNEL_VERSION="3.0"
+ LICHEE_KDIR=`pwd`
+-LICHEE_MOD_DIR==${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
++LICHEE_MOD_DIR=${LICHEE_KDIR}/output/lib/modules/${KERNEL_VERSION}
+ 
+ CONFIG_CHIP_ID=1125
+ 
+-- 
+1.8.0
+

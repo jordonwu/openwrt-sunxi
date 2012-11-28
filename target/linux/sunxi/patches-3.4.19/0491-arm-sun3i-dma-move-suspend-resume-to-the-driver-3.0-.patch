@@ -1,0 +1,304 @@
+From ededfaa97cf884a79b87d96864c67913cb0d4103 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 30 May 2012 13:26:36 +0200
+Subject: [PATCH 491/944] arm: sun3i: dma: move suspend/resume to the driver
+ (3.0 support)
+
+---
+ arch/arm/mach-sun3i/dma/dma.c          | 98 +---------------------------------
+ arch/arm/mach-sun3i/dma/dma_15.c       | 93 +++++++++++++++++++++++++++++---
+ arch/arm/mach-sun3i/include/mach/dma.h |  6 ++-
+ 3 files changed, 92 insertions(+), 105 deletions(-)
+
+diff --git a/arch/arm/mach-sun3i/dma/dma.c b/arch/arm/mach-sun3i/dma/dma.c
+index 5ac00dc..7176e74 100644
+--- a/arch/arm/mach-sun3i/dma/dma.c
++++ b/arch/arm/mach-sun3i/dma/dma.c
+@@ -18,7 +18,6 @@
+ #include <linux/sched.h>
+ #include <linux/spinlock.h>
+ #include <linux/interrupt.h>
+-#include <linux/sysdev.h>
+ #include <linux/slab.h>
+ #include <linux/errno.h>
+ #include <linux/io.h>
+@@ -1070,7 +1069,7 @@ int sw_dma_free(unsigned int channel, struct sw_dma_client *client)
+ 
+ EXPORT_SYMBOL(sw_dma_free);
+ 
+-static int sw_dma_dostop(struct sw_dma_chan *chan)
++int sw_dma_dostop(struct sw_dma_chan *chan)
+ {
+ 	unsigned long flags;
+ 	unsigned long tmp;
+@@ -1095,6 +1094,7 @@ static int sw_dma_dostop(struct sw_dma_chan *chan)
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(sw_dma_dostop);
+ 
+ static void sw_dma_waitforstop(struct sw_dma_chan *chan)
+ {
+@@ -1490,66 +1490,6 @@ int sw_dma_getcurposition(unsigned int channel, dma_addr_t *src, dma_addr_t *dst
+ EXPORT_SYMBOL(sw_dma_getcurposition);
+ 
+ 
+-/* system device class */
+-
+-#ifdef CONFIG_PM
+-
+-static struct sw_dma_chan *to_dma_chan(struct sys_device *dev)
+-{
+-	return container_of(dev, struct sw_dma_chan, dev);
+-}
+-
+-static int sw_dma_suspend(struct sys_device *dev, pm_message_t state)
+-{
+-	struct sw_dma_chan *cp = to_dma_chan(dev);
+-
+-	printk(KERN_DEBUG "suspending dma channel %d\n", cp->number);
+-
+-	if (dma_rdreg(cp, SW_DMA_DCONF) & SW_DCONF_BUSY) {
+-		/* the dma channel is still working, which is probably
+-		 * a bad thing to do over suspend/resume. We stop the
+-		 * channel and assume that the client is either going to
+-		 * retry after resume, or that it is broken.
+-		 */
+-
+-		printk(KERN_INFO "dma: stopping channel %d due to suspend\n",
+-		       cp->number);
+-
+-		sw_dma_dostop(cp);
+-	}
+-
+-	return 0;
+-}
+-
+-static int sw_dma_resume(struct sys_device *dev)
+-{
+-#if 0
+-	struct sw_dma_chan *cp = to_dma_chan(dev);
+-	unsigned int no = cp->number | DMACH_LOW_LEVEL;
+-
+-	/* restore channel's hardware configuration */
+-
+-	if (!cp->in_use)
+-		return 0;
+-
+-	printk(KERN_INFO "dma%d: restoring configuration\n", cp->number);
+-
+-	sw_dma_config(no, NULL);
+-#endif
+-	return 0;
+-}
+-
+-#else
+-#define sw_dma_suspend NULL
+-#define sw_dma_resume  NULL
+-#endif /* CONFIG_PM */
+-
+-struct sysdev_class dma_sysclass = {
+-	.name		= "sw-dma",
+-	.suspend	= sw_dma_suspend,
+-	.resume		= sw_dma_resume,
+-};
+-
+ /* kmem cache implementation */
+ 
+ static void sw_dma_cache_ctor(void *p)
+@@ -1559,40 +1499,6 @@ static void sw_dma_cache_ctor(void *p)
+ 
+ /* initialisation code */
+ 
+-static int __init sw_dma_sysclass_init(void)
+-{
+-	int ret = sysdev_class_register(&dma_sysclass);
+-
+-	if (ret != 0)
+-		printk(KERN_ERR "dma sysclass registration failed\n");
+-
+-	return ret;
+-}
+-
+-core_initcall(sw_dma_sysclass_init);
+-
+-static int __init sw_dma_sysdev_register(void)
+-{
+-	struct sw_dma_chan *cp = sw_chans;
+-	int channel, ret;
+-
+-	for (channel = 0; channel < dma_channels; cp++, channel++) {
+-		cp->dev.cls = &dma_sysclass;
+-		cp->dev.id  = channel;
+-		ret = sysdev_register(&cp->dev);
+-
+-		if (ret) {
+-			printk(KERN_ERR "error registering dev for dma %d\n",
+-			       channel);
+- 			return ret;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-late_initcall(sw_dma_sysdev_register);
+-
+ int __init sw_dma_init(unsigned int channels, unsigned int irq,
+ 			    unsigned int stride)
+ {
+diff --git a/arch/arm/mach-sun3i/dma/dma_15.c b/arch/arm/mach-sun3i/dma/dma_15.c
+index 48fdd88..2bc0c09 100644
+--- a/arch/arm/mach-sun3i/dma/dma_15.c
++++ b/arch/arm/mach-sun3i/dma/dma_15.c
+@@ -2,8 +2,10 @@
+ #include <linux/init.h>
+ #include <linux/sysdev.h>
+ #include <linux/serial_core.h>
++#include <linux/platform_device.h>
+ 
+ #include <mach/dma.h>
++#include <mach/dma_regs.h>
+ #include <mach/system.h>
+ 
+ static struct sw_dma_map __initdata sw_dma_mappings[DMACH_MAX] = {
+@@ -107,21 +109,98 @@ static struct sw_dma_selection __initdata sw_dma_sel = {
+ 	.map_size	= ARRAY_SIZE(sw_dma_mappings),
+ };
+ 
+-static int __init sw_dma_add(struct sys_device *sysdev)
++static int __init sw_dmac_probe(struct platform_device *dev)
+ {
++	int ret;
++
+ 	sw15_dma_init();
+-	return sw_dma_init_map(&sw_dma_sel);
++
++	ret = sw_dma_init_map(&sw_dma_sel);
++
++	if (ret) {
++		printk("DMAC: failed to init map\n");
++	} else {
++		pr_info("Initialize DMAC OK\n");
++	}
++
++	return ret;
++}
++
++static int __devexit sw_dmac_remove(struct platform_device *dev)
++{
++	printk("[%s] enter\n", __FUNCTION__);
++	return 0;
++}
++
++#ifdef CONFIG_PM
++
++static inline struct sw_dma_chan *to_dma_chan(struct platform_device *dev)
++{
++	return container_of(dev, struct sw_dma_chan, dev);
++}
++#define dma_rdreg(chan, reg) readl((chan)->regs + (reg))
++
++static int sw_dmac_suspend(struct platform_device *dev, pm_message_t state)
++{
++	struct sw_dma_chan *cp = to_dma_chan(dev);
++
++	printk(KERN_DEBUG "suspending dma channel %d\n", cp->number);
++
++	if (dma_rdreg(cp, SW_DMA_DCONF) & SW_DCONF_BUSY) {
++		/* the dma channel is still working, which is probably
++		 * a bad thing to do over suspend/resume. We stop the
++		 * channel and assume that the client is either going to
++		 * retry after resume, or that it is broken.
++		 */
++
++		printk(KERN_INFO "dma: stopping channel %d due to suspend\n",
++		       cp->number);
++
++		sw_dma_dostop(cp);
++	}
++
++	return 0;
+ }
+ 
+-static struct sysdev_driver __initdata sw_dma_driver = {
+-	.add	= sw_dma_add,
++static int sw_dmac_resume(struct platform_device *dev)
++{
++#if 0
++	struct sw_dma_chan *cp = to_dma_chan(dev);
++	unsigned int no = cp->number | DMACH_LOW_LEVEL;
++
++	/* restore channel's hardware configuration */
++
++	if (!cp->in_use)
++		return 0;
++
++	printk(KERN_INFO "dma%d: restoring configuration\n",
++	       cp->number);
++
++	sw_dma_config(no, NULL);
++#endif
++	return 0;
++}
++
++#else
++#define sw_dmac_suspend NULL
++#define sw_dmca_resume  NULL
++#endif /* CONFIG_PM */
++
++static struct platform_driver __initdata sw_dmac_driver = {
++	.probe		= sw_dmac_probe,
++	.remove		= __devexit_p(sw_dmac_remove),
++	.suspend	= sw_dmac_suspend,
++	.resume		= sw_dmac_resume,
++	.driver		= {
++		.name	= "sw_dmac",
++		.owner	= THIS_MODULE,
++	},
+ };
+ 
+ static int __init sw_dma_drvinit(void)
+ {
+-	return sysdev_driver_register(&sw_sysclass, &sw_dma_driver);
++	platform_driver_register(&sw_dmac_driver);
++	return 0;
+ }
+ 
+ arch_initcall(sw_dma_drvinit);
+-
+-
+diff --git a/arch/arm/mach-sun3i/include/mach/dma.h b/arch/arm/mach-sun3i/include/mach/dma.h
+index 3f58318..e715e65 100644
+--- a/arch/arm/mach-sun3i/include/mach/dma.h
++++ b/arch/arm/mach-sun3i/include/mach/dma.h
+@@ -13,7 +13,7 @@
+ #ifndef __ASM_ARCH_DMA_H
+ #define __ASM_ARCH_DMA_H __FILE__
+ 
+-#include <linux/sysdev.h>
++#include <linux/platform_device.h>
+ #include <mach/hardware.h>
+ 
+ 
+@@ -452,7 +452,7 @@ struct sw_dma_chan {
+ 	struct sw_dma_buf	*end;		/* end of queue */
+ 
+ 	/* system device */
+-	struct sys_device	dev;
++	struct platform_device	dev;
+ 	void * dev_id;
+ };
+ 
+@@ -555,6 +555,8 @@ extern int sw_dma_setflags(unsigned int channel,
+ 
+ extern int sw_dma_free(unsigned int channel, struct sw_dma_client *);
+ 
++extern int sw_dma_dostop(struct sw_dma_chan *chan);
++
+ /* sw_dma_enqueue
+  *
+  * place the given buffer onto the queue of operations for the channel.
+-- 
+1.8.0
+

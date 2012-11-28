@@ -1,0 +1,159 @@
+From b243bae3505acd243abd0b9cd3a8b847c6ff4ec8 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Thu, 6 Sep 2012 22:14:37 +0300
+Subject: [PATCH 747/944] video: sunxi-disp: read init brightness from config
+
+---
+ .../sunxi/disp/de_bsp_sun4i/de/disp_display.h      |  2 ++
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c    | 24 ++++++++++++++++++----
+ .../sunxi/disp/de_bsp_sun5i/de/disp_display.h      |  2 ++
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c    | 24 ++++++++++++++++++----
+ 4 files changed, 44 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+index c95c44f..501f927 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+@@ -84,6 +84,8 @@ typedef struct
+ 
+     __bool                  lcd_io_used[28];
+     user_gpio_set_t         lcd_io[28];
++
++	__u32                   init_bright;
+ }__disp_lcd_cfg_t;
+ 
+ typedef struct
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+index 8b73924..dc977c9 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+@@ -580,7 +580,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+                          "lcdd23", "lcdclk", "lcdde", "lcdhsync", "lcdvsync"};
+     user_gpio_set_t  *gpio_info;
+     int  value = 1;
+-    char primary_key[20];
++	char primary_key[20], sub_name[20];
+     int i = 0;
+     int  ret;
+ 
+@@ -672,7 +672,6 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ //lcd_gpio
+     for(i=0; i<4; i++)
+     {
+-        char sub_name[20];
+         sprintf(sub_name, "lcd_gpio_%d", i);
+ 
+         gpio_info = &(lcd_cfg->lcd_gpio[i]);
+@@ -706,6 +705,23 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+             lcd_cfg->lcd_io_used[i]= 1;
+         }
+     }
++
++/* init_brightness */
++	sprintf(primary_key, "disp_init");
++	sprintf(sub_name, "lcd%d_bright", sel);
++
++	ret = OSAL_Script_FetchParser_Data(primary_key, sub_name, &value, 1);
++	if (ret < 0) {
++		DE_INF("%s.%s not exit\n", primary_key,sub_name);
++		lcd_cfg->init_bright = 197;
++	} else {
++		DE_INF("%s.%s = %d\n", primary_key,sub_name, value);
++		if (value > 256) {
++			value = 256;
++		}
++		lcd_cfg->init_bright = value;
++	}
++
+ }
+ 
+ void LCD_delay_ms(__u32 ms)
+@@ -1267,11 +1283,11 @@ __s32 Disp_lcdc_init(__u32 sel)
+             pwm_info.period_ns = 1000000 / gpanel_info[sel].lcd_pwm_freq;
+             if(gpanel_info[sel].lcd_pwm_pol == 0)
+             {
+-                pwm_info.duty_ns = (192 * pwm_info.period_ns) / 256;
++				pwm_info.duty_ns = (gdisp.screen[sel].lcd_cfg.init_bright * pwm_info.period_ns) / 256;
+             }
+             else
+             {
+-                pwm_info.duty_ns = ((256 - 192) * pwm_info.period_ns) / 256;
++				pwm_info.duty_ns = ((256 - gdisp.screen[sel].lcd_cfg.init_bright) * pwm_info.period_ns) / 256;
+             }
+             pwm_set_para(gpanel_info[sel].lcd_pwm_ch, &pwm_info);
+         }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+index d1867fc..cccf749 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+@@ -84,6 +84,8 @@ typedef struct
+ 
+     __bool                  lcd_io_used[28];
+     user_gpio_set_t         lcd_io[28];
++
++	__u32                   init_bright;
+ }__disp_lcd_cfg_t;
+ 
+ typedef struct
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+index ca79955..69de364 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+@@ -580,7 +580,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+                          "lcdd23", "lcdclk", "lcdde", "lcdhsync", "lcdvsync"};
+     user_gpio_set_t  *gpio_info;
+     int  value = 1;
+-    char primary_key[20];
++	char primary_key[20], sub_name[20];
+     int i = 0;
+     int  ret;
+ 
+@@ -672,7 +672,6 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ //lcd_gpio
+     for(i=0; i<4; i++)
+     {
+-        char sub_name[20];
+         sprintf(sub_name, "lcd_gpio_%d", i);
+ 
+         gpio_info = &(lcd_cfg->lcd_gpio[i]);
+@@ -706,6 +705,23 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+             lcd_cfg->lcd_io_used[i]= 1;
+         }
+     }
++
++/* init_brightness */
++	sprintf(primary_key, "disp_init");
++	sprintf(sub_name, "lcd%d_bright", sel);
++
++	ret = OSAL_Script_FetchParser_Data(primary_key, sub_name, &value, 1);
++	if (ret < 0) {
++		DE_INF("%s.%s not exit\n", primary_key,sub_name);
++		lcd_cfg->init_bright = 197;
++	} else {
++		DE_INF("%s.%s = %d\n", primary_key,sub_name, value);
++		if (value > 256) {
++			value = 256;
++		}
++		lcd_cfg->init_bright = value;
++	}
++
+ }
+ 
+ void LCD_delay_ms(__u32 ms)
+@@ -1273,11 +1289,11 @@ __s32 Disp_lcdc_init(__u32 sel)
+             pwm_info.period_ns = 1000000 / gpanel_info[sel].lcd_pwm_freq;
+             if(gpanel_info[sel].lcd_pwm_pol == 0)
+             {
+-                pwm_info.duty_ns = (192 * pwm_info.period_ns) / 256;
++				pwm_info.duty_ns = (gdisp.screen[sel].lcd_cfg.init_bright * pwm_info.period_ns) / 256;
+             }
+             else
+             {
+-                pwm_info.duty_ns = ((256 - 192) * pwm_info.period_ns) / 256;
++				pwm_info.duty_ns = ((256 - gdisp.screen[sel].lcd_cfg.init_bright) * pwm_info.period_ns) / 256;
+             }
+             pwm_set_para(gpanel_info[sel].lcd_pwm_ch, &pwm_info);
+         }
+-- 
+1.8.0
+

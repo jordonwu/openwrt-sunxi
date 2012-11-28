@@ -1,0 +1,31 @@
+From aabc63c27098f31eede28db9e938af5ceef71973 Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Fri, 13 Jul 2012 13:31:19 -0700
+Subject: [PATCH 536/944] net: wireless: bcmdhd: Decrease chip recognition
+ attempts to 3
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ drivers/net/wireless/bcmdhd/dhd.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index c647035..6aceea5 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -92,10 +92,10 @@ enum dhd_bus_state {
+ #define DHD_SCAN_PASSIVE_TIME	130 /* ms: Embedded default Passive setting from DHD Driver */
+ 
+ #ifndef POWERUP_MAX_RETRY
+-#define POWERUP_MAX_RETRY	(10) /* how many times we retry to power up the chip */
++#define POWERUP_MAX_RETRY	3 /* how many times we retry to power up the chip */
+ #endif
+ #ifndef POWERUP_WAIT_MS
+-#define POWERUP_WAIT_MS		(2000) /* ms: time out in waiting wifi to come up */
++#define POWERUP_WAIT_MS		2000 /* ms: time out in waiting wifi to come up */
+ #endif
+ 
+ enum dhd_bus_wake_state {
+-- 
+1.8.0
+

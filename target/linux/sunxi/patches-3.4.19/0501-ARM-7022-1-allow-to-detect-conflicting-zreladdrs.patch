@@ -1,0 +1,42 @@
+From d96c5df8b06b88e1d99339f091e2372cb825819a Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Thu, 12 Apr 2012 00:49:20 +0200
+Subject: [PATCH 501/944] ARM: 7022/1: allow to detect conflicting zreladdrs
+
+---
+ arch/arm/mach-sun3i/Makefile.boot | 2 +-
+ arch/arm/mach-sun4i/Makefile.boot | 2 +-
+ arch/arm/mach-sun5i/Makefile.boot | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-sun3i/Makefile.boot b/arch/arm/mach-sun3i/Makefile.boot
+index c7e75ac..ff0a4b5 100644
+--- a/arch/arm/mach-sun3i/Makefile.boot
++++ b/arch/arm/mach-sun3i/Makefile.boot
+@@ -1,4 +1,4 @@
+-   zreladdr-y	:= 0x00008000
++   zreladdr-y	+= 0x00008000
+ params_phys-y	:= 0x00000100
+ initrd_phys-y	:= 0x00800000
+ 
+diff --git a/arch/arm/mach-sun4i/Makefile.boot b/arch/arm/mach-sun4i/Makefile.boot
+index c8ef6f1..b98036e 100644
+--- a/arch/arm/mach-sun4i/Makefile.boot
++++ b/arch/arm/mach-sun4i/Makefile.boot
+@@ -1,3 +1,3 @@
+ 
+-zreladdr-$(CONFIG_ARCH_SUN4I)	:= 0x40008000
++zreladdr-$(CONFIG_ARCH_SUN4I)	+= 0x40008000
+ 
+diff --git a/arch/arm/mach-sun5i/Makefile.boot b/arch/arm/mach-sun5i/Makefile.boot
+index fce6773..afac71d 100644
+--- a/arch/arm/mach-sun5i/Makefile.boot
++++ b/arch/arm/mach-sun5i/Makefile.boot
+@@ -1,3 +1,3 @@
+ 
+-zreladdr-$(CONFIG_ARCH_SUN5I)	:= 0x40008000
++zreladdr-$(CONFIG_ARCH_SUN5I)	+= 0x40008000
+ 
+-- 
+1.8.0
+

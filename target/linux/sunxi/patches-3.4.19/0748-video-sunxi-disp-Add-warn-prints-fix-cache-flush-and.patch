@@ -1,0 +1,307 @@
+From 401e32c6417c3737e87afbaebc57e4109f61f3f2 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Wed, 5 Sep 2012 22:55:29 +0300
+Subject: [PATCH 748/944] video: sunxi-disp: Add warn prints, fix cache flush
+ and make pan to wait for vsync
+
+---
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c  |  2 +-
+ .../video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c |  2 +-
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c  |  2 +-
+ .../video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c |  2 +-
+ drivers/video/sunxi/disp/dev_disp.c                | 30 ++++++-----
+ drivers/video/sunxi/disp/dev_fb.c                  | 59 +++++++++++-----------
+ 6 files changed, 51 insertions(+), 46 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
+index 0cb8533..51b5d84 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
+@@ -992,7 +992,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+                 layer_fb.offset_y   = player->src_win.y;
+ 
+ 	            bpp = DE_BE_Format_To_Bpp(sel, layer_fb.format);
+-                size = (player->fb.size.width * layer_man->para.src_win.height * bpp + 7)/8;
++                size = (player->fb.size.width * player->scn_win.height * bpp + 7)/8;
+                 OSAL_CacheRangeFlush((void *)player->fb.addr[0], size,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+                 DE_BE_Layer_Set_Framebuffer(sel, hid,&layer_fb);
+             }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+index 864a94f..9592b0f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+@@ -279,7 +279,7 @@ __s32 Scaler_event_proc(void *parg)
+     DE_SCAL_ClearINT(sel,fe_intflags);
+     DE_BE_ClearINT(sel,be_intflags);
+ 
+-    DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);
++	/*DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);*/
+ 
+     if(be_intflags & DE_IMG_REG_LOAD_FINISH)
+     {
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
+index 0689208..c4babaa 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
+@@ -992,7 +992,7 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+                 layer_fb.offset_y   = player->src_win.y;
+ 
+ 	            bpp = DE_BE_Format_To_Bpp(sel, layer_fb.format);
+-                size = (player->fb.size.width * layer_man->para.src_win.height * bpp + 7)/8;
++                size = (player->fb.size.width * player->scn_win.height * bpp + 7)/8;
+                 OSAL_CacheRangeFlush((void *)player->fb.addr[0], size,CACHE_CLEAN_FLUSH_D_CACHE_REGION);
+                 DE_BE_Layer_Set_Framebuffer(sel, hid,&layer_fb);
+             }
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+index 9afd2b1..a1be3fd 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+@@ -276,7 +276,7 @@ __s32 Scaler_event_proc(void *parg)
+ 
+     fe_intflags = DE_SCAL_QueryINT(sel);
+ 
+-    DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);
++	/*DE_INF("scaler %d interrupt, scal_int_status:0x%x!\n", sel, fe_intflags);*/
+ 
+     if(fe_intflags & DE_WB_END_IE)
+     {
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index 73c2ff8..fba57a2 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -627,7 +627,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     {
+         if((ubuffer[0] != 0) && (ubuffer[0] != 1))
+         {
+-            __wrn("para err in disp_ioctl, screen id = %d\n", (int)ubuffer[0]);
++			__wrn("para err in disp_ioctl, cmd = 0x%x,screen id = %d\n", cmd, (int)ubuffer[0]);
+             return -1;
+         }
+     }
+@@ -655,6 +655,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 
+     		if(copy_from_user(&para, (void __user *)ubuffer[1],sizeof(__disp_color_t)))
+     		{
++				__wrn("copy_from_user fail\n");
+     			return  -EFAULT;
+     		}
+ 		    ret = BSP_disp_set_bk_color(ubuffer[0], &para);
+@@ -667,6 +668,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 
+     		if(copy_from_user(&para, (void __user *)ubuffer[1],sizeof(__disp_colorkey_t)))
+     		{
++				__wrn("copy_from_user fail\n");
+     			return  -EFAULT;
+     		}
+     		ret = BSP_disp_set_color_key(ubuffer[0], &para);
+@@ -681,6 +683,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     	    }
+     		if(copy_from_user(gbuffer, (void __user *)ubuffer[1],ubuffer[3]))
+     		{
++				__wrn("copy_from_user fail\n");
+     			return  -EFAULT;
+     		}
+     		ret = BSP_disp_set_palette_table(ubuffer[0], (__u32 *)gbuffer, ubuffer[2], ubuffer[3]);
+@@ -695,6 +698,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_get_palette_table(ubuffer[0], (__u32 *)gbuffer, ubuffer[2], ubuffer[3]);
+     		if(copy_to_user((void __user *)ubuffer[1], gbuffer,ubuffer[3]))
+     		{
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -840,7 +844,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_layer_get_framebuffer(ubuffer[0], ubuffer[1], &para);
+     		if(copy_to_user((void __user *)ubuffer[2], &para,sizeof(__disp_fb_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -867,7 +871,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_layer_get_src_window(ubuffer[0],ubuffer[1], &para);
+     		if(copy_to_user((void __user *)ubuffer[2], &para, sizeof(__disp_rect_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -894,7 +898,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_layer_get_screen_window(ubuffer[0],ubuffer[1], &para);
+     		if(copy_to_user((void __user *)ubuffer[2], &para, sizeof(__disp_rect_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -921,7 +925,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_layer_get_para(ubuffer[0], ubuffer[1], &para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_layer_info_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1127,7 +1131,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_hwc_get_pos(ubuffer[0], &para);
+     		if(copy_to_user((void __user *)ubuffer[1],&para, sizeof(__disp_pos_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1194,7 +1198,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+             ret = BSP_disp_video_get_dit_info(ubuffer[0], ubuffer[1],&para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_dit_info_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1503,7 +1507,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_sprite_block_get_srceen_win(ubuffer[0], ubuffer[1],&para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_rect_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1529,7 +1533,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_sprite_block_get_src_win(ubuffer[0], ubuffer[1],&para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_rect_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1555,7 +1559,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_sprite_block_get_framebufer(ubuffer[0], ubuffer[1],&para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_fb_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1609,7 +1613,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+     		ret = BSP_disp_sprite_block_get_para(ubuffer[0], ubuffer[1],&para);
+     		if(copy_to_user((void __user *)ubuffer[2],&para, sizeof(__disp_sprite_block_para_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+     		break;
+@@ -1640,7 +1644,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 			ret = Display_Fb_get_para(ubuffer[0], &para);
+     		if(copy_to_user((void __user *)ubuffer[1],&para, sizeof(__disp_fb_create_para_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+ 			break;
+@@ -1653,7 +1657,7 @@ long disp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ 			ret = Display_get_disp_init_para(&para);
+     		if(copy_to_user((void __user *)ubuffer[0],&para, sizeof(__disp_init_t)))
+     		{
+-    		    __wrn("copy_from_user fail\n");
++				__wrn("copy_to_user fail\n");
+     			return  -EFAULT;
+     		}
+ 			break;
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index 91919d6..88b0b96 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -779,6 +779,33 @@ static int Fb_release(struct fb_info *info, int user)
+ 	return 0;
+ }
+ 
++static int Fb_wait_for_vsync(struct fb_info *info)
++{
++	unsigned long count;
++	__u32 sel = 0;
++	int ret;
++
++	for (sel = 0; sel < 2; sel++) {
++		if (((sel==0) && (g_fbi.fb_mode[info->node] != FB_MODE_SCREEN1)) ||
++		    ((sel==1) && (g_fbi.fb_mode[info->node] != FB_MODE_SCREEN0))) {
++
++			if(BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE) {
++				return 0;
++			}
++
++			count = g_fbi.wait_count[sel];
++			ret = wait_event_interruptible_timeout(g_fbi.wait[sel],
++				count != g_fbi.wait_count[sel], msecs_to_jiffies(50));
++			if (ret == 0) {
++				__inf("timeout\n");
++				return -ETIMEDOUT;
++			}
++		}
++	}
++
++	return 0;
++}
++
+ static int Fb_pan_display(struct fb_var_screeninfo *var,struct fb_info *info)
+ {
+ 	__u32 sel = 0;
+@@ -838,6 +865,9 @@ static int Fb_pan_display(struct fb_var_screeninfo *var,struct fb_info *info)
+             }
+         }
+     }
++
++	Fb_wait_for_vsync(info);
++
+ 	return 0;
+ }
+ 
+@@ -1017,35 +1047,6 @@ static int Fb_cursor(struct fb_info *info, struct fb_cursor *cursor)
+     return -EINVAL;
+ }
+ 
+-static int Fb_wait_for_vsync(struct fb_info *info)
+-{
+-	unsigned long count;
+-	__u32 sel = 0;
+-	int ret;
+-
+-    for(sel = 0; sel < 2; sel++)
+-    {
+-        if(((sel==0) && (g_fbi.fb_mode[info->node] != FB_MODE_SCREEN1))
+-            || ((sel==1) && (g_fbi.fb_mode[info->node] != FB_MODE_SCREEN0)))
+-        {
+-            if(BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE)
+-            {
+-                return 0;
+-            }
+-
+-        	count = g_fbi.wait_count[sel];
+-        	ret = wait_event_interruptible_timeout(g_fbi.wait[sel], count != g_fbi.wait_count[sel], msecs_to_jiffies(50));
+-        	if (ret == 0)
+-        	{
+-        	    __inf("timeout\n");
+-        		return -ETIMEDOUT;
+-        	}
+-        }
+-    }
+-
+-	return 0;
+-}
+-
+ __s32 DRV_disp_int_process(__u32 sel)
+ {
+     g_fbi.wait_count[sel]++;
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From 5c580171c6f7b97dd14aec169338cc135279bcca Mon Sep 17 00:00:00 2001
+From: Jaikumar Ganesh <jaikumarg@android.com>
+Date: Wed, 21 Sep 2011 17:18:56 -0700
+Subject: [PATCH 141/944] HID: Add null check for hidinput.
+
+Add null check for hidinput before calling input_register.
+
+Change-Id: Ib3fc0507e4091192360f3395d13d489db9b5a4d2
+Signed-off-by: Jaikumar Ganesh <jaikumarg@android.com>
+---
+ drivers/hid/hid-input.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/hid/hid-input.c b/drivers/hid/hid-input.c
+index 9317156..c19bff7 100644
+--- a/drivers/hid/hid-input.c
++++ b/drivers/hid/hid-input.c
+@@ -1218,7 +1218,7 @@ int hidinput_connect(struct hid_device *hid, unsigned int force)
+ 		goto out_unwind;
+ 	}
+ 
+-	if (hid->driver->input_register &&
++	if (hidinput && hid->driver->input_register &&
+ 			hid->driver->input_register(hid, hidinput))
+ 		goto out_cleanup;
+ 
+-- 
+1.8.0
+

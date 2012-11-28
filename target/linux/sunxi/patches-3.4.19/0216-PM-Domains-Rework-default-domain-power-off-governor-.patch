@@ -1,0 +1,174 @@
+From dd8683e97f12609fb3f8c4318628f0d246542f89 Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Apr 2012 22:54:30 +0200
+Subject: [PATCH 216/944] PM / Domains: Rework default domain power off
+ governor function, v2
+
+The existing default domain power down governor function for PM
+domains, default_power_down_ok(), is supposed to check whether or not
+the PM QoS latency constraints of the devices in the domain will be
+violated if the domain is turned off by pm_genpd_poweroff().
+However, the computations carried out by it don't reflect the
+definition of the PM QoS latency constrait in
+Documentation/ABI/testing/sysfs-devices-power.
+
+Make default_power_down_ok() follow the definition of the PM QoS
+latency constrait.  In particular, make it only take latencies into
+account, because it doesn't matter how much time has elapsed since
+the domain's devices were suspended for the computation.
+
+Remove the break_even_ns and power_off_time fields from
+struct generic_pm_domain, because they are not necessary any more.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/domain.c          |  2 +-
+ drivers/base/power/domain_governor.c | 69 ++++++++++++++++++------------------
+ include/linux/pm_domain.h            |  2 --
+ 3 files changed, 35 insertions(+), 38 deletions(-)
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 3c6e94f..d03a8c7 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -381,6 +381,7 @@ static int pm_genpd_poweroff(struct generic_pm_domain *genpd)
+ 		return 0;
+ 	}
+ 
++	genpd->max_off_time_ns = -1;
+ 	if (genpd->gov && genpd->gov->power_down_ok) {
+ 		if (!genpd->gov->power_down_ok(&genpd->domain))
+ 			return -EAGAIN;
+@@ -443,7 +444,6 @@ static int pm_genpd_poweroff(struct generic_pm_domain *genpd)
+ 	}
+ 
+ 	genpd->status = GPD_STATE_POWER_OFF;
+-	genpd->power_off_time = ktime_get();
+ 
+ 	/* Update PM QoS information for devices in the domain. */
+ 	list_for_each_entry_reverse(pdd, &genpd->dev_list, list_node) {
+diff --git a/drivers/base/power/domain_governor.c b/drivers/base/power/domain_governor.c
+index a67f157..2aae623 100644
+--- a/drivers/base/power/domain_governor.c
++++ b/drivers/base/power/domain_governor.c
+@@ -89,7 +89,6 @@ static bool default_power_down_ok(struct dev_pm_domain *pd)
+ 	struct pm_domain_data *pdd;
+ 	s64 min_dev_off_time_ns;
+ 	s64 off_on_time_ns;
+-	ktime_t time_now = ktime_get();
+ 
+ 	off_on_time_ns = genpd->power_off_latency_ns +
+ 				genpd->power_on_latency_ns;
+@@ -118,8 +117,6 @@ static bool default_power_down_ok(struct dev_pm_domain *pd)
+ 		if (sd_max_off_ns < 0)
+ 			continue;
+ 
+-		sd_max_off_ns -= ktime_to_ns(ktime_sub(time_now,
+-						       sd->power_off_time));
+ 		/*
+ 		 * Check if the subdomain is allowed to be off long enough for
+ 		 * the current domain to turn off and on (that's how much time
+@@ -135,52 +132,54 @@ static bool default_power_down_ok(struct dev_pm_domain *pd)
+ 	min_dev_off_time_ns = -1;
+ 	list_for_each_entry(pdd, &genpd->dev_list, list_node) {
+ 		struct gpd_timing_data *td;
+-		struct device *dev = pdd->dev;
+-		s64 dev_off_time_ns;
++		s64 constraint_ns;
+ 
+-		if (!dev->driver || dev->power.max_time_suspended_ns < 0)
++		if (!pdd->dev->driver)
+ 			continue;
+ 
++		/*
++		 * Check if the device is allowed to be off long enough for the
++		 * domain to turn off and on (that's how much time it will
++		 * have to wait worst case).
++		 */
+ 		td = &to_gpd_data(pdd)->td;
+-		dev_off_time_ns = dev->power.max_time_suspended_ns -
+-			(td->start_latency_ns + td->restore_state_latency_ns +
+-				ktime_to_ns(ktime_sub(time_now,
+-						dev->power.suspend_time)));
+-		if (dev_off_time_ns <= off_on_time_ns)
+-			return false;
+-
+-		if (min_dev_off_time_ns > dev_off_time_ns
+-		    || min_dev_off_time_ns < 0)
+-			min_dev_off_time_ns = dev_off_time_ns;
+-	}
++		constraint_ns = td->effective_constraint_ns;
++		/* default_stop_ok() need not be called before us. */
++		if (constraint_ns < 0) {
++			constraint_ns = dev_pm_qos_read_value(pdd->dev);
++			constraint_ns *= NSEC_PER_USEC;
++		}
++		if (constraint_ns == 0)
++			continue;
+ 
+-	if (min_dev_off_time_ns < 0) {
+ 		/*
+-		 * There are no latency constraints, so the domain can spend
+-		 * arbitrary time in the "off" state.
++		 * constraint_ns cannot be negative here, because the device has
++		 * been suspended.
+ 		 */
+-		genpd->max_off_time_ns = -1;
+-		return true;
++		constraint_ns -= td->restore_state_latency_ns;
++		if (constraint_ns <= off_on_time_ns)
++			return false;
++
++		if (min_dev_off_time_ns > constraint_ns
++		    || min_dev_off_time_ns < 0)
++			min_dev_off_time_ns = constraint_ns;
+ 	}
+ 
+ 	/*
+-	 * The difference between the computed minimum delta and the time needed
+-	 * to turn the domain on is the maximum theoretical time this domain can
+-	 * spend in the "off" state.
++	 * If the computed minimum device off time is negative, there are no
++	 * latency constraints, so the domain can spend arbitrary time in the
++	 * "off" state.
+ 	 */
+-	min_dev_off_time_ns -= genpd->power_on_latency_ns;
++	if (min_dev_off_time_ns < 0)
++		return true;
+ 
+ 	/*
+-	 * If the difference between the computed minimum delta and the time
+-	 * needed to turn the domain off and back on on is smaller than the
+-	 * domain's power break even time, removing power from the domain is not
+-	 * worth it.
++	 * The difference between the computed minimum device off time and the
++	 * time needed to turn the domain on is the maximum theoretical time
++	 * this domain can spend in the "off" state.
+ 	 */
+-	if (genpd->break_even_ns >
+-	    min_dev_off_time_ns - genpd->power_off_latency_ns)
+-		return false;
+-
+-	genpd->max_off_time_ns = min_dev_off_time_ns;
++	genpd->max_off_time_ns = min_dev_off_time_ns -
++					genpd->power_on_latency_ns;
+ 	return true;
+ }
+ 
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 9c25219..e7ada5c 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -70,9 +70,7 @@ struct generic_pm_domain {
+ 	int (*power_on)(struct generic_pm_domain *domain);
+ 	s64 power_on_latency_ns;
+ 	struct gpd_dev_ops dev_ops;
+-	s64 break_even_ns;	/* Power break even for the entire domain. */
+ 	s64 max_off_time_ns;	/* Maximum allowed "suspended" time. */
+-	ktime_t power_off_time;
+ 	struct device_node *of_node; /* Node in device tree */
+ };
+ 
+-- 
+1.8.0
+

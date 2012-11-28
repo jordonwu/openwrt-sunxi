@@ -1,0 +1,38 @@
+From 2d23ca0a3de90e34a8871a06cf430d7ac8ea1cab Mon Sep 17 00:00:00 2001
+From: Laura Abbott <lauraa@codeaurora.org>
+Date: Wed, 1 Aug 2012 18:06:18 -0700
+Subject: [PATCH 627/944] gpu: ion: Don't call ion_buffer_put on error path
+
+If dma_buf_fd fails, the dma_buf needs to be cleaned up by
+calling dma_buf_put. dma_buf_put will call ion_dma_buf_release
+which in turn calls ion_buffer_put to clean up the buffer
+reference. Calling ion_buffer_put after dma_buf_put drops the
+reference count by one more which is incorrect. Fix this by
+getting rid of the extra ion_buffer_put call.
+
+Change-Id: Ieb3a7b781bf2dc299c45384dbf0a12d186adeb22
+Signed-off-by: Laura Abbott <lauraa@codeaurora.org>
+---
+ drivers/gpu/ion/ion.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 156a68e..b782397 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -925,10 +925,9 @@ int ion_share_dma_buf(struct ion_client *client, struct ion_handle *handle)
+ 		return PTR_ERR(dmabuf);
+ 	}
+ 	fd = dma_buf_fd(dmabuf, O_CLOEXEC);
+-	if (fd < 0) {
++	if (fd < 0)
+ 		dma_buf_put(dmabuf);
+-		ion_buffer_put(buffer);
+-	}
++
+ 	return fd;
+ }
+ EXPORT_SYMBOL(ion_share_dma_buf);
+-- 
+1.8.0
+

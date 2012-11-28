@@ -1,0 +1,641 @@
+From 8370286453f78bca7eea0ba63f6892f71bc1df8a Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 15:49:26 +0200
+Subject: [PATCH 868/944] video:sunxi:disp: fix bitmasks
+
+There are tons of defines like this:
+
+This allows one to
+	value |= some_bit0 | some_bit1;
+and...
+	value &= some_bit0_mask & some_bit1_mask;
+
+The latter, without checking what _mask meant had me completely fooled.
+
+Now:
+	value &= ~(some_bit0 | some_bit1);
+
+No more confusion!
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/disp_clk.c     | 74 +++++++++++----------------------
+ drivers/video/sunxi/disp/disp_de.c      | 12 +++---
+ drivers/video/sunxi/disp/disp_display.c |  6 +--
+ drivers/video/sunxi/disp/disp_display.h | 14 -------
+ drivers/video/sunxi/disp/disp_hdmi.c    |  6 +--
+ drivers/video/sunxi/disp/disp_iep.c     | 20 ++++-----
+ drivers/video/sunxi/disp/disp_iep.h     | 10 -----
+ drivers/video/sunxi/disp/disp_layer.c   |  6 +--
+ drivers/video/sunxi/disp/disp_layer.h   |  2 -
+ drivers/video/sunxi/disp/disp_lcd.c     |  8 ++--
+ drivers/video/sunxi/disp/disp_scaler.c  |  2 +-
+ drivers/video/sunxi/disp/disp_sprite.c  |  6 +--
+ drivers/video/sunxi/disp/disp_sprite.h  |  4 --
+ drivers/video/sunxi/disp/disp_tv.c      |  6 +--
+ drivers/video/sunxi/disp/disp_vga.c     |  6 +--
+ 15 files changed, 61 insertions(+), 121 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/disp_clk.c b/drivers/video/sunxi/disp/disp_clk.c
+index fb4317c..0634ce4 100644
+--- a/drivers/video/sunxi/disp/disp_clk.c
++++ b/drivers/video/sunxi/disp/disp_clk.c
+@@ -55,30 +55,6 @@
+ #define CLK_HDMI_MOD_ON		0x20000000
+ //#define CLK_LVDS_MOD_ON
+ 
+-#define CLK_DEBE0_AHB_OFF	(~(CLK_DEBE0_AHB_ON))
+-#define CLK_DEBE0_MOD_OFF	(~(CLK_DEBE0_MOD_ON))
+-#define CLK_DEBE0_DRAM_OFF	(~(CLK_DEBE0_DRAM_ON))
+-#define CLK_DEBE1_AHB_OFF	(~(CLK_DEBE1_AHB_ON))
+-#define CLK_DEBE1_MOD_OFF	(~(CLK_DEBE1_MOD_ON))
+-#define CLK_DEBE1_DRAM_OFF	(~(CLK_DEBE1_DRAM_ON))
+-#define CLK_DEFE0_AHB_OFF	(~(CLK_DEFE0_AHB_ON))
+-#define CLK_DEFE0_MOD_OFF	(~(CLK_DEFE0_MOD_ON))
+-#define CLK_DEFE0_DRAM_OFF	(~(CLK_DEFE0_DRAM_ON))
+-#define CLK_DEFE1_AHB_OFF	(~(CLK_DEFE1_AHB_ON))
+-#define CLK_DEFE1_MOD_OFF	(~(CLK_DEFE1_MOD_ON))
+-#define CLK_DEFE1_DRAM_OFF	(~(CLK_DEFE1_DRAM_ON))
+-#define CLK_LCDC0_AHB_OFF	(~(CLK_LCDC0_AHB_ON))
+-#define CLK_LCDC0_MOD0_OFF	(~(CLK_LCDC0_MOD0_ON))
+-#define CLK_LCDC0_MOD1_OFF	(~(CLK_LCDC0_MOD1_ON))
+-#define CLK_LCDC1_AHB_OFF	(~(CLK_LCDC1_AHB_ON))
+-#define CLK_LCDC1_MOD0_OFF	(~(CLK_LCDC1_MOD0_ON))
+-#define CLK_LCDC1_MOD1_OFF	(~(CLK_LCDC1_MOD1_ON))
+-#define CLK_TVENC0_AHB_OFF	(~(CLK_TVENC0_AHB_ON))
+-#define CLK_TVENC1_AHB_OFF	(~(CLK_TVENC1_AHB_ON))
+-#define CLK_HDMI_AHB_OFF	(~(CLK_HDMI_AHB_ON))
+-#define CLK_HDMI_MOD_OFF	(~(CLK_HDMI_MOD_ON))
+-//#define CLK_LVDS_MOD_OFF	(~(CLK_LVDS_MOD_ON))
+-
+ __hdle h_debe0ahbclk, h_debe0mclk, h_debe0dramclk;
+ __hdle h_debe1ahbclk, h_debe1mclk, h_debe1dramclk;
+ __hdle h_defe0ahbclk, h_defe0mclk, h_defe0dramclk;
+@@ -220,9 +196,8 @@ __s32 image_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_debe0dramclk);
+ 		OSAL_CCMU_CloseMclk(h_debe0mclk);
+ 
+-		/* broken mask */
+-		g_clk_status &= CLK_DEBE0_AHB_OFF & CLK_DEBE0_MOD_OFF &
+-			CLK_DEBE0_DRAM_OFF;
++		g_clk_status &= ~(CLK_DEBE0_AHB_ON | CLK_DEBE0_MOD_ON |
++				  CLK_DEBE0_DRAM_ON);
+ 	} else if (sel == 1) {
+ #ifdef RESET_OSAL
+ 		OSAL_CCMU_MclkReset(h_debe1mclk, RST_VALID);
+@@ -234,9 +209,8 @@ __s32 image_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_debe1dramclk);
+ 		OSAL_CCMU_CloseMclk(h_debe1mclk);
+ 
+-		/* broken mask */
+-		g_clk_status &= CLK_DEBE1_AHB_OFF & CLK_DEBE1_MOD_OFF &
+-			CLK_DEBE1_DRAM_OFF;
++		g_clk_status &= ~(CLK_DEBE1_AHB_ON | CLK_DEBE1_MOD_ON |
++				  CLK_DEBE1_DRAM_ON);
+ 	}
+ 
+ 	return DIS_SUCCESS;
+@@ -262,10 +236,10 @@ __s32 image_clk_off(__u32 sel)
+ {
+ 	if (sel == 0) {
+ 		OSAL_CCMU_MclkOnOff(h_debe0dramclk, CLK_OFF);
+-		g_clk_status &= CLK_DEBE0_DRAM_OFF;
++		g_clk_status &= ~CLK_DEBE0_DRAM_ON;
+ 	} else if (sel == 1) {
+ 		OSAL_CCMU_MclkOnOff(h_debe1dramclk, CLK_OFF);
+-		g_clk_status &= CLK_DEBE1_DRAM_OFF;
++		g_clk_status &= ~CLK_DEBE1_DRAM_ON;
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -327,8 +301,8 @@ __s32 scaler_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_defe0dramclk);
+ 		OSAL_CCMU_CloseMclk(h_defe0mclk);
+ 
+-		g_clk_status &= CLK_DEFE0_AHB_OFF & CLK_DEFE0_MOD_OFF &
+-			CLK_DEFE0_DRAM_OFF;
++		g_clk_status &= ~(CLK_DEFE0_AHB_ON | CLK_DEFE0_MOD_ON |
++				  CLK_DEFE0_DRAM_ON);
+ 
+ 	} else if (sel == 1) {
+ #ifdef RESET_OSAL
+@@ -341,8 +315,8 @@ __s32 scaler_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_defe1dramclk);
+ 		OSAL_CCMU_CloseMclk(h_defe1mclk);
+ 
+-		g_clk_status &= CLK_DEFE1_AHB_OFF & CLK_DEFE1_MOD_OFF &
+-			CLK_DEFE1_DRAM_OFF;
++		g_clk_status &= ~(CLK_DEFE1_AHB_ON | CLK_DEFE1_MOD_ON |
++				  CLK_DEFE1_DRAM_ON);
+ 	}
+ 
+ 	return DIS_SUCCESS;
+@@ -370,12 +344,12 @@ __s32 scaler_clk_off(__u32 sel)
+ 		OSAL_CCMU_MclkOnOff(h_defe0mclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_defe0dramclk, CLK_OFF);
+ 
+-		g_clk_status &= (CLK_DEFE0_MOD_OFF & CLK_DEFE0_DRAM_OFF);
++		g_clk_status &= ~(CLK_DEFE0_MOD_ON | CLK_DEFE0_DRAM_ON);
+ 	} else if (sel == 1) {
+ 		OSAL_CCMU_MclkOnOff(h_defe1mclk, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_defe1dramclk, CLK_OFF);
+ 
+-		g_clk_status &= (CLK_DEFE1_MOD_OFF & CLK_DEFE1_DRAM_OFF);
++		g_clk_status &= ~(CLK_DEFE1_MOD_ON | CLK_DEFE1_DRAM_ON);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -469,8 +443,8 @@ __s32 lcdc_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_lcd0ch1mclk1);
+ 		OSAL_CCMU_CloseMclk(h_lcd0ch1mclk2);
+ 
+-		g_clk_status &= CLK_LCDC0_AHB_OFF & CLK_LCDC0_MOD0_OFF &
+-		     CLK_LCDC0_MOD1_OFF;
++		g_clk_status &= ~(CLK_LCDC0_AHB_ON | CLK_LCDC0_MOD0_ON |
++				  CLK_LCDC0_MOD1_ON);
+ 	} else if (sel == 1) {
+ #ifdef RESET_OSAL
+ 		OSAL_CCMU_MclkReset(h_lcd1ch0mclk0, RST_VALID);
+@@ -484,8 +458,8 @@ __s32 lcdc_clk_exit(__u32 sel)
+ 		OSAL_CCMU_CloseMclk(h_lcd1ch1mclk1);
+ 		OSAL_CCMU_CloseMclk(h_lcd1ch1mclk2);
+ 
+-		g_clk_status &= CLK_LCDC1_AHB_OFF & CLK_LCDC1_MOD0_OFF &
+-			CLK_LCDC1_MOD1_OFF;
++		g_clk_status &= ~(CLK_LCDC1_AHB_ON | CLK_LCDC1_MOD0_ON |
++				  CLK_LCDC1_MOD1_ON);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -497,13 +471,13 @@ __s32 lcdc_clk_on(__u32 sel)
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk1, CLK_ON);
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk2, CLK_ON);
+ 
+-		g_clk_status |= (CLK_LCDC0_MOD0_ON | CLK_LCDC0_MOD1_ON);
++		g_clk_status |= CLK_LCDC0_MOD0_ON | CLK_LCDC0_MOD1_ON;
+ 	} else if (sel == 1) {
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_ON);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk1, CLK_ON);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk2, CLK_ON);
+ 
+-		g_clk_status |= (CLK_LCDC1_MOD0_ON | CLK_LCDC1_MOD1_ON);
++		g_clk_status |= CLK_LCDC1_MOD0_ON | CLK_LCDC1_MOD1_ON;
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -515,13 +489,13 @@ __s32 lcdc_clk_off(__u32 sel)
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk1, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_lcd0ch1mclk2, CLK_OFF);
+ 
+-		g_clk_status &= CLK_LCDC0_MOD0_OFF & CLK_LCDC0_MOD1_OFF;
++		g_clk_status &= ~(CLK_LCDC0_MOD0_ON | CLK_LCDC0_MOD1_ON);
+ 	} else if (sel == 1) {
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch0mclk0, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk1, CLK_OFF);
+ 		OSAL_CCMU_MclkOnOff(h_lcd1ch1mclk2, CLK_OFF);
+ 
+-		g_clk_status &= CLK_LCDC1_MOD0_OFF & CLK_LCDC1_MOD1_OFF;
++		g_clk_status &= ~(CLK_LCDC1_MOD0_ON | CLK_LCDC1_MOD1_ON);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -554,12 +528,12 @@ __s32 tve_clk_exit(__u32 sel)
+ 		OSAL_CCMU_MclkReset(h_lcd0ch1mclk2, RST_VALID);
+ #endif
+ 
+-		g_clk_status &= CLK_TVENC0_AHB_OFF;
++		g_clk_status &= ~CLK_TVENC0_AHB_ON;
+ 	} else if (sel == 1) {
+ 		OSAL_CCMU_MclkOnOff(h_tvenc1ahbclk, CLK_OFF);
+ 		OSAL_CCMU_CloseMclk(h_tvenc1ahbclk);
+ 
+-		g_clk_status &= CLK_TVENC1_AHB_OFF;
++		g_clk_status &= ~CLK_TVENC1_AHB_ON;
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -612,7 +586,7 @@ __s32 hdmi_clk_exit(void)
+ 	OSAL_CCMU_MclkOnOff(h_hdmimclk, CLK_OFF);
+ #endif
+ 
+-	g_clk_status &= CLK_HDMI_AHB_OFF & CLK_HDMI_MOD_OFF;
++	g_clk_status &= ~(CLK_HDMI_AHB_ON | CLK_HDMI_MOD_ON);
+ 
+ 	return DIS_SUCCESS;
+ }
+@@ -631,7 +605,7 @@ __s32 hdmi_clk_off(void)
+ {
+ #ifdef CONFIG_ARCH_SUN4I
+ 	OSAL_CCMU_MclkOnOff(h_hdmimclk, CLK_OFF);
+-	g_clk_status &= CLK_HDMI_MOD_OFF;
++	g_clk_status &= ~CLK_HDMI_MOD_ON;
+ #endif
+ 
+ 	return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_de.c b/drivers/video/sunxi/disp/disp_de.c
+index 3674a15..20c4f8e 100644
+--- a/drivers/video/sunxi/disp/disp_de.c
++++ b/drivers/video/sunxi/disp/disp_de.c
+@@ -69,7 +69,7 @@ __s32 Image_close(__u32 sel)
+ {
+ 	DE_BE_Disable(sel);
+ 
+-	gdisp.screen[sel].status &= IMAGE_USED_MASK;
++	gdisp.screen[sel].status &= ~IMAGE_USED;
+ 
+ 	return DIS_SUCCESS;
+ }
+@@ -303,11 +303,11 @@ __s32 BSP_disp_set_output_csc(__u32 sel, __u32 out_type, __u32 drc_en)
+ #ifdef CONFIG_ARCH_SUN4I
+ __s32 BSP_disp_de_flicker_enable(__u32 sel, __bool b_en)
+ {
+-	if (b_en) {
++	if (b_en)
+ 		gdisp.screen[sel].de_flicker_status |= DE_FLICKER_REQUIRED;
+-	} else {
+-		gdisp.screen[sel].de_flicker_status &= DE_FLICKER_REQUIRED_MASK;
+-	}
++	else
++		gdisp.screen[sel].de_flicker_status &= ~DE_FLICKER_REQUIRED;
++
+ 	Disp_set_out_interlace(sel);
+ 	return DIS_SUCCESS;
+ }
+@@ -352,7 +352,7 @@ __s32 Disp_set_out_interlace(__u32 sel)
+ 				gdisp.scaler[i].b_reg_change = TRUE;
+ 			}
+ 		}
+-		gdisp.screen[sel].de_flicker_status &= DE_FLICKER_USED_MASK;
++		gdisp.screen[sel].de_flicker_status &= ~DE_FLICKER_USED;
+ 	}
+ 	DE_BE_Set_Outitl_enable(sel, gdisp.screen[sel].b_out_interlace);
+ 
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index 30b5c62..e9ecd9a 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -175,11 +175,9 @@ __s32 BSP_disp_close(void)
+ 		}
+ 	}
+ 
+-	/* this bitmasking definitely is broken! --libv */
+ 	gdisp.screen[sel].status &=
+-		(IMAGE_USED_MASK & LCD_OFF & TV_OFF & VGA_OFF & HDMI_OFF);
+-	gdisp.screen[sel].lcdc_status &=
+-		(LCDC_TCON0_USED_MASK & LCDC_TCON1_USED_MASK);
++		~(IMAGE_USED | LCD_ON | TV_ON | VGA_ON | HDMI_ON);
++	gdisp.screen[sel].lcdc_status &= ~(LCDC_TCON0_USED & LCDC_TCON1_USED);
+ 	return DIS_SUCCESS;
+ }
+ 
+diff --git a/drivers/video/sunxi/disp/disp_display.h b/drivers/video/sunxi/disp/disp_display.h
+index d78437a..85ad026 100644
+--- a/drivers/video/sunxi/disp/disp_display.h
++++ b/drivers/video/sunxi/disp/disp_display.h
+@@ -32,40 +32,26 @@
+ #endif
+ 
+ #define IMAGE_USED		0x00000004
+-#define IMAGE_USED_MASK		(~(IMAGE_USED))
+ #define YUV_CH_USED		0x00000010
+-#define YUV_CH_USED_MASK	(~(YUV_CH_USED))
+ #define HWC_USED		0x00000040
+-#define HWC_USED_MASK		(~(HWC_USED))
+ #define LCDC_TCON0_USED		0x00000080
+-#define LCDC_TCON0_USED_MASK	(~(LCDC_TCON0_USED))
+ #define LCDC_TCON1_USED	 	0x00000100
+-#define LCDC_TCON1_USED_MASK	(~(LCDC_TCON1_USED))
+ #define SCALER_USED		0x00000200
+-#define SCALER_USED_MASK	(~(SCALER_USED))
+ 
+ #define LCD_ON		0x00010000
+-#define LCD_OFF		(~(LCD_ON))
+ #define TV_ON		0x00020000
+-#define TV_OFF		(~(TV_ON))
+ #define HDMI_ON		0x00040000
+-#define HDMI_OFF	(~(HDMI_ON))
+ #define VGA_ON		0x00080000
+-#define VGA_OFF		(~(VGA_ON))
+ 
+ #define VIDEO_PLL0_USED		0x00100000
+-#define VIDEO_PLL0_USED_MASK	(~(VIDEO_PLL0_USED))
+ #define VIDEO_PLL1_USED		0x00200000
+-#define VIDEO_PLL1_USED_MASK	(~(VIDEO_PLL1_USED))
+ 
+ #define IMAGE_OUTPUT_LCDC		0x00000001
+ #define IMAGE_OUTPUT_SCALER		0x00000002
+ #define IMAGE_OUTPUT_LCDC_AND_SCALER	0x00000003
+ 
+ #define DE_FLICKER_USED 0x01000000
+-#define DE_FLICKER_USED_MASK (~(DE_FLICKER_USED))
+ #define DE_FLICKER_REQUIRED 0x02000000
+-#define DE_FLICKER_REQUIRED_MASK (~(DE_FLICKER_REQUIRED))
+ 
+ typedef struct {
+ 	__bool lcd_used;
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index a10d9b0..b61205a 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -149,12 +149,12 @@ __s32 BSP_disp_hdmi_close(__u32 sel)
+ #endif /* CONFIG_ARCH_SUN5I */
+ 
+ 		gdisp.screen[sel].b_out_interlace = 0;
+-		gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
+-		gdisp.screen[sel].status &= HDMI_OFF;
++		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON1_USED;
++		gdisp.screen[sel].status &= ~HDMI_ON;
+ 		gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 		gdisp.screen[sel].pll_use_status &=
+ 			(gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED) ?
+-			VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK;
++			~VIDEO_PLL0_USED : ~VIDEO_PLL1_USED;
+ 	}
+ 
+ 	return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_iep.c b/drivers/video/sunxi/disp/disp_iep.c
+index 02b8b2e..2f415ce 100644
+--- a/drivers/video/sunxi/disp/disp_iep.c
++++ b/drivers/video/sunxi/disp/disp_iep.c
+@@ -184,7 +184,7 @@ __s32 BSP_disp_iep_drc_enable(__u32 sel, __bool en)
+ 		if (en) {
+ 			gdisp.screen[sel].iep_status |= DRC_REQUIRED;
+ 		} else {
+-			gdisp.screen[sel].iep_status &= DRC_REQUIRED_MASK;
++			gdisp.screen[sel].iep_status &= ~DRC_REQUIRED;
+ 		}
+ 		Disp_drc_enable(sel, en);
+ 		return DIS_SUCCESS;
+@@ -224,8 +224,7 @@ __s32 BSP_disp_iep_deflicker_enable(__u32 sel, __bool en)
+ 		if (en) {
+ 			gdisp.screen[sel].iep_status |= DE_FLICKER_REQUIRED;
+ 		} else {
+-			gdisp.screen[sel].iep_status &=
+-				DE_FLICKER_REQUIRED_MASK;
++			gdisp.screen[sel].iep_status &= ~DE_FLICKER_REQUIRED;
+ 		}
+ 		Disp_de_flicker_enable(sel, en);
+ 		return DIS_SUCCESS;
+@@ -608,7 +607,7 @@ __s32 iep_clk_exit(__u32 sel)
+ 	OSAL_CCMU_CloseMclk(h_iepdramclk);
+ 	OSAL_CCMU_CloseMclk(h_iepmclk);
+ 
+-	g_clk_status &= (CLK_IEP_AHB_OFF & CLK_IEP_MOD_OFF & CLK_IEP_DRAM_OFF);
++	g_clk_status &= ~(CLK_IEP_AHB_ON | CLK_IEP_MOD_ON | CLK_IEP_DRAM_ON);
+ 	return DIS_SUCCESS;
+ }
+ 
+@@ -617,7 +616,7 @@ __s32 iep_clk_open(__u32 sel)
+ 	OSAL_CCMU_MclkOnOff(h_iepmclk, CLK_ON);
+ 	OSAL_CCMU_MclkOnOff(h_iepdramclk, CLK_ON);
+ 
+-	g_clk_status |= (CLK_IEP_MOD_ON | CLK_IEP_DRAM_ON);
++	g_clk_status |= CLK_IEP_MOD_ON | CLK_IEP_DRAM_ON;
+ 	return DIS_SUCCESS;
+ }
+ 
+@@ -626,7 +625,7 @@ __s32 iep_clk_close(__u32 sel)
+ 	OSAL_CCMU_MclkOnOff(h_iepmclk, CLK_OFF);
+ 	OSAL_CCMU_MclkOnOff(h_iepdramclk, CLK_OFF);
+ 
+-	g_clk_status &= (CLK_IEP_MOD_OFF & CLK_IEP_DRAM_OFF);
++	g_clk_status &= ~(CLK_IEP_MOD_ON | CLK_IEP_DRAM_ON);
+ 	return DIS_SUCCESS;
+ }
+ 
+@@ -770,8 +769,7 @@ __s32 Disp_drc_close_proc(__u32 sel, __u32 tcon_index)
+ 		/* IEP clk */
+ 		iep_clk_close(sel);
+ 
+-		gdisp.screen[sel].iep_status &= DRC_USED_MASK;
+-		gdisp.screen[sel].iep_status &= DRC_NEED_CLOSED_MASK;
++		gdisp.screen[sel].iep_status &= ~(DRC_USED | DRC_NEED_CLOSED);
+ 
+ 		gdisp.screen[sel].lcd_bright_dimming = 256;
+ 		BSP_disp_lcd_set_bright(sel, BSP_disp_lcd_get_bright(sel), 1);
+@@ -814,9 +812,9 @@ __s32 Disp_de_flicker_close_proc(__u32 sel, __u32 tcon_index)
+ 
+ 		/* IEP clk */
+ 		iep_clk_close(sel);
+-		// is this right? --libv
+-		gdisp.screen[sel].iep_status &= DE_FLICKER_NEED_CLOSED_MASK;
+-		gdisp.screen[sel].iep_status &= DE_FLICKER_USED_MASK;
++
++		gdisp.screen[sel].iep_status &=
++			~(DE_FLICKER_NEED_CLOSED | DE_FLICKER_USED);
+ 
+ 		return 0;
+ 	} else {
+diff --git a/drivers/video/sunxi/disp/disp_iep.h b/drivers/video/sunxi/disp/disp_iep.h
+index d170c98..b179015 100644
+--- a/drivers/video/sunxi/disp/disp_iep.h
++++ b/drivers/video/sunxi/disp/disp_iep.h
+@@ -13,22 +13,12 @@
+ #define CLK_IEP_MOD_ON	0x00000080
+ #define CLK_IEP_DRAM_ON	0x00000800
+ 
+-#define CLK_IEP_AHB_OFF (~(CLK_IEP_AHB_ON))
+-#define CLK_IEP_MOD_OFF (~(CLK_IEP_MOD_ON))
+-#define CLK_IEP_DRAM_OFF (~(CLK_IEP_DRAM_ON))
+-
+ #define DE_FLICKER_USED			0x01000000
+-#define DE_FLICKER_USED_MASK		(~(DE_FLICKER_USED))
+ #define DE_FLICKER_REQUIRED		0x02000000
+-#define DE_FLICKER_REQUIRED_MASK	(~(DE_FLICKER_REQUIRED))
+ #define DRC_USED			0x04000000
+-#define DRC_USED_MASK			(~(DRC_USED))
+ #define DRC_REQUIRED			0x08000000
+-#define DRC_REQUIRED_MASK		(~(DRC_REQUIRED))
+ #define DE_FLICKER_NEED_CLOSED		0x10000000
+-#define DE_FLICKER_NEED_CLOSED_MASK	(~(DE_FLICKER_NEED_CLOSED))
+ #define DRC_NEED_CLOSED			0x20000000
+-#define DRC_NEED_CLOSED_MASK		(~(DRC_NEED_CLOSED))
+ 
+ /* for power saving mode alg0 */
+ #define IEP_LH_PWRSV_NUM 24
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 525f2a9..3589522 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -249,7 +249,7 @@ static __s32 Yuv_Channel_Release(__u32 sel, __u8 hid)
+ 	DE_BE_Layer_Yuv_Ch_Enable(sel, hid, FALSE);
+ 
+ 	gdisp.screen[sel].layer_manage[hid].byuv_ch = FALSE;
+-	gdisp.screen[sel].status &= YUV_CH_USED_MASK;
++	gdisp.screen[sel].status &= ~YUV_CH_USED;
+ 
+ 	return DIS_SUCCESS;
+ }
+@@ -380,7 +380,7 @@ __s32 BSP_disp_layer_release(__u32 sel, __u32 hid)
+ 	BSP_disp_cfg_finish(sel);
+ 
+ 	layer_man->para.prio = IDLE_PRIO;
+-	layer_man->status &= LAYER_USED_MASK & LAYER_OPEN_MASK;
++	layer_man->status &= ~(LAYER_USED | LAYER_OPENED);
+ 
+ 	return DIS_SUCCESS;
+ }
+@@ -420,7 +420,7 @@ __s32 BSP_disp_layer_close(__u32 sel, __u32 hid)
+ 			BSP_disp_cfg_start(sel);
+ 			DE_BE_Layer_Enable(sel, hid, FALSE);
+ 			BSP_disp_cfg_finish(sel);
+-			layer_man->status &= LAYER_OPEN_MASK;
++			layer_man->status &= ~LAYER_OPENED;
+ 		}
+ 		return DIS_SUCCESS;
+ 	} else {
+diff --git a/drivers/video/sunxi/disp/disp_layer.h b/drivers/video/sunxi/disp/disp_layer.h
+index 19b26d5..779768e 100644
+--- a/drivers/video/sunxi/disp/disp_layer.h
++++ b/drivers/video/sunxi/disp/disp_layer.h
+@@ -34,9 +34,7 @@ if((__s32)(no) < DIS_SUCCESS || (no) >= (max))\
+ #define IDLE_PRIO   0xff
+ 
+ #define LAYER_OPENED        0x00000001
+-#define LAYER_OPEN_MASK     (~LAYER_OPENED)
+ #define LAYER_USED          0x00000002
+-#define LAYER_USED_MASK     (~(LAYER_USED))
+ 
+ typedef struct layer_man_t {
+ 	__u32 status;
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index 785e678..42a75e1 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -701,10 +701,10 @@ void TCON_close(__u32 sel)
+ 
+ 	if (gpanel_info[sel].tcon_index == 0) {
+ 		TCON0_close(sel);
+-		gdisp.screen[sel].lcdc_status &= LCDC_TCON0_USED_MASK;
++		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON0_USED;
+ 	} else {
+ 		TCON1_close(sel);
+-		gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
++		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON1_USED;
+ 	}
+ }
+ 
+@@ -1661,7 +1661,7 @@ __s32 BSP_disp_lcd_close_befor(__u32 sel)
+ 	Disp_drc_enable(sel, 2);
+ #endif
+ 
+-	gdisp.screen[sel].status &= LCD_OFF;
++	gdisp.screen[sel].status &= ~LCD_ON;
+ 	gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 	return DIS_SUCCESS;
+ }
+@@ -1676,7 +1676,7 @@ __s32 BSP_disp_lcd_close_after(__u32 sel)
+ 
+ 	gdisp.screen[sel].pll_use_status &=
+ 		(gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED) ?
+-		VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK;
++		~VIDEO_PLL0_USED : ~VIDEO_PLL1_USED;
+ 
+ 	return DIS_SUCCESS;
+ }
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 13d6869..c388049 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -284,7 +284,7 @@ __s32 Scaler_close(__u32 sel)
+ 	gdisp.scaler[sel].contrast = 32;
+ 	gdisp.scaler[sel].saturation = 32;
+ 	gdisp.scaler[sel].hue = 32;
+-	gdisp.scaler[sel].status &= SCALER_USED_MASK;
++	gdisp.scaler[sel].status &= ~SCALER_USED;
+ 
+ 	return DIS_SUCCESS;
+ }
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index 0b8e9b2..3bbc686 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -364,7 +364,7 @@ __s32 BSP_disp_sprite_close(__u32 sel)
+ 		DE_BE_Sprite_Enable(sel, FALSE);
+ 
+ 		gsprite[sel].enable = FALSE;
+-		gsprite[sel].status &= SPRITE_OPENED_MASK;
++		gsprite[sel].status &= ~SPRITE_OPENED;
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -677,7 +677,7 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+ 			sprite_set_sprite_block_para(sel, id, 0, &para);
+ 		}
+ 
+-		gsprite[sel].block_status[release_id] &= SPRITE_BLOCK_USED_MASK;
++		gsprite[sel].block_status[release_id] &= ~SPRITE_BLOCK_USED;
+ 		gsprite[sel].block_num--;
+ 
+ 		return DIS_SUCCESS;
+@@ -1058,7 +1058,7 @@ __s32 BSP_disp_sprite_block_close(__u32 sel, __u32 hid)
+ 						    scn_win.height);
+ 			node->data->enable = FALSE;
+ 		}
+-		gsprite[sel].block_status[id] &= SPRITE_BLOCK_OPEN_MASK;
++		gsprite[sel].block_status[id] &= ~SPRITE_BLOCK_OPENED;
+ 		return DIS_SUCCESS;
+ 	} else {
+ 		return DIS_OBJ_NOT_INITED;
+diff --git a/drivers/video/sunxi/disp/disp_sprite.h b/drivers/video/sunxi/disp/disp_sprite.h
+index 5112f7c..6a8b3eb 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.h
++++ b/drivers/video/sunxi/disp/disp_sprite.h
+@@ -25,14 +25,10 @@
+ #include "disp_display_i.h"
+ 
+ #define SPRITE_OPENED		0x00000001
+-#define SPRITE_OPENED_MASK	(~(SPRITE_OPENED))
+ #define SPRITE_USED		0x00000002
+-#define SPRITE_USED_MASK	(~(SPRITE_USED))
+ 
+ #define SPRITE_BLOCK_OPENED	0x00000004
+-#define SPRITE_BLOCK_OPEN_MASK  (~(SPRITE_OPENED))
+ #define SPRITE_BLOCK_USED	0x00000008
+-#define SPRITE_BLOCK_USED_MASK  (~(SPRITE_BLOCK_USED))
+ 
+ typedef struct {
+ 	__s32 enable;
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index 7ce15a3..ecc7250 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -352,12 +352,12 @@ __s32 BSP_disp_tv_close(__u32 sel)
+ 		}
+ 
+ 		gdisp.screen[sel].b_out_interlace = 0;
+-		gdisp.screen[sel].status &= TV_OFF;
+-		gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
++		gdisp.screen[sel].status &= ~TV_ON;
++		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON1_USED;
+ 		gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 		gdisp.screen[sel].pll_use_status &=
+ 		    ((gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED) ?
+-		     VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK);
++		     ~VIDEO_PLL0_USED : ~VIDEO_PLL1_USED);
+ 
+ #ifdef CONFIG_ARCH_SUN4I
+ 		Disp_set_out_interlace(sel);
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index a06341f..1abbc2c 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -109,12 +109,12 @@ __s32 BSP_disp_vga_close(__u32 sel)
+ 		Disp_lcdc_pin_cfg(sel, DISP_OUTPUT_TYPE_VGA, 0);
+ 
+ 		gdisp.screen[sel].b_out_interlace = 0;
+-		gdisp.screen[sel].status &= VGA_OFF;
+-		gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
++		gdisp.screen[sel].status &= ~VGA_ON;
++		gdisp.screen[sel].lcdc_status &= ~LCDC_TCON1_USED;
+ 		gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_NONE;
+ 		gdisp.screen[sel].pll_use_status &=
+ 			((gdisp.screen[sel].pll_use_status == VIDEO_PLL0_USED) ?
+-			 VIDEO_PLL0_USED_MASK : VIDEO_PLL1_USED_MASK);
++			 ~VIDEO_PLL0_USED : ~VIDEO_PLL1_USED);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+-- 
+1.8.0
+

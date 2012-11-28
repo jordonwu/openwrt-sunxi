@@ -1,0 +1,37 @@
+From 481d51f28581d736ad7cf903781013d20bddbeaf Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 28 Aug 2012 00:01:22 +0200
+Subject: [PATCH 699/944] sun5i: restore sw_get_ic_ver()
+
+fix 33f5b321bc9d65dca46ae3171123f73ae44ec92e
+
+sw_get_ic_ver() is still needed by our sources even when the
+GPL-violating tree deprecated it in favour of a sw_get_chip_id()
+from which there is no public code.
+---
+ arch/arm/mach-sun5i/include/mach/system.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun5i/include/mach/system.h b/arch/arm/mach-sun5i/include/mach/system.h
+index e8e46a5..22a58e0 100644
+--- a/arch/arm/mach-sun5i/include/mach/system.h
++++ b/arch/arm/mach-sun5i/include/mach/system.h
+@@ -36,7 +36,6 @@ static inline void arch_idle(void)
+ 	cpu_do_idle();
+ }
+ 
+-#if 0
+ enum sw_ic_ver {
+ 	MAGIC_VER_A = 0,
+ 	MAGIC_VER_B,
+@@ -44,7 +43,6 @@ enum sw_ic_ver {
+ };
+ 
+ enum sw_ic_ver sw_get_ic_ver(void);
+-#endif
+ 
+ struct sw_chip_id
+ {
+-- 
+1.8.0
+

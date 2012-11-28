@@ -1,0 +1,30 @@
+From 14d34a0880560125d7a50c7627ba3d0cc3cd077e Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sun, 28 Oct 2012 12:36:48 +0100
+Subject: [PATCH 892/944] video:sunxi:lcd: clean up messaging macros
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/lcd/dev_lcd.h | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index d908e09..18cc037 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -57,10 +57,7 @@ extern void LCD_get_panel_funs_1(__lcd_panel_fun_t *fun);
+ extern __s32 Fb_Init(__u32 from);
+ extern __s32 DRV_DISP_Init(void);
+ 
+-#define OSAL_PRINTF(msg...) {printk(KERN_WARNING "[LCD] ");printk(msg);}
+-#define __inf(msg...)       {printk(KERN_WARNING "[LCD] ");printk(msg);}
+-#define __msg(msg...)       {printk(KERN_WARNING "[LCD] file:%s,line:%d:    ",__FILE__,__LINE__);printk(msg);}
+-#define __wrn(msg...)       {printk(KERN_WARNING "[LCD WRN] file:%s,line:%d:    ",__FILE__,__LINE__); printk(msg);}
+-#define __here__            {printk(KERN_WARNING "[LCD] file:%s,line:%d\n",__FILE__,__LINE__);}
++#define __inf(msg, ...) pr_debug("[DISP] " msg, ##__VA_ARGS__)
++#define __wrn(msg, ...) pr_warn("[DISP] " msg, ##__VA_ARGS__)
+ 
+ #endif
+-- 
+1.8.0
+

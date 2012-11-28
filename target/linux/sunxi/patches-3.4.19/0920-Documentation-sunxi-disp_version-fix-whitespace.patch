@@ -1,0 +1,78 @@
+From f3af43535bed0332a801f1b8df628ebfde017c0c Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 23:16:39 +0100
+Subject: [PATCH 920/944] Documentation:sunxi:disp_version: fix whitespace
+
+Bad copy-paster!
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ Documentation/sunxi/disp/disp_version.c | 38 ++++++++++++++++-----------------
+ 1 file changed, 19 insertions(+), 19 deletions(-)
+
+diff --git a/Documentation/sunxi/disp/disp_version.c b/Documentation/sunxi/disp/disp_version.c
+index 1363fc0..5d4f3f8 100644
+--- a/Documentation/sunxi/disp/disp_version.c
++++ b/Documentation/sunxi/disp/disp_version.c
+@@ -25,39 +25,39 @@ main(int argc, char *argv[])
+ 	int ret, tmp, width, height;
+ 
+ 	if (fd == -1) {
+-                fprintf(stderr, "Error: Failed to open /dev/mali: %s\n",
+-                       strerror(errno));
+-                return errno;
+-        }
++		fprintf(stderr, "Error: Failed to open /dev/mali: %s\n",
++			strerror(errno));
++		return errno;
++	}
+ 
+ 	tmp = SUNXI_DISP_VERSION;
+ 	ret = ioctl(fd, DISP_CMD_VERSION, &tmp);
+-        if (ret < 0) {
+-                fprintf(stderr, "Error: ioctl(VERSION) failed: %s\n",
+-                       strerror(-ret));
+-                return ret;
+-        }
++	if (ret < 0) {
++		fprintf(stderr, "Error: ioctl(VERSION) failed: %s\n",
++			strerror(-ret));
++		return ret;
++	}
+ 
+ 	printf("disp kernel module version is %d.%d\n",
+ 	       ret >> 16, ret & 0xFFFF);
+ 
+ 	tmp = 0;
+ 	ret = ioctl(fd, DISP_CMD_SCN_GET_WIDTH, &tmp);
+-        if (ret) {
+-                fprintf(stderr, "Error: ioctl(SCN_GET_WIDTH) failed: %s\n",
+-                       strerror(ret));
+-                return ret;
+-        }
++	if (ret) {
++		fprintf(stderr, "Error: ioctl(SCN_GET_WIDTH) failed: %s\n",
++			strerror(ret));
++		return ret;
++	}
+ 
+ 	width = ret;
+ 
+ 	tmp = 0;
+ 	ret = ioctl(fd, DISP_CMD_SCN_GET_HEIGHT, &tmp);
+-        if (ret) {
+-                fprintf(stderr, "Error: ioctl(SCN_GET_HEIGHT) failed: %s\n",
+-                       strerror(ret));
+-                return ret;
+-        }
++	if (ret) {
++		fprintf(stderr, "Error: ioctl(SCN_GET_HEIGHT) failed: %s\n",
++			strerror(ret));
++		return ret;
++	}
+ 
+ 	height = ret;
+ 
+-- 
+1.8.0
+

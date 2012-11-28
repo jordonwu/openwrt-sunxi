@@ -1,0 +1,102 @@
+From ca1626a07a6fa360b98d6b0e55717bc76705bdaa Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 12 Jul 2012 12:39:19 +0200
+Subject: [PATCH 584/944] ARM: sunxi: remove fpga exceptions
+
+---
+ arch/arm/mach-sun4i/Kconfig      |  3 ---
+ arch/arm/mach-sun5i/Kconfig      |  5 -----
+ arch/arm/mach-sun5i/core.c       | 10 ----------
+ arch/arm/plat-sunxi/sys_config.c |  4 ----
+ 4 files changed, 22 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/Kconfig b/arch/arm/mach-sun4i/Kconfig
+index e35bf58..ff12138 100644
+--- a/arch/arm/mach-sun4i/Kconfig
++++ b/arch/arm/mach-sun4i/Kconfig
+@@ -2,9 +2,6 @@ if ARCH_SUN4I
+ 
+ comment "Allwinner A10 options"
+ 
+-config TEGRA_FPGA
+-	bool "FPGA Express support"
+-
+ config SW_DEBUG_UART
+ 	int "UART to use for low-level debug"
+ 	depends on DEBUG_LL
+diff --git a/arch/arm/mach-sun5i/Kconfig b/arch/arm/mach-sun5i/Kconfig
+index 8d44115..8f64589 100644
+--- a/arch/arm/mach-sun5i/Kconfig
++++ b/arch/arm/mach-sun5i/Kconfig
+@@ -1,10 +1,5 @@
+ if ARCH_SUN5I
+ 
+-config SUN5I_FPGA
+-	bool "FPGA Board Support"
+-	help
+-	  Only for FPGA board.
+-
+ config SW_DEBUG_UART
+ 	int "UART to use for low-level debug"
+ 	depends on DEBUG_LL
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 9290ba2..d6fdd5f 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -113,12 +113,6 @@ static void __init sw_core_fixup(struct tag *tags, char **cmdline,
+ {
+ 	u32 size;
+ 
+-#ifdef CONFIG_SUN5I_FPGA
+-	size = 256;
+-	mi->nr_banks = 1;
+-	mi->bank[0].start = 0x40000000;
+-	mi->bank[0].size = SZ_1M * size;
+-#else
+ 	size = DRAMC_get_dram_size();
+ 	early_printk("DRAM: %d", size);
+ 
+@@ -133,7 +127,6 @@ static void __init sw_core_fixup(struct tag *tags, char **cmdline,
+ 		mi->bank[1].start = 0x60000000;
+ 		mi->bank[1].size = SZ_1M * (size - 512);
+ 	}
+-#endif
+ 
+ 	pr_info("Total Detected Memory: %uMB with %d banks\n", size, mi->nr_banks);
+ }
+@@ -156,8 +149,6 @@ EXPORT_SYMBOL(ve_size);
+ static void __init sw_core_reserve(void)
+ {
+ 	memblock_reserve(SYS_CONFIG_MEMBASE, SYS_CONFIG_MEMSIZE);
+-#ifdef CONFIG_SUN5I_FPGA
+-#else
+ 	memblock_reserve(fb_start, fb_size);
+ 	memblock_reserve(ve_start, SZ_64M);
+ 	memblock_reserve(ve_start + SZ_64M, SZ_16M);
+@@ -188,7 +179,6 @@ static void __init sw_core_reserve(void)
+ 	pr_info("\tSYS: 0x%08x, 0x%08x\n", (unsigned int)SYS_CONFIG_MEMBASE, (unsigned int)SYS_CONFIG_MEMSIZE);
+ 	pr_info("\tG2D: 0x%08x, 0x%08x\n", (unsigned int)g2d_start, (unsigned int)g2d_size);
+ 	pr_info("\tVE : 0x%08x, 0x%08x\n", (unsigned int)ve_start, (unsigned int)ve_size);
+-#endif
+ }
+ 
+ void sw_irq_ack(struct irq_data *irqd)
+diff --git a/arch/arm/plat-sunxi/sys_config.c b/arch/arm/plat-sunxi/sys_config.c
+index 9a69254..71d4a3b 100644
+--- a/arch/arm/plat-sunxi/sys_config.c
++++ b/arch/arm/plat-sunxi/sys_config.c
+@@ -503,11 +503,7 @@ int gpio_init(void)
+ {
+ 	printk(KERN_INFO "Init eGon pin module V2.0\n");
+ 	gpio_g_pioMemBase = (u32)CSP_OSAL_PHY_2_VIRT(CSP_PIN_PHY_ADDR_BASE , CSP_PIN_PHY_ADDR_SIZE);
+-#ifdef FPGA_RUNTIME_ENV
+-	return script_parser_init((char *)(sys_cofig_data));
+-#else
+ 	return script_parser_init((char *)__va(SYS_CONFIG_MEMBASE));
+-#endif
+ }
+ fs_initcall(gpio_init);
+ 
+-- 
+1.8.0
+

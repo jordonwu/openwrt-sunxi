@@ -1,0 +1,2970 @@
+From e79ffc2443a5a09afca9640e2254120f435d17b2 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Mon, 4 Jun 2012 16:25:37 +0800
+Subject: [PATCH 509/944] ARM: sun5i: clean the license problem of mach-sun5i
+
+---
+ arch/arm/mach-sun4i/pm/standby/standby_ir.h    | 37 +++++++++++---------
+ arch/arm/mach-sun5i/clock/Makefile             |  4 +--
+ arch/arm/mach-sun5i/clock/aw_clocksrc.c        | 19 ++++++++---
+ arch/arm/mach-sun5i/clock/aw_clocksrc.h        | 19 ++++++++---
+ arch/arm/mach-sun5i/clock/ccmu/Makefile        |  9 ++---
+ arch/arm/mach-sun5i/clock/ccmu/ccm.c           | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/clock/ccmu/ccm_i.h         | 40 ++++++++++++----------
+ arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/clock/ccmu/ccu_dbg.c       | 38 +++++++++++----------
+ arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c   | 39 +++++++++++----------
+ arch/arm/mach-sun5i/clock/clock.c              | 37 +++++++++++---------
+ arch/arm/mach-sun5i/core.c                     | 14 ++++++--
+ arch/arm/mach-sun5i/cpu-freq/Makefile          |  2 --
+ arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c  | 37 +++++++++++---------
+ arch/arm/mach-sun5i/cpu-freq/cpu-freq.c        | 37 +++++++++++---------
+ arch/arm/mach-sun5i/cpu-freq/cpu-freq.h        | 37 +++++++++++---------
+ arch/arm/mach-sun5i/devices.c                  | 14 ++++++--
+ arch/arm/mach-sun5i/dma/Makefile               |  2 --
+ arch/arm/mach-sun5i/dma/dma.c                  | 18 +++++++---
+ arch/arm/mach-sun5i/dma/dma_15.c               | 18 +++++++---
+ arch/arm/mach-sun5i/dma/dma_regs.h             | 17 +++++++---
+ arch/arm/mach-sun5i/include/mach/aw_ccu.h      | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/include/mach/ccmu_regs.h   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/include/mach/clock.h       | 18 +++++++---
+ arch/arm/mach-sun5i/include/mach/debug-macro.S | 23 ++++++++++---
+ arch/arm/mach-sun5i/include/mach/dma.h         | 17 +++++++---
+ arch/arm/mach-sun5i/include/mach/dram.h        | 37 +++++++++++---------
+ arch/arm/mach-sun5i/include/mach/entry-macro.S | 38 +++++++++++----------
+ arch/arm/mach-sun5i/include/mach/hardware.h    | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/i2c.h         | 14 +++++++-
+ arch/arm/mach-sun5i/include/mach/io.h          | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/irqs.h        | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/memory.h      | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/platform.h    | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/spi.h         | 15 ++++++--
+ arch/arm/mach-sun5i/include/mach/sys_config.h  | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/system.h      | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/timex.h       | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/uncompress.h  | 16 ++++++---
+ arch/arm/mach-sun5i/include/mach/vmalloc.h     | 16 ++++++---
+ arch/arm/mach-sun5i/pm/pm.c                    | 39 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby.S               | 25 ++++++++++++++
+ arch/arm/mach-sun5i/pm/standby/common.c        | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/common.h        | 40 +++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/dram.c          | 31 ++++++++++++-----
+ arch/arm/mach-sun5i/pm/standby/dram_i.h        | 31 ++++++++++++-----
+ arch/arm/mach-sun5i/pm/standby/dram_init.c     | 31 ++++++++++++-----
+ arch/arm/mach-sun5i/pm/standby/stack.S         | 25 +++++++++++++-
+ arch/arm/mach-sun5i/pm/standby/standby.c       | 39 +++++++++++----------
+ arch/arm/mach-sun5i/pm/standby/standby.lds     |  2 --
+ arch/arm/mach-sun5i/pm/standby/standby_cfg.h   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_clock.c | 45 ++++++++++++------------
+ arch/arm/mach-sun5i/pm/standby/standby_clock.h | 40 ++++++++++++----------
+ arch/arm/mach-sun5i/pm/standby/standby_delay.S | 22 ++++++++++++
+ arch/arm/mach-sun5i/pm/standby/standby_i.h     | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_int.c   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_int.h   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_ir.c    | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_ir.h    | 37 +++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_key.c   | 45 ++++++++++++------------
+ arch/arm/mach-sun5i/pm/standby/standby_key.h   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_power.c | 44 ++++++++++++------------
+ arch/arm/mach-sun5i/pm/standby/standby_power.h | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_tmr.c   | 40 ++++++++++++----------
+ arch/arm/mach-sun5i/pm/standby/standby_tmr.h   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_twi.c   | 38 ++++++++++++---------
+ arch/arm/mach-sun5i/pm/standby/standby_twi.h   | 38 +++++++++++----------
+ arch/arm/mach-sun5i/pm/standby/standby_usb.c   | 47 +++++++++++++-------------
+ arch/arm/mach-sun5i/pm/standby/standby_usb.h   | 39 +++++++++++----------
+ arch/arm/mach-sun5i/sys_config.c               | 16 ++++++---
+ 71 files changed, 1246 insertions(+), 760 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/pm/standby/standby_ir.h b/arch/arm/mach-sun4i/pm/standby/standby_ir.h
+index f46f4b0..e8715b1 100644
+--- a/arch/arm/mach-sun4i/pm/standby/standby_ir.h
++++ b/arch/arm/mach-sun4i/pm/standby/standby_ir.h
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_ir.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:15
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun4i/pm/standby/standby_ir.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #ifndef __STANDBY_IR_H__
+ #define __STANDBY_IR_H__
+diff --git a/arch/arm/mach-sun5i/clock/Makefile b/arch/arm/mach-sun5i/clock/Makefile
+index f125a5b..e3a35e9 100644
+--- a/arch/arm/mach-sun5i/clock/Makefile
++++ b/arch/arm/mach-sun5i/clock/Makefile
+@@ -1,3 +1,3 @@
+-obj-y += ccmu/ \
+-         clock.o \
++obj-y += ccmu/
++obj-y += clock.o \
+          aw_clocksrc.o
+diff --git a/arch/arm/mach-sun5i/clock/aw_clocksrc.c b/arch/arm/mach-sun5i/clock/aw_clocksrc.c
+index 0dce2c6..b5b1993 100644
+--- a/arch/arm/mach-sun5i/clock/aw_clocksrc.c
++++ b/arch/arm/mach-sun5i/clock/aw_clocksrc.c
+@@ -1,17 +1,26 @@
+ /*
+- * arch\arm\mach-sun5i\clock\aw_clocksrc.c
+- * (C) Copyright 2010-2015
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * kevin.z
++ * arch/arm/mach-sun5i/clock/ccmu/aw_clocksrc.c
+  *
+- * core header file for Lichee Linux BSP
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
++
+ #include <mach/hardware.h>
+ #include <mach/platform.h>
+ #include <linux/init.h>
+diff --git a/arch/arm/mach-sun5i/clock/aw_clocksrc.h b/arch/arm/mach-sun5i/clock/aw_clocksrc.h
+index df63ec5..8622ef6 100644
+--- a/arch/arm/mach-sun5i/clock/aw_clocksrc.h
++++ b/arch/arm/mach-sun5i/clock/aw_clocksrc.h
+@@ -1,17 +1,26 @@
+ /*
+- * arch\arm\mach-sun5i\clock\aw_clocksrc.h
+- * (C) Copyright 2010-2015
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * kevin.z
++ * arch/arm/mach-sun5i/clock/ccmu/aw_clocksrc.h
+  *
+- * core header file for Lichee Linux BSP
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
++
+ #ifndef __AW_CLOCKSRC_H__
+ #define __AW_CLOCKSRC_H__
+ 
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/Makefile b/arch/arm/mach-sun5i/clock/ccmu/Makefile
+index 27db03e..0f9d6c7 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/Makefile
++++ b/arch/arm/mach-sun5i/clock/ccmu/Makefile
+@@ -1,6 +1,3 @@
+-obj-y += ccm_mod_clk.o \
+-	ccm_sys_clk.o \
+-	ccm.o \
+-	pll_cfg_tbl.o \
+-	ccu_dbg.o \
+-
++obj-y += ccm_mod_clk.o ccm_sys_clk.o \
++         ccm.o pll_cfg_tbl.o \
++         ccu_dbg.o
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/ccm.c b/arch/arm/mach-sun5i/clock/ccmu/ccm.c
+index bfb8679..612ef80 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/ccm.c
++++ b/arch/arm/mach-sun5i/clock/ccmu/ccm.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : ccm.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-13 18:42
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/ccm.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <mach/platform.h>
+ #include <mach/clock.h>
+ #include "ccm_i.h"
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/ccm_i.h b/arch/arm/mach-sun5i/clock/ccmu/ccm_i.h
+index d55760a..5f4b8cf 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/ccm_i.h
++++ b/arch/arm/mach-sun5i/clock/ccmu/ccm_i.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : ccm_i.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-13 18:50
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/ccm_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __AW_CCMU_I_H__
+ #define __AW_CCMU_I_H__
+ 
+@@ -24,7 +30,6 @@
+ 
+ extern __ccmu_reg_list_t   *aw_ccu_reg;
+ 
+-
+ #undef CCU_DBG
+ #undef CCU_ERR
+ #if (1)
+@@ -46,4 +51,3 @@ struct core_pll_factor_t {
+ extern int ccm_clk_get_pll_para(struct core_pll_factor_t *factor, __u64 rate);
+ 
+ #endif /* #ifndef __AW_CCMU_I_H__ */
+-
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c b/arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c
+index 72af99f..10aac59 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c
++++ b/arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : ccu_mod_clk.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-14 11:05
+-* Descript: module clock management for allwinners chips.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/ccm_mod_clk.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c b/arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c
+index 516c541..e22a19c 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c
++++ b/arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : ccu_sys_clk.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-14 10:45
+-* Descript: system clock management for allwinners chips
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/ccm_sys_clk.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/list.h>
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/ccu_dbg.c b/arch/arm/mach-sun5i/clock/ccmu/ccu_dbg.c
+index d6a89e5..357fea7 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/ccu_dbg.c
++++ b/arch/arm/mach-sun5i/clock/ccmu/ccu_dbg.c
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : clock_dbg.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-18 18:18
+-* Descript: clock management debug.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/ccm_dbg.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+@@ -664,4 +669,3 @@ static void  __exit ccu_dbg_exit(void)
+ core_initcall(ccu_dbg_init);
+ module_exit(ccu_dbg_exit);
+ #endif
+-
+diff --git a/arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c b/arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c
+index f8eef64..2250309 100644
+--- a/arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c
++++ b/arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : core_pll_tbl.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-6-21 9:42
+-* Descript: core pll configuration table
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/ccmu/pll_cfg_tbl.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "ccm_i.h"
+ #include <mach/aw_ccu.h>
+ 
+@@ -303,4 +309,3 @@ int ccm_clk_get_pll_para(struct core_pll_factor_t *factor, __u64 rate)
+ 
+     return 0;
+ }
+-
+diff --git a/arch/arm/mach-sun5i/clock/clock.c b/arch/arm/mach-sun5i/clock/clock.c
+index 01d34b7..9ad13dd 100644
+--- a/arch/arm/mach-sun5i/clock/clock.c
++++ b/arch/arm/mach-sun5i/clock/clock.c
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : clock.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-13 17:32
+-* Descript: clock management for allwinners chips.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/clock/clock.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index 36f61c3..f22c819 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -1,6 +1,7 @@
+ /*
+- * arch/arch/mach-sun5i/core.c
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/core.c
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+@@ -11,6 +12,15 @@
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #include <linux/init.h>
+diff --git a/arch/arm/mach-sun5i/cpu-freq/Makefile b/arch/arm/mach-sun5i/cpu-freq/Makefile
+index 4f2e238..ddd3bc9 100644
+--- a/arch/arm/mach-sun5i/cpu-freq/Makefile
++++ b/arch/arm/mach-sun5i/cpu-freq/Makefile
+@@ -1,4 +1,2 @@
+-
+ obj-$(CONFIG_CPU_FREQ)  += cpu-freq.o
+ obj-$(CONFIG_CPU_FREQ_TABLE)  += cpu-freq-table.o
+-
+diff --git a/arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c b/arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c
+index c65f4d6..f63638b 100644
+--- a/arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c
++++ b/arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2007-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : cpu-freq-table.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-6-19 9:34
+-* Descript: sun4i cpu frequency table
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/cpu-freq/cpu-freq-table.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/types.h>
+ #include <linux/clk.h>
+diff --git a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
+index a1d3401..7907b76 100644
+--- a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
++++ b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : cpu-freq.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-6-18 18:13
+-* Descript: cpufreq driver on allwinner chips;
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/cpu-freq/cpu-freq.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+diff --git a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.h b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.h
+index e6966a9..f2cc64c 100644
+--- a/arch/arm/mach-sun5i/cpu-freq/cpu-freq.h
++++ b/arch/arm/mach-sun5i/cpu-freq/cpu-freq.h
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : cpu-freq.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-6-19 13:16
+-* Descript: cpu frequency for sun4i;
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/cpu-freq/cpu-freq.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #ifndef __SUN4I_CPU_FREQ_H__
+ #define __SUN4I_CPU_FREQ_H__
+diff --git a/arch/arm/mach-sun5i/devices.c b/arch/arm/mach-sun5i/devices.c
+index 06b1322..6c0d69b 100644
+--- a/arch/arm/mach-sun5i/devices.c
++++ b/arch/arm/mach-sun5i/devices.c
+@@ -1,6 +1,7 @@
+ /*
+- * arch/arch/mach-sun5i/devices.c
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/devices.c
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+@@ -11,6 +12,15 @@
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #include <linux/kernel.h>
+diff --git a/arch/arm/mach-sun5i/dma/Makefile b/arch/arm/mach-sun5i/dma/Makefile
+index 5374a77..0fcabbf 100644
+--- a/arch/arm/mach-sun5i/dma/Makefile
++++ b/arch/arm/mach-sun5i/dma/Makefile
+@@ -1,3 +1 @@
+-
+ obj-y		+= dma.o dma_15.o
+-
+diff --git a/arch/arm/mach-sun5i/dma/dma.c b/arch/arm/mach-sun5i/dma/dma.c
+index aa22493..b6f47c6 100644
+--- a/arch/arm/mach-sun5i/dma/dma.c
++++ b/arch/arm/mach-sun5i/dma/dma.c
+@@ -1,18 +1,25 @@
+ /*
+- * arch\arm\mach-sun5i\dma\dma.c
+- * (C) Copyright 2007-2011
++ * arch/arm/mach-sun5i/dma/dma.c
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * huangxin <huangxin@allwinnertech.com>
+  *
+- * some simple description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+-//#define DEBUG
+ 
+ #include <linux/module.h>
+ #include <linux/init.h>
+@@ -34,6 +41,7 @@
+ #include <mach/dma.h>
+ #include "dma_regs.h"
+ 
++#undef DEBUG
+ 
+ /* io map for dma */
+ static void __iomem *dma_base;
+diff --git a/arch/arm/mach-sun5i/dma/dma_15.c b/arch/arm/mach-sun5i/dma/dma_15.c
+index 04ae89f..5030dae 100644
+--- a/arch/arm/mach-sun5i/dma/dma_15.c
++++ b/arch/arm/mach-sun5i/dma/dma_15.c
+@@ -1,17 +1,26 @@
+ /*
+- * arch\arm\mach-sun5i\dma\dma_15.c
+- * (C) Copyright 2007-2011
++ * arch/arm/mach-sun5i/dma/dma_15.c
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * huangxin <huangxin@allwinnertech.com>
+  *
+- * some simple description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
++
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+@@ -19,7 +28,6 @@
+ #include <linux/serial_core.h>
+ #include <linux/platform_device.h>
+ 
+-
+ #include <mach/dma.h>
+ #include <mach/system.h>
+ 
+diff --git a/arch/arm/mach-sun5i/dma/dma_regs.h b/arch/arm/mach-sun5i/dma/dma_regs.h
+index 4a07110..c2d73b3 100644
+--- a/arch/arm/mach-sun5i/dma/dma_regs.h
++++ b/arch/arm/mach-sun5i/dma/dma_regs.h
+@@ -1,17 +1,26 @@
+ /*
+- * arch\arm\mach-sun5i\dma\dma_regs.h
+- * (C) Copyright 2007-2011
++ * arch/arm/mach-sun5i/dma/dma_regs.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * huangxin <huangxin@allwinnertech.com>
+  *
+- * some simple description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
++
+ #ifndef _DMA_REGS_
+ #define _DMA_REGS_
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/aw_ccu.h b/arch/arm/mach-sun5i/include/mach/aw_ccu.h
+index f065ffc..9cd42d1 100644
+--- a/arch/arm/mach-sun5i/include/mach/aw_ccu.h
++++ b/arch/arm/mach-sun5i/include/mach/aw_ccu.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : aw_ccu.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-13 18:52
+-* Descript: ccu operation fucntion for allwinners chips.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/include/mach/aw_ccu.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __AW_CCU_H__
+ #define __AW_CCU_H__
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/ccmu_regs.h b/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
+index 480fae0..016859f 100644
+--- a/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
++++ b/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : ccmu_regs.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-13 16:42
+-* Descript: define registers for ccmu.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/include/mach/ccmu_regs.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __CCMU_REGS_H__
+ #define __CCMU_REGS_H__
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/clock.h b/arch/arm/mach-sun5i/include/mach/clock.h
+index 53a1892..44fe3c4 100644
+--- a/arch/arm/mach-sun5i/include/mach/clock.h
++++ b/arch/arm/mach-sun5i/include/mach/clock.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/clock.h
+- * (C) Copyright 2010-2015
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- * kevin.z
++ * arch/arm/mach-sun5i/include/mach/clock.h
+  *
+- * core header file for Lichee Linux BSP
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
+  *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_CLOCK_H__
+diff --git a/arch/arm/mach-sun5i/include/mach/debug-macro.S b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+index 432cc17..110ab53 100644
+--- a/arch/arm/mach-sun5i/include/mach/debug-macro.S
++++ b/arch/arm/mach-sun5i/include/mach/debug-macro.S
+@@ -1,10 +1,25 @@
+ /*
+  * arch/arm/mach-sun5i/include/mach/debug-macro.S
+  *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+-*/
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <mach/platform.h>
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/dma.h b/arch/arm/mach-sun5i/include/mach/dma.h
+index 4c0e35a..8ab1cc5 100644
+--- a/arch/arm/mach-sun5i/include/mach/dma.h
++++ b/arch/arm/mach-sun5i/include/mach/dma.h
+@@ -1,17 +1,26 @@
+ /*
+- * arch\arm\mach-sun5i\include\mach\dma.h
+- * (C) Copyright 2007-2011
++ * arch/arm/mach-sun5i/include/mach/dma.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * huangxin <huangxin@allwinnertech.com>
+  *
+- * some simple description for this code
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
++
+ #ifndef __ASM_ARCH_DMA_H
+ #define __ASM_ARCH_DMA_H __FILE__
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/dram.h b/arch/arm/mach-sun5i/include/mach/dram.h
+index 50337c1..58c037f 100644
+--- a/arch/arm/mach-sun5i/include/mach/dram.h
++++ b/arch/arm/mach-sun5i/include/mach/dram.h
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : dram.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-6-2 14:54
+-* Descript: dram interface
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/include/mach/dram.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #ifndef __AW_DRAM_H__
+ #define __AW_DRAM_H__
+diff --git a/arch/arm/mach-sun5i/include/mach/entry-macro.S b/arch/arm/mach-sun5i/include/mach/entry-macro.S
+index 6d8a58e..8c920ee 100644
+--- a/arch/arm/mach-sun5i/include/mach/entry-macro.S
++++ b/arch/arm/mach-sun5i/include/mach/entry-macro.S
+@@ -1,21 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, Benn Huang China
+-*                                             All Rights Reserved
+-*
+-* File    : include/mach/entry-macro.S
+-* By      : Benn Huang (benn@allwinnertech.com)
+-* Version : v1.0
+-* Date    : 2011-10-26 17:25
+-* Descript: for head.S and interrupt
+-* Update  : date                auther      ver     notes
+-*           2011/10/26          benn        v1.0    First porting version
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/include/mach/entry-macro.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Benn Huang <benn@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <mach/io.h>
+ #include <mach/hardware.h>
+diff --git a/arch/arm/mach-sun5i/include/mach/hardware.h b/arch/arm/mach-sun5i/include/mach/hardware.h
+index ec7bead..9e2be38 100644
+--- a/arch/arm/mach-sun5i/include/mach/hardware.h
++++ b/arch/arm/mach-sun5i/include/mach/hardware.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/hardware.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/hardware.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header file for Lichee Linux BSP
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_HARDWARE_H
+diff --git a/arch/arm/mach-sun5i/include/mach/i2c.h b/arch/arm/mach-sun5i/include/mach/i2c.h
+index e87f8f7..3dac290 100644
+--- a/arch/arm/mach-sun5i/include/mach/i2c.h
++++ b/arch/arm/mach-sun5i/include/mach/i2c.h
+@@ -1,5 +1,7 @@
+ /*
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/i2c.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+  * Tom Cubie <tanglaing@allwinnertech.com>
+@@ -11,6 +13,16 @@
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/io.h b/arch/arm/mach-sun5i/include/mach/io.h
+index 94a0c7e..7d56a7e 100644
+--- a/arch/arm/mach-sun5i/include/mach/io.h
++++ b/arch/arm/mach-sun5i/include/mach/io.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/io.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/io.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header file for Lichee Linux BSP
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_IO_H
+diff --git a/arch/arm/mach-sun5i/include/mach/irqs.h b/arch/arm/mach-sun5i/include/mach/irqs.h
+index c1dfc77..be85721 100644
+--- a/arch/arm/mach-sun5i/include/mach/irqs.h
++++ b/arch/arm/mach-sun5i/include/mach/irqs.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/irqs.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/irqs.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header file for Lichee Linux BSP
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_IRQS_H
+diff --git a/arch/arm/mach-sun5i/include/mach/memory.h b/arch/arm/mach-sun5i/include/mach/memory.h
+index a6d2da1..76ecc49 100644
+--- a/arch/arm/mach-sun5i/include/mach/memory.h
++++ b/arch/arm/mach-sun5i/include/mach/memory.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/memory.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/memory.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header file for Lichee Linux BSP
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_MEMORY_H
+diff --git a/arch/arm/mach-sun5i/include/mach/platform.h b/arch/arm/mach-sun5i/include/mach/platform.h
+index c85f85c..02b9079 100644
+--- a/arch/arm/mach-sun5i/include/mach/platform.h
++++ b/arch/arm/mach-sun5i/include/mach/platform.h
+@@ -1,16 +1,24 @@
+ /*
+- * include/mach/platform.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/platform.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header file for Lichee Linux BSP
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_PLATFORM_H
+diff --git a/arch/arm/mach-sun5i/include/mach/spi.h b/arch/arm/mach-sun5i/include/mach/spi.h
+index 240e6cc..f5d89b2 100644
+--- a/arch/arm/mach-sun5i/include/mach/spi.h
++++ b/arch/arm/mach-sun5i/include/mach/spi.h
+@@ -1,7 +1,8 @@
+ /*
+- * (C) Copyright 2010-2015
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * arch/arm/mach-sun5i/include/mach/spi.h
+  *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Pan Nan <pannan@allwinnertech.com>
+  * Victor Wei <weiziheng@allwinnertech.com>
+  *
+@@ -11,6 +12,16 @@
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef _SUN5I_SPI_H_
+diff --git a/arch/arm/mach-sun5i/include/mach/sys_config.h b/arch/arm/mach-sun5i/include/mach/sys_config.h
+index 571ba33..473d331 100644
+--- a/arch/arm/mach-sun5i/include/mach/sys_config.h
++++ b/arch/arm/mach-sun5i/include/mach/sys_config.h
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/include/mach/sys_config.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/sys_config.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * sys_config utils (porting from 2.6.36)
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_SYS_CONFIG_H
+diff --git a/arch/arm/mach-sun5i/include/mach/system.h b/arch/arm/mach-sun5i/include/mach/system.h
+index 9891fe2..70c7e67 100644
+--- a/arch/arm/mach-sun5i/include/mach/system.h
++++ b/arch/arm/mach-sun5i/include/mach/system.h
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/include/mach/system.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/system.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_SYSTEM_H
+diff --git a/arch/arm/mach-sun5i/include/mach/timex.h b/arch/arm/mach-sun5i/include/mach/timex.h
+index a1a8313..f8b3180 100644
+--- a/arch/arm/mach-sun5i/include/mach/timex.h
++++ b/arch/arm/mach-sun5i/include/mach/timex.h
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/include/mach/timex.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/timex.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_TIMEX_H
+diff --git a/arch/arm/mach-sun5i/include/mach/uncompress.h b/arch/arm/mach-sun5i/include/mach/uncompress.h
+index 5cbb665..fdce823 100644
+--- a/arch/arm/mach-sun5i/include/mach/uncompress.h
++++ b/arch/arm/mach-sun5i/include/mach/uncompress.h
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/include/mach/uncompress.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/uncompress.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * core header, useless on our platform, but need it to pass compilation
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_UNCOMPRESS_H
+diff --git a/arch/arm/mach-sun5i/include/mach/vmalloc.h b/arch/arm/mach-sun5i/include/mach/vmalloc.h
+index dd2d172..7462532 100644
+--- a/arch/arm/mach-sun5i/include/mach/vmalloc.h
++++ b/arch/arm/mach-sun5i/include/mach/vmalloc.h
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/include/mach/vmalloc.h
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/include/mach/vmalloc.h
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * highmem support
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #ifndef __SW_VMALLOC_H
+diff --git a/arch/arm/mach-sun5i/pm/pm.c b/arch/arm/mach-sun5i/pm/pm.c
+index 7bc2743..db83900 100644
+--- a/arch/arm/mach-sun5i/pm/pm.c
++++ b/arch/arm/mach-sun5i/pm/pm.c
+@@ -1,20 +1,27 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : pm.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-27 14:08
+-* Descript: power manager for allwinners chips platform.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/pm.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * chech usb to wake up system from standby
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include <linux/module.h>
+ #include <linux/suspend.h>
+diff --git a/arch/arm/mach-sun5i/pm/standby.S b/arch/arm/mach-sun5i/pm/standby.S
+index 0c20470..c6d15d4 100644
+--- a/arch/arm/mach-sun5i/pm/standby.S
++++ b/arch/arm/mach-sun5i/pm/standby.S
+@@ -1,3 +1,28 @@
++/*
++ * arch/arm/mach-sun5i/pm/standby.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * chech usb to wake up system from standby
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 	.globl	standby_bin_start
+ standby_bin_start:
+ 	.incbin	"arch/arm/mach-sun5i/pm/standby/standby.bin"
+diff --git a/arch/arm/mach-sun5i/pm/standby/common.c b/arch/arm/mach-sun5i/pm/standby/common.c
+index 0c1e831..9ede288 100644
+--- a/arch/arm/mach-sun5i/pm/standby/common.c
++++ b/arch/arm/mach-sun5i/pm/standby/common.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : common.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 19:38
+-* Descript: common lib for standby
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/common.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "standby_i.h"
+ 
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/common.h b/arch/arm/mach-sun5i/pm/standby/common.h
+index 86f6353..41efdd2 100644
+--- a/arch/arm/mach-sun5i/pm/standby/common.h
++++ b/arch/arm/mach-sun5i/pm/standby/common.h
+@@ -1,20 +1,28 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : common.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 17:21
+-* Descript: common lib for standby.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/common.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++#include <linux/types.h>
++
+ #ifndef __COMMON_H__
+ #define __COMMON_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/dram.c b/arch/arm/mach-sun5i/pm/standby/dram.c
+index b44e860..12a2916 100644
+--- a/arch/arm/mach-sun5i/pm/standby/dram.c
++++ b/arch/arm/mach-sun5i/pm/standby/dram.c
+@@ -1,13 +1,26 @@
+ /*
+-*********************************************************************************************************
+-* File    : dram_i.h
+-* By      : Berg.Xing
+-* Date    : 2011-12-07
+-* Descript: dram for AW1625 chipset
+-* Update  : date                auther      ver     notes
+-*			2011-12-07			Berg        1.0     create file from aw1623
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/dram.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Berg Xing <bergxing@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "dram_i.h"
+ 
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/dram_i.h b/arch/arm/mach-sun5i/pm/standby/dram_i.h
+index a897ff1..88ce8c9 100644
+--- a/arch/arm/mach-sun5i/pm/standby/dram_i.h
++++ b/arch/arm/mach-sun5i/pm/standby/dram_i.h
+@@ -1,13 +1,26 @@
+ /*
+-*********************************************************************************************************
+-* File    : dram_i.h
+-* By      : Berg.Xing
+-* Date    : 2011-12-07
+-* Descript: dram for AW1625 chipset
+-* Update  : date                auther      ver     notes
+-*			2011-12-07			Berg        1.0     create file from aw1623
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/dram_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Berg Xing <bergxing@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DRAM_I_H__
+ #define __DRAM_I_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/dram_init.c b/arch/arm/mach-sun5i/pm/standby/dram_init.c
+index 5f154ef2..9a8d9ec 100644
+--- a/arch/arm/mach-sun5i/pm/standby/dram_init.c
++++ b/arch/arm/mach-sun5i/pm/standby/dram_init.c
+@@ -1,13 +1,26 @@
+ /*
+-*********************************************************************************************************
+-* File    : dram_init.c
+-* By      : Berg.Xing
+-* Date    : 2011-12-07
+-* Descript: dram for AW1625 chipset
+-* Update  : date                auther      ver     notes
+-*			2011-12-07			Berg        1.0     create file from aw1623
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/dram_init.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Berg Xing <bergxing@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "dram_i.h"
+ 
+ typedef struct dram_para_t  __dram_para_t;
+diff --git a/arch/arm/mach-sun5i/pm/standby/stack.S b/arch/arm/mach-sun5i/pm/standby/stack.S
+index 65f8027..5fba132 100644
+--- a/arch/arm/mach-sun5i/pm/standby/stack.S
++++ b/arch/arm/mach-sun5i/pm/standby/stack.S
+@@ -1,6 +1,29 @@
++/*
++ * arch/arm/mach-sun5i/pm/standby/stack.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <mach/platform.h>
+ 
+-/**stack point address in sram*/
++/* stack point address in sram */
+ #define SP_IN_SRAM	0xf0007ffc
+ 
+     .text
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby.c b/arch/arm/mach-sun5i/pm/standby/standby.c
+index 5cdc741..2626be8 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby.c
+@@ -1,22 +1,27 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 18:34
+-* Descript: platform standby fucntion.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
+-#include "standby_i.h"
++ * arch/arm/mach-sun5i/pm/standby/standby.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
++#include "standby_i.h"
+ 
+ extern unsigned int save_sp(void);
+ extern void restore_sp(unsigned int sp);
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby.lds b/arch/arm/mach-sun5i/pm/standby/standby.lds
+index 73b8674..47f7a4e 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby.lds
++++ b/arch/arm/mach-sun5i/pm/standby/standby.lds
+@@ -1,4 +1,3 @@
+-
+ OUTPUT_ARCH(arm)
+ ENTRY(main)
+ 
+@@ -18,4 +17,3 @@ SECTIONS
+ 	__bss_end = .;
+ 	__standby_end = . ;
+ }
+-
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_cfg.h b/arch/arm/mach-sun5i/pm/standby/standby_cfg.h
+index 69675e3..b8c073e 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_cfg.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_cfg.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_cfg.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 14:29
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_cfg.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_CFG_H__
+ #define __STANDBY_CFG_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_clock.c b/arch/arm/mach-sun5i/pm/standby/standby_clock.c
+index d945b9e..8a70ed1 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_clock.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_clock.c
+@@ -1,35 +1,32 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_clock.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 13:40
+-* Descript: ccmu process for platform standby;
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_clock.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include "standby_i.h"
+ 
+-
+ static __ccmu_reg_list_t   *CmuReg;;
+ static __u32    ccu_reg_back[7];
+ __u32   cpu_ms_loopcnt;
+ 
+-//==============================================================================
+-// CLOCK SET FOR SYSTEM STANDBY
+-//==============================================================================
+-
+-
+-
+-
+ /*
+ *********************************************************************************************************
+ *                           standby_clk_init
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_clock.h b/arch/arm/mach-sun5i/pm/standby/standby_clock.h
+index 12929f2..2d1d608 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_clock.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_clock.h
+@@ -1,27 +1,32 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_clock.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 21:05
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_clock.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_CLOCK_H__
+ #define __STANDBY_CLOCK_H__
+ 
+ #include "standby_cfg.h"
+ #include <mach/ccmu_regs.h>
+ 
+-
+ struct sun4i_clk_div_t {
+     __u32   cpu_div:4;      /* division of cpu clock, divide core_pll */
+     __u32   axi_div:4;      /* division of axi clock, divide cpu clock*/
+@@ -30,7 +35,6 @@ struct sun4i_clk_div_t {
+     __u32   reserved:16;
+ };
+ 
+-
+ __s32 standby_clk_init(void);
+ __s32 standby_clk_exit(void);
+ __s32 standby_clk_core2losc(void);
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_delay.S b/arch/arm/mach-sun5i/pm/standby/standby_delay.S
+index c2beeb7..4a6dc12 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_delay.S
++++ b/arch/arm/mach-sun5i/pm/standby/standby_delay.S
+@@ -1,3 +1,25 @@
++/*
++ * arch/arm/mach-sun5i/pm/standby/standby_delay.S
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+     .text
+     .globl standby_delay
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_i.h b/arch/arm/mach-sun5i/pm/standby/standby_i.h
+index 7db84bb..a22439f 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_i.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_i.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_i.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 17:21
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_I_H__
+ #define __STANDBY_I_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_int.c b/arch/arm/mach-sun5i/pm/standby/standby_int.c
+index ce625cf..7dbede9 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_int.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_int.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_int.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 20:13
+-* Descript: interrupt for platform standby
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_int.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "standby_i.h"
+ 
+ static __u32    IrqEnReg[3], IrqMaskReg[3], IrqSelReg[3];
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_int.h b/arch/arm/mach-sun5i/pm/standby/standby_int.h
+index 66b80f5..ea7571b 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_int.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_int.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_int.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-30 19:50
+-* Descript: intterupt bsp for platform standby.
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_int.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_INT_H__
+ #define __STANDBY_INT_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_ir.c b/arch/arm/mach-sun5i/pm/standby/standby_ir.c
+index e2a4dcd..e73b64d 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_ir.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_ir.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_ir.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 14:36
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_ir.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include  "standby_i.h"
+ 
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_ir.h b/arch/arm/mach-sun5i/pm/standby/standby_ir.h
+index f46f4b0..be661f7 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_ir.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_ir.h
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_ir.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:15
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_ir.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #ifndef __STANDBY_IR_H__
+ #define __STANDBY_IR_H__
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_key.c b/arch/arm/mach-sun5i/pm/standby/standby_key.c
+index 4f58dfb..8ace48e 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_key.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_key.c
+@@ -1,30 +1,33 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_key.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:16
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_key.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * Querry key to wake up system from standby
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "standby_i.h"
+ 
+ static __standby_key_reg_t  *KeyReg;
+ static __u32 KeyCtrl, KeyIntc, KeyInts, KeyData0, KeyData1;
+ 
+-//==============================================================================
+-// QUERRY KEY FOR WAKE UP SYSTEM FROM STANDBY
+-//==============================================================================
+-
+-
+ /*
+ *********************************************************************************************************
+ *                                     INIT KEY FOR STANDBY
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_key.h b/arch/arm/mach-sun5i/pm/standby/standby_key.h
+index d4d1f51..a063966 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_key.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_key.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_key.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:16
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_key.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_KEY_H__
+ #define __STANDBY_KEY_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_power.c b/arch/arm/mach-sun5i/pm/standby/standby_power.c
+index cfd181b..11978f6 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_power.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_power.c
+@@ -1,27 +1,27 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_power.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 14:34
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
+-#include "standby_i.h"
+-
+-
+-//==============================================================================
+-// POWER CHECK FOR SYSTEM STANDBY
+-//==============================================================================
++ * arch/arm/mach-sun5i/pm/standby/standby_power.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
++#include "standby_i.h"
+ 
+ /*
+ *********************************************************************************************************
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_power.h b/arch/arm/mach-sun5i/pm/standby/standby_power.h
+index bf80cbd..8718781 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_power.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_power.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_power.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 14:34
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_power.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_POWER_H__
+ #define __STANDBY_POWER_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_tmr.c b/arch/arm/mach-sun5i/pm/standby/standby_tmr.c
+index 623e134..1bb1090 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_tmr.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_tmr.c
+@@ -1,28 +1,32 @@
+ /*
+-*********************************************************************************************************
+-*                                                    eMOD
+-*                                   the Easy Portable/Player Operation System
+-*                                            power manager sub-system
+-*
+-*                                     (c) Copyright 2008-2009, kevin.z China
+-*                                              All Rights Reserved
+-*
+-* File   : standby_tmr.c
+-* Version: V1.0
+-* By     : kevin.z
+-* Date   : 2009-7-22 18:31
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_tmr.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "standby_i.h"
+ 
+ 
+ static __standby_tmr_reg_t  *TmrReg;
+ static __u32 TmrIntCtl, Tmr0Ctl, Tmr0IntVal, Tmr0CntVal, Tmr1Ctl, Tmr1IntVal, Tmr1CntVal;
+ 
+-
+-
+-
+-
+ /*
+ *********************************************************************************************************
+ *                                     TIMER INIT
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_tmr.h b/arch/arm/mach-sun5i/pm/standby/standby_tmr.h
+index cd1da3c..b380e49 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_tmr.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_tmr.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_tmr.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:23
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_tmr.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_TMR_H__
+ #define __STANDBY_TMR_H__
+ 
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_twi.c b/arch/arm/mach-sun5i/pm/standby/standby_twi.c
+index 4afdabe..954126c 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_twi.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_twi.c
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_twi.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:22
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_twi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "standby_i.h"
+ 
+ #define TWI_CHECK_TIMEOUT       (0x2ff)
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_twi.h b/arch/arm/mach-sun5i/pm/standby/standby_twi.h
+index 391d977..8cdde1b 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_twi.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_twi.h
+@@ -1,20 +1,25 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_twi.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:22
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_twi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #ifndef __STANDBY_TWI_H__
+ #define __STANDBY_TWI_H__
+@@ -51,4 +56,3 @@ extern __s32 twi_byte_rw(enum twi_op_type_e op, __u8 saddr, __u8 baddr, __u8 *da
+ 
+ 
+ #endif  /* __STANDBY_TWI_H__ */
+-
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_usb.c b/arch/arm/mach-sun5i/pm/standby/standby_usb.c
+index adb6ec5..fc3ef1b 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_usb.c
++++ b/arch/arm/mach-sun5i/pm/standby/standby_usb.c
+@@ -1,28 +1,29 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_usb.c
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:18
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
+-#include "standby_i.h"
+-
+-
+-
+-//==============================================================================
+-// USB CHECK FOR WAKEUP SYSTEM FROM STANDBY
+-//==============================================================================
++ * arch/arm/mach-sun5i/pm/standby/standby_usb.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * chech usb to wake up system from standby
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
++#include "standby_i.h"
+ 
+ /*
+ *********************************************************************************************************
+diff --git a/arch/arm/mach-sun5i/pm/standby/standby_usb.h b/arch/arm/mach-sun5i/pm/standby/standby_usb.h
+index 5b3ce21..f2dcca6 100644
+--- a/arch/arm/mach-sun5i/pm/standby/standby_usb.h
++++ b/arch/arm/mach-sun5i/pm/standby/standby_usb.h
+@@ -1,20 +1,26 @@
+ /*
+-*********************************************************************************************************
+-*                                                    LINUX-KERNEL
+-*                                        AllWinner Linux Platform Develop Kits
+-*                                                   Kernel Module
+-*
+-*                                    (c) Copyright 2006-2011, kevin.z China
+-*                                             All Rights Reserved
+-*
+-* File    : standby_usb.h
+-* By      : kevin.z
+-* Version : v1.0
+-* Date    : 2011-5-31 15:17
+-* Descript:
+-* Update  : date                auther      ver     notes
+-*********************************************************************************************************
+-*/
++ * arch/arm/mach-sun5i/pm/standby/standby_usb.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Kevin Zhang <kevin@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __STANDBY_USB_H__
+ #define __STANDBY_USB_H__
+ 
+@@ -26,4 +32,3 @@ extern __s32 standby_usb_exit(void);
+ extern __s32 standby_query_usb_event(void);
+ 
+ #endif  /* __STANDBY_USB_H__ */
+-
+diff --git a/arch/arm/mach-sun5i/sys_config.c b/arch/arm/mach-sun5i/sys_config.c
+index 15c555e..bf32bf2 100644
+--- a/arch/arm/mach-sun5i/sys_config.c
++++ b/arch/arm/mach-sun5i/sys_config.c
+@@ -1,16 +1,24 @@
+ /*
+- * arch/arch/mach-sun5i/sys_config.c
+- * (C) Copyright 2010-2015
++ * arch/arm/mach-sun5i/sys_config.c
++ *
++ * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Benn Huang <benn@allwinnertech.com>
+  *
+- * sys_config utils (porting from 2.6.36)
+- *
+  * This program is free software; you can redistribute it and/or
+  * modify it under the terms of the GNU General Public License as
+  * published by the Free Software Foundation; either version 2 of
+  * the License, or (at your option) any later version.
+  *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
+  */
+ 
+ #include <linux/kernel.h>
+-- 
+1.8.0
+

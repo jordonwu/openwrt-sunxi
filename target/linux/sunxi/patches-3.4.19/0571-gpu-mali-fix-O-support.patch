@@ -1,0 +1,298 @@
+From 009e0beee02f565e9cad75f96fae9f28c7cefcde Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Mon, 4 Jun 2012 16:18:01 +0000
+Subject: [PATCH 571/944] gpu: mali: fix O= support
+
+---
+ drivers/gpu/mali/mali/Kbuild  |   6 ++-
+ drivers/gpu/mali/ump/Kbuild   | 121 ++++++++++++++++++++++++++++++++++++++++++
+ drivers/gpu/mali/ump/Makefile | 121 ------------------------------------------
+ 3 files changed, 125 insertions(+), 123 deletions(-)
+ create mode 100644 drivers/gpu/mali/ump/Kbuild
+ delete mode 100644 drivers/gpu/mali/ump/Makefile
+
+diff --git a/drivers/gpu/mali/mali/Kbuild b/drivers/gpu/mali/mali/Kbuild
+index 858ede2..1cfdfe3 100644
+--- a/drivers/gpu/mali/mali/Kbuild
++++ b/drivers/gpu/mali/mali/Kbuild
+@@ -34,7 +34,7 @@ KERNEL_RUNTIME_PM_ENABLED ?= 0
+ CONFIG ?= pb-virtex5-m200
+ 
+ # Get path to driver source from Linux build system
+-DRIVER_DIR=$(src)
++DRIVER_DIR=$(srctree)/$(src)
+ 
+ MALI_RELEASE_NAME=$(shell cat $(DRIVER_DIR)/.version 2> /dev/null)
+ include $(DRIVER_DIR)/Makefile.common
+@@ -44,11 +44,13 @@ ifneq ($(shell [ -d $(DRIVER_DIR)/arch-$(CONFIG) ] && [ -f $(DRIVER_DIR)/arch-$(
+ $(warning Current directory is $(shell pwd))
+ $(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+ else
++ifeq ($(KERNELRELEASE),)
+ # Link arch to the selected arch-config directory
+ $(shell [ -L $(DRIVER_DIR)/arch ] && rm $(DRIVER_DIR)/arch)
+-$(shell ln -sf arch-$(CONFIG) $(DRIVER_DIR)/arch)
++$(shell ln -sf $(DRIVER_DIR)/arch-$(CONFIG) $(DRIVER_DIR)/arch)
+ $(shell touch $(DRIVER_DIR)/arch/config.h)
+ endif
++endif
+ 
+ # Set up our defines, which will be passed to gcc
+ DEFINES += -DUSING_OS_MEMORY=$(USING_OS_MEMORY)
+diff --git a/drivers/gpu/mali/ump/Kbuild b/drivers/gpu/mali/ump/Kbuild
+new file mode 100644
+index 0000000..34fa1ee
+--- /dev/null
++++ b/drivers/gpu/mali/ump/Kbuild
+@@ -0,0 +1,121 @@
++#
++# Copyright (C) 2010-2012 ARM Limited. All rights reserved.
++# 
++# This program is free software and is provided to you under the terms of the GNU General Public License version 2
++# as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
++# 
++# A copy of the licence is included with the program, and can also be obtained from Free Software
++# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
++#
++
++DRIVER_DIR_UMP=$(srctree)/$(src)
++
++UMP_FILE_PREFIX =
++UDD_FILE_PREFIX = ../mali/
++
++ifneq ($(DRIVER_DIR_UMP),)
++include $(DRIVER_DIR_UMP)/Makefile.common
++else
++include ./Makefile.common
++endif
++
++# For each arch check: CROSS_COMPILE , KDIR , CFLAGS += -DARCH
++
++ARCH ?= arm
++BUILD ?= debug
++
++EXTRA_CFLAGS += -DDEBUG -DMALI_STATE_TRACKING=0
++ifeq ($(BUILD), debug)
++EXTRA_CFLAGS += -DDEBUG
++endif
++
++# linux build system integration
++
++ifneq ($(KERNELRELEASE),)
++# Inside the kernel build system
++
++EXTRA_CFLAGS += -I$(DRIVER_DIR_UMP) -I$(DRIVER_DIR_UMP)/common -I$(DRIVER_DIR_UMP)/linux -I$(DRIVER_DIR_UMP)/../mali/common -I$(DRIVER_DIR_UMP)/../mali/linux -I$(DRIVER_DIR_UMP)/../../ump/include/ump -I$(DRIVER_DIR_UMP)/../include/ump
++
++# For customer releases the Linux Device Drivers will be provided as ARM proprietary and GPL releases:
++# The ARM proprietary product will only include the license/proprietary directory
++# The GPL product will only include the license/gpl directory
++
++ifeq ($(wildcard $(DRIVER_DIR_UMP)/linux/license/gpl/*),)
++EXTRA_CFLAGS += -I$(DRIVER_DIR_UMP)/linux/license/proprietary
++else
++EXTRA_CFLAGS += -I$(DRIVER_DIR_UMP)/linux/license/gpl
++endif
++
++SRC +=	$(UMP_FILE_PREFIX)linux/ump_kernel_linux.c \
++	$(UMP_FILE_PREFIX)linux/ump_kernel_memory_backend_os.c \
++	$(UMP_FILE_PREFIX)linux/ump_kernel_memory_backend_dedicated.c \
++	$(UMP_FILE_PREFIX)linux/ump_memory_backend.c \
++	$(UMP_FILE_PREFIX)linux/ump_ukk_wrappers.c \
++	$(UMP_FILE_PREFIX)linux/ump_ukk_ref_wrappers.c \
++	$(UMP_FILE_PREFIX)linux/ump_osk_atomics.c \
++	$(UMP_FILE_PREFIX)linux/ump_osk_low_level_mem.c \
++	$(UMP_FILE_PREFIX)linux/ump_osk_misc.c \
++	$(UDD_FILE_PREFIX)linux/mali_osk_atomics.c \
++	$(UDD_FILE_PREFIX)linux/mali_osk_locks.c \
++	$(UDD_FILE_PREFIX)linux/mali_osk_memory.c \
++	$(UDD_FILE_PREFIX)linux/mali_osk_math.c \
++	$(UDD_FILE_PREFIX)linux/mali_osk_misc.c
++
++# Selecting files to compile by parsing the config file
++
++MODULE:=ump.ko
++
++obj-m := $(MODULE:.ko=.o)
++$(MODULE:.ko=-y) := $(SRC:.c=.o)
++
++else
++# Outside the kernel build system
++
++# Check that required parameters are supplied.
++ifeq ($(CONFIG),)
++$(error "CONFIG must be specified.")
++endif
++ifeq ($(CPU)$(KDIR),)
++$(error "KDIR or CPU must be specified.")
++endif
++
++# Get any user defined KDIR-<names> or maybe even a hardcoded KDIR
++-include KDIR_CONFIGURATION
++
++# Define host system directory
++KDIR-$(shell uname -m):=/lib/modules/$(shell uname -r)/build
++
++ifeq ($(ARCH), arm)
++	# when compiling for ARM we're cross compiling
++	export CROSS_COMPILE ?= arm-none-linux-gnueabi-
++endif
++
++# look up KDIR based om CPU selection
++KDIR ?= $(KDIR-$(CPU))
++
++ifeq ($(KDIR),)
++$(error No KDIR found for platform $(CPU))
++endif
++
++# Validate selected config
++ifneq ($(shell [ -d arch-$(CONFIG) ] && [ -f arch-$(CONFIG)/config.h ] && echo "OK"), OK)
++$(warning Current directory is $(shell pwd))
++$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
++else
++# Link arch to the selected arch-config directory
++$(shell [ -L arch ] && rm arch)
++$(shell ln -sf arch-$(CONFIG) arch)
++$(shell touch arch/config.h)
++endif
++
++all:
++	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) modules
++
++kernelrelease:
++	$(MAKE) ARCH=$(ARCH) -C $(KDIR) kernelrelease
++
++clean:
++	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) clean
++	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR)/../mali clean
++
++endif
+diff --git a/drivers/gpu/mali/ump/Makefile b/drivers/gpu/mali/ump/Makefile
+deleted file mode 100644
+index cb5d773..0000000
+--- a/drivers/gpu/mali/ump/Makefile
++++ /dev/null
+@@ -1,121 +0,0 @@
+-#
+-# Copyright (C) 2010-2012 ARM Limited. All rights reserved.
+-# 
+-# This program is free software and is provided to you under the terms of the GNU General Public License version 2
+-# as published by the Free Software Foundation, and any use by you of this program is subject to the terms of such GNU licence.
+-# 
+-# A copy of the licence is included with the program, and can also be obtained from Free Software
+-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+-#
+-
+-UMP_FILE_PREFIX =
+-UDD_FILE_PREFIX = ../mali/
+-
+-KBUILD_EXTMOD := drivers/gpu/mali/ump
+-
+-ifneq ($(KBUILD_EXTMOD),)
+-include $(KBUILD_EXTMOD)/Makefile.common
+-else
+-include ./Makefile.common
+-endif
+-
+-# For each arch check: CROSS_COMPILE , KDIR , CFLAGS += -DARCH
+-
+-ARCH ?= arm
+-BUILD ?= debug
+-
+-EXTRA_CFLAGS += -DDEBUG -DMALI_STATE_TRACKING=0
+-ifeq ($(BUILD), debug)
+-EXTRA_CFLAGS += -DDEBUG
+-endif
+-
+-# linux build system integration
+-
+-ifneq ($(KERNELRELEASE),)
+-# Inside the kernel build system
+-
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD) -I$(KBUILD_EXTMOD)/common -I$(KBUILD_EXTMOD)/linux -I$(KBUILD_EXTMOD)/../mali/common -I$(KBUILD_EXTMOD)/../mali/linux -I$(KBUILD_EXTMOD)/../../ump/include/ump -I$(KBUILD_EXTMOD)/../include/ump
+-
+-# For customer releases the Linux Device Drivers will be provided as ARM proprietary and GPL releases:
+-# The ARM proprietary product will only include the license/proprietary directory
+-# The GPL product will only include the license/gpl directory
+-
+-ifeq ($(wildcard $(KBUILD_EXTMOD)/linux/license/gpl/*),)
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/linux/license/proprietary
+-else
+-EXTRA_CFLAGS += -I$(KBUILD_EXTMOD)/linux/license/gpl
+-endif
+-
+-SRC +=	$(UMP_FILE_PREFIX)linux/ump_kernel_linux.c \
+-	$(UMP_FILE_PREFIX)linux/ump_kernel_memory_backend_os.c \
+-	$(UMP_FILE_PREFIX)linux/ump_kernel_memory_backend_dedicated.c \
+-	$(UMP_FILE_PREFIX)linux/ump_memory_backend.c \
+-	$(UMP_FILE_PREFIX)linux/ump_ukk_wrappers.c \
+-	$(UMP_FILE_PREFIX)linux/ump_ukk_ref_wrappers.c \
+-	$(UMP_FILE_PREFIX)linux/ump_osk_atomics.c \
+-	$(UMP_FILE_PREFIX)linux/ump_osk_low_level_mem.c \
+-	$(UMP_FILE_PREFIX)linux/ump_osk_misc.c \
+-	$(UDD_FILE_PREFIX)linux/mali_osk_atomics.c \
+-	$(UDD_FILE_PREFIX)linux/mali_osk_locks.c \
+-	$(UDD_FILE_PREFIX)linux/mali_osk_memory.c \
+-	$(UDD_FILE_PREFIX)linux/mali_osk_math.c \
+-	$(UDD_FILE_PREFIX)linux/mali_osk_misc.c
+-
+-# Selecting files to compile by parsing the config file
+-
+-MODULE:=ump.ko
+-
+-obj-m := $(MODULE:.ko=.o)
+-$(MODULE:.ko=-y) := $(SRC:.c=.o)
+-
+-else
+-# Outside the kernel build system
+-
+-# Check that required parameters are supplied.
+-ifeq ($(CONFIG),)
+-$(error "CONFIG must be specified.")
+-endif
+-ifeq ($(CPU)$(KDIR),)
+-$(error "KDIR or CPU must be specified.")
+-endif
+-
+-# Get any user defined KDIR-<names> or maybe even a hardcoded KDIR
+--include KDIR_CONFIGURATION
+-
+-# Define host system directory
+-KDIR-$(shell uname -m):=/lib/modules/$(shell uname -r)/build
+-
+-ifeq ($(ARCH), arm)
+-	# when compiling for ARM we're cross compiling
+-	export CROSS_COMPILE ?= arm-none-linux-gnueabi-
+-endif
+-
+-# look up KDIR based om CPU selection
+-KDIR ?= $(KDIR-$(CPU))
+-
+-ifeq ($(KDIR),)
+-$(error No KDIR found for platform $(CPU))
+-endif
+-
+-# Validate selected config
+-ifneq ($(shell [ -d arch-$(CONFIG) ] && [ -f arch-$(CONFIG)/config.h ] && echo "OK"), OK)
+-$(warning Current directory is $(shell pwd))
+-$(error No configuration found for config $(CONFIG). Check that arch-$(CONFIG)/config.h exists)
+-else
+-# Link arch to the selected arch-config directory
+-$(shell [ -L arch ] && rm arch)
+-$(shell ln -sf arch-$(CONFIG) arch)
+-$(shell touch arch/config.h)
+-endif
+-
+-all:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) modules
+-
+-kernelrelease:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) kernelrelease
+-
+-clean:
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR) clean
+-	$(MAKE) ARCH=$(ARCH) -C $(KDIR) M=$(CURDIR)/../mali clean
+-
+-endif
+-- 
+1.8.0
+

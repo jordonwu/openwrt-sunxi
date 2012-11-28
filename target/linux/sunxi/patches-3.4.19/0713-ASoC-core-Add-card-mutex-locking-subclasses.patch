@@ -1,0 +1,54 @@
+From 2da03399a18fa58a39b8caef165d65f0ca58a3e6 Mon Sep 17 00:00:00 2001
+From: Liam Girdwood <lrg@ti.com>
+Date: Wed, 7 Mar 2012 10:38:25 +0000
+Subject: [PATCH 713/944] ASoC: core: Add card mutex locking subclasses
+
+This is the first part of a change that is intended to improve
+ASoC locking protection for DAPM and PCM operations.
+
+This part of the series adds a mutex class for the soc_card mutex. The
+SND_SOC_CARD_CLASS_INIT class is used for card initialisation only whilst the
+SND_SOC_CARD_CLASS_PCM class is used for the forth coming Dynamic
+PCM operations. The new mutex classes are required otherwise we will see a false
+positive mutex deadlock warning between the card initialisation and the PCM
+operations (something that would never deadlock in real life).
+
+Signed-off-by: Liam Girdwood <lrg@ti.com>
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ include/sound/soc.h  | 5 +++++
+ sound/soc/soc-core.c | 2 +-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/include/sound/soc.h b/include/sound/soc.h
+index 2ebf787..70de2f8 100644
+--- a/include/sound/soc.h
++++ b/include/sound/soc.h
+@@ -288,6 +288,11 @@ enum snd_soc_pcm_subclass {
+ 	SND_SOC_PCM_CLASS_BE	= 1,
+ };
+ 
++enum snd_soc_card_subclass {
++	SND_SOC_CARD_CLASS_INIT	= 0,
++	SND_SOC_CARD_CLASS_PCM	= 1,
++};
++
+ int snd_soc_codec_set_sysclk(struct snd_soc_codec *codec, int clk_id,
+ 			     int source, unsigned int freq, int dir);
+ int snd_soc_codec_set_pll(struct snd_soc_codec *codec, int pll_id, int source,
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index c88d974..28ac883 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -1412,7 +1412,7 @@ static void snd_soc_instantiate_card(struct snd_soc_card *card)
+ 	struct snd_soc_dai_link *dai_link;
+ 	int ret, i, order;
+ 
+-	mutex_lock(&card->mutex);
++	mutex_lock_nested(&card->mutex, SND_SOC_CARD_CLASS_INIT);
+ 
+ 	if (card->instantiated) {
+ 		mutex_unlock(&card->mutex);
+-- 
+1.8.0
+

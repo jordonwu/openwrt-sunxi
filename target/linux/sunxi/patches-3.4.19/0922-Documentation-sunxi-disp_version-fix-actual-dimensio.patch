@@ -1,0 +1,46 @@
+From 74fc6ac225929ba73d1619f1751e10bc71a7586e Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 23:16:41 +0100
+Subject: [PATCH 922/944] Documentation:sunxi:disp_version: fix actual
+ dimensions
+
+If the display is fully initialised, the WIDTH/HEIGHT ioctls return
+an actual value. Usually one does not fall over when actual good values
+are returned.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ Documentation/sunxi/disp/disp_version.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Documentation/sunxi/disp/disp_version.c b/Documentation/sunxi/disp/disp_version.c
+index 4b0606f..cb93ef4 100644
+--- a/Documentation/sunxi/disp/disp_version.c
++++ b/Documentation/sunxi/disp/disp_version.c
+@@ -43,9 +43,9 @@ main(int argc, char *argv[])
+ 
+ 	tmp = 0;
+ 	ret = ioctl(fd, DISP_CMD_SCN_GET_WIDTH, &tmp);
+-	if (ret) {
++	if (ret < 0) {
+ 		fprintf(stderr, "Error: ioctl(SCN_GET_WIDTH) failed: %s\n",
+-			strerror(ret));
++			strerror(-ret));
+ 		return ret;
+ 	}
+ 
+@@ -53,9 +53,9 @@ main(int argc, char *argv[])
+ 
+ 	tmp = 0;
+ 	ret = ioctl(fd, DISP_CMD_SCN_GET_HEIGHT, &tmp);
+-	if (ret) {
++	if (ret < 0) {
+ 		fprintf(stderr, "Error: ioctl(SCN_GET_HEIGHT) failed: %s\n",
+-			strerror(ret));
++			strerror(-ret));
+ 		return ret;
+ 	}
+ 
+-- 
+1.8.0
+

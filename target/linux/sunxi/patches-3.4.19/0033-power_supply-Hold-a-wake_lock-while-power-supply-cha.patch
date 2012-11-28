@@ -1,0 +1,119 @@
+From 836ad4845a8a93a83cef6e73230abc0a76740416 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Arve=20Hj=C3=B8nnev=C3=A5g?= <arve@android.com>
+Date: Mon, 21 Sep 2009 17:26:47 -0700
+Subject: [PATCH 033/944] power_supply: Hold a wake_lock while power supply
+ change notifications are pending
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When connecting usb or the charger the device would often go back to sleep
+before the charge led and screen turned on.
+
+Change-Id: I01def6d86ddece0d4e31d2a91d176ed0975b6b9d
+Signed-off-by: Arve Hjønnevåg <arve@android.com>
+---
+ drivers/power/power_supply_core.c | 30 ++++++++++++++++++++++++++----
+ include/linux/power_supply.h      |  4 ++++
+ 2 files changed, 30 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/power/power_supply_core.c b/drivers/power/power_supply_core.c
+index 6ad6127..f58d1805 100644
+--- a/drivers/power/power_supply_core.c
++++ b/drivers/power/power_supply_core.c
+@@ -41,23 +41,40 @@ static int __power_supply_changed_work(struct device *dev, void *data)
+ 
+ static void power_supply_changed_work(struct work_struct *work)
+ {
++	unsigned long flags;
+ 	struct power_supply *psy = container_of(work, struct power_supply,
+ 						changed_work);
+ 
+ 	dev_dbg(psy->dev, "%s\n", __func__);
+ 
+-	class_for_each_device(power_supply_class, NULL, psy,
+-			      __power_supply_changed_work);
++	spin_lock_irqsave(&psy->changed_lock, flags);
++	if (psy->changed) {
++		psy->changed = false;
++		spin_unlock_irqrestore(&psy->changed_lock, flags);
+ 
+-	power_supply_update_leds(psy);
++		class_for_each_device(power_supply_class, NULL, psy,
++				      __power_supply_changed_work);
+ 
+-	kobject_uevent(&psy->dev->kobj, KOBJ_CHANGE);
++		power_supply_update_leds(psy);
++
++		kobject_uevent(&psy->dev->kobj, KOBJ_CHANGE);
++		spin_lock_irqsave(&psy->changed_lock, flags);
++	}
++	if (!psy->changed)
++		wake_unlock(&psy->work_wake_lock);
++	spin_unlock_irqrestore(&psy->changed_lock, flags);
+ }
+ 
+ void power_supply_changed(struct power_supply *psy)
+ {
++	unsigned long flags;
++
+ 	dev_dbg(psy->dev, "%s\n", __func__);
+ 
++	spin_lock_irqsave(&psy->changed_lock, flags);
++	psy->changed = true;
++	wake_lock(&psy->work_wake_lock);
++	spin_unlock_irqrestore(&psy->changed_lock, flags);
+ 	schedule_work(&psy->changed_work);
+ }
+ EXPORT_SYMBOL_GPL(power_supply_changed);
+@@ -197,6 +214,9 @@ int power_supply_register(struct device *parent, struct power_supply *psy)
+ 	if (rc)
+ 		goto device_add_failed;
+ 
++	spin_lock_init(&psy->changed_lock);
++	wake_lock_init(&psy->work_wake_lock, WAKE_LOCK_SUSPEND, "power-supply");
++
+ 	rc = power_supply_create_triggers(psy);
+ 	if (rc)
+ 		goto create_triggers_failed;
+@@ -206,6 +226,7 @@ int power_supply_register(struct device *parent, struct power_supply *psy)
+ 	goto success;
+ 
+ create_triggers_failed:
++	wake_lock_destroy(&psy->work_wake_lock);
+ 	device_del(dev);
+ kobject_set_name_failed:
+ device_add_failed:
+@@ -220,6 +241,7 @@ void power_supply_unregister(struct power_supply *psy)
+ 	cancel_work_sync(&psy->changed_work);
+ 	sysfs_remove_link(&psy->dev->kobj, "powers");
+ 	power_supply_remove_triggers(psy);
++	wake_lock_destroy(&psy->work_wake_lock);
+ 	device_unregister(psy->dev);
+ }
+ EXPORT_SYMBOL_GPL(power_supply_unregister);
+diff --git a/include/linux/power_supply.h b/include/linux/power_supply.h
+index c38c13d..e078bd7 100644
+--- a/include/linux/power_supply.h
++++ b/include/linux/power_supply.h
+@@ -13,6 +13,7 @@
+ #ifndef __LINUX_POWER_SUPPLY_H__
+ #define __LINUX_POWER_SUPPLY_H__
+ 
++#include <linux/wakelock.h>
+ #include <linux/workqueue.h>
+ #include <linux/leds.h>
+ 
+@@ -172,6 +173,9 @@ struct power_supply {
+ 	/* private */
+ 	struct device *dev;
+ 	struct work_struct changed_work;
++	spinlock_t changed_lock;
++	bool changed;
++	struct wake_lock work_wake_lock;
+ 
+ #ifdef CONFIG_LEDS_TRIGGERS
+ 	struct led_trigger *charging_full_trig;
+-- 
+1.8.0
+

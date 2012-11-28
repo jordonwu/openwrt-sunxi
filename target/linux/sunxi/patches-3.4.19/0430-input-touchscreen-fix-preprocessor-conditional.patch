@@ -1,0 +1,27 @@
+From 204efc8c4dc8275f60f9e57ab7c796b5e3e8f993 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@tuxfamily.org>
+Date: Sun, 13 May 2012 18:40:14 +0000
+Subject: [PATCH 430/944] input: touchscreen: fix preprocessor conditional
+
+"#else ifdef CONFIG_ARCH_SUN5I" is not valid, use the correct
+form "#elif defined(CONFIG_ARCH_SUN5I)"
+---
+ drivers/input/touchscreen/ft5x_ts.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/input/touchscreen/ft5x_ts.c b/drivers/input/touchscreen/ft5x_ts.c
+index 15af13c..d73926b 100644
+--- a/drivers/input/touchscreen/ft5x_ts.c
++++ b/drivers/input/touchscreen/ft5x_ts.c
+@@ -112,7 +112,7 @@ static int key_val = 0;
+ //specific tp related macro: need be configured for specific tp
+ #ifdef CONFIG_ARCH_SUN4I
+ #define CTP_IRQ_NO			(IRQ_EINT21)
+-#else ifdef CONFIG_ARCH_SUN5I
++#elif defined(CONFIG_ARCH_SUN5I)
+ #define CTP_IRQ_NO			(IRQ_EINT9)
+ #endif
+ 
+-- 
+1.8.0
+

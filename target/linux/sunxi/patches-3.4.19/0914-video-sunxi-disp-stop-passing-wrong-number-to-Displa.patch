@@ -1,0 +1,41 @@
+From 6f21b04b0f4428c04d12e61bc1027a2bb5cec074 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:22 +0100
+Subject: [PATCH 914/944] video:sunxi:disp: stop passing wrong number to
+ Display_Fb_Release
+
+Nobody used these handles anyway, and Fb_Release uses this argument
+to index a table that is 2 large. Amazing that we did not get a segfault
+out of this.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/dev_fb.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index eace6e8..10eb4f5 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -32,9 +32,6 @@
+ 
+ fb_info_t g_fbi;
+ 
+-#define FBHANDTOID(handle)  ((handle) - 100)
+-#define FBIDTOHAND(ID)  ((ID) + 100)
+-
+ /*
+  *          0:ARGB  1:BRGA  2:ABGR  3:RGBA
+  *     seq:  ARGB    BRGA    ARGB    BRGA
+@@ -1674,7 +1671,7 @@ __s32 Fb_Exit(void)
+ 		if (g_fbi.fbinfo[fb_id] == NULL)
+ 			continue;
+ 
+-		Display_Fb_Release(FBIDTOHAND(fb_id));
++		Display_Fb_Release(fb_id);
+ 
+ 		unregister_framebuffer(g_fbi.fbinfo[fb_id]);
+ 		framebuffer_release(g_fbi.fbinfo[fb_id]);
+-- 
+1.8.0
+

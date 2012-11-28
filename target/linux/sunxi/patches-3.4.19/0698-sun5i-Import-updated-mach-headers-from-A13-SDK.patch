@@ -1,0 +1,241 @@
+From 8b55227ac17979930e199f417f4ece71ec0f4687 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Mon, 20 Aug 2012 01:10:31 +0200
+Subject: [PATCH 698/944] sun5i: Import updated mach headers from A13 SDK
+
+---
+ arch/arm/mach-sun5i/core.c                   |  7 ++++--
+ arch/arm/mach-sun5i/include/mach/aw_ccu.h    |  5 +++++
+ arch/arm/mach-sun5i/include/mach/ccmu_regs.h |  4 +++-
+ arch/arm/mach-sun5i/include/mach/dram.h      | 32 ++++++++++++++++++++++++++++
+ arch/arm/mach-sun5i/include/mach/irqs.h      |  3 +++
+ arch/arm/mach-sun5i/include/mach/memory.h    | 22 +++++++++++++++++++
+ arch/arm/mach-sun5i/include/mach/platform.h  | 10 ++++++---
+ arch/arm/mach-sun5i/include/mach/system.h    | 12 +++++++++++
+ 8 files changed, 89 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-sun5i/core.c b/arch/arm/mach-sun5i/core.c
+index d6fdd5f..b4e0a67 100644
+--- a/arch/arm/mach-sun5i/core.c
++++ b/arch/arm/mach-sun5i/core.c
+@@ -292,8 +292,11 @@ static void sun5i_restart(char mode, const char *cmd)
+ 	#define WATCH_DOG_CTRL_REG  (SW_VA_TIMERC_IO_BASE + 0x0094)
+ 	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 0;
+ 	__delay(100000);
+-	*(volatile unsigned int *)WATCH_DOG_CTRL_REG = 3;
+-	while(1);
++	*(volatile unsigned int *)WATCH_DOG_CTRL_REG |= 2;
++	while(1) {
++		__delay(100);
++		*(volatile unsigned int *)WATCH_DOG_CTRL_REG |= 1;
++	}
+ }
+ 
+ static void timer_set_mode(enum clock_event_mode mode, struct clock_event_device *clk)
+diff --git a/arch/arm/mach-sun5i/include/mach/aw_ccu.h b/arch/arm/mach-sun5i/include/mach/aw_ccu.h
+index 9cd42d1..4579e65 100644
+--- a/arch/arm/mach-sun5i/include/mach/aw_ccu.h
++++ b/arch/arm/mach-sun5i/include/mach/aw_ccu.h
+@@ -27,6 +27,11 @@
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+ 
++/* define if need use pll6 to take the place of pll4,
++   this definition is significative on C ver. only */
++#define USE_PLL6M_REPLACE_PLL4      (1)
++
++
+ /* define clock error type      */
+ typedef enum __AW_CCU_ERR
+ {
+diff --git a/arch/arm/mach-sun5i/include/mach/ccmu_regs.h b/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
+index 016859f..1a8a901 100644
+--- a/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
++++ b/arch/arm/mach-sun5i/include/mach/ccmu_regs.h
+@@ -104,7 +104,8 @@ typedef struct __CCMU_PLL4_VE_REG0018
+     __u32   FactorK:2;          //bit4,  PLL4 factor K
+     __u32   reserved1:2;        //bit6,  reserved
+     __u32   FactorN:5;          //bit8,  PLL4 factor N
+-    __u32   reserved2:3;        //bit13, reserved
++    __u32   reserved2:1;        //bit13, reserved
++    __u32   PllSwitch:2;        //bit14, PLL4 output switch, 00-pll4, 01-pll3x2, 10/11-pll6
+     __u32   FactorP:2;          //bit16, PLL4 output external divider P
+     __u32   reserved3:1;        //bit18, reserved
+     __u32   VCOGain:1;          //bit19, PLL4 VCO gain control
+@@ -605,6 +606,7 @@ typedef struct __CCMU_REG_LIST
+     volatile __ccmu_lvds_clk_reg014c_t      LvdsClk;    //0x014C, LVDS module clock control
+     volatile __ccmu_hdmi_clk_reg0150_t      HdmiClk;    //0x0150, HDMI module clock control
+     volatile __ccmu_mali400_clk_reg0154_t   MaliClk;    //0x0154, MALI400 module clock control
++    volatile __u32                          reserved21; //0x0158, reserved
+     volatile __ccmu_mbus_clk_reg015c_t      MbusClk;    //0x015c, MBUS clock control
+     volatile __ccmu_iep_clk_reg0160_t       IepClk;     //0x0160, IEP clock control
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/dram.h b/arch/arm/mach-sun5i/include/mach/dram.h
+index 58c037f..2f0cbcd 100644
+--- a/arch/arm/mach-sun5i/include/mach/dram.h
++++ b/arch/arm/mach-sun5i/include/mach/dram.h
+@@ -25,6 +25,7 @@
+ #define __AW_DRAM_H__
+ 
+ #include <linux/kernel.h>
++#include <mach/platform.h>
+ 
+ struct dram_para_t
+ {
+@@ -67,5 +68,36 @@ void dram_hostport_setup(unsigned int port, unsigned int prio, unsigned int wait
+ void dram_power_save_process(void);
+ unsigned int dram_power_up_process(void);
+ 
++
++#define DRAM_HOST_CFG_BASE          (SW_VA_DRAM_IO_BASE + 0x250)
++typedef struct __DRAM_HOST_CFG_REG{
++    unsigned int    AcsEn:1;    //bit0, host port access enable
++    unsigned int    reserved0:1;    //bit1
++    unsigned int    PrioLevel:2;    //bit2, host port poriority level
++    unsigned int    WaitState:4;    //bit4, host port wait state
++    unsigned int    CmdNum:8;       //bit8, host port command number
++    unsigned int    reserved1:14;   //bit16
++    unsigned int    WrCntEn:1;      //bit30, host port write counter enable
++    unsigned int    RdCntEn:1;      //bit31, host port read counter enable
++} __dram_host_cfg_reg_t;
++
++typedef enum __DRAM_HOST_PORT{
++    DRAM_HOST_CPU   = 16,
++    DRAM_HOST_GPU   = 17,
++    DRAM_HOST_BE    = 18,
++    DRAM_HOST_FE    = 19,
++    DRAM_HOST_CSI   = 20,
++    DRAM_HOST_TSDM  = 21,
++    DRAM_HOST_VE    = 22,
++    DRAM_HOST_USB   = 24,
++    DRAM_HOST_NDMA  = 25,
++    DRAM_HOST_ATH   = 26,
++    DRAM_HOST_IEP   = 27,
++    DRAM_HOST_SDHC  = 28,
++    DRAM_HOST_DDMA  = 29,
++    DRAM_HOST_GPS   = 30,
++} __dram_host_port_e;
++
++
+ #endif  /* __AW_DRAM_H__ */
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/irqs.h b/arch/arm/mach-sun5i/include/mach/irqs.h
+index be85721..defe49a 100644
+--- a/arch/arm/mach-sun5i/include/mach/irqs.h
++++ b/arch/arm/mach-sun5i/include/mach/irqs.h
+@@ -122,6 +122,9 @@
+ #define SW_INT_IRQNO_GPU_RSV5           79
+ #define SW_INT_IRQNO_GPU_RSV6           80
+ 
++#define SW_INT_IRQNO_SYNC_TIMER0	82
++#define SW_INT_IRQNO_SYNC_TIMER1	83
++
+ #define SW_INT_END		                  95
+ 
+ #endif
+diff --git a/arch/arm/mach-sun5i/include/mach/memory.h b/arch/arm/mach-sun5i/include/mach/memory.h
+index 76ecc49..1f4a9e6 100644
+--- a/arch/arm/mach-sun5i/include/mach/memory.h
++++ b/arch/arm/mach-sun5i/include/mach/memory.h
+@@ -27,5 +27,27 @@
+ /* physical offset of RAM */
+ #define PLAT_PHYS_OFFSET		UL(0x40000000)
+ 
++#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
++#define SW_VE_MEM_SIZE                    (SZ_64M)
++#define SW_FB_MEM_BASE                    (SW_VE_MEM_BASE + SW_VE_MEM_SIZE)
++#define SW_FB_MEM_SIZE                    (SZ_16M)
++#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
++#define SW_GPU_MEM_SIZE                   (SZ_64M)
++#define SW_BANK1_SIZE                     (SZ_64M + SW_VE_MEM_SIZE + SW_FB_MEM_SIZE)
++#define SW_BANK2_OFFSET                   (SW_BANK1_SIZE + SW_GPU_MEM_SIZE)
++
++/*
++#error "fixme"
++#define SW_VE_MEM_BASE                    (PLAT_PHYS_OFFSET + SZ_64M)
++#define SW_VE_MEM_SIZE                    (SZ_64M + SZ_16M)
++#define SW_FB_MEM_BASE                    (SW_VE_MEM + SW_MEM_VE_SIZE)
++#define SW_FB_MEM_SIZE                    (SZ_32M)
++#define SW_GPU_MEM_BASE                   (SW_FB_MEM_BASE + SW_FB_MEM_SIZE)
++#define SW_GPU_MEM_SIZE                   (SZ_64M)
++#define SW_G2D_MEM_BASE
++#define SW_G2D_MEM_SIZE                   0x1000000
++*/
++
++
+ #endif
+ 
+diff --git a/arch/arm/mach-sun5i/include/mach/platform.h b/arch/arm/mach-sun5i/include/mach/platform.h
+index 02b9079..fbd1df8 100644
+--- a/arch/arm/mach-sun5i/include/mach/platform.h
++++ b/arch/arm/mach-sun5i/include/mach/platform.h
+@@ -104,11 +104,13 @@
+ #define SW_PA_DEBE1_IO_BASE               0x01e40000
+ #define SW_PA_MP_IO_BASE                  0x01e80000
+ #define SW_PA_AVG_IO_BASE                 0x01ea0000
++#define SW_PA_BROM_BASE                   0xffff0000
+ 
+ 
+ 
+ /* Virtual Address */
+ #define SW_VA_SRAM_BASE                   0xf0000000	/*16KB*/
++#define SW_VA_BROM_BASE                   0xf0100000	/*64KB*/
+ 
+ #define SW_VA_IO_BASE                     0xf1c00000
+ #define SW_VA_SRAM_IO_BASE                0xf1c00000   /* 4KB */
+@@ -240,18 +242,20 @@
+ #define SW_INT_SRCPRIO_REG2               (SW_VA_INT_IO_BASE + 0x88)
+ #define SW_INT_SRCPRIO_REG3               (SW_VA_INT_IO_BASE + 0x8c)
+ #define SW_INT_SRCPRIO_REG4               (SW_VA_INT_IO_BASE + 0x90)
+-
++#define SW_INT_SRCPRIO_REG5               (SW_VA_INT_IO_BASE + 0x94)
+ 
+ #define SW_UART0_THR                      (*(volatile unsigned int *)(SW_VA_UART0_IO_BASE + 0x00))
+ #define SW_UART0_LSR                      (*(volatile unsigned int *)(SW_VA_UART0_IO_BASE + 0x14))
+ #define SW_UART0_USR                      (*(volatile unsigned int *)(SW_VA_UART0_IO_BASE + 0x7c))
+ 
++#define SW_UART1_THR                      (*(volatile unsigned int *)(SW_VA_UART1_IO_BASE + 0x00))
++#define SW_UART1_LSR                      (*(volatile unsigned int *)(SW_VA_UART1_IO_BASE + 0x14))
++#define SW_UART1_USR                      (*(volatile unsigned int *)(SW_VA_UART1_IO_BASE + 0x7c))
++
+ #define PA_VIC_BASE                       0x01c20400
+ #define VA_VIC_BASE                       IO_ADDRESS(PA_VIC_BASE)
+ #define PIO_BASE                          SW_PA_PORTC_IO_BASE
+ 
+-#define SW_G2D_MEM_BASE                   0x58000000
+-#define SW_G2D_MEM_MAX                    0x1000000
+ 
+ /**
+ *@name DRAM controller register address
+diff --git a/arch/arm/mach-sun5i/include/mach/system.h b/arch/arm/mach-sun5i/include/mach/system.h
+index 70c7e67..e8e46a5 100644
+--- a/arch/arm/mach-sun5i/include/mach/system.h
++++ b/arch/arm/mach-sun5i/include/mach/system.h
+@@ -36,6 +36,7 @@ static inline void arch_idle(void)
+ 	cpu_do_idle();
+ }
+ 
++#if 0
+ enum sw_ic_ver {
+ 	MAGIC_VER_A = 0,
+ 	MAGIC_VER_B,
+@@ -43,5 +44,16 @@ enum sw_ic_ver {
+ };
+ 
+ enum sw_ic_ver sw_get_ic_ver(void);
++#endif
++
++struct sw_chip_id
++{
++    unsigned int sid_rkey0;
++    unsigned int sid_rkey1;
++    unsigned int sid_rkey2;
++    unsigned int sid_rkey3;
++};
++
++int sw_get_chip_id(struct sw_chip_id *);
+ 
+ #endif
+-- 
+1.8.0
+

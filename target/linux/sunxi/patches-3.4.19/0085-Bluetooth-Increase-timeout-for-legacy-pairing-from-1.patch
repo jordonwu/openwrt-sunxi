@@ -1,0 +1,70 @@
+From f855a2c3742daf81a43ab1e7bfe6c2d73f82b9eb Mon Sep 17 00:00:00 2001
+From: Nick Pelly <npelly@google.com>
+Date: Fri, 18 Sep 2009 18:29:23 -0700
+Subject: [PATCH 085/944] Bluetooth: Increase timeout for legacy pairing from
+ 10 seconds to 40 seconds.
+
+Legacy pairing is a bit of a problem because on the incoming end it is
+impossible to know pairing has begun:
+
+2009-09-18 18:29:24.115692 > HCI Event: Connect Request (0x04) plen 10
+    bdaddr 00:23:D4:04:51:7A class 0x58020c type ACL
+2009-09-18 18:29:24.115966 < HCI Command: Accept Connection Request (0x01|0x0009) plen 7
+    bdaddr 00:23:D4:04:51:7A role 0x00
+    Role: Master
+2009-09-18 18:29:24.117065 > HCI Event: Command Status (0x0f) plen 4
+    Accept Connection Request (0x01|0x0009) status 0x00 ncmd 1
+2009-09-18 18:29:24.282928 > HCI Event: Role Change (0x12) plen 8
+    status 0x00 bdaddr 00:23:D4:04:51:7A role 0x00
+    Role: Master
+2009-09-18 18:29:24.291534 > HCI Event: Connect Complete (0x03) plen 11
+    status 0x00 handle 1 bdaddr 00:23:D4:04:51:7A type ACL encrypt 0x00
+2009-09-18 18:29:24.291839 < HCI Command: Read Remote Supported Features (0x01|0x001b) plen 2
+    handle 1
+2009-09-18 18:29:24.292144 > HCI Event: Page Scan Repetition Mode Change (0x20) plen 7
+    bdaddr 00:23:D4:04:51:7A mode 1
+2009-09-18 18:29:24.293823 > HCI Event: Command Status (0x0f) plen 4
+    Read Remote Supported Features (0x01|0x001b) status 0x00 ncmd 1
+2009-09-18 18:29:24.303588 > HCI Event: Max Slots Change (0x1b) plen 3
+    handle 1 slots 5
+2009-09-18 18:29:24.309448 > HCI Event: Read Remote Supported Features (0x0b) plen 11
+    status 0x00 handle 1
+    Features: 0xff 0xff 0x2d 0xfe 0x9b 0xff 0x79 0x83
+2009-09-18 18:29:24.345916 < HCI Command: Remote Name Request (0x01|0x0019) plen 10
+    bdaddr 00:23:D4:04:51:7A mode 2 clkoffset 0x0000
+2009-09-18 18:29:24.346923 > HCI Event: Command Status (0x0f) plen 4
+    Remote Name Request (0x01|0x0019) status 0x00 ncmd 1
+2009-09-18 18:29:24.375793 > HCI Event: Remote Name Req Complete (0x07) plen 255
+    status 0x00 bdaddr 00:23:D4:04:51:7A name 'test'
+2009-09-18 18:29:34.332190 < HCI Command: Disconnect (0x01|0x0006) plen 3
+    handle 1 reason 0x13
+
+There are some mainline patches such as "Add different pairing timeout for
+Legacy Pairing" but they do not address the HCI sequence above.
+
+I think the real solution is to avoid using CreateBond(), and instead make
+the profile connection immediately. This way both sides will use a longer
+timeout because there is a higher level connection in progress, and we will
+not end up with the useless HCI sequence above.
+
+Signed-off-by: Nick Pelly <npelly@google.com>
+---
+ include/net/bluetooth/hci_core.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/net/bluetooth/hci_core.h b/include/net/bluetooth/hci_core.h
+index daefaac..5203748 100644
+--- a/include/net/bluetooth/hci_core.h
++++ b/include/net/bluetooth/hci_core.h
+@@ -597,7 +597,7 @@ static inline void hci_conn_put(struct hci_conn *conn)
+ 			if (conn->state == BT_CONNECTED) {
+ 				timeo = msecs_to_jiffies(conn->disc_timeout);
+ 				if (!conn->out)
+-					timeo *= 2;
++					timeo *= 20;
+ 			} else {
+ 				timeo = msecs_to_jiffies(10);
+ 			}
+-- 
+1.8.0
+

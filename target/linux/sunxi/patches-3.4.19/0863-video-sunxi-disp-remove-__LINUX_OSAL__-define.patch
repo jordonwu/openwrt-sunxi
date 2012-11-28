@@ -1,0 +1,410 @@
+From 91146e88aa0ea581a3f60b111fbe8ad2ceecb9c9 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Sat, 27 Oct 2012 00:44:50 +0200
+Subject: [PATCH 863/944] video:sunxi:disp: remove __LINUX_OSAL__ define
+
+And BOOT, WINCE, MELIS...
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/bsp_display.h    | 25 -------------------------
+ drivers/video/sunxi/disp/disp_display.c   | 13 +------------
+ drivers/video/sunxi/disp/disp_display_i.h |  8 +-------
+ drivers/video/sunxi/disp/disp_hdmi.c      |  2 --
+ drivers/video/sunxi/disp/disp_lcd.c       | 30 +++---------------------------
+ drivers/video/sunxi/disp/disp_scaler.c    | 30 ++++--------------------------
+ drivers/video/sunxi/disp/disp_scaler.h    |  2 --
+ drivers/video/sunxi/disp/disp_tv.c        |  7 +------
+ drivers/video/sunxi/disp/disp_vga.c       |  2 --
+ 9 files changed, 10 insertions(+), 109 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/bsp_display.h b/drivers/video/sunxi/disp/bsp_display.h
+index 511aa99..3806d90 100644
+--- a/drivers/video/sunxi/disp/bsp_display.h
++++ b/drivers/video/sunxi/disp/bsp_display.h
+@@ -23,12 +23,6 @@
+ #ifndef __EBSP_DISPLAY_H__
+ #define __EBSP_DISPLAY_H__
+ 
+-#define __LINUX_OSAL__
+-//#define __MELIS_OSAL__
+-//#define __WINCE_OSAL__
+-//#define __BOOT_OSAL__
+-
+-#ifdef __LINUX_OSAL__
+ #include "linux/kernel.h"
+ #include "linux/mm.h"
+ #include <asm/uaccess.h>
+@@ -78,23 +72,6 @@ typedef unsigned int __hdle;
+ #define __here__            {printk(KERN_WARNING "[DISP] file:%s,line:%d\n",__FILE__,__LINE__);}
+ #endif
+ 
+-
+-#endif//end of define __LINUX_OSAL__
+-
+-#ifdef __MELIS_OSAL__
+-#include "string.h"
+-#include "D:/winners/eBase/eBSP/BSP/sun_20/common_inc.h"
+-#endif
+-
+-#ifdef __BOOT_OSAL__
+-#define OSAL_PRINTF wlibc_uprintf
+-
+-#include "egon2.h"
+-#include "string.h"
+-#include "../OSAL/OSAL_De.h"
+-#endif
+-
+-
+ typedef struct
+ {
+ 	__u32 base_image0;
+@@ -324,9 +301,7 @@ extern __s32 BSP_disp_iep_get_drc_enable(__u32 sel);
+ extern __s32 BSP_disp_iep_set_demo_win(__u32 sel, __u32 mode, __disp_rect_t *regn)	;
+ #endif
+ 
+-#ifdef __LINUX_OSAL__
+ __s32 Display_set_fb_timming(__u32 sel);
+-#endif
+ 
+ /* symbol exists in dev_disp.c */
+ int sunxi_is_version_A(void);
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index 5237862..3166177 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -291,7 +291,7 @@ __s32 BSP_disp_print_reg(__bool b_force_on, __u32 id)
+         reg[1] = sys_get_wvalue(base + i + 4);
+         reg[2] = sys_get_wvalue(base + i + 8);
+         reg[3] = sys_get_wvalue(base + i + 12);
+-#ifdef __LINUX_OSAL__
++
+         if(b_force_on)
+         {
+             OSAL_PRINTF("0x%08x:%08x,%08x:%08x,%08x\n", base + i, reg[0], reg[1], reg[2], reg[3]);
+@@ -300,17 +300,6 @@ __s32 BSP_disp_print_reg(__bool b_force_on, __u32 id)
+         {
+             DE_INF("0x%08x:%08x,%08x:%08x,%08x\n", base + i, reg[0], reg[1], reg[2], reg[3]);
+         }
+-#endif
+-#ifdef __BOOT_OSAL__
+-        if(b_force_on)
+-        {
+-            OSAL_PRINTF("0x%x:%x,%x,%x,%x\n", base + i, reg[0], reg[1], reg[2], reg[3]);
+-        }
+-        else
+-        {
+-            DE_INF("0x%x:%x,%x:%x,%x\n", base + i, reg[0], reg[1], reg[2], reg[3]);
+-        }
+-#endif
+     }
+ 
+     return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_display_i.h b/drivers/video/sunxi/disp/disp_display_i.h
+index 97eb90c..c3e426a 100644
+--- a/drivers/video/sunxi/disp/disp_display_i.h
++++ b/drivers/video/sunxi/disp/disp_display_i.h
+@@ -27,17 +27,11 @@
+ 
+ 
+ 
+-#ifdef __LINUX_OSAL__
++
+ #define DE_INF __inf
+ #define DE_MSG __msg
+ #define DE_WRN __wrn
+ #define OSAL_IRQ_RETURN IRQ_HANDLED
+-#else
+-#define DE_INF(msg...)
+-#define DE_MSG __msg
+-#define DE_WRN __wrn
+-#define OSAL_IRQ_RETURN DIS_SUCCESS
+-#endif
+ 
+ #define HANDTOID(handle)  ((handle) - 100)
+ #define IDTOHAND(ID)  ((ID) + 100)
+diff --git a/drivers/video/sunxi/disp/disp_hdmi.c b/drivers/video/sunxi/disp/disp_hdmi.c
+index 7eba71a..78d44ff 100644
+--- a/drivers/video/sunxi/disp/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/disp_hdmi.c
+@@ -103,9 +103,7 @@ __s32 BSP_disp_hdmi_open(__u32 sel)
+         gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+         gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_HDMI;
+ 
+-#ifdef __LINUX_OSAL__
+         Display_set_fb_timming(sel);
+-#endif
+     }
+ 
+     return DIS_SUCCESS;
+diff --git a/drivers/video/sunxi/disp/disp_lcd.c b/drivers/video/sunxi/disp/disp_lcd.c
+index f263e6f..0baf9ad 100644
+--- a/drivers/video/sunxi/disp/disp_lcd.c
++++ b/drivers/video/sunxi/disp/disp_lcd.c
+@@ -239,11 +239,10 @@ void Lcd_Panel_Parameter_Check(__u32 sel)
+             reg_value = sys_get_wvalue(image_base_addr+0x800);
+             sys_put_wvalue(image_base_addr+0x800,reg_value & 0xfffff0ff);//close all layer
+ 
+-#ifdef __LINUX_OSAL__
+             LCD_delay_ms(2000);
+             sys_put_wvalue(image_base_addr+0x804,0x00000000);//set background color
+             sys_put_wvalue(image_base_addr+0x800,reg_value);//open layer
+-#endif
++
+             OSAL_PRINTF("*** Try new parameters,you can make it pass!\n");
+     	}
+         OSAL_PRINTF("*** LCD Panel Parameter Check End\n");
+@@ -725,28 +724,16 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
+ 
+ void LCD_delay_ms(__u32 ms)
+ {
+-#ifdef __LINUX_OSAL__
+     __u32 timeout = ms*HZ/1000;
+ 
+     set_current_state(TASK_INTERRUPTIBLE);
+     schedule_timeout(timeout);
+-#endif
+-#ifdef __BOOT_OSAL__
+-    wBoot_timer_delay(ms);//assume cpu runs at 1000Mhz,10 clock one cycle
+-#endif
+ }
+ 
+ 
+ void LCD_delay_us(__u32 us)
+ {
+-#ifdef __LINUX_OSAL__
+     udelay(us);
+-#endif
+-#ifdef __BOOT_OSAL__
+-    volatile __u32 time;
+-
+-    for(time = 0; time < (us*700/10);time++);//assume cpu runs at 700Mhz,10 clock one cycle
+-#endif
+ }
+ 
+ void LCD_OPEN_FUNC(__u32 sel, LCD_FUNC func, __u32 delay)
+@@ -1325,18 +1312,10 @@ __s32 Disp_lcdc_init(__u32 sel)
+     if(sel == 0)
+     {
+ 	ret = request_irq(INTC_IRQNO_LCDC0, Disp_lcdc_event_proc, IRQF_DISABLED, "sunxi lcd0", (void *) sel);
+-#ifndef __LINUX_OSAL__
+-        enable_irq(INTC_IRQNO_LCDC0);
+-        LCD_get_panel_funs_0(&lcd_panel_fun[sel]);
+-#endif
+     }
+     else
+     {
+ 	ret = request_irq(INTC_IRQNO_LCDC1, Disp_lcdc_event_proc, IRQF_DISABLED, "sunxi lcd1", (void *) sel);
+-#ifndef __LINUX_OSAL__
+-        enable_irq(INTC_IRQNO_LCDC1);
+-        LCD_get_panel_funs_1(&lcd_panel_fun[sel]);
+-#endif
+     }
+ 
+     if(gdisp.screen[sel].lcd_cfg.lcd_used)
+@@ -1785,9 +1764,9 @@ __s32 BSP_disp_lcd_open_after(__u32 sel)
+ #ifdef CONFIG_ARCH_SUN5I
+     Disp_drc_enable(sel, TRUE);
+ #endif
+-#ifdef __LINUX_OSAL__
++
+     Display_set_fb_timming(sel);
+-#endif
++
+     return DIS_SUCCESS;
+ }
+ 
+@@ -2067,7 +2046,6 @@ __s32 BSP_disp_close_lcd_backlight(__u32 sel)
+ }
+ #endif /* CONFIG_ARCH_SUN5I */
+ 
+-#ifdef __LINUX_OSAL__
+ EXPORT_SYMBOL(LCD_OPEN_FUNC);
+ EXPORT_SYMBOL(LCD_CLOSE_FUNC);
+ EXPORT_SYMBOL(LCD_get_reg_bases);
+@@ -2094,5 +2072,3 @@ EXPORT_SYMBOL(pwm_get_para);
+ EXPORT_SYMBOL(pwm_set_duty_ns);
+ EXPORT_SYMBOL(pwm_enable);
+ 
+-#endif
+-
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index ac4ec8f..0ba0cc5 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -283,7 +283,7 @@ static irqreturn_t Scaler_event_proc(int irq, void *parg)
+     if(fe_intflags & DE_WB_END_IE)
+     {
+         DE_SCAL_DisableINT(sel,DE_FE_INTEN_ALL);
+-#ifdef __LINUX_OSAL__
++
+         if(gdisp.scaler[sel].b_scaler_finished == 1 && (&gdisp.scaler[sel].scaler_queue != NULL))
+         {
+             gdisp.scaler[sel].b_scaler_finished = 2;
+@@ -293,7 +293,6 @@ static irqreturn_t Scaler_event_proc(int irq, void *parg)
+         {
+             __wrn("not scaler %d begin in DRV_scaler_finish\n", sel);
+         }
+-#endif
+     }
+ 
+     return OSAL_IRQ_RETURN;
+@@ -309,16 +308,10 @@ __s32 Scaler_Init(__u32 sel)
+     if(sel == 0)
+     {
+ 	ret = request_irq(INTC_IRQNO_SCALER0, Scaler_event_proc, IRQF_DISABLED, "sunxi scaler0", (void *) sel);
+-#ifndef __LINUX_OSAL__
+-        enable_irq(INTC_IRQNO_SCALER0);
+-#endif
+     }
+     else if(sel == 1)
+     {
+ 	ret = request_irq(INTC_IRQNO_SCALER1, Scaler_event_proc, IRQF_DISABLED, "sunxi scaler1", (void *) sel);
+-#ifndef __LINUX_OSAL__
+-        enable_irq(INTC_IRQNO_SCALER1);
+-#endif
+     }
+    	return DIS_SUCCESS;
+ }
+@@ -1115,11 +1108,6 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+     DE_SCAL_Start(sel);
+     DE_SCAL_Set_Reg_Rdy(sel);
+ 
+-#ifndef __LINUX_OSAL__
+-    DE_SCAL_Writeback_Enable(sel);
+-    while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
+-	    ;
+-#else
+     {
+ 	    long timeout = (100 * HZ)/1000;//100ms
+ 
+@@ -1135,7 +1123,7 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 		    return -1;
+ 	    }
+     }
+-#endif /* __LINUX_OSAL__ */
++
+     DE_SCAL_Reset(sel);
+     DE_SCAL_Writeback_Disable(sel);
+ #else
+@@ -1167,11 +1155,6 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 		DE_SCAL_Start(sel);
+ 		DE_SCAL_Set_Reg_Rdy(sel);
+ 
+-#ifndef __LINUX_OSAL__
+-		DE_SCAL_Writeback_Enable(sel);
+-		while(!(DE_SCAL_QueryINT(sel) & DE_WB_END_IE))
+-			;
+-#else
+ 		{
+ 			long timeout = (100 * HZ)/1000;//100ms
+ 
+@@ -1191,7 +1174,7 @@ __s32 BSP_disp_scaler_start(__u32 handle,__disp_scaler_para_t *para)
+ 				return -1;
+ 			}
+ 		}
+-#endif /* __LINUX_OSAL__ */
++
+ 		DE_SCAL_Writeback_Disable(sel);
+ 		DE_SCAL_Reset(sel);
+ 		DE_SCAL_Disable(sel);
+@@ -1338,11 +1321,6 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para)
+     DE_SCAL_Start(scaler_idx);
+ 
+     DE_INF("capture begin\n");
+-#ifndef __LINUX_OSAL__
+-    while(!(DE_SCAL_QueryINT(scaler_idx) & DE_WB_END_IE) )
+-    {
+-    }
+-#else
+     {
+         long timeout = (100 * HZ)/1000;//100ms
+ 
+@@ -1358,7 +1336,7 @@ __s32 BSP_disp_capture_screen(__u32 sel, __disp_capture_screen_para_t * para)
+             return -1;
+         }
+     }
+-#endif
++
+     DE_SCAL_Reset(scaler_idx);
+     Scaler_Release(scaler_idx, FALSE);
+     if(BSP_disp_get_output_type(sel) == DISP_OUTPUT_TYPE_NONE)
+diff --git a/drivers/video/sunxi/disp/disp_scaler.h b/drivers/video/sunxi/disp/disp_scaler.h
+index fe2da00..fc9822a 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.h
++++ b/drivers/video/sunxi/disp/disp_scaler.h
+@@ -69,10 +69,8 @@ typedef struct
+ 
+     __bool                  b_trd_out;
+     __disp_3d_out_mode_t    out_trd_mode;
+-#ifdef __LINUX_OSAL__
+     wait_queue_head_t       scaler_queue;
+     __bool                  b_scaler_finished;
+-#endif
+ #ifdef CONFIG_ARCH_SUN5I
+ 	__bool                      coef_change;
+ #endif
+diff --git a/drivers/video/sunxi/disp/disp_tv.c b/drivers/video/sunxi/disp/disp_tv.c
+index a3e54a0..8e518a9 100644
+--- a/drivers/video/sunxi/disp/disp_tv.c
++++ b/drivers/video/sunxi/disp/disp_tv.c
+@@ -256,7 +256,6 @@ __s32 BSP_disp_tv_open(__u32 sel)
+ #ifdef CONFIG_ARCH_SUN5I
+ 	Disp_de_flicker_enable(sel, TRUE);
+ #endif
+-#ifdef __LINUX_OSAL__
+         {
+             user_gpio_set_t  gpio_info[1];
+             __hdle gpio_pa_shutdown;
+@@ -281,7 +280,6 @@ __s32 BSP_disp_tv_open(__u32 sel)
+                 }
+             }
+         }
+-#endif
+         gdisp.screen[sel].b_out_interlace = Disp_get_screen_scan_mode(tv_mod);
+         gdisp.screen[sel].status |= TV_ON;
+         gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+@@ -291,9 +289,7 @@ __s32 BSP_disp_tv_open(__u32 sel)
+         Disp_set_out_interlace(sel);
+ #endif
+ 
+-#ifdef __LINUX_OSAL__
+         Display_set_fb_timming(sel);
+-#endif
+     }
+     return DIS_SUCCESS;
+ }
+@@ -324,7 +320,6 @@ __s32 BSP_disp_tv_close(__u32 sel)
+         }
+ #endif /* CONFIG_ARCH_SUN5I */
+ 
+-#ifdef __LINUX_OSAL__
+         {
+             user_gpio_set_t  gpio_info[1];
+             __hdle gpio_pa_shutdown;
+@@ -349,7 +344,7 @@ __s32 BSP_disp_tv_close(__u32 sel)
+                 }
+             }
+         }
+-#endif
++
+ 		gdisp.screen[sel].b_out_interlace = 0;
+         gdisp.screen[sel].status &= TV_OFF;
+         gdisp.screen[sel].lcdc_status &= LCDC_TCON1_USED_MASK;
+diff --git a/drivers/video/sunxi/disp/disp_vga.c b/drivers/video/sunxi/disp/disp_vga.c
+index 2ddd80c..0a4efe3 100644
+--- a/drivers/video/sunxi/disp/disp_vga.c
++++ b/drivers/video/sunxi/disp/disp_vga.c
+@@ -85,9 +85,7 @@ __s32 BSP_disp_vga_open(__u32 sel)
+     	gdisp.screen[sel].status |= VGA_ON;
+     	gdisp.screen[sel].lcdc_status |= LCDC_TCON1_USED;
+     	gdisp.screen[sel].output_type = DISP_OUTPUT_TYPE_VGA;
+-#ifdef __LINUX_OSAL__
+         Display_set_fb_timming(sel);
+-#endif
+ 	}
+ 
+ 	return DIS_SUCCESS;
+-- 
+1.8.0
+

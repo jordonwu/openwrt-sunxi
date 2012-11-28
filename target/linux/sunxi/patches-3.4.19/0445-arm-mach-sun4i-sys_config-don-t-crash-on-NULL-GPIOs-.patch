@@ -1,0 +1,26 @@
+From 4338134a39213e96e1e6a8334263377575d85e75 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 17 May 2012 17:09:33 +0200
+Subject: [PATCH 445/944] arm: mach-sun4i: sys_config: don't crash on NULL
+ GPIOs (e.g. sata)
+
+---
+ arch/arm/mach-sun4i/sys_config.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/sys_config.c b/arch/arm/mach-sun4i/sys_config.c
+index 4f14c40..5454ad6 100644
+--- a/arch/arm/mach-sun4i/sys_config.c
++++ b/arch/arm/mach-sun4i/sys_config.c
+@@ -845,7 +845,7 @@ EXPORT_SYMBOL_GPL(gpio_request);
+ u32 gpio_request_ex(char *main_name, const char *sub_name)  //设备申请GPIO函数扩展接口
+ {
+     user_gpio_set_t    *gpio_list=NULL;
+-    user_gpio_set_t     one_gpio;
++    user_gpio_set_t     one_gpio = {"",0};
+        __u32               gpio_handle;
+     __s32               gpio_count;
+ 
+-- 
+1.8.0
+

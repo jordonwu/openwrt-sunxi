@@ -1,0 +1,127 @@
+From 894eecb7c7cdbd01c887c673a7673808e5344ce7 Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Tue, 13 Dec 2011 16:16:31 -0800
+Subject: [PATCH 144/944] usb: gadget: composite: Add usb_remove_config
+
+Add usb_remove_config to unbind a configuration and remove it from
+the configs list. This allows implementing composite gadget drivers that
+can disconnect themself from the bus and that will later be re-enumerated
+with a different configuration.
+
+Gadget drivers must call usb_gadget_disconnect before calling this
+function to disable the pullup, disconnect the device from the host,
+and prevent the host from enumerating the device while we are changing
+the gadget configuration.
+
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/usb/gadget/composite.c | 69 ++++++++++++++++++++++++++++++------------
+ include/linux/usb/composite.h  |  3 ++
+ 2 files changed, 52 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/usb/gadget/composite.c b/drivers/usb/gadget/composite.c
+index baaebf2..a358252 100644
+--- a/drivers/usb/gadget/composite.c
++++ b/drivers/usb/gadget/composite.c
+@@ -774,6 +774,54 @@ done:
+ 	return status;
+ }
+ 
++static int remove_config(struct usb_composite_dev *cdev,
++			      struct usb_configuration *config)
++{
++	while (!list_empty(&config->functions)) {
++		struct usb_function		*f;
++
++		f = list_first_entry(&config->functions,
++				struct usb_function, list);
++		list_del(&f->list);
++		if (f->unbind) {
++			DBG(cdev, "unbind function '%s'/%p\n", f->name, f);
++			f->unbind(config, f);
++			/* may free memory for "f" */
++		}
++	}
++	list_del(&config->list);
++	if (config->unbind) {
++		DBG(cdev, "unbind config '%s'/%p\n", config->label, config);
++		config->unbind(config);
++			/* may free memory for "c" */
++	}
++	return 0;
++}
++
++/**
++ * usb_remove_config() - remove a configuration from a device.
++ * @cdev: wraps the USB gadget
++ * @config: the configuration
++ *
++ * Drivers must call usb_gadget_disconnect before calling this function
++ * to disconnect the device from the host and make sure the host will not
++ * try to enumerate the device while we are changing the config list.
++ */
++int usb_remove_config(struct usb_composite_dev *cdev,
++		      struct usb_configuration *config)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&cdev->lock, flags);
++
++	if (cdev->config == config)
++		reset_config(cdev);
++
++	spin_unlock_irqrestore(&cdev->lock, flags);
++
++	return remove_config(cdev, config);
++}
++
+ /*-------------------------------------------------------------------------*/
+ 
+ /* We support strings in multiple languages ... string descriptor zero
+@@ -1328,28 +1376,9 @@ composite_unbind(struct usb_gadget *gadget)
+ 
+ 	while (!list_empty(&cdev->configs)) {
+ 		struct usb_configuration	*c;
+-
+ 		c = list_first_entry(&cdev->configs,
+ 				struct usb_configuration, list);
+-		while (!list_empty(&c->functions)) {
+-			struct usb_function		*f;
+-
+-			f = list_first_entry(&c->functions,
+-					struct usb_function, list);
+-			list_del(&f->list);
+-			if (f->unbind) {
+-				DBG(cdev, "unbind function '%s'/%p\n",
+-						f->name, f);
+-				f->unbind(c, f);
+-				/* may free memory for "f" */
+-			}
+-		}
+-		list_del(&c->list);
+-		if (c->unbind) {
+-			DBG(cdev, "unbind config '%s'/%p\n", c->label, c);
+-			c->unbind(c);
+-			/* may free memory for "c" */
+-		}
++		remove_config(cdev, c);
+ 	}
+ 	if (composite->unbind)
+ 		composite->unbind(cdev);
+diff --git a/include/linux/usb/composite.h b/include/linux/usb/composite.h
+index a316fba..6938a86 100644
+--- a/include/linux/usb/composite.h
++++ b/include/linux/usb/composite.h
+@@ -242,6 +242,9 @@ int usb_add_config(struct usb_composite_dev *,
+ 		struct usb_configuration *,
+ 		int (*)(struct usb_configuration *));
+ 
++int usb_remove_config(struct usb_composite_dev *,
++		struct usb_configuration *);
++
+ /**
+  * struct usb_composite_driver - groups configurations into a gadget
+  * @name: For diagnostics, identifies the driver.
+-- 
+1.8.0
+

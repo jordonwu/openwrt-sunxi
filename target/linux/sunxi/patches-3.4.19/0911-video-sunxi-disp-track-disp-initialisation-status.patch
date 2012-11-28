@@ -1,0 +1,54 @@
+From 40a4b88c77158c11a8539fb856658afa1ae6cf05 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:19 +0100
+Subject: [PATCH 911/944] video:sunxi:disp: track disp initialisation status
+
+A quick fix that stops us from trying to deinit uninitialised stuff.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/disp/disp_display.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/video/sunxi/disp/disp_display.c b/drivers/video/sunxi/disp/disp_display.c
+index 6259aba..2046614 100644
+--- a/drivers/video/sunxi/disp/disp_display.c
++++ b/drivers/video/sunxi/disp/disp_display.c
+@@ -30,6 +30,7 @@
+ #include "disp_hdmi.h"
+ 
+ __disp_dev_t gdisp;
++static bool disp_initialised;
+ 
+ __s32 BSP_disp_init(__disp_bsp_init_para *para)
+ {
+@@ -102,11 +103,16 @@ __s32 BSP_disp_init(__disp_bsp_init_para *para)
+ 	Disp_iep_init(0);
+ #endif
+ 
++	disp_initialised = true;
++
+ 	return DIS_SUCCESS;
+ }
+ 
+ __s32 BSP_disp_exit(__u32 mode)
+ {
++	if (!disp_initialised)
++		return DIS_SUCCESS;
++
+ 	if (mode == DISP_EXIT_MODE_CLEAN_ALL) {
+ 		BSP_disp_close();
+ 
+@@ -157,6 +163,9 @@ __s32 BSP_disp_close(void)
+ {
+ 	__u32 sel = 0;
+ 
++	if (!disp_initialised)
++		return DIS_SUCCESS;
++
+ 	for (sel = 0; sel < 2; sel++) {
+ 		Image_close(sel);
+ 		if (gdisp.scaler[sel].status & SCALER_USED)
+-- 
+1.8.0
+

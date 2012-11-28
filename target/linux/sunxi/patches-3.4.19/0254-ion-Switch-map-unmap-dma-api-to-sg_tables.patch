@@ -1,0 +1,238 @@
+From 7191e9ba2508ca6f1eaab251cf3f0a2318eebe26 Mon Sep 17 00:00:00 2001
+From: Rebecca Schultz Zavin <rebecca@android.com>
+Date: Mon, 30 Jan 2012 14:18:08 -0800
+Subject: [PATCH 254/944] ion: Switch map/unmap dma api to sg_tables
+
+Switch these api's from scatterlists to sg_tables
+
+Change-Id: I8b99e39633df009d472ce24704fa26af7bb50fa2
+Signed-off-by: Rebecca Schultz Zavin <rebecca@android.com>
+---
+ drivers/gpu/ion/ion.c             | 16 +++++-----
+ drivers/gpu/ion/ion_priv.h        | 18 ++---------
+ drivers/gpu/ion/ion_system_heap.c | 66 +++++++++++++++++++++++----------------
+ include/linux/ion.h               |  6 ++--
+ 4 files changed, 53 insertions(+), 53 deletions(-)
+
+diff --git a/drivers/gpu/ion/ion.c b/drivers/gpu/ion/ion.c
+index 1002ec0..239a3d5 100644
+--- a/drivers/gpu/ion/ion.c
++++ b/drivers/gpu/ion/ion.c
+@@ -445,11 +445,11 @@ void *ion_map_kernel(struct ion_client *client, struct ion_handle *handle)
+ 	return vaddr;
+ }
+ 
+-struct scatterlist *ion_map_dma(struct ion_client *client,
++struct sg_table *ion_map_dma(struct ion_client *client,
+ 				struct ion_handle *handle)
+ {
+ 	struct ion_buffer *buffer;
+-	struct scatterlist *sglist;
++	struct sg_table *table;
+ 
+ 	mutex_lock(&client->lock);
+ 	if (!ion_handle_validate(client, handle)) {
+@@ -469,16 +469,16 @@ struct scatterlist *ion_map_dma(struct ion_client *client,
+ 		return ERR_PTR(-ENODEV);
+ 	}
+ 	if (_ion_map(&buffer->dmap_cnt, &handle->dmap_cnt)) {
+-		sglist = buffer->heap->ops->map_dma(buffer->heap, buffer);
+-		if (IS_ERR_OR_NULL(sglist))
++		table = buffer->heap->ops->map_dma(buffer->heap, buffer);
++		if (IS_ERR_OR_NULL(table))
+ 			_ion_unmap(&buffer->dmap_cnt, &handle->dmap_cnt);
+-		buffer->sglist = sglist;
++		buffer->sg_table = table;
+ 	} else {
+-		sglist = buffer->sglist;
++		table = buffer->sg_table;
+ 	}
+ 	mutex_unlock(&buffer->lock);
+ 	mutex_unlock(&client->lock);
+-	return sglist;
++	return table;
+ }
+ 
+ void ion_unmap_kernel(struct ion_client *client, struct ion_handle *handle)
+@@ -505,7 +505,7 @@ void ion_unmap_dma(struct ion_client *client, struct ion_handle *handle)
+ 	mutex_lock(&buffer->lock);
+ 	if (_ion_unmap(&buffer->dmap_cnt, &handle->dmap_cnt)) {
+ 		buffer->heap->ops->unmap_dma(buffer->heap, buffer);
+-		buffer->sglist = NULL;
++		buffer->sg_table = NULL;
+ 	}
+ 	mutex_unlock(&buffer->lock);
+ 	mutex_unlock(&client->lock);
+diff --git a/drivers/gpu/ion/ion_priv.h b/drivers/gpu/ion/ion_priv.h
+index 3323954..cf4a960 100644
+--- a/drivers/gpu/ion/ion_priv.h
++++ b/drivers/gpu/ion/ion_priv.h
+@@ -23,18 +23,6 @@
+ #include <linux/rbtree.h>
+ #include <linux/ion.h>
+ 
+-struct ion_mapping;
+-
+-struct ion_dma_mapping {
+-	struct kref ref;
+-	struct scatterlist *sglist;
+-};
+-
+-struct ion_kernel_mapping {
+-	struct kref ref;
+-	void *vaddr;
+-};
+-
+ struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
+ 
+ /**
+@@ -53,7 +41,7 @@ struct ion_buffer *ion_handle_buffer(struct ion_handle *handle);
+  * @kmap_cnt:		number of times the buffer is mapped to the kernel
+  * @vaddr:		the kenrel mapping if kmap_cnt is not zero
+  * @dmap_cnt:		number of times the buffer is mapped for dma
+- * @sglist:		the scatterlist for the buffer is dmap_cnt is not zero
++ * @sg_table:		the sg table for the buffer if dmap_cnt is not zero
+ */
+ struct ion_buffer {
+ 	struct kref ref;
+@@ -70,7 +58,7 @@ struct ion_buffer {
+ 	int kmap_cnt;
+ 	void *vaddr;
+ 	int dmap_cnt;
+-	struct scatterlist *sglist;
++	struct sg_table *sg_table;
+ };
+ 
+ /**
+@@ -92,7 +80,7 @@ struct ion_heap_ops {
+ 	void (*free) (struct ion_buffer *buffer);
+ 	int (*phys) (struct ion_heap *heap, struct ion_buffer *buffer,
+ 		     ion_phys_addr_t *addr, size_t *len);
+-	struct scatterlist *(*map_dma) (struct ion_heap *heap,
++	struct sg_table *(*map_dma) (struct ion_heap *heap,
+ 					struct ion_buffer *buffer);
+ 	void (*unmap_dma) (struct ion_heap *heap, struct ion_buffer *buffer);
+ 	void * (*map_kernel) (struct ion_heap *heap, struct ion_buffer *buffer);
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index c046cf1..d494ceb 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -38,40 +38,46 @@ void ion_system_heap_free(struct ion_buffer *buffer)
+ 	vfree(buffer->priv_virt);
+ }
+ 
+-struct scatterlist *ion_system_heap_map_dma(struct ion_heap *heap,
+-					    struct ion_buffer *buffer)
++struct sg_table *ion_system_heap_map_dma(struct ion_heap *heap,
++					 struct ion_buffer *buffer)
+ {
+-	struct scatterlist *sglist;
+-	struct page *page;
++	struct sg_table *table;
++	struct scatterlist *sg;
+ 	int i;
+ 	int npages = PAGE_ALIGN(buffer->size) / PAGE_SIZE;
+ 	void *vaddr = buffer->priv_virt;
++	int ret;
+ 
+-	sglist = vmalloc(npages * sizeof(struct scatterlist));
+-	if (!sglist)
++	table = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
++	if (!table)
+ 		return ERR_PTR(-ENOMEM);
+-	memset(sglist, 0, npages * sizeof(struct scatterlist));
+-	sg_init_table(sglist, npages);
+-	for (i = 0; i < npages; i++) {
++	ret = sg_alloc_table(table, npages, GFP_KERNEL);
++	if (ret)
++		goto err0;
++	for_each_sg(table->sgl, sg, table->nents, i) {
++		struct page *page;
+ 		page = vmalloc_to_page(vaddr);
+-		if (!page)
+-			goto end;
+-		sg_set_page(&sglist[i], page, PAGE_SIZE, 0);
++		if (!page) {
++			ret = -ENOMEM;
++			goto err1;
++		}
++		sg_set_page(sg, page, PAGE_SIZE, 0);
+ 		vaddr += PAGE_SIZE;
+ 	}
+-	/* XXX do cache maintenance for dma? */
+-	return sglist;
+-end:
+-	vfree(sglist);
+-	return NULL;
++	return table;
++err1:
++	sg_free_table(table);
++err0:
++	kfree(table);
++	return ERR_PTR(ret);
+ }
+ 
+ void ion_system_heap_unmap_dma(struct ion_heap *heap,
+ 			       struct ion_buffer *buffer)
+ {
+-	/* XXX undo cache maintenance for dma? */
+-	if (buffer->sglist)
+-		vfree(buffer->sglist);
++	if (buffer->sg_table)
++		sg_free_table(buffer->sg_table);
++	kfree(buffer->sg_table);
+ }
+ 
+ void *ion_system_heap_map_kernel(struct ion_heap *heap,
+@@ -144,17 +150,23 @@ static int ion_system_contig_heap_phys(struct ion_heap *heap,
+ 	return 0;
+ }
+ 
+-struct scatterlist *ion_system_contig_heap_map_dma(struct ion_heap *heap,
++struct sg_table *ion_system_contig_heap_map_dma(struct ion_heap *heap,
+ 						   struct ion_buffer *buffer)
+ {
+-	struct scatterlist *sglist;
++	struct sg_table *table;
++	int ret;
+ 
+-	sglist = vmalloc(sizeof(struct scatterlist));
+-	if (!sglist)
++	table = kzalloc(sizeof(struct sg_table), GFP_KERNEL);
++	if (!table)
+ 		return ERR_PTR(-ENOMEM);
+-	sg_init_table(sglist, 1);
+-	sg_set_page(sglist, virt_to_page(buffer->priv_virt), buffer->size, 0);
+-	return sglist;
++	ret = sg_alloc_table(table, 1, GFP_KERNEL);
++	if (ret) {
++		kfree(table);
++		return ERR_PTR(ret);
++	}
++	sg_set_page(table->sgl, virt_to_page(buffer->priv_virt), buffer->size,
++		    0);
++	return table;
+ }
+ 
+ int ion_system_contig_heap_map_user(struct ion_heap *heap,
+diff --git a/include/linux/ion.h b/include/linux/ion.h
+index aed8349..9d196e2 100644
+--- a/include/linux/ion.h
++++ b/include/linux/ion.h
+@@ -169,10 +169,10 @@ void ion_unmap_kernel(struct ion_client *client, struct ion_handle *handle);
+  * @client:	the client
+  * @handle:	handle to map
+  *
+- * Return an sglist describing the given handle
++ * Return an sg_table describing the given handle
+  */
+-struct scatterlist *ion_map_dma(struct ion_client *client,
+-				struct ion_handle *handle);
++struct sg_table *ion_map_dma(struct ion_client *client,
++			     struct ion_handle *handle);
+ 
+ /**
+  * ion_unmap_dma() - destroy a dma mapping for a handle
+-- 
+1.8.0
+

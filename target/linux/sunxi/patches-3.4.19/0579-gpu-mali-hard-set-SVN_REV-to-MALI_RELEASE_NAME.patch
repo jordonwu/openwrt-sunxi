@@ -1,0 +1,47 @@
+From 3253dec417b9cd8fc6dabe6670fae31222bb30d3 Mon Sep 17 00:00:00 2001
+From: Brian Olsen <brian@stellacore.com>
+Date: Wed, 20 Jun 2012 12:58:51 -0600
+Subject: [PATCH 579/944] gpu: mali: hard set SVN_REV to MALI_RELEASE_NAME
+
+---
+ drivers/gpu/mali/mali/Makefile.common | 7 +------
+ drivers/gpu/mali/ump/Makefile.common  | 4 ++--
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/gpu/mali/mali/Makefile.common b/drivers/gpu/mali/mali/Makefile.common
+index c2be3cf..615505a 100644
+--- a/drivers/gpu/mali/mali/Makefile.common
++++ b/drivers/gpu/mali/mali/Makefile.common
+@@ -39,13 +39,8 @@ ifeq ($(MALI_PLATFORM_FILE),)
+ MALI_PLATFORM_FILE=platform/default/mali_platform.c
+ endif
+ 
+-# Get subversion revision number, fall back to only ${MALI_RELEASE_NAME} if no svn info is available
+-SVN_REV := $(shell (cd $(DRIVER_DIR); (svnversion | grep -qv exported && svnversion) || git svn info | grep '^Revision: '| sed -e 's/^Revision: //' ) 2>/dev/null )
+-ifeq ($(SVN_REV),)
++# set the SVN_REV to ${MALI_RELEASE_NAME} due to ARM using subversion
+ SVN_REV := $(MALI_RELEASE_NAME)
+-else
+-SVN_REV := $(MALI_RELEASE_NAME)-r$(SVN_REV)
+-endif
+ 
+ # Common version-string, will be extended by OS-specifc sections
+ VERSION_STRINGS :=
+diff --git a/drivers/gpu/mali/ump/Makefile.common b/drivers/gpu/mali/ump/Makefile.common
+index 9681e12..acb6c7e 100644
+--- a/drivers/gpu/mali/ump/Makefile.common
++++ b/drivers/gpu/mali/ump/Makefile.common
+@@ -13,8 +13,8 @@ SRC = $(UMP_FILE_PREFIX)common/ump_kernel_common.c \
+ 	$(UMP_FILE_PREFIX)common/ump_kernel_api.c \
+ 	$(UMP_FILE_PREFIX)common/ump_kernel_ref_drv.c
+ 
+-# Get subversion revision number, fall back to 0000 if no svn info is available
+-SVN_REV:=$(shell ((svnversion | grep -qv exported && echo -n 'Revision: ' && svnversion) || git svn info | sed -e 's/$$$$/M/' | grep '^Revision: ' || echo ${MALI_RELEASE_NAME}) 2>/dev/null | sed -e 's/^Revision: //')
++# set the SVN_REV to ${MALI_RELEASE_NAME} due to ARM using subversion
++SVN_REV := $(MALI_RELEASE_NAME)
+ 
+ EXTRA_CFLAGS += -DSVN_REV=$(SVN_REV)
+ EXTRA_CFLAGS += -DSVN_REV_STRING=\"$(SVN_REV)\"
+-- 
+1.8.0
+

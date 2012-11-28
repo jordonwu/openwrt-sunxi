@@ -1,0 +1,34 @@
+From a4e924f0818a45d59c906807f3aaf793e0abc570 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:28 +0200
+Subject: [PATCH 663/944] MAINTAINERS: add UHID entry
+
+Add an UHID entry to the MAINTAINERS file.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ MAINTAINERS | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index b362709..5f8ab49 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -6855,6 +6855,13 @@ S:	Maintained
+ F:	Documentation/filesystems/ufs.txt
+ F:	fs/ufs/
+ 
++UHID USERSPACE HID IO DRIVER:
++M:	David Herrmann <dh.herrmann@googlemail.com>
++L:	linux-input@vger.kernel.org
++S:	Maintained
++F:	drivers/hid/uhid.c
++F:	include/linux/uhid.h
++
+ ULTRA-WIDEBAND (UWB) SUBSYSTEM:
+ L:	linux-usb@vger.kernel.org
+ S:	Orphan
+-- 
+1.8.0
+

@@ -1,0 +1,412 @@
+From 07021e27084db612e1308da87c1ced296bb708f1 Mon Sep 17 00:00:00 2001
+From: Nick Pelly <npelly@google.com>
+Date: Thu, 11 Feb 2010 11:54:28 -0800
+Subject: [PATCH 088/944] Bluetooth: Allow SCO/eSCO packet type selection for
+ outgoing SCO connections.
+
+__u16 sco_pkt_type is introduced to struct sockaddr_sco. It allows bitwise
+selection of SCO/eSCO packet types. Currently those bits are:
+
+0x0001 HV1 may be used.
+0x0002 HV2 may be used.
+0x0004 HV3 may be used.
+0x0008 EV3 may be used.
+0x0010 EV4 may be used.
+0x0020 EV5 may be used.
+0x0040 2-EV3 may be used.
+0x0080 3-EV3 may be used.
+0x0100 2-EV5 may be used.
+0x0200 3-EV5 may be used.
+
+This is similar to the Packet Type parameter in the HCI Setup Synchronous
+Connection Command, except that we are not reversing the logic on the EDR bits.
+This makes the use of sco_pkt_tpye forward portable for the use case of
+white-listing packet types, which we expect will be the primary use case.
+
+If sco_pkt_type is zero, or userspace uses the old struct sockaddr_sco,
+then the default behavior is to allow all packet types.
+
+Packet type selection is just a request made to the Bluetooth chipset, and
+it is up to the link manager on the chipset to negiotiate and decide on the
+actual packet types used. Furthermore, when a SCO/eSCO connection is eventually
+made there is no way for the host stack to determine which packet type was used
+(however it is possible to get the link type of SCO or eSCO).
+
+sco_pkt_type is ignored for incoming SCO connections. It is possible
+to add this in the future as a parameter to the Accept Synchronous Connection
+Command, however its a little trickier because the kernel does not
+currently preserve sockaddr_sco data between userspace calls to accept().
+
+The most common use for sco_pkt_type will be to white-list only SCO packets,
+which can be done with the hci.h constant SCO_ESCO_MASK.
+
+This patch is motivated by broken Bluetooth carkits such as the Motorolo
+HF850 (it claims to support eSCO, but will actually reject eSCO connections
+after 5 seconds) and the 2007/2008 Infiniti G35/37 (fails to route audio
+if a 2-EV5 packet type is negiotiated). With this patch userspace can maintain
+a list of compatible packet types to workaround remote devices such as these.
+
+Based on a patch by Marcel Holtmann.
+
+Rebased to 2.6.39.
+
+Change-Id: Ide1c89574fa4f6f1b9218282e1af17051eb86315
+Signed-off-by: Nick Pelly <npelly@google.com>
+---
+ include/net/bluetooth/hci.h      |  6 +++--
+ include/net/bluetooth/hci_core.h |  8 +++---
+ include/net/bluetooth/sco.h      |  4 ++-
+ net/bluetooth/hci_conn.c         | 35 +++++++++++++++++---------
+ net/bluetooth/hci_event.c        |  9 ++++---
+ net/bluetooth/l2cap_core.c       |  4 +--
+ net/bluetooth/mgmt.c             |  8 +++---
+ net/bluetooth/sco.c              | 54 ++++++++++++++++++++++++++--------------
+ 8 files changed, 81 insertions(+), 47 deletions(-)
+
+diff --git a/include/net/bluetooth/hci.h b/include/net/bluetooth/hci.h
+index 0a2c786..b78c9d3 100644
+--- a/include/net/bluetooth/hci.h
++++ b/include/net/bluetooth/hci.h
+@@ -173,8 +173,10 @@ enum {
+ #define ESCO_2EV5	0x0100
+ #define ESCO_3EV5	0x0200
+ 
+-#define SCO_ESCO_MASK  (ESCO_HV1 | ESCO_HV2 | ESCO_HV3)
+-#define EDR_ESCO_MASK  (ESCO_2EV3 | ESCO_3EV3 | ESCO_2EV5 | ESCO_3EV5)
++#define SCO_ESCO_MASK	(ESCO_HV1 | ESCO_HV2 | ESCO_HV3)
++#define EDR_ESCO_MASK	(ESCO_2EV3 | ESCO_3EV3 | ESCO_2EV5 | ESCO_3EV5)
++#define ALL_ESCO_MASK	(SCO_ESCO_MASK | ESCO_EV3 | ESCO_EV4 | ESCO_EV5 | \
++			EDR_ESCO_MASK)
+ 
+ /* ACL flags */
+ #define ACL_START_NO_FLUSH	0x00
+diff --git a/include/net/bluetooth/hci_core.h b/include/net/bluetooth/hci_core.h
+index 5203748..58bf62d 100644
+--- a/include/net/bluetooth/hci_core.h
++++ b/include/net/bluetooth/hci_core.h
+@@ -560,7 +560,8 @@ void hci_add_sco(struct hci_conn *conn, __u16 handle);
+ void hci_setup_sync(struct hci_conn *conn, __u16 handle);
+ void hci_sco_setup(struct hci_conn *conn, __u8 status);
+ 
+-struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type, bdaddr_t *dst);
++struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type,
++					__u16 pkt_type, bdaddr_t *dst);
+ int hci_conn_del(struct hci_conn *conn);
+ void hci_conn_hash_flush(struct hci_dev *hdev);
+ void hci_conn_check_pending(struct hci_dev *hdev);
+@@ -569,8 +570,9 @@ struct hci_chan *hci_chan_create(struct hci_conn *conn);
+ int hci_chan_del(struct hci_chan *chan);
+ void hci_chan_list_flush(struct hci_conn *conn);
+ 
+-struct hci_conn *hci_connect(struct hci_dev *hdev, int type, bdaddr_t *dst,
+-						__u8 sec_level, __u8 auth_type);
++struct hci_conn *hci_connect(struct hci_dev *hdev, int type,
++					__u16 pkt_type, bdaddr_t *dst,
++					__u8 sec_level, __u8 auth_type);
+ int hci_conn_check_link_mode(struct hci_conn *conn);
+ int hci_conn_check_secure(struct hci_conn *conn, __u8 sec_level);
+ int hci_conn_security(struct hci_conn *conn, __u8 sec_level, __u8 auth_type);
+diff --git a/include/net/bluetooth/sco.h b/include/net/bluetooth/sco.h
+index 1e35c43..6d1857a 100644
+--- a/include/net/bluetooth/sco.h
++++ b/include/net/bluetooth/sco.h
+@@ -37,6 +37,7 @@
+ struct sockaddr_sco {
+ 	sa_family_t	sco_family;
+ 	bdaddr_t	sco_bdaddr;
++	__u16		sco_pkt_type;
+ };
+ 
+ /* SCO socket options */
+@@ -72,7 +73,8 @@ struct sco_conn {
+ 
+ struct sco_pinfo {
+ 	struct bt_sock	bt;
+-	__u32		flags;
++	__u16		pkt_type;
++
+ 	struct sco_conn	*conn;
+ };
+ 
+diff --git a/net/bluetooth/hci_conn.c b/net/bluetooth/hci_conn.c
+index 6503761..a5f93a9 100644
+--- a/net/bluetooth/hci_conn.c
++++ b/net/bluetooth/hci_conn.c
+@@ -360,7 +360,8 @@ static void hci_conn_auto_accept(unsigned long arg)
+ 								&conn->dst);
+ }
+ 
+-struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type, bdaddr_t *dst)
++struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type,
++					__u16 pkt_type, bdaddr_t *dst)
+ {
+ 	struct hci_conn *conn;
+ 
+@@ -388,14 +389,22 @@ struct hci_conn *hci_conn_add(struct hci_dev *hdev, int type, bdaddr_t *dst)
+ 		conn->pkt_type = hdev->pkt_type & ACL_PTYPE_MASK;
+ 		break;
+ 	case SCO_LINK:
+-		if (lmp_esco_capable(hdev))
+-			conn->pkt_type = (hdev->esco_type & SCO_ESCO_MASK) |
+-					(hdev->esco_type & EDR_ESCO_MASK);
+-		else
+-			conn->pkt_type = hdev->pkt_type & SCO_PTYPE_MASK;
+-		break;
++		if (!pkt_type)
++			pkt_type = SCO_ESCO_MASK;
+ 	case ESCO_LINK:
+-		conn->pkt_type = hdev->esco_type & ~EDR_ESCO_MASK;
++		if (!pkt_type)
++			pkt_type = ALL_ESCO_MASK;
++		if (lmp_esco_capable(hdev)) {
++			/* HCI Setup Synchronous Connection Command uses
++			   reverse logic on the EDR_ESCO_MASK bits */
++			conn->pkt_type = (pkt_type ^ EDR_ESCO_MASK) &
++					hdev->esco_type;
++		} else {
++			/* Legacy HCI Add Sco Connection Command uses a
++			   shifted bitmask */
++			conn->pkt_type = (pkt_type << 5) & hdev->pkt_type &
++					SCO_PTYPE_MASK;
++		}
+ 		break;
+ 	}
+ 
+@@ -513,7 +522,9 @@ EXPORT_SYMBOL(hci_get_route);
+ 
+ /* Create SCO, ACL or LE connection.
+  * Device _must_ be locked */
+-struct hci_conn *hci_connect(struct hci_dev *hdev, int type, bdaddr_t *dst, __u8 sec_level, __u8 auth_type)
++struct hci_conn *hci_connect(struct hci_dev *hdev, int type,
++					__u16 pkt_type, bdaddr_t *dst,
++					__u8 sec_level, __u8 auth_type)
+ {
+ 	struct hci_conn *acl;
+ 	struct hci_conn *sco;
+@@ -532,7 +543,7 @@ struct hci_conn *hci_connect(struct hci_dev *hdev, int type, bdaddr_t *dst, __u8
+ 		if (!entry)
+ 			return ERR_PTR(-EHOSTUNREACH);
+ 
+-		le = hci_conn_add(hdev, LE_LINK, dst);
++		le = hci_conn_add(hdev, LE_LINK, 0, dst);
+ 		if (!le)
+ 			return ERR_PTR(-ENOMEM);
+ 
+@@ -547,7 +558,7 @@ struct hci_conn *hci_connect(struct hci_dev *hdev, int type, bdaddr_t *dst, __u8
+ 
+ 	acl = hci_conn_hash_lookup_ba(hdev, ACL_LINK, dst);
+ 	if (!acl) {
+-		acl = hci_conn_add(hdev, ACL_LINK, dst);
++		acl = hci_conn_add(hdev, ACL_LINK, 0, dst);
+ 		if (!acl)
+ 			return ERR_PTR(-ENOMEM);
+ 	}
+@@ -566,7 +577,7 @@ struct hci_conn *hci_connect(struct hci_dev *hdev, int type, bdaddr_t *dst, __u8
+ 
+ 	sco = hci_conn_hash_lookup_ba(hdev, type, dst);
+ 	if (!sco) {
+-		sco = hci_conn_add(hdev, type, dst);
++		sco = hci_conn_add(hdev, type, pkt_type, dst);
+ 		if (!sco) {
+ 			hci_conn_put(acl);
+ 			return ERR_PTR(-ENOMEM);
+diff --git a/net/bluetooth/hci_event.c b/net/bluetooth/hci_event.c
+index c7d3574..e15c05e 100644
+--- a/net/bluetooth/hci_event.c
++++ b/net/bluetooth/hci_event.c
+@@ -1213,7 +1213,7 @@ static inline void hci_cs_create_conn(struct hci_dev *hdev, __u8 status)
+ 		}
+ 	} else {
+ 		if (!conn) {
+-			conn = hci_conn_add(hdev, ACL_LINK, &cp->bdaddr);
++			conn = hci_conn_add(hdev, ACL_LINK, 0, &cp->bdaddr);
+ 			if (conn) {
+ 				conn->out = true;
+ 				conn->link_mode |= HCI_LM_MASTER;
+@@ -1630,7 +1630,7 @@ static void hci_cs_le_create_conn(struct hci_dev *hdev, __u8 status)
+ 		}
+ 	} else {
+ 		if (!conn) {
+-			conn = hci_conn_add(hdev, LE_LINK, &cp->peer_addr);
++			conn = hci_conn_add(hdev, LE_LINK, 0, &cp->peer_addr);
+ 			if (conn) {
+ 				conn->dst_type = cp->peer_addr_type;
+ 				conn->out = true;
+@@ -1824,7 +1824,8 @@ static inline void hci_conn_request_evt(struct hci_dev *hdev, struct sk_buff *sk
+ 
+ 		conn = hci_conn_hash_lookup_ba(hdev, ev->link_type, &ev->bdaddr);
+ 		if (!conn) {
+-			conn = hci_conn_add(hdev, ev->link_type, &ev->bdaddr);
++			/* pkt_type not yet used for incoming connections */
++			conn = hci_conn_add(hdev, ev->link_type, 0, &ev->bdaddr);
+ 			if (!conn) {
+ 				BT_ERR("No memory for new connection");
+ 				hci_dev_unlock(hdev);
+@@ -3265,7 +3266,7 @@ static inline void hci_le_conn_complete_evt(struct hci_dev *hdev, struct sk_buff
+ 
+ 	conn = hci_conn_hash_lookup_ba(hdev, LE_LINK, &ev->bdaddr);
+ 	if (!conn) {
+-		conn = hci_conn_add(hdev, LE_LINK, &ev->bdaddr);
++		conn = hci_conn_add(hdev, LE_LINK, 0, &ev->bdaddr);
+ 		if (!conn) {
+ 			BT_ERR("No memory for new connection");
+ 			hci_dev_unlock(hdev);
+diff --git a/net/bluetooth/l2cap_core.c b/net/bluetooth/l2cap_core.c
+index b8e17e4..8d19eab 100644
+--- a/net/bluetooth/l2cap_core.c
++++ b/net/bluetooth/l2cap_core.c
+@@ -1218,10 +1218,10 @@ int l2cap_chan_connect(struct l2cap_chan *chan, __le16 psm, u16 cid, bdaddr_t *d
+ 	auth_type = l2cap_get_auth_type(chan);
+ 
+ 	if (chan->dcid == L2CAP_CID_LE_DATA)
+-		hcon = hci_connect(hdev, LE_LINK, dst,
++		hcon = hci_connect(hdev, LE_LINK, 0, dst,
+ 					chan->sec_level, auth_type);
+ 	else
+-		hcon = hci_connect(hdev, ACL_LINK, dst,
++		hcon = hci_connect(hdev, ACL_LINK, 0, dst,
+ 					chan->sec_level, auth_type);
+ 
+ 	if (IS_ERR(hcon)) {
+diff --git a/net/bluetooth/mgmt.c b/net/bluetooth/mgmt.c
+index 7fcff88..e553c9c 100644
+--- a/net/bluetooth/mgmt.c
++++ b/net/bluetooth/mgmt.c
+@@ -1891,11 +1891,11 @@ static int pair_device(struct sock *sk, struct hci_dev *hdev, void *data,
+ 		auth_type = HCI_AT_DEDICATED_BONDING_MITM;
+ 
+ 	if (cp->addr.type == MGMT_ADDR_BREDR)
+-		conn = hci_connect(hdev, ACL_LINK, &cp->addr.bdaddr, sec_level,
+-				   auth_type);
++		conn = hci_connect(hdev, ACL_LINK, 0, &cp->addr.bdaddr,
++				   sec_level, auth_type);
+ 	else
+-		conn = hci_connect(hdev, LE_LINK, &cp->addr.bdaddr, sec_level,
+-				   auth_type);
++		conn = hci_connect(hdev, LE_LINK, 0, &cp->addr.bdaddr,
++				   sec_level, auth_type);
+ 
+ 	memset(&rp, 0, sizeof(rp));
+ 	bacpy(&rp.addr.bdaddr, &cp->addr.bdaddr);
+diff --git a/net/bluetooth/sco.c b/net/bluetooth/sco.c
+index f6ab129..458cec0 100644
+--- a/net/bluetooth/sco.c
++++ b/net/bluetooth/sco.c
+@@ -177,6 +177,7 @@ static int sco_connect(struct sock *sk)
+ {
+ 	bdaddr_t *src = &bt_sk(sk)->src;
+ 	bdaddr_t *dst = &bt_sk(sk)->dst;
++	__u16 pkt_type = sco_pi(sk)->pkt_type;
+ 	struct sco_conn *conn;
+ 	struct hci_conn *hcon;
+ 	struct hci_dev  *hdev;
+@@ -192,10 +193,12 @@ static int sco_connect(struct sock *sk)
+ 
+ 	if (lmp_esco_capable(hdev) && !disable_esco)
+ 		type = ESCO_LINK;
+-	else
++	else {
+ 		type = SCO_LINK;
++		pkt_type &= SCO_ESCO_MASK;
++	}
+ 
+-	hcon = hci_connect(hdev, type, dst, BT_SECURITY_LOW, HCI_AT_NO_BONDING);
++	hcon = hci_connect(hdev, type, pkt_type, dst, BT_SECURITY_LOW, HCI_AT_NO_BONDING);
+ 	if (IS_ERR(hcon)) {
+ 		err = PTR_ERR(hcon);
+ 		goto done;
+@@ -462,18 +465,22 @@ static int sco_sock_create(struct net *net, struct socket *sock, int protocol,
+ 	return 0;
+ }
+ 
+-static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int addr_len)
++static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int alen)
+ {
+-	struct sockaddr_sco *sa = (struct sockaddr_sco *) addr;
++	struct sockaddr_sco sa;
+ 	struct sock *sk = sock->sk;
+-	bdaddr_t *src = &sa->sco_bdaddr;
+-	int err = 0;
++	bdaddr_t *src = &sa.sco_bdaddr;
++	int len, err = 0;
+ 
+-	BT_DBG("sk %p %s", sk, batostr(&sa->sco_bdaddr));
++	BT_DBG("sk %p %s", sk, batostr(&sa.sco_bdaddr));
+ 
+ 	if (!addr || addr->sa_family != AF_BLUETOOTH)
+ 		return -EINVAL;
+ 
++	memset(&sa, 0, sizeof(sa));
++	len = min_t(unsigned int, sizeof(sa), alen);
++	memcpy(&sa, addr, len);
++
+ 	lock_sock(sk);
+ 
+ 	if (sk->sk_state != BT_OPEN) {
+@@ -487,7 +494,8 @@ static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int addr_le
+ 		err = -EADDRINUSE;
+ 	} else {
+ 		/* Save source address */
+-		bacpy(&bt_sk(sk)->src, &sa->sco_bdaddr);
++		bacpy(&bt_sk(sk)->src, &sa.sco_bdaddr);
++		sco_pi(sk)->pkt_type = sa.sco_pkt_type;
+ 		sk->sk_state = BT_BOUND;
+ 	}
+ 
+@@ -500,27 +508,34 @@ done:
+ 
+ static int sco_sock_connect(struct socket *sock, struct sockaddr *addr, int alen, int flags)
+ {
+-	struct sockaddr_sco *sa = (struct sockaddr_sco *) addr;
+ 	struct sock *sk = sock->sk;
+-	int err = 0;
+-
++	struct sockaddr_sco sa;
++	int len, err = 0;
+ 
+ 	BT_DBG("sk %p", sk);
+ 
+-	if (alen < sizeof(struct sockaddr_sco) ||
+-	    addr->sa_family != AF_BLUETOOTH)
++	if (!addr || addr->sa_family != AF_BLUETOOTH)
+ 		return -EINVAL;
+ 
+-	if (sk->sk_state != BT_OPEN && sk->sk_state != BT_BOUND)
+-		return -EBADFD;
+-
+-	if (sk->sk_type != SOCK_SEQPACKET)
+-		return -EINVAL;
++	memset(&sa, 0, sizeof(sa));
++	len = min_t(unsigned int, sizeof(sa), alen);
++	memcpy(&sa, addr, len);
+ 
+ 	lock_sock(sk);
+ 
++	if (sk->sk_type != SOCK_SEQPACKET) {
++		err = -EINVAL;
++		goto done;
++	}
++
++	if (sk->sk_state != BT_OPEN && sk->sk_state != BT_BOUND) {
++		err = -EBADFD;
++		goto done;
++	}
++
+ 	/* Set destination address and psm */
+-	bacpy(&bt_sk(sk)->dst, &sa->sco_bdaddr);
++	bacpy(&bt_sk(sk)->dst, &sa.sco_bdaddr);
++	sco_pi(sk)->pkt_type = sa.sco_pkt_type;
+ 
+ 	err = sco_connect(sk);
+ 	if (err)
+@@ -627,6 +642,7 @@ static int sco_sock_getname(struct socket *sock, struct sockaddr *addr, int *len
+ 		bacpy(&sa->sco_bdaddr, &bt_sk(sk)->dst);
+ 	else
+ 		bacpy(&sa->sco_bdaddr, &bt_sk(sk)->src);
++	sa->sco_pkt_type = sco_pi(sk)->pkt_type;
+ 
+ 	return 0;
+ }
+-- 
+1.8.0
+

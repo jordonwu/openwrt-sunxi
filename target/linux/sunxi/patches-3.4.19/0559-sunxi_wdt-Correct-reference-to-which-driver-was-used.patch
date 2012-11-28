@@ -1,0 +1,26 @@
+From 6cd5008b4d23e7d2de367725e098bf9ab7fc9b5f Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Thu, 28 Jun 2012 03:34:57 +0200
+Subject: [PATCH 559/944] sunxi_wdt: Correct reference to which driver was
+ used as template
+
+---
+ drivers/watchdog/sunxi_wdt.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/watchdog/sunxi_wdt.c b/drivers/watchdog/sunxi_wdt.c
+index 6e4e345..a96b840 100644
+--- a/drivers/watchdog/sunxi_wdt.c
++++ b/drivers/watchdog/sunxi_wdt.c
+@@ -8,7 +8,7 @@
+  *	as published by the Free Software Foundation; either version
+  *	2 of the License, or (at your option) any later version.
+  *
+- *	Based on sunxi_wdt.c
++ *	Based on xen_wdt.c
+  *	(c) Copyright 2010 Novell, Inc.
+  *
+  * Known issues:
+-- 
+1.8.0
+

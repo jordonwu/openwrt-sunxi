@@ -1,0 +1,37 @@
+From 45f645c65c821f5b12da759e58bd3b5c03e958af Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Tue, 10 Jul 2012 18:01:19 -0700
+Subject: [PATCH 525/944] power: smb347: update state if found changed on
+ property get
+
+If charger connect status is found changed while retreiving a
+property, update the associated driver state and send a
+power_supply_changed() for the supplies.  In case an interrupt
+was not received for the connection status change.
+
+Change-Id: I8b9fe09dd883bf6c9be6c95e89ea5b9281c8bc6d
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 70aecb7..32519ed 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -1075,6 +1075,12 @@ static int smb347_battery_get_property(struct power_supply *psy,
+ 	if (ret < 0)
+ 		return ret;
+ 
++	if (ret > 0) {
++		smb347_update_online(smb);
++		power_supply_changed(&smb->mains);
++		power_supply_changed(&smb->usb);
++	}
++
+ 	switch (prop) {
+ 	case POWER_SUPPLY_PROP_STATUS:
+ 		if (!smb347_is_online(smb)) {
+-- 
+1.8.0
+

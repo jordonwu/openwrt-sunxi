@@ -1,0 +1,25 @@
+From 92cbdf8aab61937c2c08778a115fae022fb59674 Mon Sep 17 00:00:00 2001
+From: pannan <pannan@allwinnertech.com>
+Date: Thu, 1 Dec 2011 15:47:32 +0800
+Subject: [PATCH 408/944] i2c-sun4i: update twi restart timeout
+
+---
+ drivers/i2c/busses/i2c-sun4i.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/i2c/busses/i2c-sun4i.c b/drivers/i2c/busses/i2c-sun4i.c
+index 6b10cb6..b973858 100644
+--- a/drivers/i2c/busses/i2c-sun4i.c
++++ b/drivers/i2c/busses/i2c-sun4i.c
+@@ -423,7 +423,7 @@ static int aw_twi_start(void *base_addr)
+ 
+ static int aw_twi_restart(void  *base_addr)
+ {
+-	unsigned int timeout = 0x20;
++	unsigned int timeout = 0xff;
+ 	aw_twi_set_start(base_addr);
+ 	aw_twi_clear_irq_flag(base_addr);
+ 	while((1 == aw_twi_get_start(base_addr))&&(--timeout));
+-- 
+1.8.0
+

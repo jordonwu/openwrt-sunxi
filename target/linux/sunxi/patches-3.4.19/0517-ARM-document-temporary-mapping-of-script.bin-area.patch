@@ -1,0 +1,39 @@
+From 2f86a96f357aecfeb2fdc304ff03671eff7eb599 Mon Sep 17 00:00:00 2001
+From: Henrik Nordstrom <henrik@henriknordstrom.net>
+Date: Mon, 2 Apr 2012 21:18:14 +0200
+Subject: [PATCH 517/944] ARM: document temporary mapping of script.bin area
+
+---
+ arch/arm/kernel/head.S | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
+index 415ddca..52741af 100644
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -251,10 +251,6 @@ __create_page_tables:
+ 	add	r0, r4,  #(KERNEL_START & 0xff000000) >> (SECTION_SHIFT - PMD_ORDER)
+ 	str	r3, [r0, #((KERNEL_START & 0x00f00000) >> SECTION_SHIFT) << PMD_ORDER]!
+ 
+-	add     r0, r4,  #((0x3000000 + KERNEL_START) & 0xff000000) >> 18
+-	add     r6, r3, #48 << 20
+-	str     r6, [r0, #((0x3000000 + KERNEL_START) & 0x00f00000) >> 18]
+-
+ 	ldr	r6, =(KERNEL_END - 1)
+ 	add	r0, r0, #1 << PMD_ORDER
+ 	add	r6, r4, r6, lsr #(SECTION_SHIFT - PMD_ORDER)
+@@ -280,6 +276,11 @@ __create_page_tables:
+ 	bls	1b
+ #endif
+ 
++	/* Add a map for script.bin */
++	add     r0, r4,  #((0x3000000 + KERNEL_START) & 0xff000000) >> 18
++	add     r6, r3, #48 << 20
++	str     r6, [r0, #((0x3000000 + KERNEL_START) & 0x00f00000) >> 18]
++
+ 	/*
+ 	 * Then map boot params address in r2 or the first 1MB (2MB with LPAE)
+ 	 * of ram if boot params address is not specified.
+-- 
+1.8.0
+

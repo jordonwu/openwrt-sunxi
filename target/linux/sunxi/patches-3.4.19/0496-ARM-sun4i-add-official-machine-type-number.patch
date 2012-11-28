@@ -1,0 +1,39 @@
+From 7f1f59f033032009df836a1f532170a1db78054f Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 26 Mar 2012 15:27:54 +0200
+Subject: [PATCH 496/944] ARM: sun4i: add *official* machine type number
+
+---
+ arch/arm/kernel/head.S    | 2 +-
+ arch/arm/tools/mach-types | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
+index dc6a391..415ddca 100644
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -101,7 +101,7 @@ ENTRY(stext)
+ 	.long 0x81000000
+ #elif CONFIG_CHIP_ID == 1123
+ #warning "chip id: 1123"
+-1:	.long 0xf34
++1:	.long 0x1008
+ 	.long 0x81000000
+ #elif CONFIG_CHIP_ID == 1125
+ #warning "chip id: 1125"
+diff --git a/arch/arm/tools/mach-types b/arch/arm/tools/mach-types
+index 082a71a..3196a82 100644
+--- a/arch/arm/tools/mach-types
++++ b/arch/arm/tools/mach-types
+@@ -1169,7 +1169,7 @@ elite_ulk		MACH_ELITE_ULK		ELITE_ULK		3888
+ pov2			MACH_POV2		POV2			3889
+ ipod_touch_2g		MACH_IPOD_TOUCH_2G	IPOD_TOUCH_2G		3890
+ da850_pqab		MACH_DA850_PQAB		DA850_PQAB		3891
+-sun4i                   MACH_SUN4I              SUN4I                   3892
++sun4i			MACH_SUN4I		SUN4I			4104
+ sun5i                   MACH_SUN5I              SUN5I                   3893
+ sun6i                   MACH_SUN6I              SUN6I                   3894
+ sun3i                   MACH_SUN3I              SUN3I                   3895
+-- 
+1.8.0
+

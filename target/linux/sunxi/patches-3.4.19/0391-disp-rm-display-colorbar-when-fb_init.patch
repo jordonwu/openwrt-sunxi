@@ -1,0 +1,25 @@
+From d5d8b58e3d94b2db4c8a21796186cecfcf08578b Mon Sep 17 00:00:00 2001
+From: danling <danling@allwinnertech.com>
+Date: Mon, 28 Nov 2011 17:00:55 +0800
+Subject: [PATCH 391/944] disp: rm display colorbar when fb_init
+
+---
+ drivers/video/sun4i/disp/dev_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/video/sun4i/disp/dev_fb.c b/drivers/video/sun4i/disp/dev_fb.c
+index 99ffc1b..b7198d0 100644
+--- a/drivers/video/sun4i/disp/dev_fb.c
++++ b/drivers/video/sun4i/disp/dev_fb.c
+@@ -1368,7 +1368,7 @@ __s32 Fb_Init(__u32 from)
+             }
+             Display_Fb_Request(i, &fb_para);
+ 
+-            fb_draw_colorbar((__u32)g_fbi.fbinfo[i]->screen_base, fb_para.width, fb_para.height*fb_para.buffer_num, &(g_fbi.fbinfo[i]->var));
++            //fb_draw_colorbar((__u32)g_fbi.fbinfo[i]->screen_base, fb_para.width, fb_para.height*fb_para.buffer_num, &(g_fbi.fbinfo[i]->var));
+         }
+ 
+         if(g_fbi.disp_init.scaler_mode[0])
+-- 
+1.8.0
+

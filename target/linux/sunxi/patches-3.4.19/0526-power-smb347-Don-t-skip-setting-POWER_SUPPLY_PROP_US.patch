@@ -1,0 +1,39 @@
+From b2b4cd0840aeab22b0201ec0143a5056e947e370 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Tue, 10 Jul 2012 18:27:29 -0700
+Subject: [PATCH 526/944] power: smb347: Don't skip setting
+ POWER_SUPPLY_PROP_USB_HC if offline
+
+Avoids runtime errors.
+
+Change-Id: I04e37ecf6b70d4ddccdc95084451becf0c074eb1
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 32519ed..f9b6854 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -1030,12 +1030,11 @@ static int smb347_usb_set_property(struct power_supply *psy,
+ 
+ 	switch (prop) {
+ 	case POWER_SUPPLY_PROP_USB_HC:
+-		if (smb->usb_online) {
+-			smb347_set_writable(smb, true);
+-			ret = smb347_write(smb, CMD_B, val->intval ?
+-					   CMD_B_HC_MODE : CMD_B_USB59_MODE);
+-			smb347_set_writable(smb, false);
+-		}
++		smb347_set_writable(smb, true);
++		ret = smb347_write(smb, CMD_B, val->intval ?
++				   CMD_B_HC_MODE : CMD_B_USB59_MODE);
++		smb347_set_writable(smb, false);
++		break;
+ 
+ 	default:
+ 		break;
+-- 
+1.8.0
+

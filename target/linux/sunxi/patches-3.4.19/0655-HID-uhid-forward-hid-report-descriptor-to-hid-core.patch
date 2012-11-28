@@ -1,0 +1,32 @@
+From 558bb3ba899b3a45e4d4f1eeb63d62e921b13457 Mon Sep 17 00:00:00 2001
+From: David Herrmann <dh.herrmann@googlemail.com>
+Date: Sun, 10 Jun 2012 15:16:20 +0200
+Subject: [PATCH 655/944] HID: uhid: forward hid report-descriptor to hid core
+
+When the uhid_hid_parse callback is called we simply forward it to
+hid_parse_report() with the data that we got in the UHID_CREATE event.
+
+Signed-off-by: David Herrmann <dh.herrmann@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+---
+ drivers/hid/uhid.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/hid/uhid.c b/drivers/hid/uhid.c
+index 3d1ebda..0d011db 100644
+--- a/drivers/hid/uhid.c
++++ b/drivers/hid/uhid.c
+@@ -106,7 +106,9 @@ static int uhid_hid_input(struct input_dev *input, unsigned int type,
+ 
+ static int uhid_hid_parse(struct hid_device *hid)
+ {
+-	return 0;
++	struct uhid_device *uhid = hid->driver_data;
++
++	return hid_parse_report(hid, uhid->rd_data, uhid->rd_size);
+ }
+ 
+ static int uhid_hid_get_raw(struct hid_device *hid, unsigned char rnum,
+-- 
+1.8.0
+

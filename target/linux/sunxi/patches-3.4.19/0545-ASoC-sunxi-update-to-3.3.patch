@@ -1,0 +1,219 @@
+From 010c2f7aebf5dadff55cc96e70bae9db603fea6d Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Mon, 11 Jun 2012 13:30:15 +0200
+Subject: [PATCH 545/944] ASoC: sunxi: update to 3.3
+
+---
+ sound/soc/sun4i/hdmiaudio/sun4i-hdmipcm.c | 9 +++++----
+ sound/soc/sun4i/i2s/sun4i-i2sdma.c        | 9 +++++----
+ sound/soc/sun4i/spdif/sun4i_spdma.c       | 9 +++++----
+ sound/soc/sun5i/hdmiaudio/sun5i-hdmipcm.c | 9 +++++----
+ sound/soc/sun5i/i2s/sun5i-i2sdma.c        | 9 +++++----
+ sound/soc/sun5i/spdif/sun5i_spdma.c       | 9 +++++----
+ 6 files changed, 30 insertions(+), 24 deletions(-)
+
+diff --git a/sound/soc/sun4i/hdmiaudio/sun4i-hdmipcm.c b/sound/soc/sun4i/hdmiaudio/sun4i-hdmipcm.c
+index 834d1dd..ecf8757 100644
+--- a/sound/soc/sun4i/hdmiaudio/sun4i-hdmipcm.c
++++ b/sound/soc/sun4i/hdmiaudio/sun4i-hdmipcm.c
+@@ -355,9 +355,10 @@ static void sun4i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun4i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun4i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun4i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 
+ 	if (!card->dev->dma_mask)
+@@ -365,14 +366,14 @@ static int sun4i_pcm_new(struct snd_card *card,
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+diff --git a/sound/soc/sun4i/i2s/sun4i-i2sdma.c b/sound/soc/sun4i/i2s/sun4i-i2sdma.c
+index 72a4ec8..fd81fd9 100644
+--- a/sound/soc/sun4i/i2s/sun4i-i2sdma.c
++++ b/sound/soc/sun4i/i2s/sun4i-i2sdma.c
+@@ -353,23 +353,24 @@ static void sun4i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun4i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun4i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun4i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 	if (!card->dev->dma_mask)
+ 		card->dev->dma_mask = &sun4i_pcm_mask;
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+diff --git a/sound/soc/sun4i/spdif/sun4i_spdma.c b/sound/soc/sun4i/spdif/sun4i_spdma.c
+index 1329a00..d7a4924 100644
+--- a/sound/soc/sun4i/spdif/sun4i_spdma.c
++++ b/sound/soc/sun4i/spdif/sun4i_spdma.c
+@@ -359,9 +359,10 @@ static void sun4i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun4i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun4i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun4i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 
+ 	if (!card->dev->dma_mask)
+@@ -369,14 +370,14 @@ static int sun4i_pcm_new(struct snd_card *card,
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun4i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+diff --git a/sound/soc/sun5i/hdmiaudio/sun5i-hdmipcm.c b/sound/soc/sun5i/hdmiaudio/sun5i-hdmipcm.c
+index dcf2ac9..5a07372 100644
+--- a/sound/soc/sun5i/hdmiaudio/sun5i-hdmipcm.c
++++ b/sound/soc/sun5i/hdmiaudio/sun5i-hdmipcm.c
+@@ -355,9 +355,10 @@ static void sun5i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun5i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun5i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun5i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 
+ 	if (!card->dev->dma_mask)
+@@ -365,14 +366,14 @@ static int sun5i_pcm_new(struct snd_card *card,
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+diff --git a/sound/soc/sun5i/i2s/sun5i-i2sdma.c b/sound/soc/sun5i/i2s/sun5i-i2sdma.c
+index 4aef878..f2367a7 100644
+--- a/sound/soc/sun5i/i2s/sun5i-i2sdma.c
++++ b/sound/soc/sun5i/i2s/sun5i-i2sdma.c
+@@ -353,23 +353,24 @@ static void sun5i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun5i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun5i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun5i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 	if (!card->dev->dma_mask)
+ 		card->dev->dma_mask = &sun5i_pcm_mask;
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+diff --git a/sound/soc/sun5i/spdif/sun5i_spdma.c b/sound/soc/sun5i/spdif/sun5i_spdma.c
+index f755ead..724422d 100644
+--- a/sound/soc/sun5i/spdif/sun5i_spdma.c
++++ b/sound/soc/sun5i/spdif/sun5i_spdma.c
+@@ -359,9 +359,10 @@ static void sun5i_pcm_free_dma_buffers(struct snd_pcm *pcm)
+ 
+ static u64 sun5i_pcm_mask = DMA_BIT_MASK(32);
+ 
+-static int sun5i_pcm_new(struct snd_card *card,
+-			   struct snd_soc_dai *dai, struct snd_pcm *pcm)
++static int sun5i_pcm_new(struct snd_soc_pcm_runtime *rtd)
+ {
++	struct snd_card *card = rtd->card->snd_card;
++	struct snd_pcm *pcm = rtd->pcm;
+ 	int ret = 0;
+ 
+ 	if (!card->dev->dma_mask)
+@@ -369,14 +370,14 @@ static int sun5i_pcm_new(struct snd_card *card,
+ 	if (!card->dev->coherent_dma_mask)
+ 		card->dev->coherent_dma_mask = 0xffffffff;
+ 
+-	if (dai->driver->playback.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_PLAYBACK].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_PLAYBACK);
+ 		if (ret)
+ 			goto out;
+ 	}
+ 
+-	if (dai->driver->capture.channels_min) {
++	if (pcm->streams[SNDRV_PCM_STREAM_CAPTURE].substream) {
+ 		ret = sun5i_pcm_preallocate_dma_buffer(pcm,
+ 			SNDRV_PCM_STREAM_CAPTURE);
+ 		if (ret)
+-- 
+1.8.0
+

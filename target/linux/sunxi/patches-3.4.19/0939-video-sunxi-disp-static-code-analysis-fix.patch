@@ -1,0 +1,51 @@
+From 36dae5ec4dc1bc197c0e2e4d87c7ec6126724884 Mon Sep 17 00:00:00 2001
+From: Jari Helaakoski <tekkuli@gmail.com>
+Date: Mon, 19 Nov 2012 21:38:16 +0200
+Subject: [PATCH 939/944] video: sunxi: disp: static code analysis fix
+
+---
+ drivers/video/sunxi/disp/OSAL_Clock.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL_Clock.c
+index dacc452..a2e6269 100644
+--- a/drivers/video/sunxi/disp/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL_Clock.c
+@@ -217,12 +217,13 @@ __s32 OSAL_CCMU_SetSrcFreq(__u32 nSclkNo, __u32 nFreq)
+ 
+ 	hSysClk = clk_get(NULL, _sysClkName[nSclkNo]);
+ 
+-	__inf("OSAL_CCMU_SetSrcFreq<%s,%d>\n", hSysClk->clk->name, nFreq);
+-
+ 	if (NULL == hSysClk) {
+ 		__wrn("Fail to get handle for system clock [%d].\n", nSclkNo);
+ 		return -1;
+-	}
++	} else
++		__inf("OSAL_CCMU_SetSrcFreq<%s,%d>\n",
++				hSysClk->clk->name, nFreq);
++
+ 	if (nFreq == clk_get_rate(hSysClk)) {
+ #if 0
+ 		__inf("Sys clk[%d] freq is alreay %d, not need to set.\n",
+@@ -288,13 +289,13 @@ __s32 OSAL_CCMU_SetMclkSrc(__hdle hMclk, __u32 nSclkNo)
+ 
+ 	hSysClk = clk_get(NULL, _sysClkName[nSclkNo]);
+ 
+-	__inf("OSAL_CCMU_SetMclkSrc<%s,%s>\n", hModClk->clk->name,
+-	      hSysClk->clk->name);
+-
+ 	if (NULL == hSysClk) {
+ 		__wrn("Fail to get handle for system clock [%d].\n", nSclkNo);
+ 		return -1;
+-	}
++	} else
++		__inf("OSAL_CCMU_SetMclkSrc<%s,%s>\n", hModClk->clk->name,
++		      hSysClk->clk->name);
++
+ 	if (clk_get_parent(hModClk) == hSysClk) {
+ 		__inf("Parent is alreay %d, not need to set.\n", nSclkNo);
+ 		clk_put(hSysClk);
+-- 
+1.8.0
+

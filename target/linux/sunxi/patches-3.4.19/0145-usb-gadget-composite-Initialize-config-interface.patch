@@ -1,0 +1,28 @@
+From 9c507c7f881eeba40e66999a06ce4727b4130148 Mon Sep 17 00:00:00 2001
+From: Benoit Goby <benoit@android.com>
+Date: Tue, 13 Dec 2011 16:01:41 -0800
+Subject: [PATCH 145/944] usb: gadget: composite: Initialize config->interface
+
+Reset config->interface in usb_add_config, as it may contain pointers to
+functions from a previous session if config is removed and re-added.
+
+Signed-off-by: Benoit Goby <benoit@android.com>
+---
+ drivers/usb/gadget/composite.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/usb/gadget/composite.c b/drivers/usb/gadget/composite.c
+index a358252..343d842 100644
+--- a/drivers/usb/gadget/composite.c
++++ b/drivers/usb/gadget/composite.c
+@@ -734,6 +734,7 @@ int usb_add_config(struct usb_composite_dev *cdev,
+ 
+ 	INIT_LIST_HEAD(&config->functions);
+ 	config->next_interface_id = 0;
++	memset(config->interface, 0, sizeof(config->interface));
+ 
+ 	status = bind(config);
+ 	if (status < 0) {
+-- 
+1.8.0
+

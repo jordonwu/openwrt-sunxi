@@ -1,0 +1,47 @@
+From c2f0cfddc046cfbd1452cec3430ae0777deef982 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 18 Jul 2012 18:55:26 -0700
+Subject: [PATCH 603/944] PM / Sleep: call early resume handlers when
+ suspend_noirq fails
+
+Commit cf579dfb82550e34de7ccf3ef090d8b834ccd3a9 (PM / Sleep: Introduce
+"late suspend" and "early resume" of devices) introduced a bug where
+suspend_late handlers would be called, but if dpm_suspend_noirq returned
+an error the early_resume handlers would never be called.  All devices
+would end up on the dpm_late_early_list, and would never be resumed
+again.
+
+Fix it by calling dpm_resume_early when dpm_suspend_noirq returns
+an error.
+
+Change-Id: I9b984e40c523240bc08f5496183dec763cfef963
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/base/power/main.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/power/main.c b/drivers/base/power/main.c
+index 249cb66..fb017f0 100644
+--- a/drivers/base/power/main.c
++++ b/drivers/base/power/main.c
+@@ -1020,8 +1020,16 @@ static int dpm_suspend_late(pm_message_t state)
+ int dpm_suspend_end(pm_message_t state)
+ {
+ 	int error = dpm_suspend_late(state);
++	if (error)
++		return error;
+ 
+-	return error ? : dpm_suspend_noirq(state);
++	error = dpm_suspend_noirq(state);
++	if (error) {
++		dpm_resume_early(state);
++		return error;
++	}
++
++	return 0;
+ }
+ EXPORT_SYMBOL_GPL(dpm_suspend_end);
+ 
+-- 
+1.8.0
+

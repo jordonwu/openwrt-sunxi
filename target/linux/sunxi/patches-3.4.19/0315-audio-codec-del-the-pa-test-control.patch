@@ -1,0 +1,37 @@
+From 61cd25cbf560b72b0eda09a47c2d6a875ba99fa5 Mon Sep 17 00:00:00 2001
+From: huangxin <huangxin@LServer.(none)>
+Date: Wed, 16 Nov 2011 09:14:48 +0800
+Subject: [PATCH 315/944] audio codec:del the pa test control
+
+---
+ sound/soc/sun4i/sun4i-codec.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/sun4i/sun4i-codec.c b/sound/soc/sun4i/sun4i-codec.c
+index 7d46abb..b41d705 100644
+--- a/sound/soc/sun4i/sun4i-codec.c
++++ b/sound/soc/sun4i/sun4i-codec.c
+@@ -413,9 +413,7 @@ static int codec_capture_open(void)
+ 
+ static int codec_play_start(void)
+ {
+-	/*if the address of bit 27 is 0,means that the tv is close, so open pa*/
+-	if(0 == test_bit(27, (void *)(volatile int *)0xf1c22c10))
+-		gpio_write_one_pin_value(gpio_pa_shutdown, 1, "audio_pa_ctrl");
++	gpio_write_one_pin_value(gpio_pa_shutdown, 1, "audio_pa_ctrl");
+ 	//flush TX FIFO
+ 	codec_wr_control(SW_DAC_FIFOC ,0x1, DAC_FIFO_FLUSH, 0x1);
+ 	//enable dac drq
+@@ -1314,8 +1312,7 @@ static void codec_resume_events(struct work_struct *work)
+ //	codec_wr_control(SW_DAC_ACTL, 0x1, PA_MUTE, 0x1);
+     msleep(50);
+ 	printk("====pa turn on===\n");
+-	if(0 == test_bit(27, (void *)(volatile int *)0xf1c22c10))
+-		gpio_write_one_pin_value(gpio_pa_shutdown, 1, "audio_pa_ctrl");
++	gpio_write_one_pin_value(gpio_pa_shutdown, 1, "audio_pa_ctrl");
+ 	/*for clk test*/
+ 	//printk("[codec resume reg]\n");
+ 	//printk("codec_module CLK:0xf1c20140 is:%x\n", *(volatile int *)0xf1c20140);
+-- 
+1.8.0
+

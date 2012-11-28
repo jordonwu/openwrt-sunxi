@@ -1,0 +1,73 @@
+From 7ffba5a22183e2d2d4198b29ebffa0b340821a49 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 17 Oct 2012 13:13:27 +0200
+Subject: [PATCH 832/944] include:linux: chmod and remove paths from sunxi
+ disp files
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ include/linux/drv_display.h       | 2 --
+ include/linux/drv_display_sun3i.h | 2 --
+ include/linux/drv_display_sunxi.h | 2 --
+ include/linux/drv_hdmi.h          | 2 --
+ include/linux/major.h             | 2 --
+ 5 files changed, 10 deletions(-)
+
+diff --git a/include/linux/drv_display.h b/include/linux/drv_display.h
+index e2f9384..22a023c 100644
+--- a/include/linux/drv_display.h
++++ b/include/linux/drv_display.h
+@@ -1,6 +1,4 @@
+ /*
+- * include/linux/drv_display.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/include/linux/drv_display_sun3i.h b/include/linux/drv_display_sun3i.h
+index 98cd061..a8014d4 100644
+--- a/include/linux/drv_display_sun3i.h
++++ b/include/linux/drv_display_sun3i.h
+@@ -1,6 +1,4 @@
+ /*
+- * include/linux/drv_display_sun3i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/include/linux/drv_display_sunxi.h b/include/linux/drv_display_sunxi.h
+index e8d8795..e0fd090 100644
+--- a/include/linux/drv_display_sunxi.h
++++ b/include/linux/drv_display_sunxi.h
+@@ -1,6 +1,4 @@
+ /*
+- * include/linux/drv_display_sun4i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/include/linux/drv_hdmi.h b/include/linux/drv_hdmi.h
+index 42e80cb..ae0ae6d 100644
+--- a/include/linux/drv_hdmi.h
++++ b/include/linux/drv_hdmi.h
+@@ -1,6 +1,4 @@
+ /*
+- * include/linux/drv_hdmi.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/include/linux/major.h b/include/linux/major.h
+index d63eb03..a06e813 100644
+--- a/include/linux/major.h
++++ b/include/linux/major.h
+@@ -1,6 +1,4 @@
+ /*
+- * include/linux/major.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+-- 
+1.8.0
+

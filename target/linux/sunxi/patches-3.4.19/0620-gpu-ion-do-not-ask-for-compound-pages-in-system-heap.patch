@@ -1,0 +1,28 @@
+From 8b41f4f3a84b18211c10546a14c9cfda8e4ca33e Mon Sep 17 00:00:00 2001
+From: Dima Zavin <dima@android.com>
+Date: Fri, 27 Jul 2012 15:29:55 -0700
+Subject: [PATCH 620/944] gpu: ion: do not ask for compound pages in system
+ heap
+
+Change-Id: If84b246ec984ee2ae7b0174c714c8ce7726a6ab1
+Signed-off-by: Dima Zavin <dima@android.com>
+---
+ drivers/gpu/ion/ion_system_heap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/ion/ion_system_heap.c b/drivers/gpu/ion/ion_system_heap.c
+index d0ec610..726448d 100644
+--- a/drivers/gpu/ion/ion_system_heap.c
++++ b/drivers/gpu/ion/ion_system_heap.c
+@@ -41,7 +41,7 @@ static struct page_info *alloc_largest_available(unsigned long size)
+ 	for (i = 0; i < ARRAY_SIZE(orders); i++) {
+ 		if (size < (1 << orders[i]) * PAGE_SIZE)
+ 			continue;
+-		page = alloc_pages(GFP_HIGHUSER | __GFP_ZERO | __GFP_COMP |
++		page = alloc_pages(GFP_HIGHUSER | __GFP_ZERO |
+ 				   __GFP_NOWARN | __GFP_NORETRY, orders[i]);
+ 		if (!page)
+ 			continue;
+-- 
+1.8.0
+

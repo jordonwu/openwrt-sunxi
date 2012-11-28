@@ -1,0 +1,56 @@
+From c1a277ea12c793e5b5395fc70e256d8329cd6019 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Tue, 10 Jul 2012 18:25:40 -0700
+Subject: [PATCH 527/944] power: smb347: Make POWER_SUPPLY_PROP_USB_HC
+ readable
+
+Avoid runtime errors.
+
+Change-Id: Ib48f179d97c3c5be33a8050423d6c6f549536eb4
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index f9b6854..56d2907 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -138,6 +138,7 @@ struct smb347_charger {
+ 	bool			usb_online;
+ 	bool			charging_enabled;
+ 	unsigned int		mains_current_limit;
++	bool			usb_hc_mode;
+ 	struct dentry		*dentry;
+ 	const struct smb347_charger_platform_data *pdata;
+ };
+@@ -1013,9 +1014,17 @@ static int smb347_usb_get_property(struct power_supply *psy,
+ 	struct smb347_charger *smb =
+ 		container_of(psy, struct smb347_charger, usb);
+ 
+-	if (prop == POWER_SUPPLY_PROP_ONLINE) {
++	switch (prop) {
++	case POWER_SUPPLY_PROP_ONLINE:
+ 		val->intval = smb->usb_online;
+ 		return 0;
++
++	case POWER_SUPPLY_PROP_USB_HC:
++		val->intval = smb->usb_hc_mode;
++		return 0;
++
++	default:
++		break;
+ 	}
+ 	return -EINVAL;
+ }
+@@ -1034,6 +1043,7 @@ static int smb347_usb_set_property(struct power_supply *psy,
+ 		ret = smb347_write(smb, CMD_B, val->intval ?
+ 				   CMD_B_HC_MODE : CMD_B_USB59_MODE);
+ 		smb347_set_writable(smb, false);
++		smb->usb_hc_mode = val->intval;
+ 		break;
+ 
+ 	default:
+-- 
+1.8.0
+

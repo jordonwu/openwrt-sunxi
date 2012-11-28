@@ -1,0 +1,26 @@
+From d4dafecf42fb23f92a6faaa009261351977ab3f1 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 7 Aug 2012 01:04:06 +0200
+Subject: [PATCH 695/944] sun4i: set default memory size to 512MB
+
+so we don't end with 16MB when using broken bootloaders
+---
+ arch/arm/mach-sun4i/include/mach/memory.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-sun4i/include/mach/memory.h b/arch/arm/mach-sun4i/include/mach/memory.h
+index f57eb9f..5be06c8 100644
+--- a/arch/arm/mach-sun4i/include/mach/memory.h
++++ b/arch/arm/mach-sun4i/include/mach/memory.h
+@@ -27,5 +27,7 @@
+ /* physical offset of RAM */
+ #define PLAT_PHYS_OFFSET		UL(0x40000000)
+ 
+-#endif
++/* default ATAG_MEM size */
++#define MEM_SIZE	(512*1024*1024)
+ 
++#endif
+-- 
+1.8.0
+

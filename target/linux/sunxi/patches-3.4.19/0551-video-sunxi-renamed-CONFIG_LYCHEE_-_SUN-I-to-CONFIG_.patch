@@ -1,0 +1,297 @@
+From bc90f9870003482c214674d3b7c2fe9494d8fe03 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 14 Jun 2012 15:38:05 +0200
+Subject: [PATCH 551/944] video: sunxi: renamed CONFIG_LYCHEE_*_SUN?I to
+ CONFIG_SUN?I_*
+
+---
+ arch/arm/configs/a12_defconfig         |  6 +++---
+ arch/arm/configs/a13_defconfig         |  6 +++---
+ arch/arm/configs/sun3i_defconfig       |  4 ++--
+ arch/arm/configs/sun4i_crane_defconfig |  6 +++---
+ arch/arm/configs/sun4i_defconfig       |  6 +++---
+ arch/arm/configs/sun5i_defconfig       |  6 +++---
+ drivers/video/Kconfig                  | 16 ++++++++--------
+ drivers/video/Makefile                 | 16 ++++++++--------
+ drivers/video/sun3i/disp/Makefile      |  2 +-
+ drivers/video/sun3i/hdmi/Makefile      |  2 +-
+ drivers/video/sun4i/disp/Makefile      |  2 +-
+ drivers/video/sun4i/hdmi/Makefile      |  2 +-
+ drivers/video/sun4i/lcd/Makefile       |  2 +-
+ drivers/video/sun5i/disp/Makefile      |  2 +-
+ drivers/video/sun5i/hdmi/Makefile      |  2 +-
+ drivers/video/sun5i/lcd/Makefile       |  2 +-
+ 16 files changed, 41 insertions(+), 41 deletions(-)
+
+diff --git a/arch/arm/configs/a12_defconfig b/arch/arm/configs/a12_defconfig
+index 39a095e..7bd8642 100644
+--- a/arch/arm/configs/a12_defconfig
++++ b/arch/arm/configs/a12_defconfig
+@@ -1040,9 +1040,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_LYCHEE_FB_SUN5I=y
+-CONFIG_LYCHEE_LCD_SUN5I=y
+-CONFIG_LYCHEE_HDMI_SUN5I=y
++CONFIG_SUN5I_FB=y
++CONFIG_SUN5I_LCD=y
++CONFIG_SUN5I_HDMI=y
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/arch/arm/configs/a13_defconfig b/arch/arm/configs/a13_defconfig
+index 59188ae..ceb4e95 100644
+--- a/arch/arm/configs/a13_defconfig
++++ b/arch/arm/configs/a13_defconfig
+@@ -1081,9 +1081,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_LYCHEE_FB_SUN5I=y
+-CONFIG_LYCHEE_LCD_SUN5I=y
+-# CONFIG_LYCHEE_HDMI_SUN5I is not set
++CONFIG_SUN5I_FB=y
++CONFIG_SUN5I_LCD=y
++# CONFIG_SUN5I_HDMI is not set
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/arch/arm/configs/sun3i_defconfig b/arch/arm/configs/sun3i_defconfig
+index d165c9c..10b9a90 100644
+--- a/arch/arm/configs/sun3i_defconfig
++++ b/arch/arm/configs/sun3i_defconfig
+@@ -934,8 +934,8 @@ CONFIG_FB_CFB_IMAGEBLIT=y
+ #
+ # Frame buffer hardware drivers
+ #
+-# CONFIG_LYCHEE_FB_SUN3I is not set
+-# CONFIG_LYCHEE_HDMI_SUN3I is not set
++# CONFIG_SUN3I_FB is not set
++# CONFIG_SUN3I_HDMI is not set
+ CONFIG_FB_ARMCLCD=y
+ # CONFIG_FB_S1D13XXX is not set
+ # CONFIG_FB_VIRTUAL is not set
+diff --git a/arch/arm/configs/sun4i_crane_defconfig b/arch/arm/configs/sun4i_crane_defconfig
+index 29273d7..0268a6c 100644
+--- a/arch/arm/configs/sun4i_crane_defconfig
++++ b/arch/arm/configs/sun4i_crane_defconfig
+@@ -1517,9 +1517,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_LYCHEE_FB_SUN4I=y
+-CONFIG_LYCHEE_LCD_SUN4I=y
+-CONFIG_LYCHEE_HDMI_SUN4I=y
++CONFIG_SUN4I_FB=y
++CONFIG_SUN4I_LCD=y
++CONFIG_SUN4I_HDMI=y
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 7b11d54..4068514 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -1173,9 +1173,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_LYCHEE_FB_SUN4I=m
+-CONFIG_LYCHEE_LCD_SUN4I=m
+-CONFIG_LYCHEE_HDMI_SUN4I=m
++CONFIG_SUN4I_FB=m
++CONFIG_SUN4I_LCD=m
++CONFIG_SUN4I_HDMI=m
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/arch/arm/configs/sun5i_defconfig b/arch/arm/configs/sun5i_defconfig
+index 17c3028..c7ae9cc 100644
+--- a/arch/arm/configs/sun5i_defconfig
++++ b/arch/arm/configs/sun5i_defconfig
+@@ -1021,9 +1021,9 @@ CONFIG_FB=y
+ #
+ # Frame buffer hardware drivers
+ #
+-CONFIG_LYCHEE_FB_SUN5I=y
+-CONFIG_LYCHEE_LCD_SUN5I=y
+-CONFIG_LYCHEE_HDMI_SUN5I=y
++CONFIG_SUN5I_FB=y
++CONFIG_SUN5I_LCD=y
++CONFIG_SUN5I_HDMI=y
+ # CONFIG_FB_ARMCLCD is not set
+ # CONFIG_FB_UVESA is not set
+ # CONFIG_FB_S1D13XXX is not set
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index 5cba57c..38915d0 100644
+--- a/drivers/video/Kconfig
++++ b/drivers/video/Kconfig
+@@ -270,49 +270,49 @@ config FB_GRVGA
+ 	---help---
+ 	This enables support for the SVGACTRL framebuffer in the GRLIB IP library from Aeroflex Gaisler.
+ 
+-config LYCHEE_FB_SUN3I
++config SUN3I_FB
+ 	tristate "FB Controller Driver Support(sun3i)"
+ 	depends on FB && ARCH_SUN3I
+ 	---help---
+ 	default m
+ 
+-config LYCHEE_HDMI_SUN3I
++config SUN3I_HDMI
+ 	tristate "HDMI Driver Support(sun3i)"
+ 	depends on ARCH_SUN3I
+ 	---help---
+ 	default m
+ 
+-config LYCHEE_FB_SUN4I
++config SUN4I_FB
+         tristate "DISP Driver Support(sun4i)"
+         depends on FB && ARCH_SUN4I
+         ---help---
+         default m
+ 
+-config LYCHEE_LCD_SUN4I
++config SUN4I_LCD
+         tristate "LCD Driver Support(sun4i)"
+         depends on ARCH_SUN4I
+         ---help---
+         default m
+ 
+-config LYCHEE_HDMI_SUN4I
++config SUN4I_HDMI
+         tristate "HDMI Driver Support(sun4i)"
+         depends on ARCH_SUN4I
+         ---help---
+         default m
+ 
+-config LYCHEE_FB_SUN5I
++config SUN5I_FB
+         tristate "DISP Driver Support(sun5i)"
+         depends on FB && ARCH_SUN5I
+         ---help---
+         default m
+ 
+-config LYCHEE_LCD_SUN5I
++config SUN5I_LCD
+         tristate "LCD Driver Support(sun5i)"
+         depends on ARCH_SUN5I
+         ---help---
+         default m
+ 
+-config LYCHEE_HDMI_SUN5I
++config SUN5I_HDMI
+         tristate "HDMI Driver Support(sun5i)"
+         depends on ARCH_SUN5I
+         ---help---
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index 89461877..436fe7e 100644
+--- a/drivers/video/Makefile
++++ b/drivers/video/Makefile
+@@ -30,14 +30,14 @@ obj-$(CONFIG_FB_DDC)           += fb_ddc.o
+ obj-$(CONFIG_FB_DEFERRED_IO)   += fb_defio.o
+ obj-$(CONFIG_FB_WMT_GE_ROPS)   += wmt_ge_rops.o
+ 
+-obj-$(CONFIG_LYCHEE_FB_SUN3I)     += sun3i/disp/
+-obj-$(CONFIG_LYCHEE_HDMI_SUN3I)   += sun3i/hdmi/
+-obj-$(CONFIG_LYCHEE_FB_SUN4I)     += sun4i/disp/
+-obj-$(CONFIG_LYCHEE_LCD_SUN4I)    += sun4i/lcd/
+-obj-$(CONFIG_LYCHEE_HDMI_SUN4I)   += sun4i/hdmi/
+-obj-$(CONFIG_LYCHEE_FB_SUN5I)     += sun5i/disp/
+-obj-$(CONFIG_LYCHEE_LCD_SUN5I)    += sun5i/lcd/
+-obj-$(CONFIG_LYCHEE_HDMI_SUN5I)   += sun5i/hdmi/
++obj-$(CONFIG_SUN3I_FB)     += sun3i/disp/
++obj-$(CONFIG_SUN3I_HDMI)   += sun3i/hdmi/
++obj-$(CONFIG_SUN4I_FB)     += sun4i/disp/
++obj-$(CONFIG_SUN4I_LCD)    += sun4i/lcd/
++obj-$(CONFIG_SUN4I_HDMI)   += sun4i/hdmi/
++obj-$(CONFIG_SUN5I_FB)     += sun5i/disp/
++obj-$(CONFIG_SUN5I_LCD)    += sun5i/lcd/
++obj-$(CONFIG_SUN5I_HDMI)   += sun5i/hdmi/
+ 
+ # Hardware specific drivers go first
+ obj-$(CONFIG_FB_AMIGA)            += amifb.o c2p_planar.o
+diff --git a/drivers/video/sun3i/disp/Makefile b/drivers/video/sun3i/disp/Makefile
+index 98e02fd..82174ff 100644
+--- a/drivers/video/sun3i/disp/Makefile
++++ b/drivers/video/sun3i/disp/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_FB_SUN3I) += disp.o
++obj-$(CONFIG_SUN3I_FB) += disp.o
+ 
+ disp-objs :=  drv_disp.o dev_disp.o dev_fb.o\
+ 							OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Dma.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+diff --git a/drivers/video/sun3i/hdmi/Makefile b/drivers/video/sun3i/hdmi/Makefile
+index 0f390db..775c98e 100644
+--- a/drivers/video/sun3i/hdmi/Makefile
++++ b/drivers/video/sun3i/hdmi/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_HDMI_SUN3I) += hdmi.o
++obj-$(CONFIG_SUN3I_HDMI) += hdmi.o
+ 
+ hdmi-objs := anx7150/ANX7150_Sys7150.o anx7150/hdmi_hal.o anx7150/hdmi_i2cintf.o\
+             dev_hdmi.o drv_hdmi.o hdmi_hdmi.o
+diff --git a/drivers/video/sun4i/disp/Makefile b/drivers/video/sun4i/disp/Makefile
+index 04b490f..0ee2437 100644
+--- a/drivers/video/sun4i/disp/Makefile
++++ b/drivers/video/sun4i/disp/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_FB_SUN4I) += disp.o
++obj-$(CONFIG_SUN4I_FB) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o\
+ 							OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Dma.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+diff --git a/drivers/video/sun4i/hdmi/Makefile b/drivers/video/sun4i/hdmi/Makefile
+index 9287a7d..9d81b76 100644
+--- a/drivers/video/sun4i/hdmi/Makefile
++++ b/drivers/video/sun4i/hdmi/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_HDMI_SUN4I) += hdmi.o
++obj-$(CONFIG_SUN4I_HDMI) += hdmi.o
+ 
+ #hdmi-objs := anx7150/hdmi_core.o anx7150/hdmi_hal.o anx7150/hdmi_i2c.o\
+ #            dev_hdmi.o drv_hdmi.o
+diff --git a/drivers/video/sun4i/lcd/Makefile b/drivers/video/sun4i/lcd/Makefile
+index 986869a..a459555 100644
+--- a/drivers/video/sun4i/lcd/Makefile
++++ b/drivers/video/sun4i/lcd/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_LCD_SUN4I) += lcd.o
++obj-$(CONFIG_SUN4I_LCD) += lcd.o
+ 
+ lcd-objs := dev_lcd.o lcd0_panel_cfg.o lcd1_panel_cfg.o
+ 
+diff --git a/drivers/video/sun5i/disp/Makefile b/drivers/video/sun5i/disp/Makefile
+index 73288ed..ec89f18 100644
+--- a/drivers/video/sun5i/disp/Makefile
++++ b/drivers/video/sun5i/disp/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_FB_SUN5I) += disp.o
++obj-$(CONFIG_SUN5I_FB) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o\
+ 							OSAL/OSAL_Cache.o OSAL/OSAL_Clock.o OSAL/OSAL_Dma.o OSAL/OSAL_Int.o OSAL/OSAL_IrqLock.o\
+diff --git a/drivers/video/sun5i/hdmi/Makefile b/drivers/video/sun5i/hdmi/Makefile
+index c580927..f982a42 100644
+--- a/drivers/video/sun5i/hdmi/Makefile
++++ b/drivers/video/sun5i/hdmi/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_HDMI_SUN5I) += hdmi.o
++obj-$(CONFIG_SUN5I_HDMI) += hdmi.o
+ 
+ #hdmi-objs := anx7150/hdmi_core.o anx7150/hdmi_hal.o anx7150/hdmi_i2c.o\
+ #            dev_hdmi.o drv_hdmi.o
+diff --git a/drivers/video/sun5i/lcd/Makefile b/drivers/video/sun5i/lcd/Makefile
+index 9030224..1828740 100644
+--- a/drivers/video/sun5i/lcd/Makefile
++++ b/drivers/video/sun5i/lcd/Makefile
+@@ -1,4 +1,4 @@
+-obj-$(CONFIG_LYCHEE_LCD_SUN5I) += lcd.o
++obj-$(CONFIG_SUN5I_LCD) += lcd.o
+ 
+ lcd-objs := dev_lcd.o lcd0_panel_cfg.o lcd1_panel_cfg.o
+ 
+-- 
+1.8.0
+

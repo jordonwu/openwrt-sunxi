@@ -1,0 +1,53 @@
+From 49795fbf33dd948adcf5e82faecc560fceaf14bc Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Wed, 16 May 2012 13:14:43 -0700
+Subject: [PATCH 268/944] sw_sync: export sw_sync API
+
+Needed to let modules link against sw_sync.
+
+Change-Id: I71d3e52677ef21b6e1ecdb84f831491be1f4fbe6
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sw_sync.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/base/sw_sync.c b/drivers/base/sw_sync.c
+index 21ddf4f..935769c 100644
+--- a/drivers/base/sw_sync.c
++++ b/drivers/base/sw_sync.c
+@@ -15,6 +15,7 @@
+  */
+ 
+ #include <linux/kernel.h>
++#include <linux/export.h>
+ #include <linux/file.h>
+ #include <linux/fs.h>
+ #include <linux/miscdevice.h>
+@@ -42,6 +43,7 @@ struct sync_pt *sw_sync_pt_create(struct sw_sync_timeline *obj, u32 value)
+ 
+ 	return (struct sync_pt *)pt;
+ }
++EXPORT_SYMBOL(sw_sync_pt_create);
+ 
+ static struct sync_pt *sw_sync_pt_dup(struct sync_pt *sync_pt)
+ {
+@@ -119,6 +121,7 @@ struct sw_sync_timeline *sw_sync_timeline_create(const char *name)
+ 
+ 	return obj;
+ }
++EXPORT_SYMBOL(sw_sync_timeline_create);
+ 
+ void sw_sync_timeline_inc(struct sw_sync_timeline *obj, u32 inc)
+ {
+@@ -126,7 +129,7 @@ void sw_sync_timeline_inc(struct sw_sync_timeline *obj, u32 inc)
+ 
+ 	sync_timeline_signal(&obj->obj);
+ }
+-
++EXPORT_SYMBOL(sw_sync_timeline_inc);
+ 
+ #ifdef CONFIG_SW_SYNC_USER
+ /* *WARNING*
+-- 
+1.8.0
+

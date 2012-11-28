@@ -1,0 +1,532 @@
+From e5e483d13369ab62d95f1738edce3cd64c7ca2ff Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Thu, 11 Aug 2011 17:15:24 -0700
+Subject: [PATCH 019/944] ARM: allow the kernel text section to be made
+ read-only
+
+This patch implements CONFIG_DEBUG_RODATA, allowing
+the kernel text section to be marked read-only in
+order to catch bugs that write over the kernel.  This
+requires mapping the kernel code, plus up to 4MB, using
+pages instead of sections, which can increase TLB
+pressure.
+
+The kernel is normally mapped using 1MB section entries
+in the first level page table, and the first level page
+table is copied into every mm.  This prevents marking
+the kernel text read-only, because the 1MB section
+entries are too large granularity to separate the init
+section, which is reused as read-write memory after
+init, and the kernel text section.  Also, the top level
+page table for every process would need to be updated,
+which is not possible to do safely and efficiently on SMP.
+
+To solve both problems, allow alloc_init_pte to overwrite
+an existing section entry with a fully-populated second
+level page table.  When CONFIG_DEBUG_RODATA is set, all
+the section entries that overlap the kernel text section
+will be replaced with page mappings.  The kernel always
+uses a pair of 2MB-aligned 1MB sections, so up to 2MB
+of memory before and after the kernel may end up page
+mapped.
+
+When the top level page tables are copied into each
+process the second level page tables are not copied,
+leaving a single second level page table that will
+affect all processes on all cpus.  To mark a page
+read-only, the second level page table is located using
+the pointer in the first level page table for the
+current process, and the supervisor RO bit is flipped
+atomically.  Once all pages have been updated, all TLBs
+are flushed to ensure the changes are visible on all
+cpus.
+
+If CONFIG_DEBUG_RODATA is not set, the kernel will be
+mapped using the normal 1MB section entries.
+
+Change-Id: I94fae337f882c2e123abaf8e1082c29cd5d483c6
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ arch/arm/Kconfig.debug            |  21 +++++
+ arch/arm/include/asm/cacheflush.h |   1 +
+ arch/arm/include/asm/rodata.h     |  32 ++++++++
+ arch/arm/kernel/ftrace.c          |  15 ++++
+ arch/arm/mm/Makefile              |   1 +
+ arch/arm/mm/mmu.c                 |  72 ++++++++++++-----
+ arch/arm/mm/rodata.c              | 159 ++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 283 insertions(+), 18 deletions(-)
+ create mode 100644 arch/arm/include/asm/rodata.h
+ create mode 100644 arch/arm/mm/rodata.c
+
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 85348a0..037bd5a 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -63,6 +63,27 @@ config DEBUG_USER
+ 	      8 - SIGSEGV faults
+ 	     16 - SIGBUS faults
+ 
++config DEBUG_RODATA
++	bool "Write protect kernel text section"
++	default n
++	depends on DEBUG_KERNEL && MMU
++	---help---
++	  Mark the kernel text section as write-protected in the pagetables,
++	  in order to catch accidental (and incorrect) writes to such const
++	  data. This will cause the size of the kernel, plus up to 4MB, to
++	  be mapped as pages instead of sections, which will increase TLB
++	  pressure.
++	  If in doubt, say "N".
++
++config DEBUG_RODATA_TEST
++	bool "Testcase for the DEBUG_RODATA feature"
++	depends on DEBUG_RODATA
++	default n
++	---help---
++	  This option enables a testcase for the DEBUG_RODATA
++	  feature.
++	  If in doubt, say "N"
++
+ # These options are only for real kernel hackers who want to get their hands dirty.
+ config DEBUG_LL
+ 	bool "Kernel low-level debugging functions (read help!)"
+diff --git a/arch/arm/include/asm/cacheflush.h b/arch/arm/include/asm/cacheflush.h
+index 1252a26..5684cbc 100644
+--- a/arch/arm/include/asm/cacheflush.h
++++ b/arch/arm/include/asm/cacheflush.h
+@@ -16,6 +16,7 @@
+ #include <asm/shmparam.h>
+ #include <asm/cachetype.h>
+ #include <asm/outercache.h>
++#include <asm/rodata.h>
+ 
+ #define CACHE_COLOUR(vaddr)	((vaddr & (SHMLBA - 1)) >> PAGE_SHIFT)
+ 
+diff --git a/arch/arm/include/asm/rodata.h b/arch/arm/include/asm/rodata.h
+new file mode 100644
+index 0000000..8c8add8
+--- /dev/null
++++ b/arch/arm/include/asm/rodata.h
+@@ -0,0 +1,32 @@
++/*
++ *  arch/arm/include/asm/rodata.h
++ *
++ *  Copyright (C) 2011 Google, Inc.
++ *
++ *  Author: Colin Cross <ccross@android.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#ifndef _ASMARM_RODATA_H
++#define _ASMARM_RODATA_H
++
++#ifndef __ASSEMBLY__
++
++#ifdef CONFIG_DEBUG_RODATA
++
++int set_memory_rw(unsigned long virt, int numpages);
++int set_memory_ro(unsigned long virt, int numpages);
++
++void mark_rodata_ro(void);
++void set_kernel_text_rw(void);
++void set_kernel_text_ro(void);
++#else
++static inline void set_kernel_text_rw(void) { }
++static inline void set_kernel_text_ro(void) { }
++#endif
++
++#endif
++
++#endif
+diff --git a/arch/arm/kernel/ftrace.c b/arch/arm/kernel/ftrace.c
+index df0bf0c..bf17145 100644
+--- a/arch/arm/kernel/ftrace.c
++++ b/arch/arm/kernel/ftrace.c
+@@ -13,6 +13,7 @@
+  */
+ 
+ #include <linux/ftrace.h>
++#include <linux/module.h>
+ #include <linux/uaccess.h>
+ 
+ #include <asm/cacheflush.h>
+@@ -63,6 +64,20 @@ static unsigned long adjust_address(struct dyn_ftrace *rec, unsigned long addr)
+ }
+ #endif
+ 
++int ftrace_arch_code_modify_prepare(void)
++{
++	set_kernel_text_rw();
++	set_all_modules_text_rw();
++	return 0;
++}
++
++int ftrace_arch_code_modify_post_process(void)
++{
++	set_all_modules_text_ro();
++	set_kernel_text_ro();
++	return 0;
++}
++
+ static unsigned long ftrace_call_replace(unsigned long pc, unsigned long addr)
+ {
+ 	return arm_gen_branch_link(pc, addr);
+diff --git a/arch/arm/mm/Makefile b/arch/arm/mm/Makefile
+index bca7e61..37da2cc 100644
+--- a/arch/arm/mm/Makefile
++++ b/arch/arm/mm/Makefile
+@@ -7,6 +7,7 @@ obj-y				:= dma-mapping.o extable.o fault.o init.o \
+ 
+ obj-$(CONFIG_MMU)		+= fault-armv.o flush.o idmap.o ioremap.o \
+ 				   mmap.o pgd.o mmu.o vmregion.o
++obj-$(CONFIG_DEBUG_RODATA)	+= rodata.o
+ 
+ ifneq ($(CONFIG_MMU),y)
+ obj-y				+= nommu.o
+diff --git a/arch/arm/mm/mmu.c b/arch/arm/mm/mmu.c
+index b86f893..9def96d 100644
+--- a/arch/arm/mm/mmu.c
++++ b/arch/arm/mm/mmu.c
+@@ -562,11 +562,25 @@ static void __init *early_alloc(unsigned long sz)
+ 	return early_alloc_aligned(sz, sz);
+ }
+ 
+-static pte_t * __init early_pte_alloc(pmd_t *pmd, unsigned long addr, unsigned long prot)
++static pte_t * __init early_pte_alloc(pmd_t *pmd)
++{
++	if (pmd_none(*pmd) || pmd_bad(*pmd))
++		return early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
++	return pmd_page_vaddr(*pmd);
++}
++
++static void __init early_pte_install(pmd_t *pmd, pte_t *pte, unsigned long prot)
++{
++	__pmd_populate(pmd, __pa(pte), prot);
++	BUG_ON(pmd_bad(*pmd));
++}
++
++static pte_t * __init early_pte_alloc_and_install(pmd_t *pmd,
++	unsigned long addr, unsigned long prot)
+ {
+ 	if (pmd_none(*pmd)) {
+-		pte_t *pte = early_alloc(PTE_HWTABLE_OFF + PTE_HWTABLE_SIZE);
+-		__pmd_populate(pmd, __pa(pte), prot);
++		pte_t *pte = early_pte_alloc(pmd);
++		early_pte_install(pmd, pte, prot);
+ 	}
+ 	BUG_ON(pmd_bad(*pmd));
+ 	return pte_offset_kernel(pmd, addr);
+@@ -576,16 +590,23 @@ static void __init alloc_init_pte(pmd_t *pmd, unsigned long addr,
+ 				  unsigned long end, unsigned long pfn,
+ 				  const struct mem_type *type)
+ {
+-	pte_t *pte = early_pte_alloc(pmd, addr, type->prot_l1);
++	pte_t *start_pte = early_pte_alloc(pmd);
++	pte_t *pte = start_pte + pte_index(addr);
++
++	/* If replacing a section mapping, the whole section must be replaced */
++	BUG_ON(pmd_bad(*pmd) && ((addr | end) & ~PMD_MASK));
++
+ 	do {
+ 		set_pte_ext(pte, pfn_pte(pfn, __pgprot(type->prot_pte)), 0);
+ 		pfn++;
+ 	} while (pte++, addr += PAGE_SIZE, addr != end);
++	early_pte_install(pmd, start_pte, type->prot_l1);
+ }
+ 
+ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
+ 				      unsigned long end, phys_addr_t phys,
+-				      const struct mem_type *type)
++				      const struct mem_type *type,
++				      bool force_pages)
+ {
+ 	pmd_t *pmd = pmd_offset(pud, addr);
+ 
+@@ -595,7 +616,7 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
+ 	 * L1 entries, whereas PGDs refer to a group of L1 entries making
+ 	 * up one logical pointer to an L2 table.
+ 	 */
+-	if (((addr | end | phys) & ~SECTION_MASK) == 0) {
++	if (((addr | end | phys) & ~SECTION_MASK) == 0 && !force_pages) {
+ 		pmd_t *p = pmd;
+ 
+ #ifndef CONFIG_ARM_LPAE
+@@ -619,14 +640,14 @@ static void __init alloc_init_section(pud_t *pud, unsigned long addr,
+ }
+ 
+ static void alloc_init_pud(pgd_t *pgd, unsigned long addr, unsigned long end,
+-	unsigned long phys, const struct mem_type *type)
++	unsigned long phys, const struct mem_type *type, bool force_pages)
+ {
+ 	pud_t *pud = pud_offset(pgd, addr);
+ 	unsigned long next;
+ 
+ 	do {
+ 		next = pud_addr_end(addr, end);
+-		alloc_init_section(pud, addr, next, phys, type);
++		alloc_init_section(pud, addr, next, phys, type, force_pages);
+ 		phys += next - addr;
+ 	} while (pud++, addr = next, addr != end);
+ }
+@@ -700,7 +721,7 @@ static void __init create_36bit_mapping(struct map_desc *md,
+  * offsets, and we take full advantage of sections and
+  * supersections.
+  */
+-static void __init create_mapping(struct map_desc *md)
++static void __init create_mapping(struct map_desc *md, bool force_pages)
+ {
+ 	unsigned long addr, length, end;
+ 	phys_addr_t phys;
+@@ -750,7 +771,7 @@ static void __init create_mapping(struct map_desc *md)
+ 	do {
+ 		unsigned long next = pgd_addr_end(addr, end);
+ 
+-		alloc_init_pud(pgd, addr, next, phys, type);
++		alloc_init_pud(pgd, addr, next, phys, type, force_pages);
+ 
+ 		phys += next - addr;
+ 		addr = next;
+@@ -771,7 +792,7 @@ void __init iotable_init(struct map_desc *io_desc, int nr)
+ 	vm = early_alloc_aligned(sizeof(*vm) * nr, __alignof__(*vm));
+ 
+ 	for (md = io_desc; nr; md++, nr--) {
+-		create_mapping(md);
++		create_mapping(md, false);
+ 		vm->addr = (void *)(md->virtual & PAGE_MASK);
+ 		vm->size = PAGE_ALIGN(md->length + (md->virtual & ~PAGE_MASK));
+ 		vm->phys_addr = __pfn_to_phys(md->pfn); 
+@@ -1050,12 +1071,12 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
+ 	map.virtual = 0xffff0000;
+ 	map.length = PAGE_SIZE;
+ 	map.type = MT_HIGH_VECTORS;
+-	create_mapping(&map);
++	create_mapping(&map, false);
+ 
+ 	if (!vectors_high()) {
+ 		map.virtual = 0;
+ 		map.type = MT_LOW_VECTORS;
+-		create_mapping(&map);
++		create_mapping(&map, false);
+ 	}
+ 
+ 	/*
+@@ -1077,20 +1098,23 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
+ static void __init kmap_init(void)
+ {
+ #ifdef CONFIG_HIGHMEM
+-	pkmap_page_table = early_pte_alloc(pmd_off_k(PKMAP_BASE),
++	pkmap_page_table = early_pte_alloc_and_install(pmd_off_k(PKMAP_BASE),
+ 		PKMAP_BASE, _PAGE_KERNEL_TABLE);
+ #endif
+ }
+ 
++
+ static void __init map_lowmem(void)
+ {
+ 	struct memblock_region *reg;
++	phys_addr_t start;
++	phys_addr_t end;
++	struct map_desc map;
+ 
+ 	/* Map all the lowmem memory banks. */
+ 	for_each_memblock(memory, reg) {
+-		phys_addr_t start = reg->base;
+-		phys_addr_t end = start + reg->size;
+-		struct map_desc map;
++		start = reg->base;
++		end = start + reg->size;
+ 
+ 		if (end > lowmem_limit)
+ 			end = lowmem_limit;
+@@ -1102,8 +1126,20 @@ static void __init map_lowmem(void)
+ 		map.length = end - start;
+ 		map.type = MT_MEMORY;
+ 
+-		create_mapping(&map);
++		create_mapping(&map, false);
+ 	}
++
++#ifdef CONFIG_DEBUG_RODATA
++	start = __pa(_stext) & PMD_MASK;
++	end = ALIGN(__pa(__end_rodata), PMD_SIZE);
++
++	map.pfn = __phys_to_pfn(start);
++	map.virtual = __phys_to_virt(start);
++	map.length = end - start;
++	map.type = MT_MEMORY;
++
++	create_mapping(&map, true);
++#endif
+ }
+ 
+ /*
+diff --git a/arch/arm/mm/rodata.c b/arch/arm/mm/rodata.c
+new file mode 100644
+index 0000000..9a8eb84
+--- /dev/null
++++ b/arch/arm/mm/rodata.c
+@@ -0,0 +1,159 @@
++/*
++ *  linux/arch/arm/mm/rodata.c
++ *
++ *  Copyright (C) 2011 Google, Inc.
++ *
++ *  Author: Colin Cross <ccross@android.com>
++ *
++ *  Based on x86 implementation in arch/x86/mm/init_32.c
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/kernel.h>
++#include <linux/mm.h>
++#include <linux/module.h>
++
++#include <asm/cache.h>
++#include <asm/pgtable.h>
++#include <asm/rodata.h>
++#include <asm/sections.h>
++#include <asm/tlbflush.h>
++
++#include "mm.h"
++
++static int kernel_set_to_readonly __read_mostly;
++
++#ifdef CONFIG_DEBUG_RODATA_TEST
++static const int rodata_test_data = 0xC3;
++
++static noinline void rodata_test(void)
++{
++	int result;
++
++	pr_info("%s: attempting to write to read-only section:\n", __func__);
++
++	if (*(volatile int *)&rodata_test_data != 0xC3) {
++		pr_err("read only data changed before test\n");
++		return;
++	}
++
++	/*
++	 * Attempt to to write to rodata_test_data, trapping the expected
++	 * data abort.  If the trap executed, result will be 1.  If it didn't,
++	 * result will be 0xFF.
++	 */
++	asm volatile(
++		"0:	str	%[zero], [%[rodata_test_data]]\n"
++		"	mov	%[result], #0xFF\n"
++		"	b	2f\n"
++		"1:	mov	%[result], #1\n"
++		"2:\n"
++
++		/* Exception fixup - if store at label 0 faults, jumps to 1 */
++		".pushsection __ex_table, \"a\"\n"
++		"	.long	0b, 1b\n"
++		".popsection\n"
++
++		: [result] "=r" (result)
++		: [rodata_test_data] "r" (&rodata_test_data), [zero] "r" (0)
++		: "memory"
++	);
++
++	if (result == 1)
++		pr_info("write to read-only section trapped, success\n");
++	else
++		pr_err("write to read-only section NOT trapped, test failed\n");
++
++	if (*(volatile int *)&rodata_test_data != 0xC3)
++		pr_err("read only data changed during write\n");
++}
++#else
++static inline void rodata_test(void) { }
++#endif
++
++static int set_page_attributes(unsigned long virt, int numpages,
++	pte_t (*f)(pte_t))
++{
++	pmd_t *pmd;
++	pte_t *pte;
++	unsigned long start = virt;
++	unsigned long end = virt + (numpages << PAGE_SHIFT);
++	unsigned long pmd_end;
++
++	while (virt < end) {
++		pmd = pmd_off_k(virt);
++		pmd_end = min(ALIGN(virt + 1, PMD_SIZE), end);
++
++		if ((pmd_val(*pmd) & PMD_TYPE_MASK) != PMD_TYPE_TABLE) {
++			pr_err("%s: pmd %p=%08lx for %08lx not page table\n",
++				__func__, pmd, pmd_val(*pmd), virt);
++			virt = pmd_end;
++			continue;
++		}
++
++		while (virt < pmd_end) {
++			pte = pte_offset_kernel(pmd, virt);
++			set_pte_ext(pte, f(*pte), 0);
++			virt += PAGE_SIZE;
++		}
++	}
++
++	flush_tlb_kernel_range(start, end);
++
++	return 0;
++}
++
++int set_memory_ro(unsigned long virt, int numpages)
++{
++	return set_page_attributes(virt, numpages, pte_wrprotect);
++}
++EXPORT_SYMBOL(set_memory_ro);
++
++int set_memory_rw(unsigned long virt, int numpages)
++{
++	return set_page_attributes(virt, numpages, pte_mkwrite);
++}
++EXPORT_SYMBOL(set_memory_rw);
++
++void set_kernel_text_rw(void)
++{
++	unsigned long start = PAGE_ALIGN((unsigned long)_text);
++	unsigned long size = PAGE_ALIGN((unsigned long)__end_rodata) - start;
++
++	if (!kernel_set_to_readonly)
++		return;
++
++	pr_debug("Set kernel text: %lx - %lx to read-write\n",
++		 start, start + size);
++
++	set_memory_rw(start, size >> PAGE_SHIFT);
++}
++
++void set_kernel_text_ro(void)
++{
++	unsigned long start = PAGE_ALIGN((unsigned long)_text);
++	unsigned long size = PAGE_ALIGN((unsigned long)__end_rodata) - start;
++
++	if (!kernel_set_to_readonly)
++		return;
++
++	pr_info_once("Write protecting the kernel text section %lx - %lx\n",
++		start, start + size);
++
++	pr_debug("Set kernel text: %lx - %lx to read only\n",
++		 start, start + size);
++
++	set_memory_ro(start, size >> PAGE_SHIFT);
++}
++
++void mark_rodata_ro(void)
++{
++	kernel_set_to_readonly = 1;
++
++	set_kernel_text_ro();
++
++	rodata_test();
++}
+-- 
+1.8.0
+

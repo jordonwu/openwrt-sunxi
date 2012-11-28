@@ -1,0 +1,32 @@
+From f5f2c66c7abc16c5eb009e29d3c6162f54e06e36 Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Thu, 17 Nov 2011 17:27:24 +0800
+Subject: [PATCH 347/944] build: clean git untracked files
+
+----------------------------------------------------------------
+modules/example/Module.symvers
+modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/Module.symvers
+modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/ump/Module.symvers
+output/
+-----------------------------------------------------------------
+---
+ .gitignore | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index 57af07c..1e1b3a1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -84,3 +84,9 @@ GTAGS
+ *.orig
+ *~
+ \#*#
++
++# build generated files
++modules/example/Module.symvers
++modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/mali/Module.symvers
++modules/mali/DX910-SW-99002-r2p1-05rel1/src/devicedrv/ump/Module.symvers
++output/
+-- 
+1.8.0
+

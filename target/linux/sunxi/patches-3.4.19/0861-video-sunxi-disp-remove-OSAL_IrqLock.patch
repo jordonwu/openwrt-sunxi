@@ -1,0 +1,457 @@
+From 2f50593e7bb9cfca3e18f1f851961e82201e45ee Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Fri, 19 Oct 2012 15:07:06 +0200
+Subject: [PATCH 861/944] video:sunxi:disp: remove OSAL_IrqLock.*
+
+Seems like they had some general locking issue, and just sprinkled
+this stuff around. If only they had some mutexing in from the start...
+But that's something to do later, once we see more structure.
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/Makefile            |  3 ++-
+ drivers/video/sunxi/disp/OSAL/OSAL.h         |  1 -
+ drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c | 39 ----------------------------
+ drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h | 29 ---------------------
+ drivers/video/sunxi/disp/disp_layer.c        | 22 ----------------
+ drivers/video/sunxi/disp/disp_scaler.c       |  3 ---
+ drivers/video/sunxi/disp/disp_sprite.c       | 26 -------------------
+ 7 files changed, 2 insertions(+), 121 deletions(-)
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
+ delete mode 100644 drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
+
+diff --git a/drivers/video/sunxi/disp/Makefile b/drivers/video/sunxi/disp/Makefile
+index 2d845b9..4e527cc 100644
+--- a/drivers/video/sunxi/disp/Makefile
++++ b/drivers/video/sunxi/disp/Makefile
+@@ -1,7 +1,8 @@
+ obj-$(CONFIG_FB_SUNXI) += disp.o
+ 
+ disp-objs :=  dev_disp.o dev_fb.o
+-disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_IrqLock.o OSAL/OSAL_Pin.o
++
++disp-objs += OSAL/OSAL_Clock.o OSAL/OSAL_Pin.o
+ 
+ disp-objs += de_be.o de_fe.o de_hwc.o\
+ 	de_layer.o de_lcdc.o de_tvec.o\
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index a841d94..25035c2 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -24,7 +24,6 @@
+ #include "../bsp_display.h"
+ 
+ #include  "OSAL_Clock.h"
+-#include  "OSAL_IrqLock.h"
+ #include  "OSAL_Pin.h"
+ 
+ #endif   //__OSAL_H__
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
+deleted file mode 100644
+index 348e3ae..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
++++ /dev/null
+@@ -1,39 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#include "OSAL.h"
+-void OSAL_IrqLock(__u32 *cpu_sr)
+-{
+-    //local_irq_save(*cpu_sr);
+-
+-	//unsigned long flags = *cpu_sr;
+-	//local_irq_save(flags);
+-}
+-
+-void OSAL_IrqUnLock(__u32 cpu_sr)
+-{
+-	//local_irq_restore(cpu_sr);
+-
+-    //unsigned long flags = cpu_sr;
+-    //local_irq_restore(flags);
+-}
+-
+-
+-
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
+deleted file mode 100644
+index 57cfea0..0000000
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
++++ /dev/null
+@@ -1,29 +0,0 @@
+-/*
+- * (C) Copyright 2007-2012
+- * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License as
+- * published by the Free Software Foundation; either version 2 of
+- * the License, or (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+- * MA 02111-1307 USA
+- */
+-
+-#ifndef  __OSAL_IRQLOCK_H__
+-#define  __OSAL_IRQLOCK_H__
+-
+-void OSAL_IrqLock(__u32 *cpu_sr);
+-void OSAL_IrqUnLock(__u32 cpu_sr);
+-#define OSAL_IRQ_RETURN IRQ_HANDLED
+-
+-#endif   //__OSAL_IRQLOCK_H__
+-
+diff --git a/drivers/video/sunxi/disp/disp_layer.c b/drivers/video/sunxi/disp/disp_layer.c
+index 651152f..5c8e545 100644
+--- a/drivers/video/sunxi/disp/disp_layer.c
++++ b/drivers/video/sunxi/disp/disp_layer.c
+@@ -374,25 +374,20 @@ __s32 BSP_disp_layer_request(__u32 sel, __disp_layer_work_mode_t mode)
+ {
+     __s32   hid;
+     __s32   prio = 0;
+-    __u32   cpu_sr;
+     __layer_man_t * layer_man;
+ 
+-    OSAL_IrqLock(&cpu_sr);
+     hid = Layer_Get_Idle_Hid(sel);
+     if(hid == DIS_NO_RES)
+     {
+         DE_WRN("all layer resource used!\n");
+-        OSAL_IrqUnLock(cpu_sr);
+         return DIS_NULL;
+     }
+     prio=Layer_Get_Idle_Prio(sel);
+ 	if(prio < 0)
+ 	{
+         DE_WRN("all layer prio used!\n");
+-        OSAL_IrqUnLock(cpu_sr);
+ 		return DIS_NULL;
+ 	}
+-	OSAL_IrqUnLock(cpu_sr);
+ 
+     BSP_disp_cfg_start(sel);
+ 
+@@ -403,14 +398,12 @@ __s32 BSP_disp_layer_request(__u32 sel, __disp_layer_work_mode_t mode)
+ 
+     BSP_disp_cfg_finish(sel);
+ 
+-    OSAL_IrqLock(&cpu_sr);
+     layer_man = &gdisp.screen[sel].layer_manage[hid];
+     memset(&layer_man->para,0,sizeof(__disp_layer_info_t));
+     layer_man->para.mode = DISP_LAYER_WORK_MODE_NORMAL;
+     layer_man->para.prio = prio;
+     layer_man->byuv_ch = 0;
+ 	layer_man->status = LAYER_USED;
+-	OSAL_IrqUnLock(cpu_sr);
+ 
+     return IDTOHAND(hid);
+ }
+@@ -418,7 +411,6 @@ __s32 BSP_disp_layer_request(__u32 sel, __disp_layer_work_mode_t mode)
+ 
+ __s32 BSP_disp_layer_release(__u32 sel, __u32 hid)
+ {
+-    __u32   cpu_sr;
+     __layer_man_t * layer_man;
+ 
+     hid = HANDTOID(hid);
+@@ -470,10 +462,8 @@ __s32 BSP_disp_layer_release(__u32 sel, __u32 hid)
+ 
+     BSP_disp_cfg_finish(sel);
+ 
+-    OSAL_IrqLock(&cpu_sr);
+     layer_man->para.prio = IDLE_PRIO;
+     layer_man->status &= LAYER_USED_MASK&LAYER_OPEN_MASK;
+-    OSAL_IrqUnLock(cpu_sr);
+ 
+     return DIS_SUCCESS;
+ }
+@@ -534,7 +524,6 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)//k
+ {
+     __s32           ret;
+     layer_src_t     layer_fb;
+-    __u32           cpu_sr;
+     __layer_man_t * layer_man;
+     __u32 size;
+ 
+@@ -585,9 +574,7 @@ __s32 BSP_disp_layer_set_framebuffer(__u32 sel, __u32 hid, __disp_fb_t * pfb)//k
+                 DE_BE_Layer_Set_Framebuffer(sel, hid,&layer_fb);
+             }
+ 
+-            OSAL_IrqLock(&cpu_sr);
+             memcpy(&layer_man->para.fb,pfb,sizeof(__disp_fb_t));
+-            OSAL_IrqUnLock(cpu_sr);
+ 
+             size = (pfb->size.width * layer_man->para.src_win.height * de_format_to_bpp(pfb->format) + 7)/8;
+ 
+@@ -642,7 +629,6 @@ __s32 BSP_disp_layer_get_framebuffer(__u32 sel, __u32 hid,__disp_fb_t * pfb)
+ 
+ __s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid,__disp_rect_t *regn)//if not scaler mode, ignore the src window width&height.
+ {
+-    __u32           cpu_sr;
+     __layer_man_t * layer_man;
+ 
+     hid = HANDTOID(hid);
+@@ -693,12 +679,10 @@ __s32 BSP_disp_layer_set_src_window(__u32 sel, __u32 hid,__disp_rect_t *regn)//i
+                 DE_BE_Layer_Set_Framebuffer(sel, hid,&layer_fb);
+             }
+ 
+-            OSAL_IrqLock(&cpu_sr);
+             layer_man->para.src_win.x = regn->x;
+             layer_man->para.src_win.y = regn->y;
+             layer_man->para.src_win.width = regn->width;
+             layer_man->para.src_win.height = regn->height;
+-            OSAL_IrqUnLock(cpu_sr);
+ 
+ 		    BSP_disp_cfg_finish(sel);
+ 
+@@ -752,7 +736,6 @@ __s32 BSP_disp_layer_get_src_window(__u32 sel, __u32 hid,__disp_rect_t *regn)
+ __s32 BSP_disp_layer_set_screen_window(__u32 sel, __u32 hid,__disp_rect_t * regn)
+ {
+     __disp_rectsz_t      outsize;
+-    __u32           cpu_sr;
+     __layer_man_t * layer_man;
+ 
+     hid = HANDTOID(hid);
+@@ -797,12 +780,10 @@ __s32 BSP_disp_layer_set_screen_window(__u32 sel, __u32 hid,__disp_rect_t * regn
+         	Yuv_Channel_adjusting(sel, layer_man->para.fb.mode, layer_man->para.fb.format, &layer_man->para.src_win.x , &regn->width);
+         }
+         DE_BE_Layer_Set_Screen_Win(sel, hid, regn);
+-	    OSAL_IrqLock(&cpu_sr);
+ 	    layer_man->para.scn_win.x = regn->x;
+ 	    layer_man->para.scn_win.y = regn->y;
+ 	    layer_man->para.scn_win.width = regn->width;
+ 	    layer_man->para.scn_win.height = regn->height;
+-	    OSAL_IrqUnLock(cpu_sr);
+ 
+ 	    if(layer_man->para.mode == DISP_LAYER_WORK_MODE_SCALER)
+ 	    {
+@@ -855,7 +836,6 @@ __s32 BSP_disp_layer_get_screen_window(__u32 sel, __u32 hid,__disp_rect_t *regn)
+ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+ {
+     __s32 ret;
+-    __u32 cpu_sr;
+     __layer_man_t * layer_man;
+     __u32 prio_tmp = 0;
+     __u32 size;
+@@ -1002,7 +982,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+         DE_BE_Layer_ColorKey_Enable(sel, hid, player->ck_enable);
+         DE_BE_Layer_Set_Screen_Win(sel,hid,&player->scn_win);
+ 
+-        OSAL_IrqLock(&cpu_sr);
+         prio_tmp = layer_man->para.prio;
+         memcpy(&(layer_man->para),player,sizeof(__disp_layer_info_t));
+         layer_man->para.prio = prio_tmp;//ignore the prio setting
+@@ -1012,7 +991,6 @@ __s32 BSP_disp_layer_set_para(__u32 sel, __u32 hid,__disp_layer_info_t *player)
+             layer_man->para.src_win.height = player->src_win.height;
+             layer_man->para.b_from_screen = player->b_from_screen;
+         }
+-        OSAL_IrqUnLock(cpu_sr);
+ 
+         size = (player->fb.size.width * player->src_win.height * de_format_to_bpp(player->fb.format) + 7)/8;
+ 
+diff --git a/drivers/video/sunxi/disp/disp_scaler.c b/drivers/video/sunxi/disp/disp_scaler.c
+index 534c679..ac4ec8f 100644
+--- a/drivers/video/sunxi/disp/disp_scaler.c
++++ b/drivers/video/sunxi/disp/disp_scaler.c
+@@ -451,14 +451,11 @@ __s32 Scaler_Set_Framebuffer(__u32 sel, __disp_fb_t *pfb)//keep the source windo
+ 	__scal_scan_mod_t out_scan;
+     __disp_scaler_t * scaler;
+     __u32 screen_index;
+-    __u32 cpu_sr;
+ 
+     scaler = &(gdisp.scaler[sel]);
+     screen_index = gdisp.scaler[sel].screen_index;
+ 
+-	OSAL_IrqLock(&cpu_sr);
+ 	memcpy(&scaler->in_fb, pfb, sizeof(__disp_fb_t));
+-	OSAL_IrqUnLock(cpu_sr);
+ 
+ 	in_type.fmt= Scaler_sw_para_to_reg(0,scaler->in_fb.format);
+ 	in_type.mod= Scaler_sw_para_to_reg(1,scaler->in_fb.mode);
+diff --git a/drivers/video/sunxi/disp/disp_sprite.c b/drivers/video/sunxi/disp/disp_sprite.c
+index db6a27b..7898f6c 100644
+--- a/drivers/video/sunxi/disp/disp_sprite.c
++++ b/drivers/video/sunxi/disp/disp_sprite.c
+@@ -363,32 +363,24 @@ __s32 BSP_disp_sprite_exit(__u32 sel)
+ 
+ __s32 BSP_disp_sprite_open(__u32 sel)
+ {
+-    __u32 cpu_sr;
+-
+ 	if(!gsprite[sel].status & SPRITE_OPENED)
+ 	{
+ 		DE_BE_Sprite_Enable(sel, TRUE);
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		gsprite[sel].enable = TRUE;
+ 		gsprite[sel].status|= SPRITE_OPENED;
+-		OSAL_IrqUnLock(cpu_sr);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+ 
+ __s32 BSP_disp_sprite_close(__u32 sel)
+ {
+-    __u32 cpu_sr;
+-
+ 	if(gsprite[sel].status & SPRITE_OPENED)
+ 	{
+ 		DE_BE_Sprite_Enable(sel, FALSE);
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		gsprite[sel].enable = FALSE;
+ 		gsprite[sel].status &=SPRITE_OPENED_MASK;
+-		OSAL_IrqUnLock(cpu_sr);
+ 	}
+ 	return DIS_SUCCESS;
+ }
+@@ -567,7 +559,6 @@ __s32 BSP_disp_sprite_block_request(__u32 sel, __disp_sprite_block_para_t *para)
+ 	__s32 id = 0;
+ 	__disp_sprite_block_para_t cur_para;
+ 	list_head_t * node = NULL;
+-	__u32 cpu_sr;
+ 
+ 	if((para->scn_win.width != 8) && (para->scn_win.width != 16) && (para->scn_win.width != 32)
+ 		&& (para->scn_win.width != 64) && (para->scn_win.width != 128) && (para->scn_win.width != 256)
+@@ -606,10 +597,8 @@ __s32 BSP_disp_sprite_block_request(__u32 sel, __disp_sprite_block_para_t *para)
+ 	DE_BE_Sprite_Block_Set_Next_Id(sel, node->prev->data->id, id);
+ 	sprite_set_sprite_block_para(sel, id, 0, para);
+ 
+-    OSAL_IrqLock(&cpu_sr);
+ 	gsprite[sel].block_status[id] |= SPRITE_BLOCK_USED;
+ 	gsprite[sel].block_num ++;
+-    OSAL_IrqUnLock(cpu_sr);
+ 
+     return Sprite_Id_To_Hid(sel, id);
+ 
+@@ -620,7 +609,6 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+ 	__s32 id = 0,pre_id = 0,next_id = 0;
+ 	list_head_t * node = NULL, *next_node=NULL, *pre_node=NULL;
+ 	__s32 release_id = 0;
+-	__u32 cpu_sr;
+ 
+ 	id = Sprite_Hid_To_Id(sel, hid);
+ 
+@@ -712,10 +700,8 @@ __s32 BSP_disp_sprite_block_release(__u32 sel, __s32 hid)
+ 			sprite_set_sprite_block_para(sel, id,0,&para);
+ 		}
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		gsprite[sel].block_status[release_id] &= SPRITE_BLOCK_USED_MASK;
+ 		gsprite[sel].block_num --;
+-		OSAL_IrqUnLock(cpu_sr);
+ 
+ 		return DIS_SUCCESS;
+ 	}
+@@ -731,7 +717,6 @@ __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid, __disp_rect_t *
+ 	__s32 id = 0;
+ 	list_head_t * node = NULL;
+ 	__disp_rect_t cur_scn;
+-	__u32 cpu_sr;
+ 
+ 	id = Sprite_Hid_To_Id(sel, hid);
+ 	if(gsprite[sel].block_status[id] & SPRITE_BLOCK_USED)
+@@ -769,12 +754,10 @@ __s32 BSP_disp_sprite_block_set_screen_win(__u32 sel, __s32 hid, __disp_rect_t *
+     	DE_BE_Sprite_Block_Set_Pos(sel, id,cur_scn.x,cur_scn.y);
+     	DE_BE_Sprite_Block_Set_Size(sel, id,cur_scn.width,cur_scn.height);
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		node->data->scn_win.x = scn_win->x;
+ 		node->data->scn_win.y = scn_win->y;
+ 		node->data->scn_win.width = scn_win->width;
+ 		node->data->scn_win.height = scn_win->height;
+-		OSAL_IrqUnLock(cpu_sr);
+ 		return DIS_SUCCESS;
+ 	}
+ 	else
+@@ -812,7 +795,6 @@ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid, __disp_rect_t * sr
+ {
+ 	__s32 id = 0;
+ 	list_head_t * node = NULL;
+-	__u32 cpu_sr;
+ 	__u32 bpp, addr;
+ 
+ 	id = Sprite_Hid_To_Id(sel, hid);
+@@ -824,10 +806,8 @@ __s32 BSP_disp_sprite_block_set_src_win(__u32 sel, __s32 hid, __disp_rect_t * sr
+ 	addr = DE_BE_Offset_To_Addr(node->data->address, node->data->size.width, src_win->x, src_win->y, bpp);
+ 	DE_BE_Sprite_Block_Set_fb(sel, id, addr, node->data->size.width * (bpp >> 3));
+ 
+-        OSAL_IrqLock(&cpu_sr);
+         node->data->src_win.x = src_win->x;
+         node->data->src_win.y = src_win->y;
+-        OSAL_IrqUnLock(cpu_sr);
+ 
+         return DIS_SUCCESS;
+ 	}
+@@ -867,7 +847,6 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid, __disp_fb_t *
+ 	__s32 id = 0;
+ 	list_head_t * node = NULL;
+ 	__s32 bpp = 0, addr;
+-	__u32 cpu_sr;
+ 
+ 	id = Sprite_Hid_To_Id(sel, hid);
+ 	if(gsprite[sel].block_status[id] & SPRITE_BLOCK_USED)
+@@ -879,11 +858,9 @@ __s32 BSP_disp_sprite_block_set_framebuffer(__u32 sel, __s32 hid, __disp_fb_t *
+ 		addr = DE_BE_Offset_To_Addr(fb->addr[0], fb->size.width, node->data->src_win.x, node->data->src_win.y, bpp);
+ 		DE_BE_Sprite_Block_Set_fb(sel, id, addr, fb->size.width * (bpp >> 3));
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		node->data->address = fb->addr[0];
+ 		node->data->size.width = fb->size.width;
+ 		node->data->size.height = fb->size.height;
+-		OSAL_IrqUnLock(cpu_sr);
+ 
+ 		return DIS_SUCCESS;
+ 	}
+@@ -924,7 +901,6 @@ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,__disp_sprite_block_pa
+ 	__s32 id = 0;
+ 	list_head_t * node = NULL;
+ 	__disp_sprite_block_para_t cur_para;
+-	__u32 cpu_sr;
+ 
+ 	id = Sprite_Hid_To_Id(sel, hid);
+ 	if(gsprite[sel].block_status[id] & SPRITE_BLOCK_USED)
+@@ -939,7 +915,6 @@ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,__disp_sprite_block_pa
+ 
+ 	    sprite_set_sprite_block_para(sel, id, node->next->data->id, &cur_para);
+ 
+-		OSAL_IrqLock(&cpu_sr);
+ 		node->data->address = para->fb.addr[0];
+ 		node->data->size.width = para->fb.size.width;
+ 		node->data->size.height = para->fb.size.height;
+@@ -949,7 +924,6 @@ __s32 BSP_disp_sprite_block_set_para(__u32 sel, __u32 hid,__disp_sprite_block_pa
+ 		node->data->scn_win.y = para->scn_win.y;
+ 		node->data->scn_win.width = para->scn_win.width;
+ 		node->data->scn_win.height = para->scn_win.height;
+-		OSAL_IrqUnLock(cpu_sr);
+ 		return DIS_SUCCESS;
+ 	}
+ 	else
+-- 
+1.8.0
+

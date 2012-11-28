@@ -1,0 +1,29 @@
+From 46c51523636da61774275118150c10d5a30cd2a3 Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 23:16:40 +0100
+Subject: [PATCH 921/944] Documentation:sunxi:disp_version: it's /dev/disp
+ that the ioctl failed on.
+
+Spotted by Turl.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ Documentation/sunxi/disp/disp_version.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/sunxi/disp/disp_version.c b/Documentation/sunxi/disp/disp_version.c
+index 5d4f3f8..4b0606f 100644
+--- a/Documentation/sunxi/disp/disp_version.c
++++ b/Documentation/sunxi/disp/disp_version.c
+@@ -25,7 +25,7 @@ main(int argc, char *argv[])
+ 	int ret, tmp, width, height;
+ 
+ 	if (fd == -1) {
+-		fprintf(stderr, "Error: Failed to open /dev/mali: %s\n",
++		fprintf(stderr, "Error: Failed to open /dev/disp: %s\n",
+ 			strerror(errno));
+ 		return errno;
+ 	}
+-- 
+1.8.0
+

@@ -1,0 +1,1675 @@
+From cd4ee3ab6ac44aa545baf982bf1afc06ce93a23e Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@codethink.co.uk>
+Date: Wed, 17 Oct 2012 12:18:24 +0200
+Subject: [PATCH 831/944] video:sunxi: remove full paths from top of files
+
+Signed-off-by: Luc Verhaegen <libv@codethink.co.uk>
+---
+ drivers/video/sunxi/disp/OSAL/OSAL.h                            | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Cache.c                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Cache.h                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Clock.c                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Clock.h                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Dma.c                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Dma.h                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Int.c                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Int.h                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c                    | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h                    | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h                      | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Parser.c                     | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Parser.h                     | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Pin.c                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Pin.h                        | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Semi.c                       | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Semi.h                       | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Thread.c                     | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Thread.h                     | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Time.c                       | 2 --
+ drivers/video/sunxi/disp/OSAL/OSAL_Time.h                       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c            | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h            | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h      | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h      | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c            | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h            | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h              | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h             | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h           | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h          | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c         | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h      | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c        | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h      | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h       | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h | 2 --
+ drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c        | 2 --
+ drivers/video/sunxi/disp/dev_disp.c                             | 2 --
+ drivers/video/sunxi/disp/dev_disp.h                             | 2 --
+ drivers/video/sunxi/disp/dev_fb.c                               | 2 --
+ drivers/video/sunxi/disp/disp_ump.c                             | 2 --
+ drivers/video/sunxi/disp/drv_disp_i.h                           | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_core.c                         | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_core.h                         | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_edid.c                         | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_hal.c                          | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_interface.c                    | 2 --
+ drivers/video/sunxi/hdmi/aw/hdmi_interface.h                    | 4 +---
+ drivers/video/sunxi/hdmi/dev_hdmi.c                             | 2 --
+ drivers/video/sunxi/hdmi/dev_hdmi.h                             | 2 --
+ drivers/video/sunxi/hdmi/drv_hdmi.c                             | 2 --
+ drivers/video/sunxi/hdmi/drv_hdmi_i.h                           | 2 --
+ drivers/video/sunxi/hdmi/hdmi_hal.h                             | 2 --
+ drivers/video/sunxi/lcd/dev_lcd.c                               | 2 --
+ drivers/video/sunxi/lcd/dev_lcd.h                               | 2 --
+ drivers/video/sunxi/lcd/lcd0_panel_cfg.c                        | 2 --
+ drivers/video/sunxi/lcd/lcd1_panel_cfg.c                        | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c           | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/TC102.c                         | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c          | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c                    | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c              | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c      | 2 --
+ drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c                     | 2 --
+ drivers/video/sunxi/lcd/lcd_panel_cfg.h                         | 2 --
+ drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c                 | 2 --
+ 138 files changed, 1 insertion(+), 277 deletions(-)
+
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL.h b/drivers/video/sunxi/disp/OSAL/OSAL.h
+index 39b3315..c8f80f8 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
+index e94617d..0edd00a 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Cache.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
+index 8d1171c..a50eb1e 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Cache.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
+index 5b057e1..5961854 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Clock.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
+index 882cf6d..5cec630 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Clock.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
+index 364a8ba..c09f158 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Dma.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
+index 03e3385..b5dac83 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Dma.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Int.c b/drivers/video/sunxi/disp/OSAL/OSAL_Int.c
+index 2d9212d..7face94 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Int.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Int.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Int.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Int.h b/drivers/video/sunxi/disp/OSAL/OSAL_Int.h
+index 59f07df..a7a83a4 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Int.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Int.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Int.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
+index f7e9c44..348e3ae 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
+index 2e7ba3c..57cfea0 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_IrqLock.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
+index ce227eb..c767c18 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
+index aa7b280..1a79a28 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Lib_C.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
+index 80aae83..c28acb1 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Parser.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
+index 80f8721..367fae9 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Parser.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Pin.c b/drivers/video/sunxi/disp/OSAL/OSAL_Pin.c
+index 7f0d46c..e467488 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Pin.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Pin.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Pin.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Pin.h b/drivers/video/sunxi/disp/OSAL/OSAL_Pin.h
+index 2102dd2..b1be8ec 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Pin.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Pin.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Pin.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
+index d6276fd..23d5c2e 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Semi.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
+index 77b6262..6c35c5d 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Semi.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
+index a7409af..9042a96 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Thread.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
+index 3762b95..255561f 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Thread.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Time.c b/drivers/video/sunxi/disp/OSAL/OSAL_Time.c
+index 8178be1..ca9bbfd 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Time.c
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Time.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Time.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/OSAL/OSAL_Time.h b/drivers/video/sunxi/disp/OSAL/OSAL_Time.h
+index 11d6000..e72c187 100644
+--- a/drivers/video/sunxi/disp/OSAL/OSAL_Time.h
++++ b/drivers/video/sunxi/disp/OSAL/OSAL_Time.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/OSAL/OSAL_Time.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  *
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+index 4c23cb5..4de8e45 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/bsp_display.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c
+index 9b0a2d3..3e9279c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h
+index 640c6b2..a31183e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_clk.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c
+index 8a72309..8d3bd92 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h
+index a7f47a6..a9fcb7e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_combined.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+index 3e46aaa..ef2bc6e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
+index cb57295..1598b0f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_de.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+index d198cdc..9a2406e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+index 281b24f..59c982d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h
+index fc1cb00..c76a559 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_display_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
+index f58da85..0cc1f13 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h
+index 45bffb6..cde87a8 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_event.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+index dfba781..93548af 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h
+index 70f2ec3..5534e6a 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hdmi.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c
+index 3859952..46dc384 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h
+index 84b1805..796b31f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_hwc.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
+index 51b5d84..07fd776 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h
+index 92aeb82..19e10df 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_layer.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+index 6ad84ca..cf78b64 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
+index 8f6fc94..8230965 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_lcd.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+index 9592b0f..e31e4c2 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h
+index 4a8a2b7..cb60c5e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_scaler.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c
+index 5c612d1..f9aef06 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h
+index 42e76f8..cbf1f9d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_sprite.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+index 272112b..54b2c77 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h
+index 82b234d..a2a1047 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_tv.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
+index eb5839f..30da851 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h
+index d780f9d..d2bf5cc 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_vga.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+index 683fbb1..a12f7c6 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h
+index 0b31508..3982aff 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/disp_video.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+index 82ae24c..d278e70 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h
+index 43b1c52..973f227 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_be.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+index 0b4cfc8..b23b0a9 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h
+index 58e7034..78c6a0d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_fe.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c
+index 0a81802..b6cea32 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_hwc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c
+index 900c8de..4413463 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_layer.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c
+index e545bd4..bb78caa 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h
+index 590d3ef..66b4418 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_lcdc_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c
+index 4d95236..26f6bf6 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h
+index dd9d39a..baa26bf 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/de_tvec_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+index 686bf6c..1aa7f5c 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_de.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h
+index 3eb805f..27692d7 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/ebios_lcdc_tve.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c
+index 21e92a6..0f12357 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun4i/de/ebios/vga_std.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+index d38d43c..f043661 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/bsp_display.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c
+index 9578de1..b9417d8 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h
+index 7bd30f7..a31183e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_clk.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
+index 0ae3a62..8d3bd92 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h
+index 67fdc39..a9fcb7e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_combined.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
+index dae83ae..d56ab0e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
+index 1a76348..a357f83 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_de.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+index ffb8078..4791323 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+index b529b0e..3e669c0 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h
+index 8fa6ba8..c76a559 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_display_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
+index fc3e093..672769e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h
+index 7c04616..cde87a8 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_event.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+index 356c8a8..4cb3c9b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h
+index 1a73bfa..5534e6a 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hdmi.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c
+index c8a13e1..46dc384 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
+index d0992c6..796b31f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_hwc.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
+index c4babaa..07fd776 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h
+index 155b2ed..08afed5 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_layer.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+index 413eb81..989de4f 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
+index 852398b..0400726 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_lcd.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+index 1437828..656fc81 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h
+index cb3bfa4..4abc5ec 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_scaler.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c
+index 79606c4..f9aef06 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h
+index f3acd66..cbf1f9d 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_sprite.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+index 2519825..21cab37 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
+index 9202aa1..a2a1047 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_tv.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
+index ad9ef9f..8750af4 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h
+index 6f252d0..d2bf5cc 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_vga.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+index 888fd0b..4a88702 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h
+index cfce7a1..3982aff 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/disp_video.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
+index 9511d24..59c61c3 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h
+index 3aa7da7..2821749 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_be.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+index 278bf2a..e14f969 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h
+index 317f10d..047d950 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_fe.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c
+index 158c705..b6cea32 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_hwc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c
+index cd46f1b..4413463 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_layer.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c
+index 6277200..868e38e 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h
+index a025975..66b4418 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_lcdc_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c
+index 41fad3c..b21742b 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h
+index d70ee90..baa26bf 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/de_tvec_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+index 9bb2881..14b2363 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_de.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h
+index a3a508d..a35b4fe 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/ebios_lcdc_tve.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c
+index d3b68b9..0f12357 100644
+--- a/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c
++++ b/drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/de_bsp_sun5i/de/ebios/vga_std.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/dev_disp.c b/drivers/video/sunxi/disp/dev_disp.c
+index ce29865..2e82695 100644
+--- a/drivers/video/sunxi/disp/dev_disp.c
++++ b/drivers/video/sunxi/disp/dev_disp.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/dev_disp.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/dev_disp.h b/drivers/video/sunxi/disp/dev_disp.h
+index a60376a..dbc734d 100644
+--- a/drivers/video/sunxi/disp/dev_disp.h
++++ b/drivers/video/sunxi/disp/dev_disp.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/dev_disp.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/dev_fb.c b/drivers/video/sunxi/disp/dev_fb.c
+index e9b2b9b..8d89f99 100644
+--- a/drivers/video/sunxi/disp/dev_fb.c
++++ b/drivers/video/sunxi/disp/dev_fb.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/dev_fb.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/disp/disp_ump.c b/drivers/video/sunxi/disp/disp_ump.c
+index c2e5b64..e0b95f4 100644
+--- a/drivers/video/sunxi/disp/disp_ump.c
++++ b/drivers/video/sunxi/disp/disp_ump.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/dev_disp.c
+- *
+  * (C) Copyright 2012
+  * Henrik Nordstrom <henrik@henriknordstrom.net>
+  *
+diff --git a/drivers/video/sunxi/disp/drv_disp_i.h b/drivers/video/sunxi/disp/drv_disp_i.h
+index 0978964..df90e5b 100644
+--- a/drivers/video/sunxi/disp/drv_disp_i.h
++++ b/drivers/video/sunxi/disp/drv_disp_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/disp/drv_disp_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_core.c b/drivers/video/sunxi/hdmi/aw/hdmi_core.c
+index ff08c10..b9350d0 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_core.c
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_core.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_core.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_core.h b/drivers/video/sunxi/hdmi/aw/hdmi_core.h
+index 43a6356..6624b54 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_core.h
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_core.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_core.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_edid.c b/drivers/video/sunxi/hdmi/aw/hdmi_edid.c
+index 45ac6e5..a097bbb 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_edid.c
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_edid.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_edid.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_hal.c b/drivers/video/sunxi/hdmi/aw/hdmi_hal.c
+index df037a7..b6b05cf 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_hal.c
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_hal.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_hal.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_interface.c b/drivers/video/sunxi/hdmi/aw/hdmi_interface.c
+index 15799f8..8b62750 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_interface.c
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_interface.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_interface.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/aw/hdmi_interface.h b/drivers/video/sunxi/hdmi/aw/hdmi_interface.h
+index 7f9203b..ba82cf6 100644
+--- a/drivers/video/sunxi/hdmi/aw/hdmi_interface.h
++++ b/drivers/video/sunxi/hdmi/aw/hdmi_interface.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/aw/hdmi_interface.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+@@ -27,4 +25,4 @@
+ #include "../hdmi_hal.h"
+ 
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.c b/drivers/video/sunxi/hdmi/dev_hdmi.c
+index 8fdd41d..eea6da4 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.c
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/dev_hdmi.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.h b/drivers/video/sunxi/hdmi/dev_hdmi.h
+index 71c7f59..80ae1d7 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.h
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/dev_hdmi.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi.c b/drivers/video/sunxi/hdmi/drv_hdmi.c
+index ed11472..60df34d 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi.c
++++ b/drivers/video/sunxi/hdmi/drv_hdmi.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/drv_hdmi.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/drv_hdmi_i.h b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+index f826336..345411b 100644
+--- a/drivers/video/sunxi/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sunxi/hdmi/drv_hdmi_i.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/drv_hdmi_i.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/hdmi/hdmi_hal.h b/drivers/video/sunxi/hdmi/hdmi_hal.h
+index b39574c..86a4e32 100644
+--- a/drivers/video/sunxi/hdmi/hdmi_hal.h
++++ b/drivers/video/sunxi/hdmi/hdmi_hal.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/hdmi/hdmi_hal.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.c b/drivers/video/sunxi/lcd/dev_lcd.c
+index acdd77b..a97ebe4 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.c
++++ b/drivers/video/sunxi/lcd/dev_lcd.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/dev_lcd.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/dev_lcd.h b/drivers/video/sunxi/lcd/dev_lcd.h
+index 4757740..1d92a7e 100644
+--- a/drivers/video/sunxi/lcd/dev_lcd.h
++++ b/drivers/video/sunxi/lcd/dev_lcd.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/dev_lcd.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+index dde2098..60af316 100644
+--- a/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd0_panel_cfg.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+index 5f5f146..f445098 100644
+--- a/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd1_panel_cfg.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index f2feab8..e859e2e 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/TC101+tl080wx800-v0.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/TC102.c b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+index 18036b6..16f2e12 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/TC102.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/TC102.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index 05ec91a..e5a05f3 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+index aa85e08..e7165be 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/hv_800x480.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+index 247c3f1..dee4ef4 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/hv_800x480_td043.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 44c9431..acb9d2a 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+index 73dd90b..a18e3f4 100644
+--- a/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_bak/lvds_1080.c
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg.h b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+index a63ba7f..841075c 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg.h
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_panel_cfg.h
+- *
+  * (C) Copyright 2007-2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+diff --git a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+index 1b0faa0..6891c5c 100644
+--- a/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
++++ b/drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+@@ -1,6 +1,4 @@
+ /*
+- * drivers/video/sunxi/lcd/lcd_panel_cfg_generic.c
+- *
+  * (C) Copyright 2012
+  * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
+  * Danling <danliang@allwinnertech.com>
+-- 
+1.8.0
+

@@ -1,0 +1,43 @@
+From a062fa21db9e41f9cde8830e9d043ad76cf4351c Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Tue, 24 Jul 2012 17:27:10 -0700
+Subject: [PATCH 612/944] cpuidle: coupled: fix sleeping while atomic in cpu
+ notifier
+
+The cpu hotplug notifier gets called in both atomic and non-atomic
+contexts, it is not always safe to lock a mutex.  Filter out all events
+except the six necessary ones, which are all sleepable, before taking
+the mutex.
+
+Change-Id: I7afa567997f2f3b70b985795026ee92b90657ab5
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/cpuidle/coupled.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/cpuidle/coupled.c b/drivers/cpuidle/coupled.c
+index fc427fa..e95c72e 100644
+--- a/drivers/cpuidle/coupled.c
++++ b/drivers/cpuidle/coupled.c
+@@ -678,6 +678,18 @@ static int cpuidle_coupled_cpu_notify(struct notifier_block *nb,
+ 	int cpu = (unsigned long)hcpu;
+ 	struct cpuidle_device *dev;
+ 
++	switch (action & ~CPU_TASKS_FROZEN) {
++	case CPU_UP_PREPARE:
++	case CPU_DOWN_PREPARE:
++	case CPU_ONLINE:
++	case CPU_DEAD:
++	case CPU_UP_CANCELED:
++	case CPU_DOWN_FAILED:
++		break;
++	default:
++		return NOTIFY_OK;
++	}
++
+ 	mutex_lock(&cpuidle_lock);
+ 
+ 	dev = per_cpu(cpuidle_devices, cpu);
+-- 
+1.8.0
+

@@ -1,0 +1,57 @@
+From 74874fd281e4a2dbef4b3d7be9d08e9248f27c0a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Tue, 30 Oct 2012 02:01:09 +0100
+Subject: [PATCH 902/944] sunxi: configs: enable IKCONFIG is the last
+ defconfigs
+
+---
+ arch/arm/configs/a12_nuclear_defconfig | 3 ++-
+ arch/arm/configs/a13_nuclear_defconfig | 3 ++-
+ arch/arm/configs/sun3i_defconfig       | 3 ++-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/a12_nuclear_defconfig b/arch/arm/configs/a12_nuclear_defconfig
+index aa37efd..624b664 100644
+--- a/arch/arm/configs/a12_nuclear_defconfig
++++ b/arch/arm/configs/a12_nuclear_defconfig
+@@ -74,7 +74,8 @@ CONFIG_TINY_PREEMPT_RCU=y
+ CONFIG_PREEMPT_RCU=y
+ # CONFIG_TREE_RCU_TRACE is not set
+ # CONFIG_RCU_BOOST is not set
+-# CONFIG_IKCONFIG is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=19
+ CONFIG_CGROUPS=y
+ # CONFIG_CGROUP_DEBUG is not set
+diff --git a/arch/arm/configs/a13_nuclear_defconfig b/arch/arm/configs/a13_nuclear_defconfig
+index 4cb40f3..953825d 100644
+--- a/arch/arm/configs/a13_nuclear_defconfig
++++ b/arch/arm/configs/a13_nuclear_defconfig
+@@ -74,7 +74,8 @@ CONFIG_TINY_PREEMPT_RCU=y
+ CONFIG_PREEMPT_RCU=y
+ # CONFIG_TREE_RCU_TRACE is not set
+ # CONFIG_RCU_BOOST is not set
+-# CONFIG_IKCONFIG is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=19
+ CONFIG_CGROUPS=y
+ # CONFIG_CGROUP_DEBUG is not set
+diff --git a/arch/arm/configs/sun3i_defconfig b/arch/arm/configs/sun3i_defconfig
+index e36aa33..52b7d11 100644
+--- a/arch/arm/configs/sun3i_defconfig
++++ b/arch/arm/configs/sun3i_defconfig
+@@ -66,7 +66,8 @@ CONFIG_IRQ_DOMAIN=y
+ CONFIG_TINY_RCU=y
+ # CONFIG_PREEMPT_RCU is not set
+ # CONFIG_TREE_RCU_TRACE is not set
+-# CONFIG_IKCONFIG is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=14
+ # CONFIG_CGROUPS is not set
+ # CONFIG_CHECKPOINT_RESTORE is not set
+-- 
+1.8.0
+

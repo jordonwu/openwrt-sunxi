@@ -1,0 +1,37 @@
+From b9aad62eee535b743934e3be33a12359270975d3 Mon Sep 17 00:00:00 2001
+From: Erik Gilling <konkers@android.com>
+Date: Wed, 11 Jul 2012 17:07:39 -0700
+Subject: [PATCH 531/944] sync: reorder sync_fence_release
+
+Previously fence's pts were freed before the were the fence was removed from the
+global fence list.  This led to a race with the debugfs support where it would
+iterate over sync_pts that had been freed.
+
+Change-Id: Ia3ddbf77de42ca593fc2dc353b5d04e42ddf3946
+Signed-off-by: Erik Gilling <konkers@android.com>
+---
+ drivers/base/sync.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/base/sync.c b/drivers/base/sync.c
+index 9bc0da5..fa2f407 100644
+--- a/drivers/base/sync.c
++++ b/drivers/base/sync.c
+@@ -520,12 +520,12 @@ static int sync_fence_release(struct inode *inode, struct file *file)
+ 	struct sync_fence *fence = file->private_data;
+ 	unsigned long flags;
+ 
+-	sync_fence_free_pts(fence);
+-
+ 	spin_lock_irqsave(&sync_fence_list_lock, flags);
+ 	list_del(&fence->sync_fence_list);
+ 	spin_unlock_irqrestore(&sync_fence_list_lock, flags);
+ 
++	sync_fence_free_pts(fence);
++
+ 	kfree(fence);
+ 
+ 	return 0;
+-- 
+1.8.0
+

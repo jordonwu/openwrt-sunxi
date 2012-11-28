@@ -1,0 +1,25 @@
+From 25f940abac0a3c9a603ed6c75efc7faa9d640ca7 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sat, 12 May 2012 22:51:33 +0200
+Subject: [PATCH 422/944] wireless: bcm40181 don't fail on warnings
+
+---
+ modules/wifi/bcm40181/open-src/src/tools/wlm/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/modules/wifi/bcm40181/open-src/src/tools/wlm/Makefile b/modules/wifi/bcm40181/open-src/src/tools/wlm/Makefile
+index c0e46c9..fcdf716 100644
+--- a/modules/wifi/bcm40181/open-src/src/tools/wlm/Makefile
++++ b/modules/wifi/bcm40181/open-src/src/tools/wlm/Makefile
+@@ -42,7 +42,7 @@ vpath %.h $(SRCBASE)/$(WLM_DIR)
+ CC = gcc
+ CXX = g++
+ 
+-C_DEFINES += -Wall -Wextra -Werror
++C_DEFINES += -Wall -Wextra
+ ANSI_C90 = -ansi -pedantic
+ 
+ INCLUDES = $(SRCBASE)/$(WLM_DIR) $(SRCBASE)/include
+-- 
+1.8.0
+

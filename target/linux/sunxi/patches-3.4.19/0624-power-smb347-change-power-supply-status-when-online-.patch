@@ -1,0 +1,61 @@
+From c71c8751f7bfa7be0357b495fc0a1506aa992f7f Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Fri, 27 Jul 2012 20:48:49 -0700
+Subject: [PATCH 624/944] power:smb347: change power supply status when online
+ prop set
+
+Ensure uevent sent to userspace when board file forces USB/mains
+online.
+
+Change-Id: I670d709bda862a0ab6c04c3f6a616581ca7a8ebc
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index c12932f..cb7b183 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -1000,9 +1000,12 @@ static int smb347_mains_set_property(struct power_supply *psy,
+ 	struct smb347_charger *smb =
+ 		container_of(psy, struct smb347_charger, mains);
+ 	int ret;
++	bool oldval;
+ 
+ 	switch (prop) {
+ 	case POWER_SUPPLY_PROP_ONLINE:
++		oldval = smb->mains_online;
++
+ 		smb->mains_online = val->intval;
+ 
+ 		smb347_set_writable(smb, true);
+@@ -1020,6 +1023,9 @@ static int smb347_mains_set_property(struct power_supply *psy,
+ 		smb347_hw_init(smb);
+ 
+ 		smb347_set_writable(smb, false);
++
++		if (smb->mains_online != oldval)
++			power_supply_changed(psy);
+ 		return 0;
+ 	case POWER_SUPPLY_PROP_CURRENT_MAX:
+ 		smb->mains_current_limit = val->intval;
+@@ -1084,10 +1090,15 @@ static int smb347_usb_set_property(struct power_supply *psy,
+ 	int ret = -EINVAL;
+ 	struct smb347_charger *smb =
+ 		container_of(psy, struct smb347_charger, usb);
++	bool oldval;
+ 
+ 	switch (prop) {
+ 	case POWER_SUPPLY_PROP_ONLINE:
++		oldval = smb->usb_online;
+ 		smb->usb_online = val->intval;
++
++		if (smb->usb_online != oldval)
++			power_supply_changed(psy);
+ 		ret = 0;
+ 		break;
+ 	case POWER_SUPPLY_PROP_USB_HC:
+-- 
+1.8.0
+

@@ -1,0 +1,226 @@
+From a3a0f312f78c4321a33314edb18b565f97ba489f Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Wed, 4 Apr 2012 13:57:49 -0700
+Subject: [PATCH 176/944] android: persistent_ram: move persistent_ram.h back
+ to include/linux
+
+When persistent_ram went in to staging, persistent_ram.h was moved
+from include/linux to driver/staging/android.  To avoid having to
+fix all the users, move it back to include/linux.
+
+Change-Id: Ifa73781b4af5412042114a4b9b0476f6c4abb99e
+Signed-off-by: Colin Cross <ccross@android.com>
+---
+ drivers/staging/android/persistent_ram.c |  2 +-
+ drivers/staging/android/persistent_ram.h | 78 --------------------------------
+ drivers/staging/android/ram_console.c    |  2 +-
+ include/linux/persistent_ram.h           | 78 ++++++++++++++++++++++++++++++++
+ 4 files changed, 80 insertions(+), 80 deletions(-)
+ delete mode 100644 drivers/staging/android/persistent_ram.h
+ create mode 100644 include/linux/persistent_ram.h
+
+diff --git a/drivers/staging/android/persistent_ram.c b/drivers/staging/android/persistent_ram.c
+index a18325f..b994f62 100644
+--- a/drivers/staging/android/persistent_ram.c
++++ b/drivers/staging/android/persistent_ram.c
+@@ -20,10 +20,10 @@
+ #include <linux/io.h>
+ #include <linux/list.h>
+ #include <linux/memblock.h>
++#include <linux/persistent_ram.h>
+ #include <linux/rslib.h>
+ #include <linux/slab.h>
+ #include <linux/vmalloc.h>
+-#include "persistent_ram.h"
+ 
+ struct persistent_ram_buffer {
+ 	uint32_t    sig;
+diff --git a/drivers/staging/android/persistent_ram.h b/drivers/staging/android/persistent_ram.h
+deleted file mode 100644
+index f41e208..0000000
+--- a/drivers/staging/android/persistent_ram.h
++++ /dev/null
+@@ -1,78 +0,0 @@
+-/*
+- * Copyright (C) 2011 Google, Inc.
+- *
+- * This software is licensed under the terms of the GNU General Public
+- * License version 2, as published by the Free Software Foundation, and
+- * may be copied, distributed, and modified under those terms.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- */
+-
+-#ifndef __LINUX_PERSISTENT_RAM_H__
+-#define __LINUX_PERSISTENT_RAM_H__
+-
+-#include <linux/device.h>
+-#include <linux/kernel.h>
+-#include <linux/list.h>
+-#include <linux/types.h>
+-
+-struct persistent_ram_buffer;
+-
+-struct persistent_ram_descriptor {
+-	const char	*name;
+-	phys_addr_t	size;
+-};
+-
+-struct persistent_ram {
+-	phys_addr_t	start;
+-	phys_addr_t	size;
+-
+-	int					num_descs;
+-	struct persistent_ram_descriptor	*descs;
+-
+-	struct list_head node;
+-};
+-
+-struct persistent_ram_zone {
+-	struct list_head node;
+-	void *vaddr;
+-	struct persistent_ram_buffer *buffer;
+-	size_t buffer_size;
+-
+-	/* ECC correction */
+-	bool ecc;
+-	char *par_buffer;
+-	char *par_header;
+-	struct rs_control *rs_decoder;
+-	int corrected_bytes;
+-	int bad_blocks;
+-	int ecc_block_size;
+-	int ecc_size;
+-	int ecc_symsize;
+-	int ecc_poly;
+-
+-	char *old_log;
+-	size_t old_log_size;
+-	size_t old_log_footer_size;
+-	bool early;
+-};
+-
+-int persistent_ram_early_init(struct persistent_ram *ram);
+-
+-struct persistent_ram_zone *persistent_ram_init_ringbuffer(struct device *dev,
+-		bool ecc);
+-
+-int persistent_ram_write(struct persistent_ram_zone *prz, const void *s,
+-	unsigned int count);
+-
+-size_t persistent_ram_old_size(struct persistent_ram_zone *prz);
+-void *persistent_ram_old(struct persistent_ram_zone *prz);
+-void persistent_ram_free_old(struct persistent_ram_zone *prz);
+-ssize_t persistent_ram_ecc_string(struct persistent_ram_zone *prz,
+-	char *str, size_t len);
+-
+-#endif
+diff --git a/drivers/staging/android/ram_console.c b/drivers/staging/android/ram_console.c
+index ce140ff..047f193 100644
+--- a/drivers/staging/android/ram_console.c
++++ b/drivers/staging/android/ram_console.c
+@@ -16,12 +16,12 @@
+ #include <linux/console.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
++#include <linux/persistent_ram.h>
+ #include <linux/platform_device.h>
+ #include <linux/proc_fs.h>
+ #include <linux/string.h>
+ #include <linux/uaccess.h>
+ #include <linux/io.h>
+-#include "persistent_ram.h"
+ #include "ram_console.h"
+ 
+ static struct persistent_ram_zone *ram_console_zone;
+diff --git a/include/linux/persistent_ram.h b/include/linux/persistent_ram.h
+new file mode 100644
+index 0000000..f41e208
+--- /dev/null
++++ b/include/linux/persistent_ram.h
+@@ -0,0 +1,78 @@
++/*
++ * Copyright (C) 2011 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef __LINUX_PERSISTENT_RAM_H__
++#define __LINUX_PERSISTENT_RAM_H__
++
++#include <linux/device.h>
++#include <linux/kernel.h>
++#include <linux/list.h>
++#include <linux/types.h>
++
++struct persistent_ram_buffer;
++
++struct persistent_ram_descriptor {
++	const char	*name;
++	phys_addr_t	size;
++};
++
++struct persistent_ram {
++	phys_addr_t	start;
++	phys_addr_t	size;
++
++	int					num_descs;
++	struct persistent_ram_descriptor	*descs;
++
++	struct list_head node;
++};
++
++struct persistent_ram_zone {
++	struct list_head node;
++	void *vaddr;
++	struct persistent_ram_buffer *buffer;
++	size_t buffer_size;
++
++	/* ECC correction */
++	bool ecc;
++	char *par_buffer;
++	char *par_header;
++	struct rs_control *rs_decoder;
++	int corrected_bytes;
++	int bad_blocks;
++	int ecc_block_size;
++	int ecc_size;
++	int ecc_symsize;
++	int ecc_poly;
++
++	char *old_log;
++	size_t old_log_size;
++	size_t old_log_footer_size;
++	bool early;
++};
++
++int persistent_ram_early_init(struct persistent_ram *ram);
++
++struct persistent_ram_zone *persistent_ram_init_ringbuffer(struct device *dev,
++		bool ecc);
++
++int persistent_ram_write(struct persistent_ram_zone *prz, const void *s,
++	unsigned int count);
++
++size_t persistent_ram_old_size(struct persistent_ram_zone *prz);
++void *persistent_ram_old(struct persistent_ram_zone *prz);
++void persistent_ram_free_old(struct persistent_ram_zone *prz);
++ssize_t persistent_ram_ecc_string(struct persistent_ram_zone *prz,
++	char *str, size_t len);
++
++#endif
+-- 
+1.8.0
+

@@ -1,0 +1,67 @@
+From 2df83fa4bce421f8176932142f1004adfba0f9dd Mon Sep 17 00:00:00 2001
+From: Minho Ban <mhban@samsung.com>
+Date: Mon, 14 May 2012 21:45:31 +0200
+Subject: [PATCH 248/944] PM / Hibernate: Use get_gendisk to verify partition
+ if resume_file is integer format
+
+Sometimes resume= parameter comes in integer style (e.g. major:minor)
+and then name_to_dev_t can not detect partition properly. (especially
+async device like usb, mmc).
+
+This patch calls get_gendisk() if resumewait is true and resume_file
+is in integer format to work around this problem.
+
+Signed-off-by: Minho Ban <mhban@samsung.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ Documentation/kernel-parameters.txt |  2 ++
+ kernel/power/hibernate.c            | 13 +++++++++++++
+ 2 files changed, 15 insertions(+)
+
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index c1601e5..5900b49 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -2372,6 +2372,8 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 
+ 	resume=		[SWSUSP]
+ 			Specify the partition device for software suspend
++			Format:
++			{/dev/<dev> | PARTUUID=<uuid> | <int>:<int> | <hex>}
+ 
+ 	resume_offset=	[SWSUSP]
+ 			Specify the offset from the beginning of the partition
+diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
+index e09dfbf..8b53db3 100644
+--- a/kernel/power/hibernate.c
++++ b/kernel/power/hibernate.c
+@@ -25,6 +25,8 @@
+ #include <linux/freezer.h>
+ #include <linux/gfp.h>
+ #include <linux/syscore_ops.h>
++#include <linux/ctype.h>
++#include <linux/genhd.h>
+ #include <scsi/scsi_scan.h>
+ 
+ #include "power.h"
+@@ -722,6 +724,17 @@ static int software_resume(void)
+ 
+ 	/* Check if the device is there */
+ 	swsusp_resume_device = name_to_dev_t(resume_file);
++
++	/*
++	 * name_to_dev_t is ineffective to verify parition if resume_file is in
++	 * integer format. (e.g. major:minor)
++	 */
++	if (isdigit(resume_file[0]) && resume_wait) {
++		int partno;
++		while (!get_gendisk(swsusp_resume_device, &partno))
++			msleep(10);
++	}
++
+ 	if (!swsusp_resume_device) {
+ 		/*
+ 		 * Some device discovery might still be in progress; we need
+-- 
+1.8.0
+

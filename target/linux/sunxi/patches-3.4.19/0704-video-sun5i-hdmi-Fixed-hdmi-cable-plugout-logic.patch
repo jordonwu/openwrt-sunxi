@@ -1,0 +1,38 @@
+From c73815d91a50dd41091185bf50b9418a344bcfb1 Mon Sep 17 00:00:00 2001
+From: KillerKink Goh <killerkink@hotmail.sg>
+Date: Fri, 1 Jun 2012 18:59:13 +0800
+Subject: [PATCH 704/944] video: sun5i-hdmi: Fixed hdmi cable plugout logic
+
+merge e2af30e90f0d975a663ff63d5d848cf6a0bafd2f intended for sun4i
+---
+ drivers/video/sun5i/hdmi/aw/hdmi_core.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/video/sun5i/hdmi/aw/hdmi_core.c b/drivers/video/sun5i/hdmi/aw/hdmi_core.c
+index 0a23bb8..4ef31d9 100644
+--- a/drivers/video/sun5i/hdmi/aw/hdmi_core.c
++++ b/drivers/video/sun5i/hdmi/aw/hdmi_core.c
+@@ -92,15 +92,15 @@ __s32 hdmi_main_task_loop(void)
+ 	        times = 0;
+ 	        __inf("unplug state\n");
+ 	    }
++                if(hdmi_state > HDMI_State_Wait_Hpd)
++                {
++                        __inf("plugout\n");
++                }
++
+ 		if(hdmi_state > HDMI_State_Idle)
+ 		{
+ 			hdmi_state = HDMI_State_Wait_Hpd;
+ 		}
+-
+-		if(hdmi_state > HDMI_State_Wait_Hpd)
+-		{
+-			__inf("plugout\n");
+-		}
+ 	}
+ 	switch(hdmi_state)
+     {
+-- 
+1.8.0
+

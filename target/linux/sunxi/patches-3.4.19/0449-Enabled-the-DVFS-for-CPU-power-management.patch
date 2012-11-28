@@ -1,0 +1,25 @@
+From 32247697dd72337b916c9c375376c55a56aa284c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Dawid=20Wr=C3=B3bel?= <me@dawidwrobel.com>
+Date: Sat, 19 May 2012 16:24:32 +0200
+Subject: [PATCH 449/944] Enabled the DVFS for CPU power management
+
+---
+ arch/arm/configs/sun4i_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index deb3c37..1a52202 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -404,7 +404,7 @@ CONFIG_CPU_FREQ_GOV_ONDEMAND=y
+ # CONFIG_CPU_FREQ_GOV_CONSERVATIVE is not set
+ # CONFIG_CPU_FREQ_GOV_FANTASY is not set
+ # CONFIG_CPU_FREQ_USR_EVNT_NOTIFY is not set
+-# CONFIG_CPU_FREQ_DVFS is not set
++CONFIG_CPU_FREQ_DVFS=y
+ CONFIG_CPU_IDLE=y
+ CONFIG_CPU_IDLE_GOV_LADDER=y
+ CONFIG_CPU_IDLE_GOV_MENU=y
+-- 
+1.8.0
+

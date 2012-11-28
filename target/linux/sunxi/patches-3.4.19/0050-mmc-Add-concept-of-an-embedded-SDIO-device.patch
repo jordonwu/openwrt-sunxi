@@ -1,0 +1,292 @@
+From e01587a794fa2ee14d3559a7d919af7e386a03e4 Mon Sep 17 00:00:00 2001
+From: San Mehat <san@android.com>
+Date: Mon, 14 Apr 2008 15:22:49 -0700
+Subject: [PATCH 050/944] mmc: Add concept of an 'embedded' SDIO device.
+
+This is required to support chips which use SDIO for signaling/
+communication but do not implement the various card enumeration registers
+as required for full SD / SDIO cards.
+
+mmc: sdio: Fix bug where we're freeing the CIS tables we never allocated when using EMBEDDED_SDIO
+mmc: Add max_blksize to embedded SDIO data
+
+Signed-off-by: San Mehat <san@google.com>
+---
+ drivers/mmc/core/Kconfig      |  9 ++++++
+ drivers/mmc/core/core.c       | 16 ++++++++++
+ drivers/mmc/core/sdio.c       | 74 +++++++++++++++++++++++++++++++++----------
+ drivers/mmc/core/sdio_bus.c   | 13 +++++++-
+ include/linux/amba/mmci.h     | 10 ++++++
+ include/linux/mmc/host.h      | 17 ++++++++++
+ include/linux/mmc/sdio_func.h |  8 +++++
+ 7 files changed, 130 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/mmc/core/Kconfig b/drivers/mmc/core/Kconfig
+index 1972b00..85c2e1a 100644
+--- a/drivers/mmc/core/Kconfig
++++ b/drivers/mmc/core/Kconfig
+@@ -28,8 +28,17 @@ config MMC_CLKGATE
+ 
+ 	  If unsure, say N.
+ 
++config MMC_EMBEDDED_SDIO
++	boolean "MMC embedded SDIO device support (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
++	help
++	  If you say Y here, support will be added for embedded SDIO
++	  devices which do not contain the necessary enumeration
++	  support in hardware to be properly detected.
++
+ config MMC_PARANOID_SD_INIT
+ 	bool "Enable paranoid SD card initialization (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
+ 	help
+ 	  If you say Y here, the MMC layer will be extra paranoid
+ 	  about re-trying SD init requests. This can be a useful
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 7474c47..3cd1828 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -2419,6 +2419,22 @@ int mmc_pm_notify(struct notifier_block *notify_block,
+ }
+ #endif
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++void mmc_set_embedded_sdio_data(struct mmc_host *host,
++				struct sdio_cis *cis,
++				struct sdio_cccr *cccr,
++				struct sdio_embedded_func *funcs,
++				int num_funcs)
++{
++	host->embedded_sdio_data.cis = cis;
++	host->embedded_sdio_data.cccr = cccr;
++	host->embedded_sdio_data.funcs = funcs;
++	host->embedded_sdio_data.num_funcs = num_funcs;
++}
++
++EXPORT_SYMBOL(mmc_set_embedded_sdio_data);
++#endif
++
+ static int __init mmc_init(void)
+ {
+ 	int ret;
+diff --git a/drivers/mmc/core/sdio.c b/drivers/mmc/core/sdio.c
+index 2c7c83f..bb8ba9a 100644
+--- a/drivers/mmc/core/sdio.c
++++ b/drivers/mmc/core/sdio.c
+@@ -28,6 +28,10 @@
+ #include "sdio_ops.h"
+ #include "sdio_cis.h"
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++#include <linux/mmc/sdio_ids.h>
++#endif
++
+ static int sdio_read_fbr(struct sdio_func *func)
+ {
+ 	int ret;
+@@ -713,19 +717,35 @@ static int mmc_sdio_init_card(struct mmc_host *host, u32 ocr,
+ 		goto finish;
+ 	}
+ 
+-	/*
+-	 * Read the common registers.
+-	 */
+-	err = sdio_read_cccr(card, ocr);
+-	if (err)
+-		goto remove;
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	if (host->embedded_sdio_data.cccr)
++		memcpy(&card->cccr, host->embedded_sdio_data.cccr, sizeof(struct sdio_cccr));
++	else {
++#endif
++		/*
++		 * Read the common registers.
++		 */
++		err = sdio_read_cccr(card,  ocr);
++		if (err)
++			goto remove;
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	}
++#endif
+ 
+-	/*
+-	 * Read the common CIS tuples.
+-	 */
+-	err = sdio_read_common_cis(card);
+-	if (err)
+-		goto remove;
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	if (host->embedded_sdio_data.cis)
++		memcpy(&card->cis, host->embedded_sdio_data.cis, sizeof(struct sdio_cis));
++	else {
++#endif
++		/*
++		 * Read the common CIS tuples.
++		 */
++		err = sdio_read_common_cis(card);
++		if (err)
++			goto remove;
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	}
++#endif
+ 
+ 	if (oldcard) {
+ 		int same = (card->cis.vendor == oldcard->cis.vendor &&
+@@ -1124,14 +1144,36 @@ int mmc_attach_sdio(struct mmc_host *host)
+ 	funcs = (ocr & 0x70000000) >> 28;
+ 	card->sdio_funcs = 0;
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	if (host->embedded_sdio_data.funcs)
++		card->sdio_funcs = funcs = host->embedded_sdio_data.num_funcs;
++#endif
++
+ 	/*
+ 	 * Initialize (but don't add) all present functions.
+ 	 */
+ 	for (i = 0; i < funcs; i++, card->sdio_funcs++) {
+-		err = sdio_init_func(host->card, i + 1);
+-		if (err)
+-			goto remove;
+-
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++		if (host->embedded_sdio_data.funcs) {
++			struct sdio_func *tmp;
++
++			tmp = sdio_alloc_func(host->card);
++			if (IS_ERR(tmp))
++				goto remove;
++			tmp->num = (i + 1);
++			card->sdio_func[i] = tmp;
++			tmp->class = host->embedded_sdio_data.funcs[i].f_class;
++			tmp->max_blksize = host->embedded_sdio_data.funcs[i].f_maxblksize;
++			tmp->vendor = card->cis.vendor;
++			tmp->device = card->cis.device;
++		} else {
++#endif
++			err = sdio_init_func(host->card, i + 1);
++			if (err)
++				goto remove;
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++		}
++#endif
+ 		/*
+ 		 * Enable Runtime PM for this func (if supported)
+ 		 */
+diff --git a/drivers/mmc/core/sdio_bus.c b/drivers/mmc/core/sdio_bus.c
+index 236842e..56d020e 100644
+--- a/drivers/mmc/core/sdio_bus.c
++++ b/drivers/mmc/core/sdio_bus.c
+@@ -24,6 +24,10 @@
+ #include "sdio_cis.h"
+ #include "sdio_bus.h"
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++#include <linux/mmc/host.h>
++#endif
++
+ /* show configuration fields */
+ #define sdio_config_attr(field, format_string)				\
+ static ssize_t								\
+@@ -263,7 +267,14 @@ static void sdio_release_func(struct device *dev)
+ {
+ 	struct sdio_func *func = dev_to_sdio_func(dev);
+ 
+-	sdio_free_func_cis(func);
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	/*
++	 * If this device is embedded then we never allocated
++	 * cis tables for this func
++	 */
++	if (!func->card->host->embedded_sdio_data.funcs)
++#endif
++		sdio_free_func_cis(func);
+ 
+ 	if (func->info)
+ 		kfree(func->info);
+diff --git a/include/linux/amba/mmci.h b/include/linux/amba/mmci.h
+index 0926063..9d1d9ca 100644
+--- a/include/linux/amba/mmci.h
++++ b/include/linux/amba/mmci.h
+@@ -5,6 +5,15 @@
+ #define AMBA_MMCI_H
+ 
+ #include <linux/mmc/host.h>
++#include <linux/mmc/card.h>
++#include <linux/mmc/sdio_func.h>
++
++struct embedded_sdio_data {
++        struct sdio_cis cis;
++        struct sdio_cccr cccr;
++        struct sdio_embedded_func *funcs;
++        int num_funcs;
++};
+ 
+ 
+ /*
+@@ -74,6 +83,7 @@ struct mmci_platform_data {
+ 	void *dma_rx_param;
+ 	void *dma_tx_param;
+ 	unsigned int status_irq;
++	struct embedded_sdio_data *embedded_sdio;
+ 	int (*register_status_notify)(void (*callback)(int card_present, void *dev_id), void *dev_id);
+ };
+ 
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index cbde4b7..2929765 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -319,6 +319,15 @@ struct mmc_host {
+ 
+ 	unsigned int		actual_clock;	/* Actual HC clock rate */
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++	struct {
++		struct sdio_cis			*cis;
++		struct sdio_cccr		*cccr;
++		struct sdio_embedded_func	*funcs;
++		int				num_funcs;
++	} embedded_sdio_data;
++#endif
++
+ 	unsigned long		private[0] ____cacheline_aligned;
+ };
+ 
+@@ -327,6 +336,14 @@ extern int mmc_add_host(struct mmc_host *);
+ extern void mmc_remove_host(struct mmc_host *);
+ extern void mmc_free_host(struct mmc_host *);
+ 
++#ifdef CONFIG_MMC_EMBEDDED_SDIO
++extern void mmc_set_embedded_sdio_data(struct mmc_host *host,
++				       struct sdio_cis *cis,
++				       struct sdio_cccr *cccr,
++				       struct sdio_embedded_func *funcs,
++				       int num_funcs);
++#endif
++
+ static inline void *mmc_priv(struct mmc_host *host)
+ {
+ 	return (void *)host->private;
+diff --git a/include/linux/mmc/sdio_func.h b/include/linux/mmc/sdio_func.h
+index 50f0bc9..54600e9 100644
+--- a/include/linux/mmc/sdio_func.h
++++ b/include/linux/mmc/sdio_func.h
+@@ -23,6 +23,14 @@ struct sdio_func;
+ typedef void (sdio_irq_handler_t)(struct sdio_func *);
+ 
+ /*
++ * Structure used to hold embedded SDIO device data from platform layer
++ */
++struct sdio_embedded_func {
++	uint8_t f_class;
++	uint32_t f_maxblksize;
++};
++
++/*
+  * SDIO function CIS tuple (unknown to the core)
+  */
+ struct sdio_func_tuple {
+-- 
+1.8.0
+

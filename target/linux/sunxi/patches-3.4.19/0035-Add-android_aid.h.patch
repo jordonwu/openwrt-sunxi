@@ -1,0 +1,47 @@
+From 8d9e6aca1f6042e53123be3eda327a955a509a35 Mon Sep 17 00:00:00 2001
+From: Robert Love <rlove@google.com>
+Date: Wed, 15 Oct 2008 15:34:49 -0400
+Subject: [PATCH 035/944] Add android_aid.h
+
+Add <linux/android_aid.h>, our mapping of AID defines to gid numbers.
+
+Signed-off-by: Robert Love <rlove@google.com>
+---
+ include/linux/android_aid.h | 25 +++++++++++++++++++++++++
+ 1 file changed, 25 insertions(+)
+ create mode 100644 include/linux/android_aid.h
+
+diff --git a/include/linux/android_aid.h b/include/linux/android_aid.h
+new file mode 100644
+index 0000000..d22723a
+--- /dev/null
++++ b/include/linux/android_aid.h
+@@ -0,0 +1,25 @@
++/* include/linux/android_aid.h
++ *
++ * Copyright (C) 2008 Google, Inc.
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#ifndef _LINUX_ANDROID_AID_H
++#define _LINUX_ANDROID_AID_H
++
++/* AIDs that the kernel treats differently */
++#define AID_NET_BT_ADMIN 3001
++#define AID_NET_BT       3002
++#define AID_INET         3003
++#define AID_NET_RAW      3004
++
++#endif
+-- 
+1.8.0
+

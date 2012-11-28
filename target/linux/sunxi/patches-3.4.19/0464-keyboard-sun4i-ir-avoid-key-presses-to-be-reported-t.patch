@@ -1,0 +1,28 @@
+From 8b9158e6bf531ab46dba975f0fcdb16c3c7dc352 Mon Sep 17 00:00:00 2001
+From: Nikk Gitanes <tsynik@gmail.com>
+Date: Tue, 22 May 2012 21:33:55 +0200
+Subject: [PATCH 464/944] keyboard: sun4i-ir: avoid key presses to be reported
+ twice
+
+---
+ drivers/input/keyboard/sun4i-ir.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/input/keyboard/sun4i-ir.c b/drivers/input/keyboard/sun4i-ir.c
+index c2bcca7..c547610 100644
+--- a/drivers/input/keyboard/sun4i-ir.c
++++ b/drivers/input/keyboard/sun4i-ir.c
+@@ -498,8 +498,10 @@ static irqreturn_t ir_irq_service(int irqno, void *dev_id)
+ 		{
+ 			if(code_valid)  //the pre-key is released
+ 			{
++#if 0
+ 				input_report_key(ir_dev, ir_keycodes[(ir_code>>16)&0xff], 0);
+ 				input_sync(ir_dev);
++#endif
+ 				#ifdef DEBUG_IR_LEVEL1
+ 				printk("IR KEY UP\n");
+ 				#endif
+-- 
+1.8.0
+

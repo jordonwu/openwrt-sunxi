@@ -1,0 +1,173 @@
+From 631874470dcf4ba86a2631eb02d9f68b5a1b7023 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 14 Oct 2012 16:15:00 +0200
+Subject: [PATCH 804/944] sunxi: sys_config: use script.h
+
+---
+ arch/arm/plat-sunxi/include/plat/sys_config.h | 37 ++++-----------------------
+ arch/arm/plat-sunxi/sys_config.c              | 32 +++++++++++------------
+ 2 files changed, 21 insertions(+), 48 deletions(-)
+
+diff --git a/arch/arm/plat-sunxi/include/plat/sys_config.h b/arch/arm/plat-sunxi/include/plat/sys_config.h
+index d029375..bd90d79 100644
+--- a/arch/arm/plat-sunxi/include/plat/sys_config.h
++++ b/arch/arm/plat-sunxi/include/plat/sys_config.h
+@@ -24,9 +24,8 @@
+ #ifndef __SW_SYS_CONFIG_H
+ #define __SW_SYS_CONFIG_H
+ 
++#include <plat/script.h>
+ 
+-#define   SYS_CONFIG_MEMBASE                 (PLAT_PHYS_OFFSET + SZ_32M + SZ_16M)
+-#define   SYS_CONFIG_MEMSIZE                 (SZ_64K)
+ #define   SCRIPT_PARSER_OK                   (0)
+ #define   SCRIPT_PARSER_EMPTY_BUFFER         (-1)
+ #define   SCRIPT_PARSER_KEYNAME_NULL         (-2)
+@@ -54,26 +53,9 @@ typedef struct
+ 	int data;
+ } script_gpio_set_t;
+ 
+-typedef struct
+-{
+-	int  main_key_count;
+-	int  version[3];
+-} script_head_t;
+-
+-typedef struct
+-{
+-	char main_name[32];
+-	int  lenth;
+-	int  offset;
+-} script_main_key_t;
+-
+-typedef struct
+-{
+-	char sub_name[32];
+-	int  offset;
+-	int  pattern;
+-} script_sub_key_t;
+-
++typedef struct sunxi_script script_head_t;
++typedef struct sunxi_script_section script_main_key_t;
++typedef struct sunxi_script_property script_sub_key_t;
+ 
+ #define   EGPIO_FAIL             (-1)
+ #define   EGPIO_SUCCESS          (0)
+@@ -114,16 +96,7 @@ typedef enum
+ #define	PIN_PHY_GROUP_I			0x08
+ #define	PIN_PHY_GROUP_J			0x09
+ 
+-typedef struct
+-{
+-    char  gpio_name[32];
+-    int port;
+-    int port_num;
+-    int mul_sel;
+-    int pull;
+-    int drv_level;
+-    int data;
+-} user_gpio_set_t;
++typedef script_gpio_set_t user_gpio_set_t;
+ 
+ /* script operations */
+ extern int script_parser_init(char *script_buf);
+diff --git a/arch/arm/plat-sunxi/sys_config.c b/arch/arm/plat-sunxi/sys_config.c
+index 404058d..fc63dbf 100644
+--- a/arch/arm/plat-sunxi/sys_config.c
++++ b/arch/arm/plat-sunxi/sys_config.c
+@@ -61,7 +61,7 @@ int script_parser_init(char *script_buf)
+ 		script_mod_buf = script_buf;
+ 		script_head = (script_head_t *)script_mod_buf;
+ 
+-		script_main_key_count = script_head->main_key_count;
++		script_main_key_count = script_head->count;
+ 
+ 		pr_debug("succeed: %s(%d)-%s\n", __FILE__, __LINE__, __func__);
+ 		return SCRIPT_PARSER_OK;
+@@ -117,13 +117,13 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
+ 
+ 	for (i = 0; i < script_main_key_count; i++) {
+ 		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
+-		if (strcmp(main_key->main_name, main_char))
++		if (strcmp(main_key->name, main_char))
+ 			continue;
+ 
+ 		/* now find sub key */
+-		for (j = 0; j < main_key->lenth; j++) {
++		for (j = 0; j < main_key->count; j++) {
+ 			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
+-			if (strcmp(sub_key->sub_name, sub_char))
++			if (strcmp(sub_key->name, sub_char))
+ 				continue;
+ 
+ 		pattern    = (sub_key->pattern>>16) & 0xffff; /* get datatype */
+@@ -202,12 +202,12 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], script_
+ 
+ 	for (i = 0; i < script_main_key_count; i++) {
+ 		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
+-		if (strcmp(main_key->main_name, main_char))
++		if (strcmp(main_key->name, main_char))
+ 			continue;
+ 
+-		for (j = 0; j < main_key->lenth; j++) {
++		for (j = 0; j < main_key->count; j++) {
+ 			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
+-		if (strcmp(sub_key->sub_name, sub_char))
++		if (strcmp(sub_key->name, sub_char))
+ 			continue;
+ 
+ 		pattern    = (sub_key->pattern>>16) & 0xffff;
+@@ -275,10 +275,10 @@ int script_parser_subkey_count(char *main_name)
+ 
+ 	for (i = 0; i < script_main_key_count; i++) {
+ 		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
+-		if (strcmp(main_key->main_name, main_char))
++		if (strcmp(main_key->name, main_char))
+ 			continue;
+ 
+-		return main_key->lenth;
++		return main_key->count;
+ 	}
+ 
+ 	return -1;
+@@ -316,10 +316,10 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
+ 
+ 	for (i = 0; i < script_main_key_count; i++) {
+ 		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
+-		if (strcmp(main_key->main_name, main_char))
++		if (strcmp(main_key->name, main_char))
+ 			continue;
+ 
+-		for (j = 0; j < main_key->lenth; j++) {
++		for (j = 0; j < main_key->count; j++) {
+ 			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
+ 
+ 			pattern    = (sub_key->pattern>>16) & 0xffff;
+@@ -359,19 +359,19 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
+ 
+ 	for (i = 0; i < script_main_key_count; i++) {
+ 		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
+-		if (strcmp(main_key->main_name, main_char))
++		if (strcmp(main_key->name, main_char))
+ 			continue;
+ 
+-		pr_debug("mainkey name = %s\n", main_key->main_name);
++		pr_debug("mainkey name = %s\n", main_key->name);
+ 		user_index = 0;
+-		for (j = 0; j < main_key->lenth; j++) {
++		for (j = 0; j < main_key->count; j++) {
+ 			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
+-			pr_debug("subkey name = %s\n", sub_key->sub_name);
++			pr_debug("subkey name = %s\n", sub_key->name);
+ 			pattern    = (sub_key->pattern>>16) & 0xffff;
+ 			pr_debug("subkey pattern = %d\n", pattern);
+ 
+ 			if (SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD == pattern) {
+-				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->sub_name);
++				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->name);
+ 				memcpy(&user_gpio_cfg[user_index].port, script_mod_buf + (sub_key->offset<<2), sizeof(script_gpio_set_t) - 32);
+ 				user_index++;
+ 				if (user_index >= gpio_count)
+-- 
+1.8.0
+

@@ -1,0 +1,29 @@
+From 12d7096ed7f91e7f814dd68f1de10286982c8140 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Mon, 27 Aug 2012 19:16:26 -0700
+Subject: [PATCH 686/944] power: smb347: reset charge full whenever charging
+ restarted
+
+Change-Id: Ibfc21bdee5c79467c25c608159f451c27e143f85
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 188bc25..5d1b5d7 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -332,6 +332,9 @@ static int smb347_charging_set(struct smb347_charger *smb, bool enable)
+ {
+ 	int ret = 0;
+ 
++	if (enable && !smb->charging_enabled)
++		smb->is_fully_charged = false;
++
+ 	if (smb->pdata->enable_control != SMB347_CHG_ENABLE_SW) {
+ 		smb->charging_enabled = enable;
+ 
+-- 
+1.8.0
+

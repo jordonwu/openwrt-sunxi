@@ -1,0 +1,31 @@
+From 791f95d951355133c0723bf4974f47a84311e5ad Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Fri, 26 Oct 2012 15:21:01 +0200
+Subject: [PATCH 834/944] sunxi: enable machine_is_sun4i(), machine_is_sun5i()
+
+---
+ arch/arm/plat-sunxi/Kconfig | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/plat-sunxi/Kconfig b/arch/arm/plat-sunxi/Kconfig
+index 36072a2..cd89acf 100644
+--- a/arch/arm/plat-sunxi/Kconfig
++++ b/arch/arm/plat-sunxi/Kconfig
+@@ -13,4 +13,14 @@ config SUNXI_MALI_RESERVED_MEM
+ 	depends on MALI
+ 	default y
+ 
++config MACH_SUN4I
++	bool
++	depends on ARCH_SUN4I
++	default y
++
++config MACH_SUN5I
++	bool
++	depends on ARCH_SUN5I
++	default y
++
+ endmenu
+-- 
+1.8.0
+

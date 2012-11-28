@@ -1,0 +1,26 @@
+From ec40d3a4dc87e93d1b588a2816d521d43ce5effa Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Thu, 18 Oct 2012 11:46:05 +0200
+Subject: [PATCH 821/944] video: sunxi: disp-ump: fix buf2 support for sun5i
+
+---
+ include/linux/drv_display_sun5i.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/drv_display_sun5i.h b/include/linux/drv_display_sun5i.h
+index 8906d2d..53b9060 100644
+--- a/include/linux/drv_display_sun5i.h
++++ b/include/linux/drv_display_sun5i.h
+@@ -787,7 +787,8 @@ typedef enum tag_DISP_CMD
+     DISP_CMD_PWM_GET_PARA = 0x301,
+ }__disp_cmd_t;
+ 
+-#define GET_UMP_SECURE_ID _IOWR('m', 310, unsigned int)
++#define GET_UMP_SECURE_ID_BUF1 _IOWR('m', 310, unsigned int)
++#define GET_UMP_SECURE_ID_BUF2 _IOWR('m', 311, unsigned int)
+ 
+ #define FBIOGET_LAYER_HDL_0 0x4700
+ #define FBIOGET_LAYER_HDL_1 0x4701
+-- 
+1.8.0
+

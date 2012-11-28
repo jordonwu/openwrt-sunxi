@@ -1,0 +1,30 @@
+From 53013da67892f1a0e303a938816be47e3a10b1b1 Mon Sep 17 00:00:00 2001
+From: Andrey Konovalov <andrey.konovalov@linaro.org>
+Date: Fri, 23 Mar 2012 21:48:02 +0400
+Subject: [PATCH 228/944] Include if_pppolac.h and if_pppopns.h into header-y
+ target
+
+This is required to pass the headers_check
+
+Change-Id: Ic4c773973278cbdf1cb4eb66473826cb96ccbfb3
+Signed-off-by: Andrey Konovalov <andrey.konovalov@linaro.org>
+---
+ include/linux/Kbuild | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/include/linux/Kbuild b/include/linux/Kbuild
+index 3c9b616..c5a9cae 100644
+--- a/include/linux/Kbuild
++++ b/include/linux/Kbuild
+@@ -183,6 +183,8 @@ header-y += if_plip.h
+ header-y += if_ppp.h
+ header-y += if_pppol2tp.h
+ header-y += if_pppox.h
++header-y += if_pppolac.h
++header-y += if_pppopns.h
+ header-y += if_slip.h
+ header-y += if_strip.h
+ header-y += if_team.h
+-- 
+1.8.0
+

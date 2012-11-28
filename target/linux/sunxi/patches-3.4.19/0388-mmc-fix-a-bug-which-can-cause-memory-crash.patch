@@ -1,0 +1,41 @@
+From 2d1056bb343835367b732290dc09fecd8c39a741 Mon Sep 17 00:00:00 2001
+From: yemao <leafy.myeh@allwinnertech.com>
+Date: Mon, 28 Nov 2011 11:06:51 +0800
+Subject: [PATCH 388/944] mmc: fix a bug which can cause memory crash
+
+---
+ drivers/mmc/sunxi-host/host_op.c | 2 +-
+ drivers/mmc/sunxi-host/sdxc.c    | 4 +---
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/sunxi-host/host_op.c b/drivers/mmc/sunxi-host/host_op.c
+index 906b2d6..5b18e2e 100644
+--- a/drivers/mmc/sunxi-host/host_op.c
++++ b/drivers/mmc/sunxi-host/host_op.c
+@@ -342,7 +342,7 @@ static void sunximmc_finalize_request(struct sunxi_mmc_host *smc_host)
+ static s32 sunximmc_get_ro(struct mmc_host *mmc)
+ {
+     struct sunxi_mmc_host *smc_host = mmc_priv(mmc);
+-    char mmc_para[4] = {0};
++    char mmc_para[16] = {0};
+     int card_wp = 0;
+     int ret;
+     u32 gpio_val;
+diff --git a/drivers/mmc/sunxi-host/sdxc.c b/drivers/mmc/sunxi-host/sdxc.c
+index b175203..823d037 100644
+--- a/drivers/mmc/sunxi-host/sdxc.c
++++ b/drivers/mmc/sunxi-host/sdxc.c
+@@ -1135,9 +1135,7 @@ _out_:
+                 if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+                     if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+                         if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                            if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                                if (readl(SDXC_REG_STAS) & SDXC_DataFSMBusy)
+-                                    SMC_ERR("data fsm busy %08x, len %d\n", readl(SDXC_REG_STAS), req->data->blksz * req->data->blocks);
++                            SMC_MSG("mmc %d fsm busy 0x%x len %d\n", smc_host->pdev->id, readl(SDXC_REG_STAS), req->data->blksz * req->data->blocks);
+         }
+         if (smc_host->dodma)
+         {
+-- 
+1.8.0
+

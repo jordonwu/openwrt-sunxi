@@ -1,0 +1,41 @@
+From d863a12f8aaf743a82c3d2bbd18107f6797e312b Mon Sep 17 00:00:00 2001
+From: Luc Verhaegen <libv@skynet.be>
+Date: Thu, 1 Nov 2012 21:16:25 +0100
+Subject: [PATCH 917/944] video:sunxi:hdmi: add hdmi_device_release
+
+This fixes a WARN_ON.
+
+Signed-off-by: Luc Verhaegen <libv@skynet.be>
+---
+ drivers/video/sunxi/hdmi/dev_hdmi.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/video/sunxi/hdmi/dev_hdmi.c b/drivers/video/sunxi/hdmi/dev_hdmi.c
+index da58f82..0f10143 100644
+--- a/drivers/video/sunxi/hdmi/dev_hdmi.c
++++ b/drivers/video/sunxi/hdmi/dev_hdmi.c
+@@ -36,12 +36,20 @@ static struct resource hdmi_resource[1] = {
+ 	       },
+ };
+ 
++static void
++hdmi_device_release(struct device *dev)
++{
++	/* FILL ME! */
++}
++
+ static struct platform_device hdmi_device = {
+ 	.name = "hdmi",
+ 	.id = -1,
+ 	.num_resources = ARRAY_SIZE(hdmi_resource),
+ 	.resource = hdmi_resource,
+-	.dev = {}
++	.dev = {
++		.release = hdmi_device_release,
++	}
+ };
+ 
+ static int __devinit hdmi_probe(struct platform_device *pdev)
+-- 
+1.8.0
+

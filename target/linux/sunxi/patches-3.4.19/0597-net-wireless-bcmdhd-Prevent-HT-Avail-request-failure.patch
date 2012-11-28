@@ -1,0 +1,108 @@
+From 4cbb79ac850ec57df3fc1653203a7313f22bdaff Mon Sep 17 00:00:00 2001
+From: Dmitry Shmidt <dimitrysh@google.com>
+Date: Wed, 18 Jul 2012 11:15:10 -0700
+Subject: [PATCH 597/944] net: wireless: bcmdhd: Prevent HT Avail request
+ failure to flood the log
+
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+
+Conflicts:
+
+	drivers/net/wireless/bcmdhd/dhd_sdio.c
+---
+ drivers/net/wireless/bcmdhd/dhd.h       |  1 +
+ drivers/net/wireless/bcmdhd/dhd_linux.c | 26 +++++++++++++++++++-------
+ drivers/net/wireless/bcmdhd/dhd_sdio.c  | 12 +++++++++++-
+ 3 files changed, 31 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/net/wireless/bcmdhd/dhd.h b/drivers/net/wireless/bcmdhd/dhd.h
+index 3283f6c..7499f28 100644
+--- a/drivers/net/wireless/bcmdhd/dhd.h
++++ b/drivers/net/wireless/bcmdhd/dhd.h
+@@ -462,6 +462,7 @@ extern void dhd_os_sdunlock_sndup_rxq(dhd_pub_t * pub);
+ extern void dhd_os_sdlock_eventq(dhd_pub_t * pub);
+ extern void dhd_os_sdunlock_eventq(dhd_pub_t * pub);
+ extern bool dhd_os_check_hang(dhd_pub_t *dhdp, int ifidx, int ret);
++extern int dhd_os_send_hang_message(dhd_pub_t *dhdp);
+ extern int net_os_send_hang_message(struct net_device *dev);
+ extern void dhd_set_version_info(dhd_pub_t *pub, char *fw);
+ 
+diff --git a/drivers/net/wireless/bcmdhd/dhd_linux.c b/drivers/net/wireless/bcmdhd/dhd_linux.c
+index 2886b45..595b866 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_linux.c
++++ b/drivers/net/wireless/bcmdhd/dhd_linux.c
+@@ -4892,21 +4892,33 @@ static void dhd_hang_process(struct work_struct *work)
+ #endif
+ 	}
+ }
++#endif
+ 
+-int net_os_send_hang_message(struct net_device *dev)
++int dhd_os_send_hang_message(dhd_pub_t *dhdp)
+ {
+-	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
+ 	int ret = 0;
+ 
+-	if (dhd) {
+-		if (!dhd->pub.hang_was_sent) {
+-			dhd->pub.hang_was_sent = 1;
+-			schedule_work(&dhd->work_hang);
++	if (dhdp) {
++		if (!dhdp->hang_was_sent) {
++			dhdp->hang_was_sent = 1;
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27))
++			schedule_work(&dhdp->info->work_hang);
++#endif
+ 		}
+ 	}
+ 	return ret;
+ }
+-#endif
++
++int net_os_send_hang_message(struct net_device *dev)
++{
++	dhd_info_t *dhd = *(dhd_info_t **)netdev_priv(dev);
++	int ret = 0;
++
++	if (dhd)
++		ret = dhd_os_send_hang_message(&dhd->pub);
++
++	return ret;
++}
+ 
+ void dhd_bus_country_set(struct net_device *dev, wl_country_t *cspec)
+ {
+diff --git a/drivers/net/wireless/bcmdhd/dhd_sdio.c b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+index 394997a..f341129 100644
+--- a/drivers/net/wireless/bcmdhd/dhd_sdio.c
++++ b/drivers/net/wireless/bcmdhd/dhd_sdio.c
+@@ -926,6 +926,8 @@ dhdsdio_clk_devsleep_iovar(dhd_bus_t *bus, bool on)
+ static int
+ dhdsdio_htclk(dhd_bus_t *bus, bool on, bool pendok)
+ {
++#define HT_AVAIL_ERROR_MAX	10
++	static int ht_avail_error = 0;
+ 	int err;
+ 	uint8 clkctl, clkreq, devctl;
+ 	bcmsdh_info_t *sdh;
+@@ -955,8 +957,16 @@ dhdsdio_htclk(dhd_bus_t *bus, bool on, bool pendok)
+ 
+ 		bcmsdh_cfg_write(sdh, SDIO_FUNC_1, SBSDIO_FUNC1_CHIPCLKCSR, clkreq, &err);
+ 		if (err) {
+-			DHD_ERROR(("%s: HT Avail request error: %d\n", __FUNCTION__, err));
++			ht_avail_error++;
++			if (ht_avail_error < HT_AVAIL_ERROR_MAX) {
++				DHD_ERROR(("%s: HT Avail request error: %d\n", __FUNCTION__, err));
++			} else {
++				if (ht_avail_error == HT_AVAIL_ERROR_MAX)
++					dhd_os_send_hang_message(bus->dhd);
++			}
+ 			return BCME_ERROR;
++		} else {
++			ht_avail_error = 0;
+ 		}
+ 
+ 		if (pendok &&
+-- 
+1.8.0
+

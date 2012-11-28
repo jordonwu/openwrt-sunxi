@@ -1,0 +1,27 @@
+From 78e87c455da077c550ccb6d5209226db17fb6305 Mon Sep 17 00:00:00 2001
+From: Todd Poynor <toddpoynor@google.com>
+Date: Thu, 4 Oct 2012 14:01:44 -0700
+Subject: [PATCH 772/944] power: smb347: Fix message newline
+
+Change-Id: Iec41b38212d85866ab32e3c233ab5a2bead169ca
+Signed-off-by: Todd Poynor <toddpoynor@google.com>
+---
+ drivers/power/smb347-charger.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/power/smb347-charger.c b/drivers/power/smb347-charger.c
+index 5d1b5d7..fb56ec7 100644
+--- a/drivers/power/smb347-charger.c
++++ b/drivers/power/smb347-charger.c
+@@ -792,7 +792,7 @@ static irqreturn_t smb347_interrupt(int irq, void *data)
+ 		    (irqstat[2] & (IRQSTAT_C_TERMINATION_IRQ |
+ 				   IRQSTAT_C_TERMINATION_STAT))) &&
+ 		   !smb->is_fully_charged) {
+-		dev_info(&smb->client->dev, "charge terminated");
++		dev_info(&smb->client->dev, "charge terminated\n");
+ 		smb->is_fully_charged = true;
+ 		smb347_charging_disable(smb);
+ 		power_supply_changed(&smb->battery);
+-- 
+1.8.0
+

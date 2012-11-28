@@ -1,0 +1,28 @@
+From f300adcc3e3028693c6b3f689d19e441164746f8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <turl@linux-sunxi.org>
+Date: Thu, 18 Oct 2012 04:28:42 +0000
+Subject: [PATCH 815/944] arm: sun4i: fix cpufreq dependency on Makefile
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We will always need the tables, so it should depend on CPU_FREQ
+instead of CPU_FREQ_TABLE
+
+Signed-off-by: Emilio López <turl@linux-sunxi.org>
+---
+ arch/arm/mach-sun4i/cpu-freq/Makefile | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-sun4i/cpu-freq/Makefile b/arch/arm/mach-sun4i/cpu-freq/Makefile
+index 0b2a51c..dc5d307 100644
+--- a/arch/arm/mach-sun4i/cpu-freq/Makefile
++++ b/arch/arm/mach-sun4i/cpu-freq/Makefile
+@@ -1,3 +1,2 @@
+-obj-$(CONFIG_CPU_FREQ)  += cpu-freq.o
+-obj-$(CONFIG_CPU_FREQ_TABLE)  += cpu-freq-table.o
++obj-$(CONFIG_CPU_FREQ) += cpu-freq.o cpu-freq-table.o
+ 
+-- 
+1.8.0
+

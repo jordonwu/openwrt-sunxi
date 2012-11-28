@@ -1,0 +1,33 @@
+From da8de7ae93a90cfbe38632522c465d784fca454d Mon Sep 17 00:00:00 2001
+From: San Mehat <san@google.com>
+Date: Thu, 6 Aug 2009 10:25:21 -0700
+Subject: [PATCH 079/944] kernel: printk: Add non exported function for
+ clearing the log ring buffer
+
+Signed-off-by: San Mehat <san@google.com>
+---
+ kernel/printk.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/kernel/printk.c b/kernel/printk.c
+index 5c3880d..f1bb173 100644
+--- a/kernel/printk.c
++++ b/kernel/printk.c
+@@ -306,6 +306,14 @@ static int log_buf_get_len(void)
+ }
+ 
+ /*
++ * Clears the ring-buffer
++ */
++void log_buf_clear(void)
++{
++	logged_chars = 0;
++}
++
++/*
+  * Copy a range of characters from the log buffer.
+  */
+ int log_buf_copy(char *dest, int idx, int len)
+-- 
+1.8.0
+

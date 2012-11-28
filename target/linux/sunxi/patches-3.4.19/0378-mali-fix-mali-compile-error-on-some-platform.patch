@@ -1,0 +1,104 @@
+From 56bb4e1dff3cd65f6ce175ada0fcf381c73225ee Mon Sep 17 00:00:00 2001
+From: benn <benn@allwinnertech.com>
+Date: Fri, 25 Nov 2011 13:55:18 +0800
+Subject: [PATCH 378/944] mali: fix mali compile error on some platform
+
+---
+ scripts/build_sun4i-lite.sh  | 9 +++++++++
+ scripts/build_sun4i.sh       | 9 +++++++++
+ scripts/build_sun4i_crane.sh | 9 +++++++++
+ 3 files changed, 27 insertions(+)
+
+diff --git a/scripts/build_sun4i-lite.sh b/scripts/build_sun4i-lite.sh
+index 1ab606f..50ca3c2 100755
+--- a/scripts/build_sun4i-lite.sh
++++ b/scripts/build_sun4i-lite.sh
+@@ -101,8 +101,12 @@ build_modules()
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
+ 
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+@@ -129,7 +133,12 @@ clean_modules()
+ {
+ 	echo "Cleaning modules"
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+diff --git a/scripts/build_sun4i.sh b/scripts/build_sun4i.sh
+index ff454f6..7753977 100755
+--- a/scripts/build_sun4i.sh
++++ b/scripts/build_sun4i.sh
+@@ -103,8 +103,12 @@ build_modules()
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
+ 
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+@@ -131,7 +135,12 @@ clean_modules()
+ {
+ 	echo "Cleaning modules"
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+diff --git a/scripts/build_sun4i_crane.sh b/scripts/build_sun4i_crane.sh
+index 4c737a0..e3505fd 100755
+--- a/scripts/build_sun4i_crane.sh
++++ b/scripts/build_sun4i_crane.sh
+@@ -102,8 +102,12 @@ build_modules()
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
+ 
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} \
+ 		CONFIG_CHIP_ID=${CONFIG_CHIP_ID} install
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+@@ -130,7 +134,12 @@ clean_modules()
+ {
+ 	echo "Cleaning modules"
+ 	make -C modules/example LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++
++	(
++	export LANG=en_US.UTF-8
++	unset LANGUAGE
+ 	make -C modules/mali LICHEE_MOD_DIR=${LICHEE_MOD_DIR} LICHEE_KDIR=${LICHEE_KDIR} clean
++	)
+ 
+ 	#build swl-n20 sdio wifi module
+ #	make -C modules/wifi/nano-c047.12 LICHEE_MOD_DIR=${LICHEE_MOD_DIR} KERNEL_DIR=${LICHEE_KDIR} \
+-- 
+1.8.0
+

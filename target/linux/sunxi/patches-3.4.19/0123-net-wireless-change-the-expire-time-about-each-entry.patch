@@ -1,0 +1,29 @@
+From 998ba94954b283f1c39a3b3d54653e8cf2f3d118 Mon Sep 17 00:00:00 2001
+From: "jun.ho.lee" <jun.ho.lee@samsung.com>
+Date: Fri, 9 Sep 2011 18:50:02 +0900
+Subject: [PATCH 123/944] net: wireless: change the expire time about each
+ entry of scan results
+
+Change-Id: I6e8d838d91bebc28f4cd09dcb8b9f1de775be13d
+Signed-off-by: jun.ho.lee <jun.ho.lee@samsung.com>
+Signed-off-by: Dmitry Shmidt <dimitrysh@google.com>
+---
+ net/wireless/scan.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/wireless/scan.c b/net/wireless/scan.c
+index 70faadf..e40104f 100644
+--- a/net/wireless/scan.c
++++ b/net/wireless/scan.c
+@@ -18,7 +18,7 @@
+ #include "nl80211.h"
+ #include "wext-compat.h"
+ 
+-#define IEEE80211_SCAN_RESULT_EXPIRE	(15 * HZ)
++#define IEEE80211_SCAN_RESULT_EXPIRE	(3 * HZ)
+ 
+ void ___cfg80211_scan_done(struct cfg80211_registered_device *rdev, bool leak)
+ {
+-- 
+1.8.0
+

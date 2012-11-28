@@ -1,0 +1,142 @@
+From f99feb58f86520dcfeb9bc77cf134629367a3a53 Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Sun, 27 May 2012 09:37:42 +0200
+Subject: [PATCH 478/944] arm: sunxi: enable early_printk in all _defconfig
+ except crane's
+
+---
+ arch/arm/configs/a12_defconfig   | 9 +++++----
+ arch/arm/configs/a13_defconfig   | 9 +++++----
+ arch/arm/configs/sun3i_defconfig | 3 ++-
+ arch/arm/configs/sun4i_defconfig | 5 ++++-
+ 4 files changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/configs/a12_defconfig b/arch/arm/configs/a12_defconfig
+index 1d7a037..39a095e 100644
+--- a/arch/arm/configs/a12_defconfig
++++ b/arch/arm/configs/a12_defconfig
+@@ -85,8 +85,6 @@ CONFIG_CGROUP_CPUACCT=y
+ CONFIG_RESOURCE_COUNTERS=y
+ # CONFIG_CGROUP_MEM_RES_CTLR is not set
+ # CONFIG_CGROUP_PERF is not set
+-CONFIG_CGROUP_SCHED=y
+-CONFIG_FAIR_GROUP_SCHED=y
+ CONFIG_BLK_CGROUP=y
+ # CONFIG_DEBUG_BLK_CGROUP is not set
+ CONFIG_NAMESPACES=y
+@@ -94,7 +92,7 @@ CONFIG_UTS_NS=y
+ CONFIG_IPC_NS=y
+ CONFIG_PID_NS=y
+ CONFIG_NET_NS=y
+-CONFIG_SCHED_AUTOGROUP=y
++# CONFIG_SCHED_AUTOGROUP is not set
+ # CONFIG_SYSFS_DEPRECATED is not set
+ CONFIG_RELAY=y
+ CONFIG_BLK_DEV_INITRD=y
+@@ -276,6 +274,7 @@ CONFIG_ARCH_SUN5I=y
+ #
+ # System MMU
+ #
++CONFIG_SW_DEBUG_UART=0
+ # CONFIG_SUN5I_FPGA is not set
+ 
+ #
+@@ -1715,7 +1714,9 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_TEST_KSTRTOX is not set
+ CONFIG_STRICT_DEVMEM=y
+ # CONFIG_DEBUG_USER is not set
+-# CONFIG_DEBUG_LL is not set
++CONFIG_DEBUG_LL=y
++CONFIG_EARLY_PRINTK=y
++# CONFIG_DEBUG_ICEDCC is not set
+ # CONFIG_OC_ETM is not set
+ 
+ #
+diff --git a/arch/arm/configs/a13_defconfig b/arch/arm/configs/a13_defconfig
+index e350f5c..59188ae 100644
+--- a/arch/arm/configs/a13_defconfig
++++ b/arch/arm/configs/a13_defconfig
+@@ -85,8 +85,6 @@ CONFIG_CGROUP_CPUACCT=y
+ CONFIG_RESOURCE_COUNTERS=y
+ # CONFIG_CGROUP_MEM_RES_CTLR is not set
+ # CONFIG_CGROUP_PERF is not set
+-CONFIG_CGROUP_SCHED=y
+-CONFIG_FAIR_GROUP_SCHED=y
+ CONFIG_BLK_CGROUP=y
+ # CONFIG_DEBUG_BLK_CGROUP is not set
+ CONFIG_NAMESPACES=y
+@@ -94,7 +92,7 @@ CONFIG_UTS_NS=y
+ CONFIG_IPC_NS=y
+ CONFIG_PID_NS=y
+ CONFIG_NET_NS=y
+-CONFIG_SCHED_AUTOGROUP=y
++# CONFIG_SCHED_AUTOGROUP is not set
+ # CONFIG_SYSFS_DEPRECATED is not set
+ CONFIG_RELAY=y
+ CONFIG_BLK_DEV_INITRD=y
+@@ -276,6 +274,7 @@ CONFIG_ARCH_SUN5I=y
+ #
+ # System MMU
+ #
++CONFIG_SW_DEBUG_UART=0
+ # CONFIG_SUN5I_FPGA is not set
+ 
+ #
+@@ -1756,7 +1755,9 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_TEST_KSTRTOX is not set
+ CONFIG_STRICT_DEVMEM=y
+ # CONFIG_DEBUG_USER is not set
+-# CONFIG_DEBUG_LL is not set
++CONFIG_DEBUG_LL=y
++CONFIG_EARLY_PRINTK=y
++# CONFIG_DEBUG_ICEDCC is not set
+ # CONFIG_OC_ETM is not set
+ 
+ #
+diff --git a/arch/arm/configs/sun3i_defconfig b/arch/arm/configs/sun3i_defconfig
+index a8745ef..d165c9c 100644
+--- a/arch/arm/configs/sun3i_defconfig
++++ b/arch/arm/configs/sun3i_defconfig
+@@ -261,6 +261,7 @@ CONFIG_SW_SYSMEM_TOTAL_MEM=128
+ CONFIG_SW_SYSMEM_RESERVED_BASE=0x83000000
+ CONFIG_SW_SYSMEM_RESERVED_SIZE=16448
+ # CONFIG_SW_PIN_TEST is not set
++CONFIG_SW_DEBUG_UART=0
+ 
+ #
+ # Processor Type
+@@ -1324,7 +1325,7 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_STRICT_DEVMEM is not set
+ CONFIG_DEBUG_USER=y
+ CONFIG_DEBUG_LL=y
+-# CONFIG_EARLY_PRINTK is not set
++CONFIG_EARLY_PRINTK=y
+ # CONFIG_DEBUG_ICEDCC is not set
+ # CONFIG_OC_ETM is not set
+ 
+diff --git a/arch/arm/configs/sun4i_defconfig b/arch/arm/configs/sun4i_defconfig
+index 1aa5f3f..7b11d54 100644
+--- a/arch/arm/configs/sun4i_defconfig
++++ b/arch/arm/configs/sun4i_defconfig
+@@ -274,6 +274,7 @@ CONFIG_ARCH_SUN4I=y
+ #
+ # System MMU
+ #
++CONFIG_SW_DEBUG_UART=0
+ 
+ #
+ # Allwinner A1x options
+@@ -1849,7 +1850,9 @@ CONFIG_HAVE_ARCH_KGDB=y
+ # CONFIG_TEST_KSTRTOX is not set
+ CONFIG_STRICT_DEVMEM=y
+ # CONFIG_DEBUG_USER is not set
+-# CONFIG_DEBUG_LL is not set
++CONFIG_DEBUG_LL=y
++CONFIG_EARLY_PRINTK=y
++# CONFIG_DEBUG_ICEDCC is not set
+ # CONFIG_OC_ETM is not set
+ 
+ #
+-- 
+1.8.0
+

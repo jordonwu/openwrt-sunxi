@@ -1,0 +1,39 @@
+From 37f1a681a269d45db2ab6d77bfd8811f9b22759a Mon Sep 17 00:00:00 2001
+From: Alejandro Mery <amery@geeks.cl>
+Date: Wed, 23 May 2012 15:23:38 +0200
+Subject: [PATCH 465/944] arm: sun3i: add dummy machine type
+
+---
+ arch/arm/kernel/head.S    | 6 +++++-
+ arch/arm/tools/mach-types | 1 +
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
+index 514fcdf..6b81595 100644
+--- a/arch/arm/kernel/head.S
++++ b/arch/arm/kernel/head.S
+@@ -95,7 +95,11 @@ ENTRY(stext)
+ 	mov	r0, #0
+ 	b	_real_start
+ 
+-#if CONFIG_CHIP_ID == 1123
++#if CONFIG_CHIP_ID == 1120
++#warning "chip id: 1120"
++1:	.long 0xf37
++	.long 0x40000000
++#elif CONFIG_CHIP_ID == 1123
+ #warning "chip id: 1123"
+ 1:	.long 0xf34
+ 	.long 0x40000000
+diff --git a/arch/arm/tools/mach-types b/arch/arm/tools/mach-types
+index 3e34e65..082a71a 100644
+--- a/arch/arm/tools/mach-types
++++ b/arch/arm/tools/mach-types
+@@ -1172,3 +1172,4 @@ da850_pqab		MACH_DA850_PQAB		DA850_PQAB		3891
+ sun4i                   MACH_SUN4I              SUN4I                   3892
+ sun5i                   MACH_SUN5I              SUN5I                   3893
+ sun6i                   MACH_SUN6I              SUN6I                   3894
++sun3i                   MACH_SUN3I              SUN3I                   3895
+-- 
+1.8.0
+

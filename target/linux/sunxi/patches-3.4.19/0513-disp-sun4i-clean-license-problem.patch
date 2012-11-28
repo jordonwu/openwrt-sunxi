@@ -1,0 +1,3395 @@
+From 0caab988c9da8e6a56e76259b3fb794ef3a3ddde Mon Sep 17 00:00:00 2001
+From: Tom Cubie <tangliang@allwinnertech.com>
+Date: Tue, 5 Jun 2012 15:36:35 +0800
+Subject: [PATCH 513/944] disp: sun4i: clean license problem
+
+---
+ drivers/video/sun4i/disp/OSAL/OSAL.h               | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Cache.c         | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Cache.h         | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Clock.c         | 35 +++++++++++-------
+ drivers/video/sun4i/disp/OSAL/OSAL_Clock.h         | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Dma.c           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Dma.h           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Int.c           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Int.h           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c       | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h       | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c         | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h         | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Parser.c        | 22 +++++++++++
+ drivers/video/sun4i/disp/OSAL/OSAL_Parser.h        | 22 +++++++++++
+ drivers/video/sun4i/disp/OSAL/OSAL_Pin.c           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Pin.h           | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Semi.c          | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Semi.h          | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Thread.c        | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Thread.h        | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Time.c          | 40 ++++++++++----------
+ drivers/video/sun4i/disp/OSAL/OSAL_Time.h          | 40 ++++++++++----------
+ drivers/video/sun4i/disp/de_bsp/bsp_display.h      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_clk.c      | 22 +++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_clk.h      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_combined.c | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_combined.h | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_de.c       | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_de.h       | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_display.c  | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_display.h  | 23 ++++++++++++
+ .../video/sun4i/disp/de_bsp/de/disp_display_i.h    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_event.c    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_event.h    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c     | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h     | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_layer.c    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_layer.h    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_tv.c       | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_tv.h       | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_vga.c      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_vga.h      | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_video.c    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/disp_video.h    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c   | 43 +++++++++++-----------
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h   | 33 ++++++++++++-----
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c  | 23 ++++++++++++
+ .../video/sun4i/disp/de_bsp/de/ebios/de_layer.c    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c | 23 ++++++++++++
+ .../video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h   | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c | 23 ++++++++++++
+ .../video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h   | 23 ++++++++++++
+ .../video/sun4i/disp/de_bsp/de/ebios/ebios_de.h    | 23 ++++++++++++
+ .../sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h    | 23 ++++++++++++
+ drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c | 23 ++++++++++++
+ drivers/video/sun4i/disp/dev_disp.c                | 23 ++++++++++++
+ drivers/video/sun4i/disp/dev_disp.h                | 23 ++++++++++++
+ drivers/video/sun4i/disp/dev_fb.c                  | 24 +++++++++++-
+ drivers/video/sun4i/disp/drv_disp_i.h              | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_core.c            | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_core.h            | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_edid.c            | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_hal.c             | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_interface.c       | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/aw/hdmi_interface.h       | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/dev_hdmi.c                | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/dev_hdmi.h                | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/drv_hdmi.c                | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/drv_hdmi_i.h              | 23 ++++++++++++
+ drivers/video/sun4i/hdmi/hdmi_hal.h                | 23 ++++++++++++
+ drivers/video/sun4i/lcd/dev_lcd.c                  | 23 ++++++++++++
+ drivers/video/sun4i/lcd/dev_lcd.h                  | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd0_panel_cfg.c           | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd1_panel_cfg.c           | 23 ++++++++++++
+ .../video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c  | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd_bak/TC102.c            | 23 ++++++++++++
+ .../video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c       | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c | 23 ++++++++++++
+ .../sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c   | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c        | 23 ++++++++++++
+ drivers/video/sun4i/lcd/lcd_panel_cfg.h            | 23 ++++++++++++
+ 93 files changed, 2093 insertions(+), 426 deletions(-)
+
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL.h b/drivers/video/sun4i/disp/OSAL/OSAL.h
+index 854131d..97b48e4 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 操作系统适配层
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_H__
+ #define  __OSAL_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Cache.c b/drivers/video/sun4i/disp/OSAL/OSAL_Cache.c
+index 30af226..855d343 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Cache.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Cache.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Cache.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Cache操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Cache.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL.h"
+ 
+ /* 刷新标记位 */
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Cache.h b/drivers/video/sun4i/disp/OSAL/OSAL_Cache.h
+index 934be8a..224119a 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Cache.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Cache.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Cache.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Cache操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Cache.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_CACHE_H__
+ #define  __OSAL_CACHE_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Clock.c b/drivers/video/sun4i/disp/OSAL/OSAL_Clock.c
+index 95c3f55..01f7fad 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Clock.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Clock.c
+@@ -1,18 +1,25 @@
+ /*
+-********************************************************************************
+-*                                                   OSAL
+-*
+-*                                     (c) Copyright 2008-2009, Kevin China
+-*                                             				All Rights Reserved
+-*
+-* File    : OSAL_Clock.c
+-* By      : Sam.Wu
+-* Version : V1.00
+-* Date    : 2011/3/25 20:25
+-* Description :
+-* Update   :  date      author      version     notes
+-********************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Clock.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL.h"
+ #include "OSAL_Clock.h"
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Clock.h b/drivers/video/sun4i/disp/OSAL/OSAL_Clock.h
+index 9448edd..85feb2a 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Clock.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Clock.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Clock.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 操作系统适配层
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   	2010-09-07          1.0         create this word
+-*		holi			2010-12-03			1.1			实现了具体的接口
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Clock.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef  __OSAL_CLOCK_H__
+ #define  __OSAL_CLOCK_H__
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Dma.c b/drivers/video/sun4i/disp/OSAL/OSAL_Dma.c
+index 851abc3..5331ea8 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Dma.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Dma.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Dma.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Dma操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   	2010-09-07          1.0         create this word
+-*		holi			2010-12-04			1.1			调整的参数部分，完全走CSP_para这条路
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Dma.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ 
+ #include "OSAL.h"
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Dma.h b/drivers/video/sun4i/disp/OSAL/OSAL_Dma.h
+index 06d32c3..da66e57 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Dma.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Dma.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Dma.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Dma操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   	2010-09-07          1.0         create this word
+-*		holi			2010-12-04			1.1			调整的参数部分，完全走CSP_para这条路
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Dma.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_DMA_H__
+ #define  __OSAL_DMA_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Int.c b/drivers/video/sun4i/disp/OSAL/OSAL_Int.c
+index 142ef0a..f6b5245 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Int.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Int.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Int.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 中断操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Int.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ 
+ #include "OSAL.h"
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Int.h b/drivers/video/sun4i/disp/OSAL/OSAL_Int.h
+index 468a411..6409994 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Int.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Int.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Int.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 中断操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Int.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_INT_H__
+ #define  __OSAL_INT_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c b/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c
+index ac7aa01..e646639 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_IrqLock.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 临界区操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL.h"
+ void OSAL_IrqLock(__u32 *cpu_sr)
+ {
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h b/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h
+index e44c1c3..5147613 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_IrqLock.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 临界区操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_IrqLock.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_IRQLOCK_H__
+ #define  __OSAL_IRQLOCK_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c b/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c
+index 3dea8ba..5280de8 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Lib_C.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: C库函数
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         	create this word
+-*		holi		   2010-12-03		   1.1			增加了OSAL_io_remap
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "OSAL.h"
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h b/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h
+index 73138cf..713d0fd 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Lib_C.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: C库函数
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         	create this word
+-*		holi		   2010-12-03		   1.1			增加了OSAL_io_remap
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Lib_C.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_LIB_C_H__
+ #define  __OSAL_LIB_C_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Parser.c b/drivers/video/sun4i/disp/OSAL/OSAL_Parser.c
+index 6cedb07..6813dc1 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Parser.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Parser.c
+@@ -1,3 +1,25 @@
++/*
++ * drivers/video/sun4i/disp/OSAL/OSAL_Parser.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL_Parser.h"
+ 
+ int OSAL_Script_FetchParser_Data(char *main_name, char *sub_name, int value[], int count)
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Parser.h b/drivers/video/sun4i/disp/OSAL/OSAL_Parser.h
+index b797ff6..8d70397 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Parser.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Parser.h
+@@ -1,3 +1,25 @@
++/*
++ * drivers/video/sun4i/disp/OSAL/OSAL_Parser.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_PARSER_H__
+ #define  __OSAL_PARSER_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Pin.c b/drivers/video/sun4i/disp/OSAL/OSAL_Pin.c
+index fb19504..e48787b 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Pin.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Pin.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Pin.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: C库函数
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*       holi     	   2010-12-02          1.1         添加具体的接口，
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Pin.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL_Pin.h"
+ 
+ __hdle OSAL_GPIO_Request(user_gpio_set_t *gpio_list, __u32 group_count_max)
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Pin.h b/drivers/video/sun4i/disp/OSAL/OSAL_Pin.h
+index 5d85a92..2720513 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Pin.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Pin.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Pin.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: C库函数
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*       holi     	   2010-12-02          1.1         添加具体的接口，
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Pin.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_PIN_H__
+ #define  __OSAL_PIN_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Semi.c b/drivers/video/sun4i/disp/OSAL/OSAL_Semi.c
+index 955b8a9..9d4c7a6 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Semi.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Semi.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Semi.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 信号量操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Semi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL.h"
+ 
+ /*
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Semi.h b/drivers/video/sun4i/disp/OSAL/OSAL_Semi.h
+index 1398cf0..1fa078e 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Semi.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Semi.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Semi.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 信号量操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Semi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_SEMI_H__
+ #define  __OSAL_SEMI_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Thread.c b/drivers/video/sun4i/disp/OSAL/OSAL_Thread.c
+index cebfc27..da5eba5 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Thread.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Thread.c
+@@ -1,22 +1,24 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Thread.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 线程操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Thread.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Thread.h b/drivers/video/sun4i/disp/OSAL/OSAL_Thread.h
+index d608c7f..e43b571 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Thread.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Thread.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_Thread.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: 线程操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Thread.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_THREAD_H__
+ #define  __OSAL_THREAD_H__
+ 
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Time.c b/drivers/video/sun4i/disp/OSAL/OSAL_Time.c
+index c4831ef..6a3530c 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Time.c
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Time.c
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_time.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Time操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Time.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "OSAL.h"
+ 
+ /*
+diff --git a/drivers/video/sun4i/disp/OSAL/OSAL_Time.h b/drivers/video/sun4i/disp/OSAL/OSAL_Time.h
+index b9b54d4..7c10ba3 100644
+--- a/drivers/video/sun4i/disp/OSAL/OSAL_Time.h
++++ b/drivers/video/sun4i/disp/OSAL/OSAL_Time.h
+@@ -1,23 +1,25 @@
+ /*
+-*************************************************************************************
+-*                         			eBsp
+-*					   Operation System Adapter Layer
+-*
+-*				(c) Copyright 2006-2010, All winners Co,Ld.
+-*							All	Rights Reserved
+-*
+-* File Name 	: OSAL_time.h
+-*
+-* Author 		: javen
+-*
+-* Description 	: Time操作
+-*
+-* History 		:
+-*      <author>    		<time>       	<version >    		<desc>
+-*       javen     	   2010-09-07          1.0         create this word
+-*
+-*************************************************************************************
+-*/
++ * drivers/video/sun4i/disp/OSAL/OSAL_Time.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef  __OSAL_TIME_H__
+ #define  __OSAL_TIME_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/bsp_display.h b/drivers/video/sun4i/disp/de_bsp/bsp_display.h
+index 45e5db6..e4ace51 100644
+--- a/drivers/video/sun4i/disp/de_bsp/bsp_display.h
++++ b/drivers/video/sun4i/disp/de_bsp/bsp_display.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/bsp_display.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __EBSP_DISPLAY_H__
+ #define __EBSP_DISPLAY_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_clk.c b/drivers/video/sun4i/disp/de_bsp/de/disp_clk.c
+index d9e9597..2b79bb9 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_clk.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_clk.c
+@@ -1,3 +1,25 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_clk.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include "disp_display_i.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_clk.h b/drivers/video/sun4i/disp/de_bsp/de/disp_clk.h
+index 0110e59..e656885 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_clk.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_clk.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_clk.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_CLK_H__
+ #define __DISP_CLK_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_combined.c b/drivers/video/sun4i/disp/de_bsp/de/disp_combined.c
+index 0d27ad3..30ff09e 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_combined.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_combined.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_combined.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_combined.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_combined.h b/drivers/video/sun4i/disp/de_bsp/de/disp_combined.h
+index 296227a..f88eefb 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_combined.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_combined.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_combined.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_COMBINED_H__
+ #define __DISP_COMBINED_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_de.c b/drivers/video/sun4i/disp/de_bsp/de/disp_de.c
+index 7954612..7d6179f 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_de.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_de.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_de.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_de.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_de.h b/drivers/video/sun4i/disp/de_bsp/de/disp_de.h
+index 7f36407..179922d 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_de.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_de.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_de.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_DE_H_
+ #define __DISP_DE_H_
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_display.c b/drivers/video/sun4i/disp/de_bsp/de/disp_display.c
+index 37404fc..52c6cd2 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_display.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_display.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_display.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_de.h"
+ #include "disp_lcd.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_display.h b/drivers/video/sun4i/disp/de_bsp/de/disp_display.h
+index fff40d0..ed77bb9 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_display.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_display.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_display.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_DISPLAY_H__
+ #define __DISP_DISPLAY_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_display_i.h b/drivers/video/sun4i/disp/de_bsp/de/disp_display_i.h
+index a20f0aa..f8ecbbc 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_display_i.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_display_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_display_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_DISPLAY_I_H__
+ #define __DISP_DISPLAY_I_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_event.c b/drivers/video/sun4i/disp/de_bsp/de/disp_event.c
+index fcdba77..92db1c6 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_event.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_event.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_event.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_event.h"
+ #include "disp_display.h"
+ #include "disp_de.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_event.h b/drivers/video/sun4i/disp/de_bsp/de/disp_event.h
+index 08c51da..883757f 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_event.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_event.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_event.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_EVENT_H__
+ #define __DISP_EVENT_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c b/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c
+index 3aec735..fe907eb 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_hdmi.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h b/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h
+index 40b0da7..2583214 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_hdmi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_HDMI_H__
+ #define __DISP_HDMI_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c b/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c
+index d1411f8..6c3d11d 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_hwc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_display.h"
+ #include "disp_hwc.h"
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h b/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h
+index dd51ba1..f849d1d 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_hwc.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_HWC_H_
+ #define _DISP_HWC_H_
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_layer.c b/drivers/video/sun4i/disp/de_bsp/de/disp_layer.c
+index e1e9733..1e36add 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_layer.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_layer.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_layer.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_layer.h"
+ #include "disp_de.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_layer.h b/drivers/video/sun4i/disp/de_bsp/de/disp_layer.h
+index 605e586..3d95082 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_layer.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_layer.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_layer.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_LAYER_H_
+ #define _DISP_LAYER_H_
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
+index 39f1751..82c4d47 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_lcd.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "disp_lcd.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h
+index 14e704b..b757bf9 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_lcd.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_LCD_H__
+ #define __DISP_LCD_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c b/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c
+index b3f7cc4..77800f0 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_scaler.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "disp_scaler.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h b/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h
+index 7367068..d7f42c7 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_scaler.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef _DISP_SCALER_H_
+ #define _DISP_SCALER_H_
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c b/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c
+index 22f2dae..04ba972 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_sprite.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_sprite.h"
+ #include "disp_display.h"
+ #include "disp_layer.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h b/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h
+index 9334408..5595b31 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_sprite.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef _DISP_SPRITE_H_
+ #define _DISP_SPRITE_H_
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_tv.c b/drivers/video/sun4i/disp/de_bsp/de/disp_tv.c
+index 34f56a6..be1ddfd 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_tv.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_tv.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_tv.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_tv.h"
+ #include "disp_display.h"
+ #include "disp_event.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_tv.h b/drivers/video/sun4i/disp/de_bsp/de/disp_tv.h
+index 04fceec..7d32f42 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_tv.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_tv.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_tv.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_TV_H__
+ #define __DISP_TV_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_vga.c b/drivers/video/sun4i/disp/de_bsp/de/disp_vga.c
+index c2174b4..56bee7b 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_vga.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_vga.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_vga.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "disp_vga.h"
+ #include "disp_de.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_vga.h b/drivers/video/sun4i/disp/de_bsp/de/disp_vga.h
+index 830205a..ebf914d 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_vga.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_vga.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_vga.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DISP_VGA_H__
+ #define __DISP_VGA_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_video.c b/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
+index 348af45..267ef77 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_video.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_video.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "disp_video.h"
+ #include "disp_display.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/disp_video.h b/drivers/video/sun4i/disp/de_bsp/de/disp_video.h
+index 25e1adf..d556fbf 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/disp_video.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/disp_video.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/disp_video.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DISP_VIDEO_H_
+ #define __DISP_VIDEO_H_
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c
+index ca0c9d2..8e7e3f4 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "de_be.h"
+ #include "de_fe.h"
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h
+index 5b905c8..a041f0e 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_be.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DE_BE_H__
+ #define __DE_BE_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c
+index 8f4e9cb..e2f4634 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c
+@@ -1,24 +1,25 @@
+-//*****************************************************************************
+-//  All Winner Micro, All Right Reserved. 2006-2012 Copyright (c)
+-//
+-//  File name   :        de_scal_bsp.c
+-//
+-//  Description :  display engine scaler base functions implement for aw1623
+-//
+-//  History       :
+-//                 2011/05/03      zchmin       v1.0    Initial version
+-//                 2011/05/13      vito         v1.1    added vpp function
+-//                 2011/05/25      zchmin       v1.2    redefine 3d inmode
+-//                 2011/07/01      zchmin       v1.3    modify set scal coef error
+-//                 2011/07/14      zchmin       v1.4    added input/output rg swap
+-//                 2011/08/04      zchmin       v1.5    added divisor no-zero limited
+-//                 2011/09/28      zchmin       v1.6    added 3D interleaved input format support
+-//                 2011/10/10      zchmin	    v1.7    clear 3d line_interleaved flag when config 2D src
+-//                                                      correct 3D interleaved format address error
+-//                 2011/10/19      zchmin       v1.8    correct out_type->fmt == DE_SCAL_INYUV420
+-//                 2012/01/04      zchmin       v1.9    correct negative shifter
+-//******************************************************************************
+-
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
+ 
+ #include "de_fe.h"
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h
+index 04d61cc..7d05c8a 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h
+@@ -1,13 +1,26 @@
+-//*****************************************************************************
+-//  All Winner Micro, All Right Reserved. 2006-2011 Copyright (c)
+-//
+-//  File name   :        de_scal_bsp.h
+-//
+-//  Description :  display engine scaler registers and interface functions define
+-//                 for aw1623
+-//  History     :
+-//                2011/05/03      zchmin       v0.1    Initial version
+-//******************************************************************************
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_fe.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DE_FE_H__
+ #define __DE_FE_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c
+index a26db50..e929452 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_hwc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "de_be.h"
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_layer.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_layer.c
+index 36d961f31..1964230 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_layer.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_layer.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_layer.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "de_be.h"
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c
+index 7f89181..52ed957 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "ebios_lcdc_tve.h"
+ #include "de_lcdc_i.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h
+index b70ab2c..d6224ee 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_lcdc_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DE_LCDC_I_H__
+ #define __DE_LCDC_I_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c
+index 853387c..96767da 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "ebios_lcdc_tve.h"
+ #include "de_tvec_i.h"
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h
+index 7c614eb..719367e 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/de_tvec_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __DE_TVE_I_H__
+ #define __DE_TVE_I_H__
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_de.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_de.h
+index 7e283dc..c5f9953 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_de.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_de.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_de.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __EBIOS_DE_H__
+ #define __EBIOS_DE_H__
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h b/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
+index 71b7f3a..e3eabba 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/ebios_lcdc_tve.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef _LCDC_TVE_H_
+ #define _LCDC_TVE_H_
+ 
+diff --git a/drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c b/drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c
+index aa43e14..ec0cf4c 100644
+--- a/drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c
++++ b/drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c
+@@ -1,4 +1,27 @@
+ /*
++ * drivers/video/sun4i/disp/de_bsp/de/ebios/vga_std.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
++/*
+ const __disp_vga_t disp_vga_h1024_v768 =
+ {
+ 	//__u32	pixel_clk;
+diff --git a/drivers/video/sun4i/disp/dev_disp.c b/drivers/video/sun4i/disp/dev_disp.c
+index bb7a4c7..ad0fb7c 100644
+--- a/drivers/video/sun4i/disp/dev_disp.c
++++ b/drivers/video/sun4i/disp/dev_disp.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/dev_disp.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_disp.h"
+ 
+diff --git a/drivers/video/sun4i/disp/dev_disp.h b/drivers/video/sun4i/disp/dev_disp.h
+index 8ac8f04..cc75f2e 100644
+--- a/drivers/video/sun4i/disp/dev_disp.h
++++ b/drivers/video/sun4i/disp/dev_disp.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/dev_disp.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_DISP_H__
+ #define __DEV_DISP_H__
+ 
+diff --git a/drivers/video/sun4i/disp/dev_fb.c b/drivers/video/sun4i/disp/dev_fb.c
+index dc16018..0905862 100644
+--- a/drivers/video/sun4i/disp/dev_fb.c
++++ b/drivers/video/sun4i/disp/dev_fb.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/dev_fb.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "drv_disp_i.h"
+ #include "dev_disp.h"
+@@ -9,7 +32,6 @@ extern fb_info_t g_fbi;
+ #define FBHANDTOID(handle)  ((handle) - 100)
+ #define FBIDTOHAND(ID)  ((ID) + 100)
+ 
+-
+ //              0:ARGB    1:BRGA    2:ABGR    3:RGBA
+ //seq           ARGB        BRGA       ARGB       BRGA
+ //br_swqp    0              0            1              1
+diff --git a/drivers/video/sun4i/disp/drv_disp_i.h b/drivers/video/sun4i/disp/drv_disp_i.h
+index 9ea2fb9..9a177a6 100644
+--- a/drivers/video/sun4i/disp/drv_disp_i.h
++++ b/drivers/video/sun4i/disp/drv_disp_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/disp/drv_disp_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DRV_DISP_I_H__
+ #define __DRV_DISP_I_H__
+ 
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_core.c b/drivers/video/sun4i/hdmi/aw/hdmi_core.c
+index 6c0151d..f019937 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_core.c
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_core.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_core.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "hdmi_core.h"
+ 
+ __s32 			hdmi_state	=	HDMI_State_Idle;
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_core.h b/drivers/video/sun4i/hdmi/aw/hdmi_core.h
+index 4e9229e..8be5f59 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_core.h
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_core.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_core.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_CORE_H__
+ #define __HDMI_CORE_H__
+ 
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_edid.c b/drivers/video/sun4i/hdmi/aw/hdmi_edid.c
+index 7a1dac1..109d2ca 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_edid.c
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_edid.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_edid.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "hdmi_core.h"
+ void DDC_Init(void)
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_hal.c b/drivers/video/sun4i/hdmi/aw/hdmi_hal.c
+index 5751624..1f7ca6a 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_hal.c
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_hal.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_hal.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include "../hdmi_hal.h"
+ #include "hdmi_interface.h"
+ #include "hdmi_core.h"
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_interface.c b/drivers/video/sun4i/hdmi/aw/hdmi_interface.c
+index ab86a6e..d4826b1 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_interface.c
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_interface.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_interface.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "hdmi_interface.h"
+ 
+diff --git a/drivers/video/sun4i/hdmi/aw/hdmi_interface.h b/drivers/video/sun4i/hdmi/aw/hdmi_interface.h
+index 3a64557..866344d 100644
+--- a/drivers/video/sun4i/hdmi/aw/hdmi_interface.h
++++ b/drivers/video/sun4i/hdmi/aw/hdmi_interface.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/aw/hdmi_interface.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_INTERFACE_H__
+ #define __HDMI_INTERFACE_H__
+ 
+diff --git a/drivers/video/sun4i/hdmi/dev_hdmi.c b/drivers/video/sun4i/hdmi/dev_hdmi.c
+index ff32621..55beb1b 100644
+--- a/drivers/video/sun4i/hdmi/dev_hdmi.c
++++ b/drivers/video/sun4i/hdmi/dev_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/dev_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_hdmi.h"
+ #include "drv_hdmi_i.h"
+diff --git a/drivers/video/sun4i/hdmi/dev_hdmi.h b/drivers/video/sun4i/hdmi/dev_hdmi.h
+index f8d8fd6..b987092 100644
+--- a/drivers/video/sun4i/hdmi/dev_hdmi.h
++++ b/drivers/video/sun4i/hdmi/dev_hdmi.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/dev_hdmi.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_DISPLAY_H__
+ #define __DEV_DISPLAY_H__
+ 
+diff --git a/drivers/video/sun4i/hdmi/drv_hdmi.c b/drivers/video/sun4i/hdmi/drv_hdmi.c
+index ac1242b..165121d 100644
+--- a/drivers/video/sun4i/hdmi/drv_hdmi.c
++++ b/drivers/video/sun4i/hdmi/drv_hdmi.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/drv_hdmi.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "drv_hdmi_i.h"
+ #include "hdmi_hal.h"
+diff --git a/drivers/video/sun4i/hdmi/drv_hdmi_i.h b/drivers/video/sun4i/hdmi/drv_hdmi_i.h
+index 855db1d..e31d2f9 100644
+--- a/drivers/video/sun4i/hdmi/drv_hdmi_i.h
++++ b/drivers/video/sun4i/hdmi/drv_hdmi_i.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/drv_hdmi_i.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef  _DRV_HDMI_I_H_
+ #define  _DRV_HDMI_I_H_
+diff --git a/drivers/video/sun4i/hdmi/hdmi_hal.h b/drivers/video/sun4i/hdmi/hdmi_hal.h
+index f528ed6..d3dc9ec 100644
+--- a/drivers/video/sun4i/hdmi/hdmi_hal.h
++++ b/drivers/video/sun4i/hdmi/hdmi_hal.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/hdmi/hdmi_hal.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __HDMI_HAL_H__
+ #define __HDMI_HAL_H__
+ 
+diff --git a/drivers/video/sun4i/lcd/dev_lcd.c b/drivers/video/sun4i/lcd/dev_lcd.c
+index 48ac83a..4f2271c 100644
+--- a/drivers/video/sun4i/lcd/dev_lcd.c
++++ b/drivers/video/sun4i/lcd/dev_lcd.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/dev_lcd.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #include <linux/module.h>
+ #include "dev_lcd.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/dev_lcd.h b/drivers/video/sun4i/lcd/dev_lcd.h
+index b46bf01..33194d3 100644
+--- a/drivers/video/sun4i/lcd/dev_lcd.h
++++ b/drivers/video/sun4i/lcd/dev_lcd.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/dev_lcd.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ #ifndef __DEV_LCD_H__
+ #define __DEV_LCD_H__
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd0_panel_cfg.c b/drivers/video/sun4i/lcd/lcd0_panel_cfg.c
+index 5cdb872..ed7746e 100644
+--- a/drivers/video/sun4i/lcd/lcd0_panel_cfg.c
++++ b/drivers/video/sun4i/lcd/lcd0_panel_cfg.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd0_panel_cfg.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd1_panel_cfg.c b/drivers/video/sun4i/lcd/lcd1_panel_cfg.c
+index ff5e77c..b99a534 100644
+--- a/drivers/video/sun4i/lcd/lcd1_panel_cfg.c
++++ b/drivers/video/sun4i/lcd/lcd1_panel_cfg.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd1_panel_cfg.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c b/drivers/video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c
+index 4843dba..87ba7d9 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/TC101+tl080wx800-v0.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/TC102.c b/drivers/video/sun4i/lcd/lcd_bak/TC102.c
+index e728452..7639d03 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/TC102.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/TC102.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/TC102.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c b/drivers/video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+index 52bf03e..5223b61 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/cpu_320x240_kgm281i0.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  cpu_320x240_kgm281i0.c
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c b/drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c
+index ac1135b..d231fda 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/hv_800x480.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  hv_800x480.c
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c b/drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c
+index 339c4c3..8effd8f 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/hv_800x480_td043.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  hv_800x480_td043.c
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c b/drivers/video/sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+index 26003f5..dcac596 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/lvds_1024x600_hds100ifw1.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ /**********************************************************************
+  *
+  *  lvds_1024x600_hds100ifw1.c
+diff --git a/drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c b/drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c
+index 61c24c0..222ece5 100644
+--- a/drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c
++++ b/drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_bak/lvds_1080.c
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #include "lcd_panel_cfg.h"
+ 
+diff --git a/drivers/video/sun4i/lcd/lcd_panel_cfg.h b/drivers/video/sun4i/lcd/lcd_panel_cfg.h
+index a4d74ae..ad67d5c 100644
+--- a/drivers/video/sun4i/lcd/lcd_panel_cfg.h
++++ b/drivers/video/sun4i/lcd/lcd_panel_cfg.h
+@@ -1,3 +1,26 @@
++/*
++ * drivers/video/sun4i/lcd/lcd_panel_cfg.h
++ *
++ * (C) Copyright 2007-2012
++ * Allwinner Technology Co., Ltd. <www.allwinnertech.com>
++ * Danling <danliang@allwinnertech.com>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License as
++ * published by the Free Software Foundation; either version 2 of
++ * the License, or (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++ * MA 02111-1307 USA
++ */
++
+ 
+ #ifndef __LCD_PANNEL_CFG_H__
+ #define __LCD_PANNEL_CFG_H__
+-- 
+1.8.0
+
