@@ -1,0 +1,34 @@
+From 4ea1e4ba7bec0a3d490a846376140643e4860536 Mon Sep 17 00:00:00 2001
+From: Afzal Mohammed <afzal@ti.com>
+Date: Sat, 29 Sep 2012 11:22:21 +0530
+Subject: [PATCH 067/951] mtd: nand: omap: read nand using register address
+
+Now that gpmc-nand registers are available in driver, use it
+to read nand data.
+
+"65b97cf  mtd: nand: omap2: handle nand on gpmc" modified all
+other instances. After initial versions of that patch, a new
+change added reading nand data using gpmc exposed function.
+In the final version this change was not taken care.
+
+Signed-off-by: Afzal Mohammed <afzal@ti.com>
+---
+ drivers/mtd/nand/omap2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/omap2.c b/drivers/mtd/nand/omap2.c
+index 4c33135..abfc602 100644
+--- a/drivers/mtd/nand/omap2.c
++++ b/drivers/mtd/nand/omap2.c
+@@ -996,7 +996,7 @@ static int omap_wait(struct mtd_info *mtd, struct nand_chip *chip)
+ 		cond_resched();
+ 	}
+ 
+-	status = gpmc_nand_read(info->gpmc_cs, GPMC_NAND_DATA);
++	status = readb(info->reg.gpmc_nand_data);
+ 	return status;
+ }
+ 
+-- 
+1.8.0
+

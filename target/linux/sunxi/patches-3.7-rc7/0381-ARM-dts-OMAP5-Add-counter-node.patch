@@ -1,0 +1,33 @@
+From 3b3132f7e80e3d786f8ad5d5b97d4b6122be9aaa Mon Sep 17 00:00:00 2001
+From: Jon Hunter <jon-hunter@ti.com>
+Date: Thu, 1 Nov 2012 09:12:23 -0500
+Subject: [PATCH 381/951] ARM: dts: OMAP5: Add counter node
+
+Add the 32kHz counter node for OMAP5 devices.
+
+Signed-off-by: Jon Hunter <jon-hunter@ti.com>
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/omap5.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/omap5.dtsi b/arch/arm/boot/dts/omap5.dtsi
+index c8954f1..ead74c8 100644
+--- a/arch/arm/boot/dts/omap5.dtsi
++++ b/arch/arm/boot/dts/omap5.dtsi
+@@ -77,6 +77,12 @@
+ 		ranges;
+ 		ti,hwmods = "l3_main_1", "l3_main_2", "l3_main_3";
+ 
++		counter32k: counter@4ae04000 {
++			compatible = "ti,omap-counter32k";
++			reg = <0x4ae04000 0x40>;
++			ti,hwmods = "counter_32k";
++		};
++
+ 		omap5_pmx_core: pinmux@4a002840 {
+ 			compatible = "ti,omap4-padconf", "pinctrl-single";
+ 			reg = <0x4a002840 0x01b6>;
+-- 
+1.8.0
+

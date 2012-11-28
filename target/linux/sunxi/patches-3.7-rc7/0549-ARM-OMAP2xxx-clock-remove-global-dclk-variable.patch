@@ -1,0 +1,213 @@
+From 5f03937700e3991a0de801ade8374628f2c982d5 Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul@pwsan.com>
+Date: Mon, 29 Oct 2012 20:55:53 -0600
+Subject: [PATCH 549/951] ARM: OMAP2xxx: clock: remove global 'dclk' variable
+
+Remove the global 'dclk' variable, instead replacing it with a
+variable local to the dpllcore clock type C file.  This removes some
+of the special-case code surrounding the OMAP2xxx clock init.
+
+This patch is a prerequisite for the removal of the
+omap_prcm_restart() code from arch/arm/mach-omap2/prcm.c.  It also
+cleans up some special-case OMAP2xxx clock code in the process.
+
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+Tested-by: Vaibhav Hiremath <hvaibhav@ti.com>
+---
+ arch/arm/mach-omap2/clkt2xxx_dpllcore.c      | 34 ++++++++++++++++++++++++----
+ arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c |  2 +-
+ arch/arm/mach-omap2/clock2420_data.c         |  4 ++--
+ arch/arm/mach-omap2/clock2430_data.c         |  4 ++--
+ arch/arm/mach-omap2/clock2xxx.c              |  2 +-
+ arch/arm/mach-omap2/clock2xxx.h              |  5 ++--
+ 6 files changed, 37 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/clkt2xxx_dpllcore.c b/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
+index 3432f91..08a896b 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
++++ b/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
+@@ -36,9 +36,15 @@
+ 
+ /* #define DOWN_VARIABLE_DPLL 1 */		/* Experimental */
+ 
++/*
++ * dpll_core_ck: pointer to the combined dpll_ck + core_ck on OMAP2xxx
++ * (currently defined as "dpll_ck" in the OMAP2xxx clock tree).  Set
++ * during dpll_ck init and used later by omap2xxx_clk_get_core_rate().
++ */
++static struct clk *dpll_core_ck;
++
+ /**
+  * omap2xxx_clk_get_core_rate - return the CORE_CLK rate
+- * @clk: pointer to the combined dpll_ck + core_ck (currently "dpll_ck")
+  *
+  * Returns the CORE_CLK rate.  CORE_CLK can have one of three rate
+  * sources on OMAP2xxx: the DPLL CLKOUT rate, DPLL CLKOUTX2, or 32KHz
+@@ -46,12 +52,14 @@
+  * struct clk *dpll_ck, which is a composite clock of dpll_ck and
+  * core_ck.
+  */
+-unsigned long omap2xxx_clk_get_core_rate(struct clk *clk)
++unsigned long omap2xxx_clk_get_core_rate(void)
+ {
+ 	long long core_clk;
+ 	u32 v;
+ 
+-	core_clk = omap2_get_dpll_rate(clk);
++	WARN_ON(!dpll_core_ck);
++
++	core_clk = omap2_get_dpll_rate(dpll_core_ck);
+ 
+ 	v = omap2_cm_read_mod_reg(PLL_MOD, CM_CLKSEL2);
+ 	v &= OMAP24XX_CORE_CLK_SRC_MASK;
+@@ -99,7 +107,7 @@ static long omap2_dpllcore_round_rate(unsigned long target_rate)
+ 
+ unsigned long omap2_dpllcore_recalc(struct clk *clk)
+ {
+-	return omap2xxx_clk_get_core_rate(clk);
++	return omap2xxx_clk_get_core_rate();
+ }
+ 
+ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate)
+@@ -109,7 +117,7 @@ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate)
+ 	struct prcm_config tmpset;
+ 	const struct dpll_data *dd;
+ 
+-	cur_rate = omap2xxx_clk_get_core_rate(dclk);
++	cur_rate = omap2xxx_clk_get_core_rate();
+ 	mult = omap2_cm_read_mod_reg(PLL_MOD, CM_CLKSEL2);
+ 	mult &= OMAP24XX_CORE_CLK_SRC_MASK;
+ 
+@@ -170,3 +178,19 @@ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate)
+ 	return 0;
+ }
+ 
++/**
++ * omap2xxx_clkt_dpllcore_init - clk init function for dpll_ck
++ * @clk: struct clk *dpll_ck
++ *
++ * Store a local copy of @clk in dpll_core_ck so other code can query
++ * the core rate without having to clk_get(), which can sleep.  Must
++ * only be called once.  No return value.  XXX If the clock
++ * registration process is ever changed such that dpll_ck is no longer
++ * statically defined, this code may need to change to increment some
++ * kind of use count on dpll_ck.
++ */
++void omap2xxx_clkt_dpllcore_init(struct clk *clk)
++{
++	WARN(dpll_core_ck, "dpll_core_ck already set - should never happen");
++	dpll_core_ck = clk;
++}
+diff --git a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+index c66276b..3115994 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
++++ b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+@@ -118,7 +118,7 @@ int omap2_select_table_rate(struct clk *clk, unsigned long rate)
+ 	}
+ 
+ 	curr_prcm_set = prcm;
+-	cur_rate = omap2xxx_clk_get_core_rate(dclk);
++	cur_rate = omap2xxx_clk_get_core_rate();
+ 
+ 	if (prcm->dpll_speed == cur_rate / 2) {
+ 		omap2xxx_sdrc_reprogram(CORE_CLK_SRC_DPLL, 1);
+diff --git a/arch/arm/mach-omap2/clock2420_data.c b/arch/arm/mach-omap2/clock2420_data.c
+index da1e388..d103485 100644
+--- a/arch/arm/mach-omap2/clock2420_data.c
++++ b/arch/arm/mach-omap2/clock2420_data.c
+@@ -124,6 +124,7 @@ static struct clk dpll_ck = {
+ 	.name		= "dpll_ck",
+ 	.ops		= &clkops_omap2xxx_dpll_ops,
+ 	.parent		= &sys_ck,		/* Can be func_32k also */
++	.init		= &omap2xxx_clkt_dpllcore_init,
+ 	.dpll_data	= &dpll_dd,
+ 	.clkdm_name	= "wkup_clkdm",
+ 	.recalc		= &omap2_dpllcore_recalc,
+@@ -1953,7 +1954,7 @@ int __init omap2420_clk_init(void)
+ 	omap_clk_disable_autoidle_all();
+ 
+ 	/* Check the MPU rate set by bootloader */
+-	clkrate = omap2xxx_clk_get_core_rate(&dpll_ck);
++	clkrate = omap2xxx_clk_get_core_rate();
+ 	for (prcm = rate_table; prcm->mpu_speed; prcm++) {
+ 		if (!(prcm->flags & cpu_mask))
+ 			continue;
+@@ -1979,7 +1980,6 @@ int __init omap2420_clk_init(void)
+ 	/* Avoid sleeping sleeping during omap2_clk_prepare_for_reboot() */
+ 	vclk = clk_get(NULL, "virt_prcm_set");
+ 	sclk = clk_get(NULL, "sys_ck");
+-	dclk = clk_get(NULL, "dpll_ck");
+ 
+ 	return 0;
+ }
+diff --git a/arch/arm/mach-omap2/clock2430_data.c b/arch/arm/mach-omap2/clock2430_data.c
+index c97dafe..3e16eab 100644
+--- a/arch/arm/mach-omap2/clock2430_data.c
++++ b/arch/arm/mach-omap2/clock2430_data.c
+@@ -123,6 +123,7 @@ static struct clk dpll_ck = {
+ 	.name		= "dpll_ck",
+ 	.ops		= &clkops_omap2xxx_dpll_ops,
+ 	.parent		= &sys_ck,		/* Can be func_32k also */
++	.init		= &omap2xxx_clkt_dpllcore_init,
+ 	.dpll_data	= &dpll_dd,
+ 	.clkdm_name	= "wkup_clkdm",
+ 	.recalc		= &omap2_dpllcore_recalc,
+@@ -2052,7 +2053,7 @@ int __init omap2430_clk_init(void)
+ 	omap_clk_disable_autoidle_all();
+ 
+ 	/* Check the MPU rate set by bootloader */
+-	clkrate = omap2xxx_clk_get_core_rate(&dpll_ck);
++	clkrate = omap2xxx_clk_get_core_rate();
+ 	for (prcm = rate_table; prcm->mpu_speed; prcm++) {
+ 		if (!(prcm->flags & cpu_mask))
+ 			continue;
+@@ -2078,7 +2079,6 @@ int __init omap2430_clk_init(void)
+ 	/* Avoid sleeping sleeping during omap2_clk_prepare_for_reboot() */
+ 	vclk = clk_get(NULL, "virt_prcm_set");
+ 	sclk = clk_get(NULL, "sys_ck");
+-	dclk = clk_get(NULL, "dpll_ck");
+ 
+ 	return 0;
+ }
+diff --git a/arch/arm/mach-omap2/clock2xxx.c b/arch/arm/mach-omap2/clock2xxx.c
+index 5feee16..8e0294e 100644
+--- a/arch/arm/mach-omap2/clock2xxx.c
++++ b/arch/arm/mach-omap2/clock2xxx.c
+@@ -28,7 +28,7 @@
+ #include "cm.h"
+ #include "cm-regbits-24xx.h"
+ 
+-struct clk *vclk, *sclk, *dclk;
++struct clk *vclk, *sclk;
+ 
+ /*
+  * Omap24xx specific clock functions
+diff --git a/arch/arm/mach-omap2/clock2xxx.h b/arch/arm/mach-omap2/clock2xxx.h
+index cb6df8c..19dc065 100644
+--- a/arch/arm/mach-omap2/clock2xxx.h
++++ b/arch/arm/mach-omap2/clock2xxx.h
+@@ -15,10 +15,11 @@ unsigned long omap2xxx_sys_clk_recalc(struct clk *clk);
+ unsigned long omap2_osc_clk_recalc(struct clk *clk);
+ unsigned long omap2_dpllcore_recalc(struct clk *clk);
+ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate);
+-unsigned long omap2xxx_clk_get_core_rate(struct clk *clk);
++unsigned long omap2xxx_clk_get_core_rate(void);
+ u32 omap2xxx_get_apll_clkin(void);
+ u32 omap2xxx_get_sysclkdiv(void);
+ void omap2xxx_clk_prepare_for_reboot(void);
++void omap2xxx_clkt_dpllcore_init(struct clk *clk);
+ 
+ #ifdef CONFIG_SOC_OMAP2420
+ int omap2420_clk_init(void);
+@@ -34,8 +35,6 @@ int omap2430_clk_init(void);
+ 
+ extern void __iomem *prcm_clksrc_ctrl, *cm_idlest_pll;
+ 
+-extern struct clk *dclk;
+-
+ extern const struct clkops clkops_omap2430_i2chs_wait;
+ extern const struct clkops clkops_oscck;
+ extern const struct clkops clkops_apll96;
+-- 
+1.8.0
+

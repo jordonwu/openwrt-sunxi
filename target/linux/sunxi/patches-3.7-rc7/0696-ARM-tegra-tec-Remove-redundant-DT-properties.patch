@@ -1,0 +1,31 @@
+From b28113e24975ef5307594bcc528401bef6ede9b8 Mon Sep 17 00:00:00 2001
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 9 Nov 2012 14:04:51 +0100
+Subject: [PATCH 696/951] ARM: tegra: tec: Remove redundant DT properties
+
+These properties are already set by the tegra20-tamonten.dtsi, so they
+don't need to be repeated.
+
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/boot/dts/tegra20-tec.dts | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-tec.dts b/arch/arm/boot/dts/tegra20-tec.dts
+index 9aff31b..916bec1 100644
+--- a/arch/arm/boot/dts/tegra20-tec.dts
++++ b/arch/arm/boot/dts/tegra20-tec.dts
+@@ -7,9 +7,6 @@
+ 	compatible = "ad,tec", "ad,tamonten", "nvidia,tegra20";
+ 
+ 	i2c@7000c000 {
+-		clock-frequency = <400000>;
+-		status = "okay";
+-
+ 		wm8903: wm8903@1a {
+ 			compatible = "wlf,wm8903";
+ 			reg = <0x1a>;
+-- 
+1.8.0
+

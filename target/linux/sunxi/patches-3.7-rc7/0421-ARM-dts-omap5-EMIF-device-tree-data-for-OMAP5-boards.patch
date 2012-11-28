@@ -1,0 +1,49 @@
+From e6900ddf615438edbc53df4d35a37147459d4cd8 Mon Sep 17 00:00:00 2001
+From: Lokesh Vutla <lokeshvutla@ti.com>
+Date: Mon, 5 Nov 2012 18:22:51 +0530
+Subject: [PATCH 421/951] ARM: dts: omap5: EMIF device tree data for OMAP5
+ boards
+
+Adding EMIF device tree data for OMAP5 boards.
+
+Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/omap5.dtsi | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+diff --git a/arch/arm/boot/dts/omap5.dtsi b/arch/arm/boot/dts/omap5.dtsi
+index ead74c8..790bb2a 100644
+--- a/arch/arm/boot/dts/omap5.dtsi
++++ b/arch/arm/boot/dts/omap5.dtsi
+@@ -474,5 +474,27 @@
+ 			ti,hwmods = "timer11";
+ 			ti,timer-pwm;
+ 		};
++
++		emif1: emif@0x4c000000 {
++			compatible	= "ti,emif-4d5";
++			ti,hwmods	= "emif1";
++			phy-type	= <2>; /* DDR PHY type: Intelli PHY */
++			reg = <0x4c000000 0x400>;
++			interrupts = <0 110 0x4>;
++			hw-caps-read-idle-ctrl;
++			hw-caps-ll-interface;
++			hw-caps-temp-alert;
++		};
++
++		emif2: emif@0x4d000000 {
++			compatible	= "ti,emif-4d5";
++			ti,hwmods	= "emif2";
++			phy-type	= <2>; /* DDR PHY type: Intelli PHY */
++			reg = <0x4d000000 0x400>;
++			interrupts = <0 111 0x4>;
++			hw-caps-read-idle-ctrl;
++			hw-caps-ll-interface;
++			hw-caps-temp-alert;
++		};
+ 	};
+ };
+-- 
+1.8.0
+

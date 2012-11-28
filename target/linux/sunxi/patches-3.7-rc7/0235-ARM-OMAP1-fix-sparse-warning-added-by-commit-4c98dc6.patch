@@ -1,0 +1,35 @@
+From 97af08b6e10e06563309728ed2fe8fdd919c5a33 Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul@pwsan.com>
+Date: Fri, 26 Oct 2012 13:21:48 -0600
+Subject: [PATCH 235/951] ARM: OMAP1: fix sparse warning added by commit
+ 4c98dc6b8ef2f73bdbfa78186db9a76507ba9ea3
+
+Commit 4c98dc6b8ef2f73bdbfa78186db9a76507ba9ea3 ("ARM: OMAP: Make
+plat/fpga.h local to arch/arm/plat-omap") results in a new warning from
+sparse:
+
+arch/arm/mach-omap1/fpga.c:147:6: warning: symbol 'omap1510_fpga_init_irq' was not declared. Should it be static?
+
+Fix by adding a missing include.
+
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+Cc: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/fpga.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-omap1/fpga.c b/arch/arm/mach-omap1/fpga.c
+index 4ec220d..d940fac 100644
+--- a/arch/arm/mach-omap1/fpga.c
++++ b/arch/arm/mach-omap1/fpga.c
+@@ -32,6 +32,7 @@
+ #include <mach/hardware.h>
+ 
+ #include "iomap.h"
++#include "common.h"
+ 
+ static void fpga_mask_irq(struct irq_data *d)
+ {
+-- 
+1.8.0
+

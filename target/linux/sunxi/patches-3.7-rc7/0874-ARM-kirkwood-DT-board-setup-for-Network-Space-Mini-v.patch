@@ -1,0 +1,189 @@
+From 7f9871d9d30f25891e0c4da4c6284d9e66e702f5 Mon Sep 17 00:00:00 2001
+From: Simon Guinot <simon.guinot@sequanux.org>
+Date: Wed, 17 Oct 2012 12:09:06 +0200
+Subject: [PATCH 874/951] ARM: kirkwood: DT board setup for Network Space Mini
+ v2
+
+This patch adds DT board setup for the LaCie NAS Network Space Mini v2
+(aka SafeBox). The hardware characteristics are very close to those of
+the Network Space Lite v2. The main difference are:
+- A GPIO fan which is only available on the NS2 Mini.
+- A single USB host port is wired on the NS2 Mini. The NS2 Lite provides
+  an additional dual-mode USB port (host/device).
+
+Signed-off-by: Simon Guinot <simon.guinot@sequanux.org>
+Reviewed-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/Makefile             |  1 +
+ arch/arm/boot/dts/kirkwood-ns2mini.dts | 49 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-kirkwood/Kconfig         |  8 ++++++
+ arch/arm/mach-kirkwood/Makefile        |  1 +
+ arch/arm/mach-kirkwood/board-dt.c      |  4 ++-
+ arch/arm/mach-kirkwood/board-ns2.c     |  3 ++-
+ arch/arm/mach-kirkwood/common.h        |  3 ++-
+ drivers/leds/Kconfig                   |  2 +-
+ 8 files changed, 67 insertions(+), 4 deletions(-)
+ create mode 100644 arch/arm/boot/dts/kirkwood-ns2mini.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 74fca59..77fce3f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -43,6 +43,7 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-dns320.dtb \
+ 	kirkwood-ns2.dtb \
+ 	kirkwood-ns2lite.dtb \
+ 	kirkwood-ns2max.dtb \
++	kirkwood-ns2mini.dtb \
+ 	kirkwood-ts219-6281.dtb \
+ 	kirkwood-ts219-6282.dtb
+ dtb-$(CONFIG_ARCH_MSM) += msm8660-surf.dtb \
+diff --git a/arch/arm/boot/dts/kirkwood-ns2mini.dts b/arch/arm/boot/dts/kirkwood-ns2mini.dts
+new file mode 100644
+index 0000000..b79f5eb
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-ns2mini.dts
+@@ -0,0 +1,49 @@
++/dts-v1/;
++
++/include/ "kirkwood-ns2-common.dtsi"
++
++/ {
++	model = "LaCie Network Space Mini v2";
++	compatible = "lacie,netspace_mini_v2", "marvell,kirkwood-88f6192", "marvell,kirkwood";
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x8000000>;
++	};
++
++	ocp@f1000000 {
++		sata@80000 {
++			status = "okay";
++			nr-ports = <1>;
++		};
++	};
++
++	gpio_fan {
++		compatible = "gpio-fan";
++		gpios = <&gpio0 22 1
++			 &gpio0  7 1
++			 &gpio1  1 1
++			 &gpio0 23 1>;
++		gpio-fan,speed-map =
++			<   0  0
++			 3000 15
++			 3180 14
++			 4140 13
++			 4570 12
++			 6760 11
++			 7140 10
++			 7980  9
++			 9200  8>;
++		alarm-gpios = <&gpio0 25 1>;
++	};
++
++	ns2-leds {
++		compatible = "lacie,ns2-leds";
++
++		blue-sata {
++			label = "ns2:blue:sata";
++			slow-gpio = <&gpio0 29 0>;
++			cmd-gpio = <&gpio0 30 0>;
++		};
++	};
++};
+diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
+index 83df331..757bdb3 100644
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -158,6 +158,14 @@ config MACH_NETSPACE_LITE_V2_DT
+ 	  Say 'Y' here if you want your kernel to support the LaCie
+ 	  Network Space Lite v2 NAS, using Flattened Device Tree.
+ 
++config MACH_NETSPACE_MINI_V2_DT
++	bool "LaCie Network Space Mini v2 NAS (Flattened Device Tree)"
++	select ARCH_KIRKWOOD_DT
++	help
++	  Say 'Y' here if you want your kernel to support the LaCie
++	  Network Space Mini v2 NAS (aka SafeBox), using Flattened
++	  Device Tree.
++
+ config MACH_TS219
+ 	bool "QNAP TS-110, TS-119, TS-119P+, TS-210, TS-219, TS-219P and TS-219P+ Turbo NAS"
+ 	help
+diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
+index 4d4b7d4..3ff4aa1 100644
+--- a/arch/arm/mach-kirkwood/Makefile
++++ b/arch/arm/mach-kirkwood/Makefile
+@@ -35,3 +35,4 @@ obj-$(CONFIG_MACH_INETSPACE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MAX_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+= board-ns2.o
++obj-$(CONFIG_MACH_NETSPACE_MINI_V2_DT)	+= board-ns2.o
+diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
+index b76ef75..571b019 100644
+--- a/arch/arm/mach-kirkwood/board-dt.c
++++ b/arch/arm/mach-kirkwood/board-dt.c
+@@ -99,7 +99,8 @@ static void __init kirkwood_dt_init(void)
+ 	if (of_machine_is_compatible("lacie,inetspace_v2") ||
+ 	    of_machine_is_compatible("lacie,netspace_v2") ||
+ 	    of_machine_is_compatible("lacie,netspace_max_v2") ||
+-	    of_machine_is_compatible("lacie,netspace_lite_v2"))
++	    of_machine_is_compatible("lacie,netspace_lite_v2") ||
++	    of_machine_is_compatible("lacie,netspace_mini_v2"))
+ 		ns2_init();
+ 
+ 	of_platform_populate(NULL, kirkwood_dt_match_table,
+@@ -122,6 +123,7 @@ static const char *kirkwood_dt_board_compat[] = {
+ 	"lacie,netspace_max_v2",
+ 	"lacie,netspace_v2",
+ 	"lacie,netspace_lite_v2",
++	"lacie,netspace_mini_v2",
+ 	NULL
+ };
+ 
+diff --git a/arch/arm/mach-kirkwood/board-ns2.c b/arch/arm/mach-kirkwood/board-ns2.c
+index da8c4c5..78596c4 100644
+--- a/arch/arm/mach-kirkwood/board-ns2.c
++++ b/arch/arm/mach-kirkwood/board-ns2.c
+@@ -74,7 +74,8 @@ void __init ns2_init(void)
+ 	kirkwood_mpp_conf(ns2_mpp_config);
+ 
+ 	kirkwood_ehci_init();
+-	if (of_machine_is_compatible("lacie,netspace_lite_v2"))
++	if (of_machine_is_compatible("lacie,netspace_lite_v2") ||
++	    of_machine_is_compatible("lacie,netspace_mini_v2"))
+ 		ns2_ge00_data.phy_addr = MV643XX_ETH_PHY_ADDR(0);
+ 	kirkwood_ge00_init(&ns2_ge00_data);
+ 
+diff --git a/arch/arm/mach-kirkwood/common.h b/arch/arm/mach-kirkwood/common.h
+index 6949d81..95eb69b 100644
+--- a/arch/arm/mach-kirkwood/common.h
++++ b/arch/arm/mach-kirkwood/common.h
+@@ -115,7 +115,8 @@ static inline void km_kirkwood_init(void) {};
+ #if defined(CONFIG_MACH_INETSPACE_V2_DT) || \
+ 	defined(CONFIG_MACH_NETSPACE_V2_DT) || \
+ 	defined(CONFIG_MACH_NETSPACE_MAX_V2_DT) || \
+-	defined(CONFIG_MACH_NETSPACE_LITE_V2_DT)
++	defined(CONFIG_MACH_NETSPACE_LITE_V2_DT) || \
++	defined(CONFIG_MACH_NETSPACE_MINI_V2_DT)
+ void ns2_init(void);
+ #else
+ static inline void ns2_init(void) {};
+diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
+index e455c08..b58bc8a 100644
+--- a/drivers/leds/Kconfig
++++ b/drivers/leds/Kconfig
+@@ -381,7 +381,7 @@ config LEDS_NS2
+ 	depends on MACH_NETSPACE_V2 || MACH_INETSPACE_V2 || \
+ 		   MACH_NETSPACE_MAX_V2 || MACH_D2NET_V2 || \
+ 		   MACH_NETSPACE_V2_DT || MACH_INETSPACE_V2_DT || \
+-		   MACH_NETSPACE_MAX_V2_DT
++		   MACH_NETSPACE_MAX_V2_DT || MACH_NETSPACE_MINI_V2_DT
+ 	default y
+ 	help
+ 	  This option enable support for the dual-GPIO LED found on the
+-- 
+1.8.0
+

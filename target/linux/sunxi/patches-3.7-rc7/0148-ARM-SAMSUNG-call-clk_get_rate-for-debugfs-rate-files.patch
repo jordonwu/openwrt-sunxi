@@ -1,0 +1,47 @@
+From 619271353dd60415b68779c0a87c17568037f5f8 Mon Sep 17 00:00:00 2001
+From: Colin Cross <ccross@android.com>
+Date: Tue, 23 Oct 2012 19:19:22 +0900
+Subject: [PATCH 148/951] ARM: SAMSUNG: call clk_get_rate for debugfs rate
+ files
+
+c->rate is rarely set, call clk_get_rate on the clock to print
+the value in /d/clock/.../rate.
+
+Signed-off-by: Colin Cross <ccross@android.com>
+Signed-off-by: Jonghwan Choi <jhbird.choi@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/plat-samsung/clock.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/plat-samsung/clock.c b/arch/arm/plat-samsung/clock.c
+index 36c1e67..47c9fad 100644
+--- a/arch/arm/plat-samsung/clock.c
++++ b/arch/arm/plat-samsung/clock.c
+@@ -447,6 +447,14 @@ static const struct file_operations clock_tree_fops = {
+ 	.release	= single_release,
+ };
+ 
++static int clock_rate_show(void *data, u64 *val)
++{
++	struct clk *c = data;
++	*val = clk_get_rate(c);
++	return 0;
++}
++DEFINE_SIMPLE_ATTRIBUTE(clock_rate_fops, clock_rate_show, NULL, "%llu\n");
++
+ static int clk_debugfs_register_one(struct clk *c)
+ {
+ 	int err;
+@@ -469,7 +477,7 @@ static int clk_debugfs_register_one(struct clk *c)
+ 		goto err_out;
+ 	}
+ 
+-	d = debugfs_create_u32("rate", S_IRUGO, c->dent, (u32 *)&c->rate);
++	d = debugfs_create_file("rate", S_IRUGO, c->dent, c, &clock_rate_fops);
+ 	if (!d) {
+ 		err = -ENOMEM;
+ 		goto err_out;
+-- 
+1.8.0
+

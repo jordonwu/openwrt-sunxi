@@ -1,0 +1,121 @@
+From 197926108cc837474f8807678d6220bdce281620 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 17 Nov 2012 17:57:15 +0400
+Subject: [PATCH 856/951] ARM: clps711x: Add FIQ interrupt handling
+
+CLPS711X-target CPU can have a several FIQ interrupts. With this patch
+we adds handling for a one which will be used for ALSA PCM later.
+Since FIQ have a separate handler we only add "mask" and "unmask" calls
+which will used for enable/disable_irq functions.
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/mach-clps711x/common.c                | 37 ++++++++++++++++++++++++--
+ arch/arm/mach-clps711x/common.h                |  2 +-
+ arch/arm/mach-clps711x/include/mach/clps711x.h |  3 +++
+ 3 files changed, 39 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-clps711x/common.c b/arch/arm/mach-clps711x/common.c
+index 0842024..fcdcd91 100644
+--- a/arch/arm/mach-clps711x/common.c
++++ b/arch/arm/mach-clps711x/common.c
+@@ -30,6 +30,7 @@
+ #include <linux/clk-provider.h>
+ 
+ #include <asm/exception.h>
++#include <asm/mach/irq.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/system_misc.h>
+@@ -91,7 +92,7 @@ static void int1_unmask(struct irq_data *d)
+ }
+ 
+ static struct irq_chip int1_chip = {
+-	.name		= "Interrupt Vector 1  ",
++	.name		= "Interrupt Vector 1",
+ 	.irq_ack	= int1_ack,
+ 	.irq_eoi	= int1_eoi,
+ 	.irq_mask	= int1_mask,
+@@ -128,13 +129,37 @@ static void int2_unmask(struct irq_data *d)
+ }
+ 
+ static struct irq_chip int2_chip = {
+-	.name		= "Interrupt Vector 2  ",
++	.name		= "Interrupt Vector 2",
+ 	.irq_ack	= int2_ack,
+ 	.irq_eoi	= int2_eoi,
+ 	.irq_mask	= int2_mask,
+ 	.irq_unmask	= int2_unmask,
+ };
+ 
++static void int3_mask(struct irq_data *d)
++{
++	u32 intmr3;
++
++	intmr3 = clps_readl(INTMR3);
++	intmr3 &= ~(1 << (d->irq - 32));
++	clps_writel(intmr3, INTMR3);
++}
++
++static void int3_unmask(struct irq_data *d)
++{
++	u32 intmr3;
++
++	intmr3 = clps_readl(INTMR3);
++	intmr3 |= 1 << (d->irq - 32);
++	clps_writel(intmr3, INTMR3);
++}
++
++static struct irq_chip int3_chip = {
++	.name		= "Interrupt Vector 3",
++	.irq_mask	= int3_mask,
++	.irq_unmask	= int3_unmask,
++};
++
+ static struct {
+ 	int			nr;
+ 	struct irq_chip		*chip;
+@@ -188,6 +213,14 @@ void __init clps711x_init_irq(void)
+ 		set_irq_flags(clps711x_irqdescs[i].nr,
+ 			      IRQF_VALID | IRQF_PROBE);
+ 	}
++
++	if (IS_ENABLED(CONFIG_FIQ)) {
++		init_FIQ(0);
++		irq_set_chip_and_handler(IRQ_DAIINT, &int3_chip,
++					 handle_bad_irq);
++		set_irq_flags(IRQ_DAIINT,
++			      IRQF_VALID | IRQF_PROBE | IRQF_NOAUTOEN);
++	}
+ }
+ 
+ inline u32 fls16(u32 x)
+diff --git a/arch/arm/mach-clps711x/common.h b/arch/arm/mach-clps711x/common.h
+index 3c7f12c..b7c0c75 100644
+--- a/arch/arm/mach-clps711x/common.h
++++ b/arch/arm/mach-clps711x/common.h
+@@ -4,7 +4,7 @@
+  * Common bits.
+  */
+ 
+-#define CLPS711X_NR_IRQS	(30)
++#define CLPS711X_NR_IRQS	(33)
+ #define CLPS711X_NR_GPIO	(4 * 8 + 3)
+ #define CLPS711X_GPIO(prt, bit)	((prt) * 8 + (bit))
+ 
+diff --git a/arch/arm/mach-clps711x/include/mach/clps711x.h b/arch/arm/mach-clps711x/include/mach/clps711x.h
+index 1f4728d..01d1b95 100644
+--- a/arch/arm/mach-clps711x/include/mach/clps711x.h
++++ b/arch/arm/mach-clps711x/include/mach/clps711x.h
+@@ -298,4 +298,7 @@
+ #define IRQ_UTXINT2		(16 + 12)
+ #define IRQ_URXINT2		(16 + 13)
+ 
++/* INTSR3 Interrupts */
++#define IRQ_DAIINT		(32 + 0)
++
+ #endif /* __MACH_CLPS711X_H */
+-- 
+1.8.0
+

@@ -1,0 +1,32 @@
+From 98c52c7c676b047e67c235616cc3fefad05c04d4 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Wed, 24 Oct 2012 11:21:35 +0100
+Subject: [PATCH 374/951] ARM: ux500: Change the type of interrupt to
+ something compatible
+
+On boot the Nomadik GPIO controller complains that an IRQ can't be
+configured as active high level-sensitive, so this patch converts
+it to be low-to-high edge triggered instead.
+
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ arch/arm/boot/dts/stuib.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/stuib.dtsi b/arch/arm/boot/dts/stuib.dtsi
+index 6c7e492..39446a2 100644
+--- a/arch/arm/boot/dts/stuib.dtsi
++++ b/arch/arm/boot/dts/stuib.dtsi
+@@ -15,7 +15,7 @@
+ 			stmpe1601: stmpe1601@40 {
+ 				compatible = "st,stmpe1601";
+ 				reg = <0x40>;
+-				interrupts = <26 0x4>;
++				interrupts = <26 0x1>;
+ 				interrupt-parent = <&gpio6>;
+ 				interrupt-controller;
+ 
+-- 
+1.8.0
+

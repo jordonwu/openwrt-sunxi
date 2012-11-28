@@ -1,0 +1,442 @@
+From 2edb36c4ea09fe5077e2d19e60fd353ab1fc6eee Mon Sep 17 00:00:00 2001
+From: Kukjin Kim <kgene.kim@samsung.com>
+Date: Thu, 15 Nov 2012 15:48:56 +0900
+Subject: [PATCH 887/951] ARM: EXYNOS: add support for EXYNOS5440 SoC
+
+This patch adds support for EXYNOS5440 SoC which is including
+ARM Cortex-A15 Quad cores.
+
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-exynos/Kconfig                 | 11 ++++-
+ arch/arm/mach-exynos/Makefile                |  2 +-
+ arch/arm/mach-exynos/common.c                | 68 +++++++++++++++++++++++++---
+ arch/arm/mach-exynos/include/mach/irqs.h     |  5 ++
+ arch/arm/mach-exynos/include/mach/map.h      |  5 ++
+ arch/arm/mach-exynos/include/mach/regs-pmu.h |  1 +
+ arch/arm/mach-exynos/mach-exynos5-dt.c       | 31 +++++++++----
+ arch/arm/mach-exynos/mct.c                   | 11 ++++-
+ arch/arm/mach-exynos/setup-i2c0.c            |  2 +-
+ arch/arm/plat-samsung/include/plat/cpu.h     |  8 ++++
+ drivers/tty/serial/samsung.c                 |  3 +-
+ 11 files changed, 126 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
+index da55107..ed17e35 100644
+--- a/arch/arm/mach-exynos/Kconfig
++++ b/arch/arm/mach-exynos/Kconfig
+@@ -67,6 +67,15 @@ config SOC_EXYNOS5250
+ 	help
+ 	  Enable EXYNOS5250 SoC support
+ 
++config SOC_EXYNOS5440
++	bool "SAMSUNG EXYNOS5440"
++	default y
++	depends on ARCH_EXYNOS5
++	select ARM_ARCH_TIMER
++	select AUTO_ZRELADDR
++	help
++	  Enable EXYNOS5440 SoC support
++
+ config EXYNOS4_MCT
+ 	bool
+ 	default y
+@@ -417,9 +426,9 @@ config MACH_EXYNOS4_DT
+ 
+ config MACH_EXYNOS5_DT
+ 	bool "SAMSUNG EXYNOS5 Machine using device tree"
++	default y
+ 	depends on ARCH_EXYNOS5
+ 	select ARM_AMBA
+-	select SOC_EXYNOS5250
+ 	select USE_OF
+ 	help
+ 	  Machine support for Samsung EXYNOS5 machine with device tree enabled.
+diff --git a/arch/arm/mach-exynos/Makefile b/arch/arm/mach-exynos/Makefile
+index 9b58024..1a076df 100644
+--- a/arch/arm/mach-exynos/Makefile
++++ b/arch/arm/mach-exynos/Makefile
+@@ -14,9 +14,9 @@ obj-				:=
+ 
+ obj-$(CONFIG_ARCH_EXYNOS)	+= common.o
+ obj-$(CONFIG_ARCH_EXYNOS4)	+= clock-exynos4.o
+-obj-$(CONFIG_ARCH_EXYNOS5)	+= clock-exynos5.o
+ obj-$(CONFIG_CPU_EXYNOS4210)	+= clock-exynos4210.o
+ obj-$(CONFIG_SOC_EXYNOS4212)	+= clock-exynos4212.o
++obj-$(CONFIG_SOC_EXYNOS5250)	+= clock-exynos5.o
+ 
+ obj-$(CONFIG_PM)		+= pm.o
+ obj-$(CONFIG_PM_GENERIC_DOMAINS) += pm_domains.o
+diff --git a/arch/arm/mach-exynos/common.c b/arch/arm/mach-exynos/common.c
+index 1947be8..94f1ded 100644
+--- a/arch/arm/mach-exynos/common.c
++++ b/arch/arm/mach-exynos/common.c
+@@ -58,9 +58,11 @@ static const char name_exynos4210[] = "EXYNOS4210";
+ static const char name_exynos4212[] = "EXYNOS4212";
+ static const char name_exynos4412[] = "EXYNOS4412";
+ static const char name_exynos5250[] = "EXYNOS5250";
++static const char name_exynos5440[] = "EXYNOS5440";
+ 
+ static void exynos4_map_io(void);
+ static void exynos5_map_io(void);
++static void exynos5440_map_io(void);
+ static void exynos4_init_clocks(int xtal);
+ static void exynos5_init_clocks(int xtal);
+ static void exynos_init_uarts(struct s3c2410_uartcfg *cfg, int no);
+@@ -99,6 +101,12 @@ static struct cpu_table cpu_ids[] __initdata = {
+ 		.init_uarts	= exynos_init_uarts,
+ 		.init		= exynos_init,
+ 		.name		= name_exynos5250,
++	}, {
++		.idcode		= EXYNOS5440_SOC_ID,
++		.idmask		= EXYNOS5_SOC_MASK,
++		.map_io		= exynos5440_map_io,
++		.init		= exynos_init,
++		.name		= name_exynos5440,
+ 	},
+ };
+ 
+@@ -113,6 +121,15 @@ static struct map_desc exynos_iodesc[] __initdata = {
+ 	},
+ };
+ 
++static struct map_desc exynos5440_iodesc[] __initdata = {
++	{
++		.virtual	= (unsigned long)S5P_VA_CHIPID,
++		.pfn		= __phys_to_pfn(EXYNOS5440_PA_CHIPID),
++		.length		= SZ_4K,
++		.type		= MT_DEVICE,
++	},
++};
++
+ static struct map_desc exynos4_iodesc[] __initdata = {
+ 	{
+ 		.virtual	= (unsigned long)S3C_VA_SYS,
+@@ -279,6 +296,15 @@ static struct map_desc exynos5_iodesc[] __initdata = {
+ 	},
+ };
+ 
++static struct map_desc exynos5440_iodesc0[] __initdata = {
++	{
++		.virtual	= (unsigned long)S3C_VA_UART,
++		.pfn		= __phys_to_pfn(EXYNOS5440_PA_UART0),
++		.length		= SZ_512K,
++		.type		= MT_DEVICE,
++	},
++};
++
+ void exynos4_restart(char mode, const char *cmd)
+ {
+ 	__raw_writel(0x1, S5P_SWRESET);
+@@ -286,11 +312,29 @@ void exynos4_restart(char mode, const char *cmd)
+ 
+ void exynos5_restart(char mode, const char *cmd)
+ {
+-	__raw_writel(0x1, EXYNOS_SWRESET);
++	u32 val;
++	void __iomem *addr;
++
++	if (of_machine_is_compatible("samsung,exynos5250")) {
++		val = 0x1;
++		addr = EXYNOS_SWRESET;
++	} else if (of_machine_is_compatible("samsung,exynos5440")) {
++		val = (0x10 << 20) | (0x1 << 16);
++		addr = EXYNOS5440_SWRESET;
++	} else {
++		pr_err("%s: cannot support non-DT\n", __func__);
++		return;
++	}
++
++	__raw_writel(val, addr);
+ }
+ 
+ void __init exynos_init_late(void)
+ {
++	if (of_machine_is_compatible("samsung,exynos5440"))
++		/* to be supported later */
++		return;
++
+ 	exynos_pm_late_initcall();
+ }
+ 
+@@ -303,7 +347,11 @@ void __init exynos_init_late(void)
+ void __init exynos_init_io(struct map_desc *mach_desc, int size)
+ {
+ 	/* initialize the io descriptors we need for initialization */
+-	iotable_init(exynos_iodesc, ARRAY_SIZE(exynos_iodesc));
++	if (of_machine_is_compatible("samsung,exynos5440"))
++		iotable_init(exynos5440_iodesc, ARRAY_SIZE(exynos5440_iodesc));
++	else
++		iotable_init(exynos_iodesc, ARRAY_SIZE(exynos_iodesc));
++
+ 	if (mach_desc)
+ 		iotable_init(mach_desc, size);
+ 
+@@ -389,6 +437,11 @@ static void __init exynos4_init_clocks(int xtal)
+ 	exynos4_setup_clocks();
+ }
+ 
++static void __init exynos5440_map_io(void)
++{
++	iotable_init(exynos5440_iodesc0, ARRAY_SIZE(exynos5440_iodesc0));
++}
++
+ static void __init exynos5_init_clocks(int xtal)
+ {
+ 	printk(KERN_DEBUG "%s: initializing clocks\n", __func__);
+@@ -604,8 +657,9 @@ int __init combiner_of_init(struct device_node *np, struct device_node *parent)
+ 	return 0;
+ }
+ 
+-static const struct of_device_id exynos4_dt_irq_match[] = {
++static const struct of_device_id exynos_dt_irq_match[] = {
+ 	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
++	{ .compatible = "arm,cortex-a15-gic", .data = gic_of_init, },
+ 	{ .compatible = "samsung,exynos4210-combiner",
+ 			.data = combiner_of_init, },
+ 	{},
+@@ -622,7 +676,7 @@ void __init exynos4_init_irq(void)
+ 		gic_init_bases(0, IRQ_PPI(0), S5P_VA_GIC_DIST, S5P_VA_GIC_CPU, gic_bank_offset, NULL);
+ #ifdef CONFIG_OF
+ 	else
+-		of_irq_init(exynos4_dt_irq_match);
++		of_irq_init(exynos_dt_irq_match);
+ #endif
+ 
+ 	if (!of_have_populated_dt())
+@@ -639,7 +693,7 @@ void __init exynos4_init_irq(void)
+ void __init exynos5_init_irq(void)
+ {
+ #ifdef CONFIG_OF
+-	of_irq_init(exynos4_dt_irq_match);
++	of_irq_init(exynos_dt_irq_match);
+ #endif
+ 	/*
+ 	 * The parameters of s5p_init_irq() are for VIC init.
+@@ -669,7 +723,7 @@ static int __init exynos4_l2x0_cache_init(void)
+ {
+ 	int ret;
+ 
+-	if (soc_is_exynos5250())
++	if (soc_is_exynos5250() || soc_is_exynos5440())
+ 		return 0;
+ 
+ 	ret = l2x0_of_init(L2_AUX_VAL, L2_AUX_MASK);
+@@ -1010,6 +1064,8 @@ static int __init exynos_init_irq_eint(void)
+ 		}
+ 	}
+ #endif
++	if (soc_is_exynos5440())
++		return 0;
+ 
+ 	if (soc_is_exynos5250())
+ 		exynos_eint_base = ioremap(EXYNOS5_PA_GPIO1, SZ_4K);
+diff --git a/arch/arm/mach-exynos/include/mach/irqs.h b/arch/arm/mach-exynos/include/mach/irqs.h
+index 35bced6..f43a96c 100644
+--- a/arch/arm/mach-exynos/include/mach/irqs.h
++++ b/arch/arm/mach-exynos/include/mach/irqs.h
+@@ -333,6 +333,11 @@
+ #define EXYNOS5_IRQ_FIMC_LITE1		IRQ_SPI(126)
+ #define EXYNOS5_IRQ_RP_TIMER		IRQ_SPI(127)
+ 
++/* EXYNOS5440 */
++
++#define EXYNOS5440_IRQ_UART0		IRQ_SPI(2)
++#define EXYNOS5440_IRQ_UART1		IRQ_SPI(3)
++
+ #define EXYNOS5_IRQ_PMU			COMBINER_IRQ(1, 2)
+ 
+ #define EXYNOS5_IRQ_SYSMMU_GSC0_0	COMBINER_IRQ(2, 0)
+diff --git a/arch/arm/mach-exynos/include/mach/map.h b/arch/arm/mach-exynos/include/mach/map.h
+index 8480849..aa3760e 100644
+--- a/arch/arm/mach-exynos/include/mach/map.h
++++ b/arch/arm/mach-exynos/include/mach/map.h
+@@ -53,6 +53,7 @@
+ #define EXYNOS4_PA_ONENAND_DMA		0x0C600000
+ 
+ #define EXYNOS_PA_CHIPID		0x10000000
++#define EXYNOS5440_PA_CHIPID		0x00160000
+ 
+ #define EXYNOS4_PA_SYSCON		0x10010000
+ #define EXYNOS5_PA_SYSCON		0x10050100
+@@ -281,6 +282,10 @@
+ #define EXYNOS5_PA_UART3		0x12C30000
+ #define EXYNOS5_SZ_UART			SZ_256
+ 
++#define EXYNOS5440_PA_UART0		0x000B0000
++#define EXYNOS5440_PA_UART1		0x000C0000
++#define EXYNOS5440_SZ_UART		SZ_256
++
+ #define S3C_VA_UARTx(x)			(S3C_VA_UART + ((x) * S3C_UART_OFFSET))
+ 
+ #endif /* __ASM_ARCH_MAP_H */
+diff --git a/arch/arm/mach-exynos/include/mach/regs-pmu.h b/arch/arm/mach-exynos/include/mach/regs-pmu.h
+index d4e392b..c0b74f3 100644
+--- a/arch/arm/mach-exynos/include/mach/regs-pmu.h
++++ b/arch/arm/mach-exynos/include/mach/regs-pmu.h
+@@ -31,6 +31,7 @@
+ 
+ #define S5P_SWRESET				S5P_PMUREG(0x0400)
+ #define EXYNOS_SWRESET				S5P_PMUREG(0x0400)
++#define EXYNOS5440_SWRESET			S5P_PMUREG(0x00C4)
+ 
+ #define S5P_WAKEUP_STAT				S5P_PMUREG(0x0600)
+ #define S5P_EINT_WAKEUP_MASK			S5P_PMUREG(0x0604)
+diff --git a/arch/arm/mach-exynos/mach-exynos5-dt.c b/arch/arm/mach-exynos/mach-exynos5-dt.c
+index db1cd8e..4db2ee1 100644
+--- a/arch/arm/mach-exynos/mach-exynos5-dt.c
++++ b/arch/arm/mach-exynos/mach-exynos5-dt.c
+@@ -75,20 +75,33 @@ static const struct of_dev_auxdata exynos5250_auxdata_lookup[] __initconst = {
+ 	{},
+ };
+ 
+-static void __init exynos5250_dt_map_io(void)
++static const struct of_dev_auxdata exynos5440_auxdata_lookup[] __initconst = {
++	OF_DEV_AUXDATA("samsung,exynos4210-uart", EXYNOS5440_PA_UART0,
++				"exynos4210-uart.0", NULL),
++	{},
++};
++
++static void __init exynos5_dt_map_io(void)
+ {
+ 	exynos_init_io(NULL, 0);
+-	s3c24xx_init_clocks(24000000);
++
++	if (of_machine_is_compatible("samsung,exynos5250"))
++		s3c24xx_init_clocks(24000000);
+ }
+ 
+-static void __init exynos5250_dt_machine_init(void)
++static void __init exynos5_dt_machine_init(void)
+ {
+-	of_platform_populate(NULL, of_default_bus_match_table,
+-				exynos5250_auxdata_lookup, NULL);
++	if (of_machine_is_compatible("samsung,exynos5250"))
++		of_platform_populate(NULL, of_default_bus_match_table,
++				     exynos5250_auxdata_lookup, NULL);
++	else if (of_machine_is_compatible("samsung,exynos5440"))
++		of_platform_populate(NULL, of_default_bus_match_table,
++				     exynos5440_auxdata_lookup, NULL);
+ }
+ 
+-static char const *exynos5250_dt_compat[] __initdata = {
++static char const *exynos5_dt_compat[] __initdata = {
+ 	"samsung,exynos5250",
++	"samsung,exynos5440",
+ 	NULL
+ };
+ 
+@@ -96,11 +109,11 @@ DT_MACHINE_START(EXYNOS5_DT, "SAMSUNG EXYNOS5 (Flattened Device Tree)")
+ 	/* Maintainer: Kukjin Kim <kgene.kim@samsung.com> */
+ 	.init_irq	= exynos5_init_irq,
+ 	.smp		= smp_ops(exynos_smp_ops),
+-	.map_io		= exynos5250_dt_map_io,
++	.map_io		= exynos5_dt_map_io,
+ 	.handle_irq	= gic_handle_irq,
+-	.init_machine	= exynos5250_dt_machine_init,
++	.init_machine	= exynos5_dt_machine_init,
+ 	.init_late	= exynos_init_late,
+ 	.timer		= &exynos4_timer,
+-	.dt_compat	= exynos5250_dt_compat,
++	.dt_compat	= exynos5_dt_compat,
+ 	.restart        = exynos5_restart,
+ MACHINE_END
+diff --git a/arch/arm/mach-exynos/mct.c b/arch/arm/mach-exynos/mct.c
+index b601fb8..57668eb 100644
+--- a/arch/arm/mach-exynos/mct.c
++++ b/arch/arm/mach-exynos/mct.c
+@@ -19,7 +19,9 @@
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/percpu.h>
++#include <linux/of.h>
+ 
++#include <asm/arch_timer.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/localtimer.h>
+ 
+@@ -476,8 +478,13 @@ static void __init exynos4_timer_resources(void)
+ #endif /* CONFIG_LOCAL_TIMERS */
+ }
+ 
+-static void __init exynos4_timer_init(void)
++static void __init exynos_timer_init(void)
+ {
++	if (soc_is_exynos5440()) {
++		arch_timer_of_register();
++		return;
++	}
++
+ 	if ((soc_is_exynos4210()) || (soc_is_exynos5250()))
+ 		mct_int_type = MCT_INT_SPI;
+ 	else
+@@ -489,5 +496,5 @@ static void __init exynos4_timer_init(void)
+ }
+ 
+ struct sys_timer exynos4_timer = {
+-	.init		= exynos4_timer_init,
++	.init		= exynos_timer_init,
+ };
+diff --git a/arch/arm/mach-exynos/setup-i2c0.c b/arch/arm/mach-exynos/setup-i2c0.c
+index 5700f23..e2d9dfb 100644
+--- a/arch/arm/mach-exynos/setup-i2c0.c
++++ b/arch/arm/mach-exynos/setup-i2c0.c
+@@ -20,7 +20,7 @@ struct platform_device; /* don't need the contents */
+ 
+ void s3c_i2c0_cfg_gpio(struct platform_device *dev)
+ {
+-	if (soc_is_exynos5250())
++	if (soc_is_exynos5250() || soc_is_exynos5440())
+ 		/* will be implemented with gpio function */
+ 		return;
+ 
+diff --git a/arch/arm/plat-samsung/include/plat/cpu.h b/arch/arm/plat-samsung/include/plat/cpu.h
+index ace4451..e0072ce 100644
+--- a/arch/arm/plat-samsung/include/plat/cpu.h
++++ b/arch/arm/plat-samsung/include/plat/cpu.h
+@@ -43,6 +43,7 @@ extern unsigned long samsung_cpu_id;
+ #define EXYNOS4_CPU_MASK	0xFFFE0000
+ 
+ #define EXYNOS5250_SOC_ID	0x43520000
++#define EXYNOS5440_SOC_ID	0x54400000
+ #define EXYNOS5_SOC_MASK	0xFFFFF000
+ 
+ #define IS_SAMSUNG_CPU(name, id, mask)		\
+@@ -62,6 +63,7 @@ IS_SAMSUNG_CPU(exynos4210, EXYNOS4210_CPU_ID, EXYNOS4_CPU_MASK)
+ IS_SAMSUNG_CPU(exynos4212, EXYNOS4212_CPU_ID, EXYNOS4_CPU_MASK)
+ IS_SAMSUNG_CPU(exynos4412, EXYNOS4412_CPU_ID, EXYNOS4_CPU_MASK)
+ IS_SAMSUNG_CPU(exynos5250, EXYNOS5250_SOC_ID, EXYNOS5_SOC_MASK)
++IS_SAMSUNG_CPU(exynos5440, EXYNOS5440_SOC_ID, EXYNOS5_SOC_MASK)
+ 
+ #if defined(CONFIG_CPU_S3C2410) || defined(CONFIG_CPU_S3C2412) || \
+     defined(CONFIG_CPU_S3C2416) || defined(CONFIG_CPU_S3C2440) || \
+@@ -130,6 +132,12 @@ IS_SAMSUNG_CPU(exynos5250, EXYNOS5250_SOC_ID, EXYNOS5_SOC_MASK)
+ # define soc_is_exynos5250()	0
+ #endif
+ 
++#if defined(CONFIG_SOC_EXYNOS5440)
++# define soc_is_exynos5440()	is_samsung_exynos5440()
++#else
++# define soc_is_exynos5440()	0
++#endif
++
+ #define IODESC_ENT(x) { (unsigned long)S3C24XX_VA_##x, __phys_to_pfn(S3C24XX_PA_##x), S3C24XX_SZ_##x, MT_DEVICE }
+ 
+ #ifndef KHZ
+diff --git a/drivers/tty/serial/samsung.c b/drivers/tty/serial/samsung.c
+index 7f04717..0e26a16 100644
+--- a/drivers/tty/serial/samsung.c
++++ b/drivers/tty/serial/samsung.c
+@@ -1646,7 +1646,8 @@ static struct s3c24xx_serial_drv_data s5pv210_serial_drv_data = {
+ #endif
+ 
+ #if defined(CONFIG_CPU_EXYNOS4210) || defined(CONFIG_SOC_EXYNOS4212) || \
+-	defined(CONFIG_SOC_EXYNOS4412) || defined(CONFIG_SOC_EXYNOS5250)
++	defined(CONFIG_SOC_EXYNOS4412) || defined(CONFIG_SOC_EXYNOS5250) || \
++	defined(CONFIG_SOC_EXYNOS5440)
+ static struct s3c24xx_serial_drv_data exynos4210_serial_drv_data = {
+ 	.info = &(struct s3c24xx_uart_info) {
+ 		.name		= "Samsung Exynos4 UART",
+-- 
+1.8.0
+

@@ -1,0 +1,49 @@
+From cee4ad1ed90a0959fc29f9d30a2526e5e9522cfa Mon Sep 17 00:00:00 2001
+From: Ivo Sieben <meltedpianoman@gmail.com>
+Date: Thu, 27 Sep 2012 14:02:05 +0200
+Subject: [PATCH 167/951] tty: prevent unnecessary work queue lock checking on
+ flip buffer copy
+
+When low_latency flag is set the TTY receive flip buffer is copied to the
+line discipline directly instead of using a work queue in the background.
+Therefor only in case a workqueue is actually used for copying data to the
+line discipline we'll have to flush the workqueue.
+
+This prevents unnecessary spin lock/unlock on the workqueue spin lock that
+can cause additional scheduling overhead on a PREEMPT_RT system. On a 200
+MHz AT91SAM9261 processor setup this fixes about 100us of scheduling
+overhead on the TTY read call.
+
+Signed-off-by: Ivo Sieben <meltedpianoman@gmail.com>
+Acked-by: Alan Cox <alan@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/tty/tty_buffer.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/tty/tty_buffer.c b/drivers/tty/tty_buffer.c
+index 91e326f..8b00f6a 100644
+--- a/drivers/tty/tty_buffer.c
++++ b/drivers/tty/tty_buffer.c
+@@ -342,6 +342,8 @@ EXPORT_SYMBOL(tty_insert_flip_string_flags);
+  *	Takes any pending buffers and transfers their ownership to the
+  *	ldisc side of the queue. It then schedules those characters for
+  *	processing by the line discipline.
++ *	Note that this function can only be used when the low_latency flag
++ *	is unset. Otherwise the workqueue won't be flushed.
+  *
+  *	Locking: Takes tty->buf.lock
+  */
+@@ -514,7 +516,8 @@ static void flush_to_ldisc(struct work_struct *work)
+  */
+ void tty_flush_to_ldisc(struct tty_struct *tty)
+ {
+-	flush_work(&tty->buf.work);
++	if (!tty->low_latency)
++		flush_work(&tty->buf.work);
+ }
+ 
+ /**
+-- 
+1.8.0
+

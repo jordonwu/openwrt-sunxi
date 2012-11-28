@@ -1,0 +1,93 @@
+From 7a2bd1cc3926327c0393deb52e8300af75b1c9e1 Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul@pwsan.com>
+Date: Fri, 14 Sep 2012 23:18:20 -0600
+Subject: [PATCH 635/951] ARM: OMAP2xxx: clock: add APLL rate recalculation
+ functions
+
+OMAP2420 and OMAP2430 chips each have two on-chip APLLs.  When locked,
+one APLL generates a 96 MHz rate; the other, a 54 MHz rate.
+Previously we treated these clocks as fixed-rate clocks at the locked
+rates, but this isn't quite right.  The locked rate should be returned
+when the APLL is locked, and a zero rate should be returned when the
+APLL is stopped.  This patch adds the infrastructure that will be used
+by the CCF changes.
+
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+Signed-off-by: Mike Turquette <mturquette@ti.com>
+Cc: Rajendra Nayak <rnayak@ti.com>
+---
+ arch/arm/mach-omap2/clkt2xxx_apll.c | 35 +++++++++++++++++++++++++++++++++++
+ arch/arm/mach-omap2/clock2xxx.h     |  4 ++++
+ 2 files changed, 39 insertions(+)
+
+diff --git a/arch/arm/mach-omap2/clkt2xxx_apll.c b/arch/arm/mach-omap2/clkt2xxx_apll.c
+index 1bd1527..76a958c 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_apll.c
++++ b/arch/arm/mach-omap2/clkt2xxx_apll.c
+@@ -39,6 +39,27 @@
+ /* Private functions */
+ 
+ #ifdef CONFIG_COMMON_CLK
++/**
++ * omap2xxx_clk_apll_locked - is the APLL locked?
++ * @hw: struct clk_hw * of the APLL to check
++ *
++ * If the APLL IP block referred to by @hw indicates that it's locked,
++ * return true; otherwise, return false.
++ */
++static bool omap2xxx_clk_apll_locked(struct clk_hw *hw)
++{
++	struct clk_hw_omap *clk = to_clk_hw_omap(hw);
++	u32 r, apll_mask;
++
++	apll_mask = EN_APLL_LOCKED << clk->enable_bit;
++
++	r = omap2_cm_read_mod_reg(PLL_MOD, CM_CLKEN);
++
++	return ((r & apll_mask) == apll_mask) ? true : false;
++}
++#endif
++
++#ifdef CONFIG_COMMON_CLK
+ int omap2_clk_apll96_enable(struct clk_hw *hw)
+ #else
+ static int _apll96_enable(struct clk *clk)
+@@ -110,6 +131,20 @@ static void _apll54_disable(struct clk *clk)
+ 	omap2xxx_cm_apll54_disable();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++unsigned long omap2_clk_apll54_recalc(struct clk_hw *hw,
++				      unsigned long parent_rate)
++{
++	return (omap2xxx_clk_apll_locked(hw)) ? 54000000 : 0;
++}
++
++unsigned long omap2_clk_apll96_recalc(struct clk_hw *hw,
++				      unsigned long parent_rate)
++{
++	return (omap2xxx_clk_apll_locked(hw)) ? 96000000 : 0;
++}
++#endif
++
+ /* Public data */
+ #ifdef CONFIG_COMMON_CLK
+ const struct clk_hw_omap_ops clkhwops_apll54 = {
+diff --git a/arch/arm/mach-omap2/clock2xxx.h b/arch/arm/mach-omap2/clock2xxx.h
+index 5858151..82147c4 100644
+--- a/arch/arm/mach-omap2/clock2xxx.h
++++ b/arch/arm/mach-omap2/clock2xxx.h
+@@ -27,6 +27,10 @@ unsigned long omap2_dpllcore_recalc(struct clk_hw *hw,
+ int omap2_reprogram_dpllcore(struct clk_hw *clk, unsigned long rate,
+ 			     unsigned long parent_rate);
+ void omap2xxx_clkt_dpllcore_init(struct clk_hw *hw);
++unsigned long omap2_clk_apll54_recalc(struct clk_hw *hw,
++				      unsigned long parent_rate);
++unsigned long omap2_clk_apll96_recalc(struct clk_hw *hw,
++				      unsigned long parent_rate);
+ #else
+ unsigned long omap2_table_mpu_recalc(struct clk *clk);
+ int omap2_select_table_rate(struct clk *clk, unsigned long rate);
+-- 
+1.8.0
+

@@ -1,0 +1,79 @@
+From ffe5cd8e3a5b0b6e13d3f51d3abab5715df75ff0 Mon Sep 17 00:00:00 2001
+From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+Date: Tue, 30 Oct 2012 08:09:09 +0800
+Subject: [PATCH 478/951] arm: at91: move pit define to the driver
+
+Signed-off-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+Cc: Nicolas Ferre <nicolas.ferre@atmel.com>
+---
+ arch/arm/mach-at91/at91sam926x_time.c      | 14 +++++++++++--
+ arch/arm/mach-at91/include/mach/at91_pit.h | 32 ------------------------------
+ 2 files changed, 12 insertions(+), 34 deletions(-)
+ delete mode 100644 arch/arm/mach-at91/include/mach/at91_pit.h
+
+diff --git a/arch/arm/mach-at91/at91sam926x_time.c b/arch/arm/mach-at91/at91sam926x_time.c
+index ffc0957..358412f 100644
+--- a/arch/arm/mach-at91/at91sam926x_time.c
++++ b/arch/arm/mach-at91/at91sam926x_time.c
+@@ -20,8 +20,18 @@
+ 
+ #include <asm/mach/time.h>
+ 
+-#include <mach/at91_pit.h>
+-
++#define AT91_PIT_MR		0x00			/* Mode Register */
++#define		AT91_PIT_PITIEN		(1 << 25)		/* Timer Interrupt Enable */
++#define		AT91_PIT_PITEN		(1 << 24)		/* Timer Enabled */
++#define		AT91_PIT_PIV		(0xfffff)		/* Periodic Interval Value */
++
++#define AT91_PIT_SR		0x04			/* Status Register */
++#define		AT91_PIT_PITS		(1 << 0)		/* Timer Status */
++
++#define AT91_PIT_PIVR		0x08			/* Periodic Interval Value Register */
++#define AT91_PIT_PIIR		0x0c			/* Periodic Interval Image Register */
++#define		AT91_PIT_PICNT		(0xfff << 20)		/* Interval Counter */
++#define		AT91_PIT_CPIV		(0xfffff)		/* Inverval Value */
+ 
+ #define PIT_CPIV(x)	((x) & AT91_PIT_CPIV)
+ #define PIT_PICNT(x)	(((x) & AT91_PIT_PICNT) >> 20)
+diff --git a/arch/arm/mach-at91/include/mach/at91_pit.h b/arch/arm/mach-at91/include/mach/at91_pit.h
+deleted file mode 100644
+index d1f80ad..0000000
+--- a/arch/arm/mach-at91/include/mach/at91_pit.h
++++ /dev/null
+@@ -1,32 +0,0 @@
+-/*
+- * arch/arm/mach-at91/include/mach/at91_pit.h
+- *
+- * Copyright (C) 2007 Andrew Victor
+- * Copyright (C) 2007 Atmel Corporation.
+- *
+- * Periodic Interval Timer (PIT) - System peripherals regsters.
+- * Based on AT91SAM9261 datasheet revision D.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- */
+-
+-#ifndef AT91_PIT_H
+-#define AT91_PIT_H
+-
+-#define AT91_PIT_MR		0x00			/* Mode Register */
+-#define		AT91_PIT_PITIEN		(1 << 25)		/* Timer Interrupt Enable */
+-#define		AT91_PIT_PITEN		(1 << 24)		/* Timer Enabled */
+-#define		AT91_PIT_PIV		(0xfffff)		/* Periodic Interval Value */
+-
+-#define AT91_PIT_SR		0x04			/* Status Register */
+-#define		AT91_PIT_PITS		(1 << 0)		/* Timer Status */
+-
+-#define AT91_PIT_PIVR		0x08			/* Periodic Interval Value Register */
+-#define AT91_PIT_PIIR		0x0c			/* Periodic Interval Image Register */
+-#define		AT91_PIT_PICNT		(0xfff << 20)		/* Interval Counter */
+-#define		AT91_PIT_CPIV		(0xfffff)		/* Inverval Value */
+-
+-#endif
+-- 
+1.8.0
+

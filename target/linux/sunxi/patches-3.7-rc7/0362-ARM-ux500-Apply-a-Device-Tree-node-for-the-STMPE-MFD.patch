@@ -1,0 +1,44 @@
+From cb5527035d384d7fdead83adf00833d734c282ce Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Thu, 4 Oct 2012 12:41:35 +0100
+Subject: [PATCH 362/951] ARM: ux500: Apply a Device Tree node for the STMPE
+ MFD
+
+Here we apply the STMPE Multi-Functional Device's node to the
+ST User Interface Board Device Tree file. It includes all of
+the properties required for correct device initialsation.
+
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ arch/arm/boot/dts/stuib.dtsi | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/stuib.dtsi b/arch/arm/boot/dts/stuib.dtsi
+index 62f3ecd..d6e36b5 100644
+--- a/arch/arm/boot/dts/stuib.dtsi
++++ b/arch/arm/boot/dts/stuib.dtsi
+@@ -11,6 +11,19 @@
+ 
+ / {
+ 	soc-u9500 {
++		i2c@80004000 {
++			stmpe1601: stmpe1601@40 {
++				compatible = "st,stmpe1601";
++				reg = <0x40>;
++				interrupts = <26 0x4>;
++				interrupt-parent = <&gpio6>;
++				interrupt-controller;
++
++				wakeup-source;
++				st,autosleep-timeout = <1024>;
++			};
++		};
++
+ 		i2c@80110000 {
+ 			bu21013_tp@0x5c {
+ 				compatible = "rhom,bu21013_tp";
+-- 
+1.8.0
+

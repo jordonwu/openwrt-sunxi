@@ -1,0 +1,201 @@
+From bb1d34a20d537e2f2342db8b5918512f05b0f852 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Sat, 15 Sep 2012 14:26:14 +0800
+Subject: [PATCH 028/951] rtc: mxc_rtc: remove cpu_is_xxx by using
+ platform_device_id
+
+It changes the driver to use platform_device_id rather than cpu_is_xxx
+to determine the controller type, and updates the platform code
+accordingly.
+
+As the result, mach/hardware.h inclusion gets removed from the driver.
+
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: rtc-linux@googlegroups.com
+---
+ arch/arm/mach-imx/clk-imx1.c                 |  2 +-
+ arch/arm/mach-imx/clk-imx27.c                |  2 +-
+ arch/arm/mach-imx/clk-imx31.c                |  2 +-
+ arch/arm/mach-imx/devices/devices-common.h   |  1 +
+ arch/arm/mach-imx/devices/platform-mxc_rtc.c |  9 ++++----
+ drivers/rtc/rtc-mxc.c                        | 34 +++++++++++++++++++++++++---
+ 6 files changed, 40 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/mach-imx/clk-imx1.c b/arch/arm/mach-imx/clk-imx1.c
+index 1982388..1cc7a73 100644
+--- a/arch/arm/mach-imx/clk-imx1.c
++++ b/arch/arm/mach-imx/clk-imx1.c
+@@ -106,7 +106,7 @@ int __init mx1_clocks_init(unsigned long fref)
+ 	clk_register_clkdev(clk[dummy], "ahb", "imx-fb.0");
+ 	clk_register_clkdev(clk[hclk], "mshc", NULL);
+ 	clk_register_clkdev(clk[per3], "ssi", NULL);
+-	clk_register_clkdev(clk[clk32], NULL, "mxc_rtc.0");
++	clk_register_clkdev(clk[clk32], NULL, "imx1-rtc.0");
+ 	clk_register_clkdev(clk[clko], "clko", NULL);
+ 
+ 	mxc_timer_init(MX1_IO_ADDRESS(MX1_TIM1_BASE_ADDR), MX1_TIM1_INT);
+diff --git a/arch/arm/mach-imx/clk-imx27.c b/arch/arm/mach-imx/clk-imx27.c
+index 100e38c..86a0c42 100644
+--- a/arch/arm/mach-imx/clk-imx27.c
++++ b/arch/arm/mach-imx/clk-imx27.c
+@@ -259,7 +259,7 @@ int __init mx27_clocks_init(unsigned long fref)
+ 	clk_register_clkdev(clk[gpio_ipg_gate], "gpio", NULL);
+ 	clk_register_clkdev(clk[brom_ahb_gate], "brom", NULL);
+ 	clk_register_clkdev(clk[ata_ahb_gate], "ata", NULL);
+-	clk_register_clkdev(clk[rtc_ipg_gate], NULL, "mxc_rtc");
++	clk_register_clkdev(clk[rtc_ipg_gate], NULL, "imx21-rtc");
+ 	clk_register_clkdev(clk[scc_ipg_gate], "scc", NULL);
+ 	clk_register_clkdev(clk[cpu_div], "cpu", NULL);
+ 	clk_register_clkdev(clk[emi_ahb_gate], "emi_ahb" , NULL);
+diff --git a/arch/arm/mach-imx/clk-imx31.c b/arch/arm/mach-imx/clk-imx31.c
+index 729d1a9..d9ff16e 100644
+--- a/arch/arm/mach-imx/clk-imx31.c
++++ b/arch/arm/mach-imx/clk-imx31.c
+@@ -124,7 +124,7 @@ int __init mx31_clocks_init(unsigned long fref)
+ 	clk_register_clkdev(clk[cspi3_gate], NULL, "imx31-cspi.2");
+ 	clk_register_clkdev(clk[pwm_gate], "pwm", NULL);
+ 	clk_register_clkdev(clk[wdog_gate], NULL, "imx2-wdt.0");
+-	clk_register_clkdev(clk[rtc_gate], NULL, "mxc_rtc");
++	clk_register_clkdev(clk[rtc_gate], NULL, "imx21-rtc");
+ 	clk_register_clkdev(clk[epit1_gate], "epit", NULL);
+ 	clk_register_clkdev(clk[epit2_gate], "epit", NULL);
+ 	clk_register_clkdev(clk[nfc], NULL, "imx27-nand.0");
+diff --git a/arch/arm/mach-imx/devices/devices-common.h b/arch/arm/mach-imx/devices/devices-common.h
+index 30a842f..1472f0f 100644
+--- a/arch/arm/mach-imx/devices/devices-common.h
++++ b/arch/arm/mach-imx/devices/devices-common.h
+@@ -292,6 +292,7 @@ struct platform_device *__init imx_add_mxc_pwm(
+ 
+ /* mxc_rtc */
+ struct imx_mxc_rtc_data {
++	const char *devid;
+ 	resource_size_t iobase;
+ 	resource_size_t irq;
+ };
+diff --git a/arch/arm/mach-imx/devices/platform-mxc_rtc.c b/arch/arm/mach-imx/devices/platform-mxc_rtc.c
+index daaf979..f35f848 100644
+--- a/arch/arm/mach-imx/devices/platform-mxc_rtc.c
++++ b/arch/arm/mach-imx/devices/platform-mxc_rtc.c
+@@ -9,20 +9,21 @@
+ #include <mach/hardware.h>
+ #include "devices-common.h"
+ 
+-#define imx_mxc_rtc_data_entry_single(soc)				\
++#define imx_mxc_rtc_data_entry_single(soc, _devid)			\
+ 	{								\
++		.devid = _devid,					\
+ 		.iobase = soc ## _RTC_BASE_ADDR,			\
+ 		.irq = soc ## _INT_RTC,					\
+ 	}
+ 
+ #ifdef CONFIG_SOC_IMX31
+ const struct imx_mxc_rtc_data imx31_mxc_rtc_data __initconst =
+-	imx_mxc_rtc_data_entry_single(MX31);
++	imx_mxc_rtc_data_entry_single(MX31, "imx21-rtc");
+ #endif /* ifdef CONFIG_SOC_IMX31 */
+ 
+ #ifdef CONFIG_SOC_IMX35
+ const struct imx_mxc_rtc_data imx35_mxc_rtc_data __initconst =
+-	imx_mxc_rtc_data_entry_single(MX35);
++	imx_mxc_rtc_data_entry_single(MX35, "imx21-rtc");
+ #endif /* ifdef CONFIG_SOC_IMX35 */
+ 
+ struct platform_device *__init imx_add_mxc_rtc(
+@@ -40,6 +41,6 @@ struct platform_device *__init imx_add_mxc_rtc(
+ 		},
+ 	};
+ 
+-	return imx_add_platform_device("mxc_rtc", -1,
++	return imx_add_platform_device(data->devid, -1,
+ 			res, ARRAY_SIZE(res), NULL, 0);
+ }
+diff --git a/drivers/rtc/rtc-mxc.c b/drivers/rtc/rtc-mxc.c
+index cd01062..7304139 100644
+--- a/drivers/rtc/rtc-mxc.c
++++ b/drivers/rtc/rtc-mxc.c
+@@ -17,8 +17,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
+ 
+-#include <mach/hardware.h>
+-
+ #define RTC_INPUT_CLK_32768HZ	(0x00 << 5)
+ #define RTC_INPUT_CLK_32000HZ	(0x01 << 5)
+ #define RTC_INPUT_CLK_38400HZ	(0x02 << 5)
+@@ -72,14 +70,38 @@ static const u32 PIE_BIT_DEF[MAX_PIE_NUM][2] = {
+ #define RTC_TEST2	0x2C	/*  32bit rtc test reg 2 */
+ #define RTC_TEST3	0x30	/*  32bit rtc test reg 3 */
+ 
++enum imx_rtc_type {
++	IMX1_RTC,
++	IMX21_RTC,
++};
++
+ struct rtc_plat_data {
+ 	struct rtc_device *rtc;
+ 	void __iomem *ioaddr;
+ 	int irq;
+ 	struct clk *clk;
+ 	struct rtc_time g_rtc_alarm;
++	enum imx_rtc_type devtype;
+ };
+ 
++static struct platform_device_id imx_rtc_devtype[] = {
++	{
++		.name = "imx1-rtc",
++		.driver_data = IMX1_RTC,
++	}, {
++		.name = "imx21-rtc",
++		.driver_data = IMX21_RTC,
++	}, {
++		/* sentinel */
++	}
++};
++MODULE_DEVICE_TABLE(platform, imx_rtc_devtype);
++
++static inline int is_imx1_rtc(struct rtc_plat_data *data)
++{
++	return data->devtype == IMX1_RTC;
++}
++
+ /*
+  * This function is used to obtain the RTC time or the alarm value in
+  * second.
+@@ -278,10 +300,13 @@ static int mxc_rtc_read_time(struct device *dev, struct rtc_time *tm)
+  */
+ static int mxc_rtc_set_mmss(struct device *dev, unsigned long time)
+ {
++	struct platform_device *pdev = to_platform_device(dev);
++	struct rtc_plat_data *pdata = platform_get_drvdata(pdev);
++
+ 	/*
+ 	 * TTC_DAYR register is 9-bit in MX1 SoC, save time and day of year only
+ 	 */
+-	if (cpu_is_mx1()) {
++	if (is_imx1_rtc(pdata)) {
+ 		struct rtc_time tm;
+ 
+ 		rtc_time_to_tm(time, &tm);
+@@ -360,6 +385,8 @@ static int __devinit mxc_rtc_probe(struct platform_device *pdev)
+ 	if (!pdata)
+ 		return -ENOMEM;
+ 
++	pdata->devtype = pdev->id_entry->driver_data;
++
+ 	if (!devm_request_mem_region(&pdev->dev, res->start,
+ 				     resource_size(res), pdev->name))
+ 		return -EBUSY;
+@@ -480,6 +507,7 @@ static struct platform_driver mxc_rtc_driver = {
+ #endif
+ 		   .owner	= THIS_MODULE,
+ 	},
++	.id_table = imx_rtc_devtype,
+ 	.probe = mxc_rtc_probe,
+ 	.remove = __devexit_p(mxc_rtc_remove),
+ };
+-- 
+1.8.0
+

@@ -1,0 +1,51 @@
+From f3a13e7246f92e0cf4e9e3baee3145693ba41a8d Mon Sep 17 00:00:00 2001
+From: Jon Hunter <jon-hunter@ti.com>
+Date: Tue, 28 Aug 2012 12:55:27 -0500
+Subject: [PATCH 623/951] ARM: OMAP2/3: Define HWMOD software reset status for
+ DMTIMERs
+
+For OMAP2/3 devices, the HWMOD data does not define a software reset status
+field for the DMTIMERs. Therefore, when HWMOD performs a soft-reset of the
+DMTIMER we don't check and wait for the reset to complete. For OMAP2/3 devices,
+the software reset status for a DMTIMER can be read from bit 0 of the DMTIMER
+TISTAT register (referred to as the SYSS register in HWMOD). Add the
+appropriate HWMOD definitions so that HWMOD will check the software reset
+status when performing a software reset of the DMTIMER.
+
+Signed-off-by: Jon Hunter <jon-hunter@ti.com>
+Acked-by: Santosh Shilimkar <santosh.shilimkar@ti.com>
+---
+ arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c | 2 +-
+ arch/arm/mach-omap2/omap_hwmod_3xxx_data.c         | 3 ++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c b/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
+index a0116d0..067fd0a 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
+@@ -58,7 +58,7 @@ static struct omap_hwmod_class_sysconfig omap2xxx_timer_sysc = {
+ 	.syss_offs	= 0x0014,
+ 	.sysc_flags	= (SYSC_HAS_SIDLEMODE | SYSC_HAS_CLOCKACTIVITY |
+ 			   SYSC_HAS_ENAWAKEUP | SYSC_HAS_SOFTRESET |
+-			   SYSC_HAS_AUTOIDLE),
++			   SYSC_HAS_AUTOIDLE | SYSS_HAS_RESET_STATUS),
+ 	.idlemodes	= (SIDLE_FORCE | SIDLE_NO | SIDLE_SMART),
+ 	.sysc_fields	= &omap_hwmod_sysc_type1,
+ };
+diff --git a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+index fac2550..fcce693 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+@@ -159,7 +159,8 @@ static struct omap_hwmod_class_sysconfig omap3xxx_timer_sysc = {
+ 	.syss_offs	= 0x0014,
+ 	.sysc_flags	= (SYSC_HAS_SIDLEMODE | SYSC_HAS_CLOCKACTIVITY |
+ 			   SYSC_HAS_ENAWAKEUP | SYSC_HAS_SOFTRESET |
+-			   SYSC_HAS_EMUFREE | SYSC_HAS_AUTOIDLE),
++			   SYSC_HAS_EMUFREE | SYSC_HAS_AUTOIDLE |
++			   SYSS_HAS_RESET_STATUS),
+ 	.idlemodes	= (SIDLE_FORCE | SIDLE_NO | SIDLE_SMART),
+ 	.sysc_fields	= &omap_hwmod_sysc_type1,
+ };
+-- 
+1.8.0
+

@@ -1,0 +1,33 @@
+From fa089de7d5daaab1b2594faece20a9f72d31ca10 Mon Sep 17 00:00:00 2001
+From: Vivek Gautam <gautam.vivek@samsung.com>
+Date: Wed, 7 Nov 2012 17:07:52 +0900
+Subject: [PATCH 512/951] ARM: EXYNOS: Remove wrongly placed usb2.0 PHY_CFG
+ definition from PMU_REG
+
+EXYNOS5_USB_CFG macro should actually point to USB20PHY_CFG system
+register (base addr + 0x230). It's wrongly placed in regs-pmu.
+Actual register at offset 0x230 in PMU is SEQ_TRANSITION4.
+
+Signed-off-by: Vivek Gautam <gautam.vivek@samsung.com>
+Reviewed-by: Jingoo Han <jg1.han@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-exynos/include/mach/regs-pmu.h | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-exynos/include/mach/regs-pmu.h b/arch/arm/mach-exynos/include/mach/regs-pmu.h
+index d4e392b..70b2795 100644
+--- a/arch/arm/mach-exynos/include/mach/regs-pmu.h
++++ b/arch/arm/mach-exynos/include/mach/regs-pmu.h
+@@ -230,8 +230,6 @@
+ 
+ /* For EXYNOS5 */
+ 
+-#define EXYNOS5_USB_CFG						S5P_PMUREG(0x0230)
+-
+ #define EXYNOS5_AUTO_WDTRESET_DISABLE				S5P_PMUREG(0x0408)
+ #define EXYNOS5_MASK_WDTRESET_REQUEST				S5P_PMUREG(0x040C)
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,30 @@
+From 49e928d6cfd4a27f2b2e0ea6cdcb9e853360a9a1 Mon Sep 17 00:00:00 2001
+From: Andrew Lunn <andrew@lunn.ch>
+Date: Sat, 17 Nov 2012 17:00:43 +0100
+Subject: [PATCH 915/951] GPIO: mvebu: Allow all plat-orion platforms.
+
+Kirkwood & Dove can also use this driver, so expand the scope to
+include all platform orion devices.
+
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ drivers/gpio/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
+index f11d8e3..6dbc403 100644
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -152,7 +152,7 @@ config GPIO_MSM_V2
+ 
+ config GPIO_MVEBU
+ 	def_bool y
+-	depends on ARCH_MVEBU
++	depends on PLAT_ORION
+ 	select GPIO_GENERIC
+ 	select GENERIC_IRQ_CHIP
+ 
+-- 
+1.8.0
+

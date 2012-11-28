@@ -1,0 +1,31 @@
+From 386ab5168bbfbecac4deb82c22d9ea231caa7e52 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 17 Nov 2012 17:57:24 +0400
+Subject: [PATCH 865/951] MAINTAINERS: Add ARM CLPS711X entry
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ MAINTAINERS | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index e73060f..e45b18a 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -699,6 +699,12 @@ S:	Maintained
+ F:	arch/arm/mach-cns3xxx/
+ T:	git git://git.infradead.org/users/cbou/linux-cns3xxx.git
+ 
++ARM/CIRRUS LOGIC CLPS711X ARM ARCHITECTURE
++M:	Alexander Shiyan <shc_work@mail.ru>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++S:	Odd Fixes
++F:	arch/arm/mach-clps711x/
++
+ ARM/CIRRUS LOGIC EP93XX ARM ARCHITECTURE
+ M:	Hartley Sweeten <hsweeten@visionengravers.com>
+ M:	Ryan Mallon <rmallon@gmail.com>
+-- 
+1.8.0
+

@@ -1,0 +1,103 @@
+From acda38aab6a4e2a7ba56a07e27791384030acb4b Mon Sep 17 00:00:00 2001
+From: Michal Simek <michal.simek@xilinx.com>
+Date: Tue, 20 Nov 2012 13:45:52 +0100
+Subject: [PATCH 839/951] ARM: zynq: Remove all unused mach headers
+
+Remove empty unused mach/hardware.h.
+mach/irqs.h is unused because SPARSE_IRQ are ON by default.
+mach/timex.h is unused because of CONFIG_ARCH_MULTIPLATFORM.
+
+Signed-off-by: Michal Simek <michal.simek@xilinx.com>
+Tested-by: Josh Cartwright <josh.cartwright@ni.com>
+---
+ arch/arm/mach-zynq/include/mach/hardware.h | 18 ------------------
+ arch/arm/mach-zynq/include/mach/irqs.h     | 21 ---------------------
+ arch/arm/mach-zynq/include/mach/timex.h    | 23 -----------------------
+ 3 files changed, 62 deletions(-)
+ delete mode 100644 arch/arm/mach-zynq/include/mach/hardware.h
+ delete mode 100644 arch/arm/mach-zynq/include/mach/irqs.h
+ delete mode 100644 arch/arm/mach-zynq/include/mach/timex.h
+
+diff --git a/arch/arm/mach-zynq/include/mach/hardware.h b/arch/arm/mach-zynq/include/mach/hardware.h
+deleted file mode 100644
+index d558d8a..0000000
+--- a/arch/arm/mach-zynq/include/mach/hardware.h
++++ /dev/null
+@@ -1,18 +0,0 @@
+-/* arch/arm/mach-zynq/include/mach/hardware.h
+- *
+- *  Copyright (C) 2011 Xilinx
+- *
+- * This software is licensed under the terms of the GNU General Public
+- * License version 2, as published by the Free Software Foundation, and
+- * may be copied, distributed, and modified under those terms.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#ifndef __MACH_HARDWARE_H__
+-#define __MACH_HARDWARE_H__
+-
+-#endif
+diff --git a/arch/arm/mach-zynq/include/mach/irqs.h b/arch/arm/mach-zynq/include/mach/irqs.h
+deleted file mode 100644
+index 5fb04fd..0000000
+--- a/arch/arm/mach-zynq/include/mach/irqs.h
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/* arch/arm/mach-zynq/include/mach/irqs.h
+- *
+- *  Copyright (C) 2011 Xilinx
+- *
+- * This software is licensed under the terms of the GNU General Public
+- * License version 2, as published by the Free Software Foundation, and
+- * may be copied, distributed, and modified under those terms.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#ifndef __MACH_IRQS_H
+-#define __MACH_IRQS_H
+-
+-#define ARCH_NR_GPIOS	118
+-#define NR_IRQS		(128 + ARCH_NR_GPIOS)
+-
+-#endif
+diff --git a/arch/arm/mach-zynq/include/mach/timex.h b/arch/arm/mach-zynq/include/mach/timex.h
+deleted file mode 100644
+index 6c0245e..0000000
+--- a/arch/arm/mach-zynq/include/mach/timex.h
++++ /dev/null
+@@ -1,23 +0,0 @@
+-/* arch/arm/mach-zynq/include/mach/timex.h
+- *
+- *  Copyright (C) 2011 Xilinx
+- *
+- * This software is licensed under the terms of the GNU General Public
+- * License version 2, as published by the Free Software Foundation, and
+- * may be copied, distributed, and modified under those terms.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#ifndef __MACH_TIMEX_H__
+-#define __MACH_TIMEX_H__
+-
+-/* the following is needed for the system to build but will be removed
+-   in the future, the value is not important but won't hurt
+-*/
+-#define CLOCK_TICK_RATE	(100 * HZ)
+-
+-#endif
+-- 
+1.8.0
+

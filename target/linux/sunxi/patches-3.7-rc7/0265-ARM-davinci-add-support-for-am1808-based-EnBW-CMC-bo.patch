@@ -1,0 +1,105 @@
+From 3015fb33483b80f64f82092f8acc89ce9c3f07e3 Mon Sep 17 00:00:00 2001
+From: Heiko Schocher <hs@denx.de>
+Date: Wed, 30 May 2012 12:19:03 +0200
+Subject: [PATCH 265/951] ARM: davinci: add support for am1808 based EnBW CMC
+ board
+
+This board supports:
+
+- AM1808 based board
+- 64 MiB DDR ram
+- 2 MiB Nor flash
+- 128 MiB NAND flash
+- use internal RTC
+- I2C support
+- hwmon lm75 support
+- UBI/UBIFS support
+- MMC support
+- USB OTG support
+
+This patch adds the basic DTS file enabling the serial ports.
+Other features will be added in due course of time.
+
+Signed-off-by: Heiko Schocher <hs@denx.de>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: devicetree-discuss@lists.ozlabs.org
+Cc: davinci-linux-open-source@linux.davincidsp.com
+Cc: Sekhar Nori <nsekhar@ti.com>
+Cc: Kevin Hilman <khilman@ti.com>
+Cc: Wolfgang Denk <wd@denx.de>
+[nsekhar@ti.com: modified after dtsi refactoring and added binding
+documentation]
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ Documentation/devicetree/bindings/arm/davinci.txt |  4 +++
+ arch/arm/boot/dts/da850-enbw-cmc.dts              | 30 +++++++++++++++++++++++
+ arch/arm/mach-davinci/da8xx-dt.c                  |  1 +
+ 3 files changed, 35 insertions(+)
+ create mode 100644 arch/arm/boot/dts/da850-enbw-cmc.dts
+
+diff --git a/Documentation/devicetree/bindings/arm/davinci.txt b/Documentation/devicetree/bindings/arm/davinci.txt
+index 2dda756..cfaeda4 100644
+--- a/Documentation/devicetree/bindings/arm/davinci.txt
++++ b/Documentation/devicetree/bindings/arm/davinci.txt
+@@ -5,6 +5,10 @@ DA850/OMAP-L138/AM18x Evaluation Module (EVM) board
+ Required root node properties:
+     - compatible = "ti,da850-evm", "ti,da850";
+ 
++EnBW AM1808 based CMC board
++Required root node properties:
++    - compatible = "enbw,cmc", "ti,da850;
++
+ Generic DaVinci Boards
+ ----------------------
+ 
+diff --git a/arch/arm/boot/dts/da850-enbw-cmc.dts b/arch/arm/boot/dts/da850-enbw-cmc.dts
+new file mode 100644
+index 0000000..422fdb3
+--- /dev/null
++++ b/arch/arm/boot/dts/da850-enbw-cmc.dts
+@@ -0,0 +1,30 @@
++/*
++ * Device Tree for AM1808 EnBW CMC board
++ *
++ * Copyright 2012 DENX Software Engineering GmbH
++ * Heiko Schocher <hs@denx.de>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++/dts-v1/;
++/include/ "da850.dtsi"
++
++/ {
++	compatible = "enbw,cmc", "ti,da850";
++	model = "EnBW CMC";
++
++	soc {
++		serial0: serial@1c42000 {
++			status = "okay";
++		};
++		serial1: serial@1d0c000 {
++			status = "okay";
++		};
++		serial2: serial@1d0d000 {
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/mach-davinci/da8xx-dt.c b/arch/arm/mach-davinci/da8xx-dt.c
+index 94b09fd..37c27af 100644
+--- a/arch/arm/mach-davinci/da8xx-dt.c
++++ b/arch/arm/mach-davinci/da8xx-dt.c
+@@ -47,6 +47,7 @@ static void __init da850_init_machine(void)
+ }
+ 
+ static const char *da850_boards_compat[] __initdata = {
++	"enbw,cmc",
+ 	"ti,da850-evm",
+ 	"ti,da850",
+ 	NULL,
+-- 
+1.8.0
+

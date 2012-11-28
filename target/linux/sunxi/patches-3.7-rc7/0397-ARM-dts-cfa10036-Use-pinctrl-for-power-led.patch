@@ -1,0 +1,52 @@
+From c241d0a3ba78d50da08bd0c8236433b7653a86c7 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Sat, 3 Nov 2012 16:59:07 +0100
+Subject: [PATCH 397/951] ARM: dts: cfa10036: Use pinctrl for power led
+
+The leds-gpio driver recently got pinctrl support, so setup the power
+led gpio muxing through pinctrl.
+
+This avoids the warning:
+leds-gpio leds.X: pins are not configured from the driver
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx28-cfa10036.dts | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx28-cfa10036.dts b/arch/arm/boot/dts/imx28-cfa10036.dts
+index c03a577..3a28077 100644
+--- a/arch/arm/boot/dts/imx28-cfa10036.dts
++++ b/arch/arm/boot/dts/imx28-cfa10036.dts
+@@ -22,6 +22,18 @@
+ 
+ 	apb@80000000 {
+ 		apbh@80000000 {
++			pinctrl@80018000 {
++				led_pins_cfa10036: leds-10036@0 {
++					reg = <0>;
++					fsl,pinmux-ids = <
++						0x3043 /* MX28_PAD_AUART1_RX__GPIO_3_4 */
++					>;
++					fsl,drive-strength = <0>;
++					fsl,voltage = <1>;
++					fsl,pull-up = <0>;
++				};
++			};
++
+ 			ssp0: ssp@80010000 {
+ 				compatible = "fsl,imx28-mmc";
+ 				pinctrl-names = "default";
+@@ -43,6 +55,8 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&led_pins_cfa10036>;
+ 
+ 		power {
+ 			gpios = <&gpio3 4 1>;
+-- 
+1.8.0
+

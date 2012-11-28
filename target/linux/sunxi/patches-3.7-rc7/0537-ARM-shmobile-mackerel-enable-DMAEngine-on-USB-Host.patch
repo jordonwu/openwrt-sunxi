@@ -1,0 +1,28 @@
+From c8c3243c7594858da9a8f51672984f79cd1585d3 Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 7 Nov 2012 19:09:01 -0800
+Subject: [PATCH 537/951] ARM: shmobile: mackerel: enable DMAEngine on USB
+ Host
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index f274252..d5fe365 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -816,6 +816,8 @@ static struct platform_device usbhs1_device = {
+ 	.id	= 1,
+ 	.dev = {
+ 		.platform_data		= &usbhs1_private.info,
++		.dma_mask		= &usbhs1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usbhs1_resources),
+ 	.resource	= usbhs1_resources,
+-- 
+1.8.0
+

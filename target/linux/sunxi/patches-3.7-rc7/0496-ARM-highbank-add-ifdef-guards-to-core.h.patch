@@ -1,0 +1,38 @@
+From a7e816b857947f0a4d59c0d9c69810977479ac50 Mon Sep 17 00:00:00 2001
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 6 Nov 2012 11:09:10 -0800
+Subject: [PATCH 496/951] ARM: highbank: add ifdef guards to core.h
+
+Fixes build error due to multiple includes:
+
+In file included from arch/arm/mach-highbank/sysregs.h:23:0,
+from arch/arm/mach-highbank/system.c:20:
+arch/arm/mach-highbank/core.h:8:91: error: redefinition of 'highbank_lluart_map_io'
+In file included from arch/arm/mach-highbank/system.c:19:0:
+arch/arm/mach-highbank/core.h:8:91: note: previous definition of 'highbank_lluart_map_io' was here
+
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/mach-highbank/core.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/mach-highbank/core.h b/arch/arm/mach-highbank/core.h
+index 286ec82..068c687 100644
+--- a/arch/arm/mach-highbank/core.h
++++ b/arch/arm/mach-highbank/core.h
+@@ -1,3 +1,6 @@
++#ifndef __HIGHBANK_CORE_H
++#define __HIGHBANK_CORE_H
++
+ extern void highbank_set_cpu_jump(int cpu, void *jump_addr);
+ extern void highbank_clocks_init(void);
+ extern void highbank_restart(char, const char *);
+@@ -18,3 +21,5 @@ extern void highbank_smc1(int fn, int arg);
+ extern void highbank_cpu_die(unsigned int cpu);
+ 
+ extern struct smp_operations highbank_smp_ops;
++
++#endif
+-- 
+1.8.0
+

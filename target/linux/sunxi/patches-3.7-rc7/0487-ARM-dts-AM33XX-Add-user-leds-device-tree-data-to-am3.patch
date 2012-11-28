@@ -1,0 +1,60 @@
+From 5d4e17063fa8d0af63e356089a321c482cbd7603 Mon Sep 17 00:00:00 2001
+From: AnilKumar Ch <anilkumar@ti.com>
+Date: Tue, 6 Nov 2012 19:18:34 +0530
+Subject: [PATCH 487/951] ARM: dts: AM33XX: Add user-leds device tree data to
+ am335x-bone
+
+Add gpio-leds device tree data to am335x-bone device to enable gpio
+based user-leds (USR0, USR1, USR2 and USR3) present on BeagleBone.
+
+[koen@dominion.thruhere.net: led0, led1 suggested by koen]
+Signed-off-by: AnilKumar Ch <anilkumar@ti.com>
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/am335x-bone.dts | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/am335x-bone.dts b/arch/arm/boot/dts/am335x-bone.dts
+index 1aac58b..2c33888 100644
+--- a/arch/arm/boot/dts/am335x-bone.dts
++++ b/arch/arm/boot/dts/am335x-bone.dts
+@@ -53,6 +53,36 @@
+ 
+ 		};
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led@2 {
++			label = "beaglebone:green:heartbeat";
++			gpios = <&gpio2 21 0>;
++			linux,default-trigger = "heartbeat";
++			default-state = "off";
++		};
++
++		led@3 {
++			label = "beaglebone:green:mmc0";
++			gpios = <&gpio2 22 0>;
++			linux,default-trigger = "mmc0";
++			default-state = "off";
++		};
++
++		led@4 {
++			label = "beaglebone:green:usr2";
++			gpios = <&gpio2 23 0>;
++			default-state = "off";
++		};
++
++		led@5 {
++			label = "beaglebone:green:usr3";
++			gpios = <&gpio2 24 0>;
++			default-state = "off";
++		};
++	};
+ };
+ 
+ /include/ "tps65217.dtsi"
+-- 
+1.8.0
+

@@ -1,0 +1,71 @@
+From 5c2734a30c0838c9ba9b6b95fb18533cea3c1a5a Mon Sep 17 00:00:00 2001
+From: Andrew Lunn <andrew@lunn.ch>
+Date: Sat, 17 Nov 2012 15:46:11 +0100
+Subject: [PATCH 907/951] ARM: Kirkwood: Convert DNSKW to use regulators
+
+Control the power to SATA0 and SATA1 using a fixed regulator.
+
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Jamie Lentin <jm@lentin.co.uk>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-dnskw.dtsi | 29 +++++++++++++++++++++++++++++
+ arch/arm/mach-kirkwood/board-dnskw.c  |  4 ----
+ 2 files changed, 29 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/kirkwood-dnskw.dtsi b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
+index 28263a1..d11054f 100644
+--- a/arch/arm/boot/dts/kirkwood-dnskw.dtsi
++++ b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
+@@ -82,4 +82,33 @@
+ 			};
+ 		};
+ 	};
++
++	regulators {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		sata0_power: regulator@1 {
++			compatible = "regulator-fixed";
++			reg = <1>;
++			regulator-name = "SATA0 Power";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			enable-active-high;
++			regulator-always-on;
++			regulator-boot-on;
++			gpio = <&gpio1 7 0>;
++		};
++		sata1_power: regulator@2 {
++			compatible = "regulator-fixed";
++			reg = <2>;
++			regulator-name = "SATA1 Power";
++			regulator-min-microvolt = <5000000>;
++			regulator-max-microvolt = <5000000>;
++			enable-active-high;
++			regulator-always-on;
++			regulator-boot-on;
++			gpio = <&gpio1 8 0>;
++		};
++	};
+ };
+diff --git a/arch/arm/mach-kirkwood/board-dnskw.c b/arch/arm/mach-kirkwood/board-dnskw.c
+index 9036801..6c4028c 100644
+--- a/arch/arm/mach-kirkwood/board-dnskw.c
++++ b/arch/arm/mach-kirkwood/board-dnskw.c
+@@ -75,10 +75,6 @@ void __init dnskw_init(void)
+ 
+ 	kirkwood_ge00_init(&dnskw_ge00_data);
+ 
+-	/* Ensure power is supplied to both HDDs */
+-	dnskw_gpio_register(39, "dnskw:power:sata0", 1);
+-	dnskw_gpio_register(40, "dnskw:power:sata1", 1);
+-
+ 	/* Set NAS to turn back on after a power failure */
+ 	dnskw_gpio_register(37, "dnskw:power:recover", 1);
+ }
+-- 
+1.8.0
+

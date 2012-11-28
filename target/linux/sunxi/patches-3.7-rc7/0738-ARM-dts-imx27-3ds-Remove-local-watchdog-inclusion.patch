@@ -1,0 +1,32 @@
+From 9b49e170c0bafb7fe9f04ae41fa3efd6aa2c2f09 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Wed, 26 Sep 2012 09:07:41 -0300
+Subject: [PATCH 738/951] ARM: dts: imx27-3ds: Remove local watchdog inclusion
+
+imx27.dtsi already register the watchdog, so no need to do it in the board dts
+file.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ arch/arm/boot/dts/imx27-3ds.dts | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx27-3ds.dts b/arch/arm/boot/dts/imx27-3ds.dts
+index 0a8978a..b01c0d7 100644
+--- a/arch/arm/boot/dts/imx27-3ds.dts
++++ b/arch/arm/boot/dts/imx27-3ds.dts
+@@ -23,10 +23,6 @@
+ 	soc {
+ 		aipi@10000000 { /* aipi */
+ 
+-			wdog@10002000 {
+-				status = "okay";
+-			};
+-
+ 			uart1: serial@1000a000 {
+ 				fsl,uart-has-rtscts;
+ 				status = "okay";
+-- 
+1.8.0
+

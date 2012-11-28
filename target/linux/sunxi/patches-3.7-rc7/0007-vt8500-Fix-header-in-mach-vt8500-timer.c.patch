@@ -1,0 +1,26 @@
+From 83cc76909622a4ee21f750148e779104d0606e9f Mon Sep 17 00:00:00 2001
+From: Tony Prisk <linux@prisktech.co.nz>
+Date: Sat, 6 Oct 2012 19:55:42 +1300
+Subject: [PATCH 007/951] vt8500: Fix header in mach-vt8500/timer.c
+
+Correct filename reference in file header.
+
+Signed-off-by: Tony Prisk <linux@prisktech.co.nz>
+---
+ arch/arm/mach-vt8500/timer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-vt8500/timer.c b/arch/arm/mach-vt8500/timer.c
+index 050e183..3dd21a4 100644
+--- a/arch/arm/mach-vt8500/timer.c
++++ b/arch/arm/mach-vt8500/timer.c
+@@ -1,5 +1,5 @@
+ /*
+- *  arch/arm/mach-vt8500/timer_dt.c
++ *  arch/arm/mach-vt8500/timer.c
+  *
+  *  Copyright (C) 2012 Tony Prisk <linux@prisktech.co.nz>
+  *  Copyright (C) 2010 Alexey Charkov <alchark@gmail.com>
+-- 
+1.8.0
+

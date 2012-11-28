@@ -1,0 +1,114 @@
+From 96754a1f8684792dc6cc5d4e886c511b255ef9be Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 17 Nov 2012 17:57:21 +0400
+Subject: [PATCH 862/951] ARM: clps711x: edb7211: Add support for NOR-Flash
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/mach-clps711x/edb7211.c               | 45 ++++++++++++++++++++------
+ arch/arm/mach-clps711x/include/mach/hardware.h |  4 ---
+ 2 files changed, 35 insertions(+), 14 deletions(-)
+
+diff --git a/arch/arm/mach-clps711x/edb7211.c b/arch/arm/mach-clps711x/edb7211.c
+index d5832b3..71aa5cf 100644
+--- a/arch/arm/mach-clps711x/edb7211.c
++++ b/arch/arm/mach-clps711x/edb7211.c
+@@ -16,6 +16,9 @@
+ #include <linux/backlight.h>
+ #include <linux/platform_device.h>
+ 
++#include <linux/mtd/physmap.h>
++#include <linux/mtd/partitions.h>
++
+ #include <asm/setup.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -33,6 +36,8 @@
+ #define EDB7211_LCDEN		CLPS711X_GPIO(3, 2)
+ #define EDB7211_LCDBL		CLPS711X_GPIO(3, 3)
+ 
++#define EDB7211_FLASH0_BASE	(CS0_PHYS_BASE)
++#define EDB7211_FLASH1_BASE	(CS1_PHYS_BASE)
+ #define EDB7211_CS8900_BASE	(CS2_PHYS_BASE + 0x300)
+ #define EDB7211_CS8900_IRQ	(IRQ_EINT3)
+ 
+@@ -41,6 +46,35 @@ static struct resource edb7211_cs8900_resource[] __initdata = {
+ 	DEFINE_RES_IRQ(EDB7211_CS8900_IRQ),
+ };
+ 
++static struct mtd_partition edb7211_flash_partitions[] __initdata = {
++	{
++		.name	= "Flash",
++		.offset	= 0,
++		.size	= MTDPART_SIZ_FULL,
++	},
++};
++
++static struct physmap_flash_data edb7211_flash_pdata __initdata = {
++	.width		= 4,
++	.parts		= edb7211_flash_partitions,
++	.nr_parts	= ARRAY_SIZE(edb7211_flash_partitions),
++};
++
++static struct resource edb7211_flash_resources[] __initdata = {
++	DEFINE_RES_MEM(EDB7211_FLASH0_BASE, SZ_8M),
++	DEFINE_RES_MEM(EDB7211_FLASH1_BASE, SZ_8M),
++};
++
++static struct platform_device edb7211_flash_pdev __initdata = {
++	.name		= "physmap-flash",
++	.id		= 0,
++	.resource	= edb7211_flash_resources,
++	.num_resources	= ARRAY_SIZE(edb7211_flash_resources),
++	.dev	= {
++		.platform_data	= &edb7211_flash_pdata,
++	},
++};
++
+ static void edb7211_lcd_power_set(struct plat_lcd_data *pd, unsigned int power)
+ {
+ 	if (power) {
+@@ -82,16 +116,6 @@ static struct map_desc edb7211_io_desc[] __initdata = {
+ 		.pfn		= __phys_to_pfn(EP7211_PHYS_EXTKBD),
+ 		.length		= SZ_1M,
+ 		.type		= MT_DEVICE,
+-	}, {	/* Flash bank 0 */
+-		.virtual	= IO_ADDRESS(EP7211_PHYS_FLASH1),
+-		.pfn		= __phys_to_pfn(EP7211_PHYS_FLASH1),
+-		.length		= SZ_8M,
+-		.type		= MT_DEVICE,
+-	}, {	/* Flash bank 1 */
+-		.virtual	= IO_ADDRESS(EP7211_PHYS_FLASH2),
+-		.pfn		= __phys_to_pfn(EP7211_PHYS_FLASH2),
+-		.length		= SZ_8M,
+-		.type		= MT_DEVICE,
+ 	},
+ };
+ 
+@@ -129,6 +153,7 @@ static void __init edb7211_init(void)
+ {
+ 	gpio_request_array(edb7211_gpios, ARRAY_SIZE(edb7211_gpios));
+ 
++	platform_device_register(&edb7211_flash_pdev);
+ 	platform_device_register_data(&platform_bus, "platform-lcd", 0,
+ 				      &edb7211_lcd_power_pdata,
+ 				      sizeof(edb7211_lcd_power_pdata));
+diff --git a/arch/arm/mach-clps711x/include/mach/hardware.h b/arch/arm/mach-clps711x/include/mach/hardware.h
+index 1ebf7b9..2f23dd5 100644
+--- a/arch/arm/mach-clps711x/include/mach/hardware.h
++++ b/arch/arm/mach-clps711x/include/mach/hardware.h
+@@ -75,10 +75,6 @@
+ /* The extra 8 lines of the keyboard matrix are wired to chip select 3 */
+ #define EP7211_PHYS_EXTKBD	CS3_PHYS_BASE
+ 
+-/* The two flash banks are wired to chip selects 0 and 1 */
+-#define EP7211_PHYS_FLASH1	CS0_PHYS_BASE
+-#define EP7211_PHYS_FLASH2	CS1_PHYS_BASE
+-
+ #endif /* CONFIG_ARCH_EDB7211 */
+ 
+ #endif
+-- 
+1.8.0
+

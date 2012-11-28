@@ -1,0 +1,327 @@
+From 5492a1108bbd40e14a895c07b6a4952022e82f7c Mon Sep 17 00:00:00 2001
+From: Stefan Peter <s.peter@mpl.ch>
+Date: Sun, 18 Nov 2012 16:46:16 +0100
+Subject: [PATCH 879/951] ARM: kirkwood: Add support for the MPL CEC4
+
+Signed-off-by: Stefan Peter <s.peter@mpl.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/Makefile             |   1 +
+ arch/arm/boot/dts/kirkwood-mplcec4.dts | 119 +++++++++++++++++++++++++++++++++
+ arch/arm/configs/kirkwood_defconfig    |   1 +
+ arch/arm/mach-kirkwood/Kconfig         |   7 ++
+ arch/arm/mach-kirkwood/Makefile        |   1 +
+ arch/arm/mach-kirkwood/board-dt.c      |   4 ++
+ arch/arm/mach-kirkwood/board-mplcec4.c |  80 ++++++++++++++++++++++
+ arch/arm/mach-kirkwood/common.h        |   6 ++
+ 8 files changed, 219 insertions(+)
+ create mode 100644 arch/arm/boot/dts/kirkwood-mplcec4.dts
+ create mode 100644 arch/arm/mach-kirkwood/board-mplcec4.c
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index c5eb41c..eef6545 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -40,6 +40,7 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-dns320.dtb \
+ 	kirkwood-km_kirkwood.dtb \
+ 	kirkwood-lschlv2.dtb \
+ 	kirkwood-lsxhl.dtb \
++	kirkwood-mplcec4.dtb \
+ 	kirkwood-ns2.dtb \
+ 	kirkwood-ns2lite.dtb \
+ 	kirkwood-ns2max.dtb \
+diff --git a/arch/arm/boot/dts/kirkwood-mplcec4.dts b/arch/arm/boot/dts/kirkwood-mplcec4.dts
+new file mode 100644
+index 0000000..ac3c080
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-mplcec4.dts
+@@ -0,0 +1,119 @@
++/dts-v1/;
++
++/include/ "kirkwood.dtsi"
++
++/ {
++	model = "MPL CEC4";
++	compatible = "mpl,cec4-10", "mpl,cec4", "marvell,kirkwood-88f6281", "marvell,kirkwood";
++
++        memory {
++                device_type = "memory";
++                reg = <0x00000000 0x20000000>;
++        };
++
++        chosen {
++                bootargs = "console=ttyS0,115200n8 earlyprintk";
++        };
++
++	ocp@f1000000 {
++                i2c@11000 {
++                        status = "okay";
++
++			rtc@51 {
++				compatible = "nxp,pcf8563";
++				reg = <0x51>;
++			};
++
++			eeprom@57 {
++				compatible = "atmel,24c02";
++				reg = <0x57>;
++			};
++
++                };
++
++                serial@12000 {
++                        clock-frequency = <200000000>;
++                        status = "ok";
++                };
++
++                nand@3000000 {
++                        status = "okay";
++
++                        partition@0 {
++                                label = "uboot";
++                                reg = <0x0000000 0x100000>;
++                        };
++
++                        partition@100000 {
++                                label = "env";
++                                reg = <0x100000 0x80000>;
++                        };
++
++                        partition@180000 {
++                                label = "fdt";
++                                reg = <0x180000 0x80000>;
++                        };
++
++                        partition@200000 {
++                                label = "kernel";
++                                reg = <0x200000 0x400000>;
++                        };
++
++                        partition@600000 {
++                                label = "rootfs";
++                                reg = <0x600000 0x1fa00000>;
++                        };
++                };
++
++		rtc@10300 {
++			status = "disabled";
++		};
++
++		sata@80000 {
++			nr-ports = <2>;
++			status = "okay";
++
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		health {
++			label = "status:green:health";
++			gpios = <&gpio0 7 1>;
++		};
++
++		user1o {
++			label = "user1:orange";
++			gpios = <&gpio1 8 1>;
++			default-state = "on";
++		};
++
++		user1g {
++			label = "user1:green";
++			gpios = <&gpio1 9 1>;
++			default-state = "on";
++		};
++
++		user0o {
++			label = "user0:orange";
++			gpios = <&gpio1 12 1>;
++			default-state = "on";
++		};
++
++		user0g {
++			label = "user0:green";
++			gpios = <&gpio1 13 1>;
++			default-state = "on";
++		};
++
++		misc {
++			label = "status:orange:misc";
++			gpios = <&gpio1 14 1>;
++			default-state = "on";
++		};
++
++	};
++};
++
+diff --git a/arch/arm/configs/kirkwood_defconfig b/arch/arm/configs/kirkwood_defconfig
+index 006b7b9..2fd4d25 100644
+--- a/arch/arm/configs/kirkwood_defconfig
++++ b/arch/arm/configs/kirkwood_defconfig
+@@ -33,6 +33,7 @@ CONFIG_MACH_NETSPACE_MAX_V2_DT=y
+ CONFIG_MACH_NETSPACE_LITE_V2_DT=y
+ CONFIG_MACH_NETSPACE_MINI_V2_DT=y
+ CONFIG_MACH_TOPKICK_DT=y
++CONFIG_MACH_MPLCEC4_DT=y
+ CONFIG_MACH_TS219=y
+ CONFIG_MACH_TS41X=y
+ CONFIG_MACH_DOCKSTAR=y
+diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
+index a5b766e..141b105 100644
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -137,6 +137,13 @@ config MACH_INETSPACE_V2_DT
+ 	  Say 'Y' here if you want your kernel to support the LaCie
+ 	  Internet Space v2 NAS, using Flattened Device Tree.
+ 
++config MACH_MPLCEC4_DT
++	bool "MPL CEC4 (Flattened Device Tree)"
++	select ARCH_KIRKWOOD_DT
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  MPL CEC4 (Flattened Device Tree).
++
+ config MACH_NETSPACE_V2_DT
+ 	bool "LaCie Network Space v2 NAS (Flattened Device Tree)"
+ 	select ARCH_KIRKWOOD_DT
+diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
+index 8f7a340..b5bc334 100644
+--- a/arch/arm/mach-kirkwood/Makefile
++++ b/arch/arm/mach-kirkwood/Makefile
+@@ -32,6 +32,7 @@ obj-$(CONFIG_MACH_LSXL_DT)		+= board-lsxl.o
+ obj-$(CONFIG_MACH_IOMEGA_IX2_200_DT)	+= board-iomega_ix2_200.o
+ obj-$(CONFIG_MACH_KM_KIRKWOOD_DT)	+= board-km_kirkwood.o
+ obj-$(CONFIG_MACH_INETSPACE_V2_DT)	+= board-ns2.o
++obj-$(CONFIG_MACH_MPLCEC4_DT)		+= board-mplcec4.o
+ obj-$(CONFIG_MACH_NETSPACE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MAX_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+= board-ns2.o
+diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
+index 87c53d1..33c0bc1 100644
+--- a/arch/arm/mach-kirkwood/board-dt.c
++++ b/arch/arm/mach-kirkwood/board-dt.c
+@@ -103,6 +103,9 @@ static void __init kirkwood_dt_init(void)
+ 	    of_machine_is_compatible("lacie,netspace_mini_v2"))
+ 		ns2_init();
+ 
++	if (of_machine_is_compatible("mpl,cec4"))
++		mplcec4_init();
++
+ 	if (of_machine_is_compatible("usi,topkick"))
+ 		usi_topkick_init();
+ 
+@@ -130,6 +133,7 @@ static const char *kirkwood_dt_board_compat[] = {
+ 	"lacie,netspace_v2",
+ 	"lacie,netspace_lite_v2",
+ 	"lacie,netspace_mini_v2",
++	"mpl,cec4",
+ 	"usi,topkick",
+ 	"zyxel,nsa310",
+ 	NULL
+diff --git a/arch/arm/mach-kirkwood/board-mplcec4.c b/arch/arm/mach-kirkwood/board-mplcec4.c
+new file mode 100644
+index 0000000..e78a227
+--- /dev/null
++++ b/arch/arm/mach-kirkwood/board-mplcec4.c
+@@ -0,0 +1,80 @@
++/*
++ * Copyright (C) 2012 MPL AG, Switzerland
++ * Stefan Peter <s.peter@mpl.ch>
++ *
++ * arch/arm/mach-kirkwood/board-mplcec4.c
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/mv643xx_eth.h>
++#include <linux/platform_data/mmc-mvsdio.h>
++#include "common.h"
++#include "mpp.h"
++
++static struct mv643xx_eth_platform_data mplcec4_ge00_data = {
++	.phy_addr	= MV643XX_ETH_PHY_ADDR(1),
++};
++
++static struct mv643xx_eth_platform_data mplcec4_ge01_data = {
++	.phy_addr	= MV643XX_ETH_PHY_ADDR(2),
++};
++
++static unsigned int mplcec4_mpp_config[] __initdata = {
++	MPP0_NF_IO2,
++	MPP1_NF_IO3,
++	MPP2_NF_IO4,
++	MPP3_NF_IO5,
++	MPP4_NF_IO6,
++	MPP5_NF_IO7,
++	MPP6_SYSRST_OUTn,
++	MPP7_GPO,	/* Status LED Green High Active */
++	MPP10_UART0_TXD,
++	MPP11_UART0_RXD,
++	MPP12_SD_CLK,
++	MPP13_SD_CMD,	/* Alt UART1_TXD */
++	MPP14_SD_D0,	/* Alt UART1_RXD */
++	MPP15_SD_D1,
++	MPP16_SD_D2,
++	MPP17_SD_D3,
++	MPP18_NF_IO0,
++	MPP19_NF_IO1,
++	MPP28_GPIO,	/* Input SYS_POR_DET (active High) */
++	MPP29_GPIO,	/* Input SYS_RTC_INT (active High) */
++	MPP34_SATA1_ACTn,
++	MPP35_SATA0_ACTn,
++	MPP40_GPIO,	/* LED User1 orange */
++	MPP41_GPIO,	/* LED User1 green */
++	MPP44_GPIO,	/* LED User0 orange */
++	MPP45_GPIO,	/* LED User0 green */
++	MPP46_GPIO,	/* Status LED Yellow High Active */
++	MPP47_GPIO,	/* SD_CD# (in/IRQ)*/
++	0
++};
++
++
++static struct mvsdio_platform_data mplcec4_mvsdio_data = {
++	.gpio_card_detect = 47,	/* MPP47 used as SD card detect */
++};
++
++
++
++void __init mplcec4_init(void)
++{
++	/*
++	 * Basic setup. Needs to be called early.
++	 */
++	kirkwood_mpp_conf(mplcec4_mpp_config);
++	kirkwood_ehci_init();
++	kirkwood_ge00_init(&mplcec4_ge00_data);
++	kirkwood_ge01_init(&mplcec4_ge01_data);
++	kirkwood_sdio_init(&mplcec4_mvsdio_data);
++	kirkwood_pcie_init(KW_PCIE0);
++}
++
++
++
+diff --git a/arch/arm/mach-kirkwood/common.h b/arch/arm/mach-kirkwood/common.h
+index 652a728..f86fcce 100644
+--- a/arch/arm/mach-kirkwood/common.h
++++ b/arch/arm/mach-kirkwood/common.h
+@@ -112,6 +112,12 @@ void km_kirkwood_init(void);
+ static inline void km_kirkwood_init(void) {};
+ #endif
+ 
++#ifdef CONFIG_MACH_MPLCEC4_DT
++void mplcec4_init(void);
++#else
++static inline void mplcec4_init(void) {};
++#endif
++
+ #if defined(CONFIG_MACH_INETSPACE_V2_DT) || \
+ 	defined(CONFIG_MACH_NETSPACE_V2_DT) || \
+ 	defined(CONFIG_MACH_NETSPACE_MAX_V2_DT) || \
+-- 
+1.8.0
+

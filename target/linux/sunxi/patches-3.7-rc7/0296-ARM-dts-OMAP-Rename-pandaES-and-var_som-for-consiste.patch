@@ -1,0 +1,305 @@
+From 00cbdce75b62a56bf3e6baca68b5ddb5474495a2 Mon Sep 17 00:00:00 2001
+From: Benoit Cousson <b-cousson@ti.com>
+Date: Wed, 24 Oct 2012 12:31:34 +0200
+Subject: [PATCH 296/951] ARM: dts: OMAP: Rename pandaES and var_som for
+ consistency
+
+Rename the files to have names consistent across OMAP boards.
+
+Update the Makefile to use the new name.
+
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/Makefile           |  4 +-
+ arch/arm/boot/dts/omap4-panda-es.dts | 24 +++++++++
+ arch/arm/boot/dts/omap4-pandaES.dts  | 24 ---------
+ arch/arm/boot/dts/omap4-var-som.dts  | 96 ++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/omap4-var_som.dts  | 96 ------------------------------------
+ 5 files changed, 122 insertions(+), 122 deletions(-)
+ create mode 100644 arch/arm/boot/dts/omap4-panda-es.dts
+ delete mode 100644 arch/arm/boot/dts/omap4-pandaES.dts
+ create mode 100644 arch/arm/boot/dts/omap4-var-som.dts
+ delete mode 100644 arch/arm/boot/dts/omap4-var_som.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index e69c921..634bd42 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -68,8 +68,8 @@ dtb-$(CONFIG_ARCH_OMAP2PLUS) += omap2420-h4.dtb \
+ 	omap3-evm.dtb \
+ 	omap3-tobi.dtb \
+ 	omap4-panda.dtb \
+-	omap4-pandaES.dtb \
+-	omap4-var_som.dtb \
++	omap4-panda-es.dtb \
++	omap4-var-som.dtb \
+ 	omap4-sdp.dtb \
+ 	omap5-evm.dtb \
+ 	am335x-evm.dtb \
+diff --git a/arch/arm/boot/dts/omap4-panda-es.dts b/arch/arm/boot/dts/omap4-panda-es.dts
+new file mode 100644
+index 0000000..d4ba43a
+--- /dev/null
++++ b/arch/arm/boot/dts/omap4-panda-es.dts
+@@ -0,0 +1,24 @@
++/*
++ * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++/include/ "omap4-panda.dts"
++
++/* Audio routing is differnet between PandaBoard4430 and PandaBoardES */
++&sound {
++	ti,model = "PandaBoardES";
++
++	/* Audio routing */
++	ti,audio-routing =
++		"Headset Stereophone", "HSOL",
++		"Headset Stereophone", "HSOR",
++		"Ext Spk", "HFL",
++		"Ext Spk", "HFR",
++		"Line Out", "AUXL",
++		"Line Out", "AUXR",
++		"AFML", "Line In",
++		"AFMR", "Line In";
++};
+diff --git a/arch/arm/boot/dts/omap4-pandaES.dts b/arch/arm/boot/dts/omap4-pandaES.dts
+deleted file mode 100644
+index d4ba43a..0000000
+--- a/arch/arm/boot/dts/omap4-pandaES.dts
++++ /dev/null
+@@ -1,24 +0,0 @@
+-/*
+- * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-/include/ "omap4-panda.dts"
+-
+-/* Audio routing is differnet between PandaBoard4430 and PandaBoardES */
+-&sound {
+-	ti,model = "PandaBoardES";
+-
+-	/* Audio routing */
+-	ti,audio-routing =
+-		"Headset Stereophone", "HSOL",
+-		"Headset Stereophone", "HSOR",
+-		"Ext Spk", "HFL",
+-		"Ext Spk", "HFR",
+-		"Line Out", "AUXL",
+-		"Line Out", "AUXR",
+-		"AFML", "Line In",
+-		"AFMR", "Line In";
+-};
+diff --git a/arch/arm/boot/dts/omap4-var-som.dts b/arch/arm/boot/dts/omap4-var-som.dts
+new file mode 100644
+index 0000000..6601e6a
+--- /dev/null
++++ b/arch/arm/boot/dts/omap4-var-som.dts
+@@ -0,0 +1,96 @@
++/*
++ * Copyright (C) 2012 Variscite Ltd. - http://www.variscite.com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++/dts-v1/;
++
++/include/ "omap4.dtsi"
++
++/ {
++	model = "Variscite OMAP4 SOM";
++	compatible = "var,omap4-var_som", "ti,omap4430", "ti,omap4";
++
++	memory {
++		device_type = "memory";
++		reg = <0x80000000 0x40000000>; /* 1 GB */
++	};
++
++	vdd_eth: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "VDD_ETH";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		enable-active-high;
++		regulator-boot-on;
++	};
++};
++
++&i2c1 {
++	clock-frequency = <400000>;
++
++	twl: twl@48 {
++		reg = <0x48>;
++		/* SPI = 0, IRQ# = 7, 4 = active high level-sensitive */
++		interrupts = <0 7 4>; /* IRQ_SYS_1N cascaded to gic */
++		interrupt-parent = <&gic>;
++	};
++};
++
++/include/ "twl6030.dtsi"
++
++&i2c2 {
++	clock-frequency = <400000>;
++};
++
++&i2c3 {
++	clock-frequency = <400000>;
++
++	/*
++	 * Temperature Sensor
++	 * http://www.ti.com/lit/ds/symlink/tmp105.pdf
++	 */
++	tmp105@49 {
++		compatible = "ti,tmp105";
++		reg = <0x49>;
++	};
++};
++
++&i2c4 {
++	clock-frequency = <400000>;
++};
++
++&mcspi1 {
++	eth@0 {
++		compatible = "ks8851";
++		spi-max-frequency = <24000000>;
++		reg = <0>;
++		interrupt-parent = <&gpio6>;
++		interrupts = <11>; /* gpio line 171 */
++		vdd-supply = <&vdd_eth>;
++	};
++};
++
++&mmc1 {
++	vmmc-supply = <&vmmc>;
++	ti,bus-width = <8>;
++	ti,non-removable;
++};
++
++&mmc2 {
++	status = "disabled";
++};
++
++&mmc3 {
++	status = "disabled";
++};
++
++&mmc4 {
++	status = "disabled";
++};
++
++&mmc5 {
++	ti,bus-width = <4>;
++};
+diff --git a/arch/arm/boot/dts/omap4-var_som.dts b/arch/arm/boot/dts/omap4-var_som.dts
+deleted file mode 100644
+index 6601e6a..0000000
+--- a/arch/arm/boot/dts/omap4-var_som.dts
++++ /dev/null
+@@ -1,96 +0,0 @@
+-/*
+- * Copyright (C) 2012 Variscite Ltd. - http://www.variscite.com
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-/dts-v1/;
+-
+-/include/ "omap4.dtsi"
+-
+-/ {
+-	model = "Variscite OMAP4 SOM";
+-	compatible = "var,omap4-var_som", "ti,omap4430", "ti,omap4";
+-
+-	memory {
+-		device_type = "memory";
+-		reg = <0x80000000 0x40000000>; /* 1 GB */
+-	};
+-
+-	vdd_eth: fixedregulator@0 {
+-		compatible = "regulator-fixed";
+-		regulator-name = "VDD_ETH";
+-		regulator-min-microvolt = <3300000>;
+-		regulator-max-microvolt = <3300000>;
+-		enable-active-high;
+-		regulator-boot-on;
+-	};
+-};
+-
+-&i2c1 {
+-	clock-frequency = <400000>;
+-
+-	twl: twl@48 {
+-		reg = <0x48>;
+-		/* SPI = 0, IRQ# = 7, 4 = active high level-sensitive */
+-		interrupts = <0 7 4>; /* IRQ_SYS_1N cascaded to gic */
+-		interrupt-parent = <&gic>;
+-	};
+-};
+-
+-/include/ "twl6030.dtsi"
+-
+-&i2c2 {
+-	clock-frequency = <400000>;
+-};
+-
+-&i2c3 {
+-	clock-frequency = <400000>;
+-
+-	/*
+-	 * Temperature Sensor
+-	 * http://www.ti.com/lit/ds/symlink/tmp105.pdf
+-	 */
+-	tmp105@49 {
+-		compatible = "ti,tmp105";
+-		reg = <0x49>;
+-	};
+-};
+-
+-&i2c4 {
+-	clock-frequency = <400000>;
+-};
+-
+-&mcspi1 {
+-	eth@0 {
+-		compatible = "ks8851";
+-		spi-max-frequency = <24000000>;
+-		reg = <0>;
+-		interrupt-parent = <&gpio6>;
+-		interrupts = <11>; /* gpio line 171 */
+-		vdd-supply = <&vdd_eth>;
+-	};
+-};
+-
+-&mmc1 {
+-	vmmc-supply = <&vmmc>;
+-	ti,bus-width = <8>;
+-	ti,non-removable;
+-};
+-
+-&mmc2 {
+-	status = "disabled";
+-};
+-
+-&mmc3 {
+-	status = "disabled";
+-};
+-
+-&mmc4 {
+-	status = "disabled";
+-};
+-
+-&mmc5 {
+-	ti,bus-width = <4>;
+-};
+-- 
+1.8.0
+

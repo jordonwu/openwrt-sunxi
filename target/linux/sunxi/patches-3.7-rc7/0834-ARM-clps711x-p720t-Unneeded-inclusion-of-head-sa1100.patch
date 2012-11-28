@@ -1,0 +1,31 @@
+From 49a88052b02df16266f1afc0d665abda5ae9d685 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 17 Nov 2012 17:57:10 +0400
+Subject: [PATCH 834/951] ARM: clps711x: p720t: Unneeded inclusion of
+ head-sa1100.S removed
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/boot/compressed/Makefile | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
+index a517153..3f9e9fe4d 100644
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -45,11 +45,6 @@ ifeq ($(CONFIG_ARCH_SHARK),y)
+ OBJS		+= head-shark.o ofw-shark.o
+ endif
+ 
+-ifeq ($(CONFIG_ARCH_P720T),y)
+-# Borrow this code from SA1100
+-OBJS		+= head-sa1100.o
+-endif
+-
+ ifeq ($(CONFIG_ARCH_SA1100),y)
+ OBJS		+= head-sa1100.o
+ endif
+-- 
+1.8.0
+

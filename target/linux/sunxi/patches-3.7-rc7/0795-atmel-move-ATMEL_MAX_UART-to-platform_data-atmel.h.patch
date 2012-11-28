@@ -1,0 +1,63 @@
+From 2abb74eaf6e73cb42e87bdc9e9c2535ce485e614 Mon Sep 17 00:00:00 2001
+From: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+Date: Sat, 17 Nov 2012 23:05:06 +0100
+Subject: [PATCH 795/951] atmel: move ATMEL_MAX_UART to platform_data/atmel.h
+
+Modify both AT91 and AVR32 platforms.
+Use 7 for it as the sam9260 or the sam9g25 have 7 of them DBGU included.
+
+Reported-by: Joachim Eastwood <joachim.eastwood@jotron.com>
+Signed-off-by: Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>
+Signed-off-by: Nicolas Ferre <nicolas.ferre@atmel.com>
+---
+ arch/arm/mach-at91/include/mach/hardware.h  | 3 ---
+ arch/avr32/mach-at32ap/include/mach/board.h | 1 -
+ include/linux/platform_data/atmel.h         | 6 ++++++
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-at91/include/mach/hardware.h b/arch/arm/mach-at91/include/mach/hardware.h
+index 711a789..a832e07 100644
+--- a/arch/arm/mach-at91/include/mach/hardware.h
++++ b/arch/arm/mach-at91/include/mach/hardware.h
+@@ -90,9 +90,6 @@
+ #define AT91_SRAM_MAX		SZ_1M
+ #define AT91_VIRT_BASE		(AT91_IO_VIRT_BASE - AT91_SRAM_MAX)
+ 
+-/* Serial ports */
+-#define ATMEL_MAX_UART		7		/* 6 USART3's and one DBGU port (SAM9260) */
+-
+ /* External Memory Map */
+ #define AT91_CHIPSELECT_0	0x10000000
+ #define AT91_CHIPSELECT_1	0x20000000
+diff --git a/arch/avr32/mach-at32ap/include/mach/board.h b/arch/avr32/mach-at32ap/include/mach/board.h
+index dca9345..d485b03 100644
+--- a/arch/avr32/mach-at32ap/include/mach/board.h
++++ b/arch/avr32/mach-at32ap/include/mach/board.h
+@@ -26,7 +26,6 @@ static inline void __deprecated at32_add_system_devices(void)
+ 
+ }
+ 
+-#define ATMEL_MAX_UART	4
+ extern struct platform_device *atmel_default_console_device;
+ 
+ /* Flags for selecting USART extra pins */
+diff --git a/include/linux/platform_data/atmel.h b/include/linux/platform_data/atmel.h
+index dbd6d53..6a293b7 100644
+--- a/include/linux/platform_data/atmel.h
++++ b/include/linux/platform_data/atmel.h
+@@ -19,6 +19,12 @@
+ #include <linux/serial.h>
+ #include <linux/platform_data/macb.h>
+ 
++/*
++ * at91: 6 USARTs and one DBGU port (SAM9260)
++ * avr32: 4
++ */
++#define ATMEL_MAX_UART	7
++
+  /* USB Device */
+ struct at91_udc_data {
+ 	int	vbus_pin;		/* high == host powering us */
+-- 
+1.8.0
+

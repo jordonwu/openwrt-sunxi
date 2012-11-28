@@ -1,0 +1,45 @@
+From 7423d2d817b815cc5bc41316f4aaa8ace3c4153e Mon Sep 17 00:00:00 2001
+From: Stefan Roese <sr@denx.de>
+Date: Mon, 26 Nov 2012 15:46:12 +0100
+Subject: [PATCH 951/951] ARM: sunxi: Add missing sun4i.dtsi file
+
+Patch f055f1f6 [ARM: sunxi: Add sun4i and cubieboard support] missed
+this sun4i.dtsi include file. This patch finally brings it upstream
+enabling support for sun4i boards.
+
+Signed-off-by: Stefan Roese <sr@denx.de>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun4i.dtsi | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun4i.dtsi
+
+diff --git a/arch/arm/boot/dts/sun4i.dtsi b/arch/arm/boot/dts/sun4i.dtsi
+new file mode 100644
+index 0000000..e61fdd4
+--- /dev/null
++++ b/arch/arm/boot/dts/sun4i.dtsi
+@@ -0,0 +1,19 @@
++/*
++ * Copyright 2012 Stefan Roese
++ * Stefan Roese <sr@denx.de>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/include/ "sunxi.dtsi"
++
++/ {
++	memory {
++		reg = <0x40000000 0x80000000>;
++	};
++};
+-- 
+1.8.0
+

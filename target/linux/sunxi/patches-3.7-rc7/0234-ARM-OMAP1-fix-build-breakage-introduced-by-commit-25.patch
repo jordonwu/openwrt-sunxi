@@ -1,0 +1,38 @@
+From 47ba7099efe83a7413fe3706e6ba352dd0b659be Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul@pwsan.com>
+Date: Thu, 25 Oct 2012 19:01:11 -0600
+Subject: [PATCH 234/951] ARM: OMAP1: fix build breakage introduced by commit
+ 25c7d49ed48b4843da7dea56a81ae7f620211ee0
+
+Commit 25c7d49ed48b4843da7dea56a81ae7f620211ee0 ("ARM: OMAP: Make
+omap_device local to mach-omap2") broke an OMAP5912-only build here:
+
+arch/arm/mach-omap1/pm_bus.c: In function 'omap1_pm_runtime_init':
+arch/arm/mach-omap1/pm_bus.c:69:2: error: implicit declaration of function
+'cpu_class_is_omap1'
+make[1]: *** [arch/arm/mach-omap1/pm_bus.o] Error 1
+
+Fix by adding a missing include.
+
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+Cc: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/pm_bus.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-omap1/pm_bus.c b/arch/arm/mach-omap1/pm_bus.c
+index 16bf2f9..3f2d396 100644
+--- a/arch/arm/mach-omap1/pm_bus.c
++++ b/arch/arm/mach-omap1/pm_bus.c
+@@ -19,6 +19,8 @@
+ #include <linux/clk.h>
+ #include <linux/err.h>
+ 
++#include "soc.h"
++
+ #ifdef CONFIG_PM_RUNTIME
+ static int omap1_pm_runtime_suspend(struct device *dev)
+ {
+-- 
+1.8.0
+

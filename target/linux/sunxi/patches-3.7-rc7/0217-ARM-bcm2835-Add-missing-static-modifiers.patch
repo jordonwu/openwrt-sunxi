@@ -1,0 +1,35 @@
+From dd3c7548b98bcefd3b21a9c3a2b1d584933467cc Mon Sep 17 00:00:00 2001
+From: Domenico Andreoli <domenico.andreoli@linux.com>
+Date: Sat, 20 Oct 2012 03:35:27 +0200
+Subject: [PATCH 217/951] ARM: bcm2835: Add missing static modifiers
+
+Add two missing static modifiers.
+
+Signed-off-by: Domenico Andreoli <domenico.andreoli@linux.com>
+Signed-off-by: Stephen Warren <swarren@wwwdotorg.org>
+---
+ arch/arm/mach-bcm2835/bcm2835.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-bcm2835/bcm2835.c b/arch/arm/mach-bcm2835/bcm2835.c
+index f6fea49..53e3842 100644
+--- a/arch/arm/mach-bcm2835/bcm2835.c
++++ b/arch/arm/mach-bcm2835/bcm2835.c
+@@ -30,12 +30,12 @@ static struct map_desc io_map __initdata = {
+ 	.type = MT_DEVICE
+ };
+ 
+-void __init bcm2835_map_io(void)
++static void __init bcm2835_map_io(void)
+ {
+ 	iotable_init(&io_map, 1);
+ }
+ 
+-void __init bcm2835_init(void)
++static void __init bcm2835_init(void)
+ {
+ 	int ret;
+ 
+-- 
+1.8.0
+

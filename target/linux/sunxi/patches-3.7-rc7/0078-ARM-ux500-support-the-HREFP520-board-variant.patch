@@ -1,0 +1,46 @@
+From a3a6c6a3a13c8fc946da86d0314f4c0d013e749d Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Mon, 1 Oct 2012 09:37:39 +0200
+Subject: [PATCH 078/951] ARM: ux500: support the HREFP520 board variant
+
+This adds support for another board registered for the old machine
+type system. Mainly doing this because it is all that is required
+to get that board working, everything else stays the same.
+
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/mach-ux500/board-mop500.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-ux500/board-mop500.c b/arch/arm/mach-ux500/board-mop500.c
+index 416d436..e4dad22 100644
+--- a/arch/arm/mach-ux500/board-mop500.c
++++ b/arch/arm/mach-ux500/board-mop500.c
+@@ -1,6 +1,5 @@
+-
+ /*
+- * Copyright (C) 2008-2009 ST-Ericsson
++ * Copyright (C) 2008-2012 ST-Ericsson
+  *
+  * Author: Srinidhi KASAGAR <srinidhi.kasagar@stericsson.com>
+  *
+@@ -701,6 +700,16 @@ MACHINE_START(U8500, "ST-Ericsson MOP500 platform")
+ 	.init_late	= ux500_init_late,
+ MACHINE_END
+ 
++MACHINE_START(U8520, "ST-Ericsson U8520 Platform HREFP520")
++	.atag_offset	= 0x100,
++	.map_io		= u8500_map_io,
++	.init_irq	= ux500_init_irq,
++	.timer		= &ux500_timer,
++	.handle_irq	= gic_handle_irq,
++	.init_machine	= mop500_init_machine,
++	.init_late	= ux500_init_late,
++MACHINE_END
++
+ MACHINE_START(HREFV60, "ST-Ericsson U8500 Platform HREFv60+")
+ 	.atag_offset	= 0x100,
+ 	.smp		= smp_ops(ux500_smp_ops),
+-- 
+1.8.0
+

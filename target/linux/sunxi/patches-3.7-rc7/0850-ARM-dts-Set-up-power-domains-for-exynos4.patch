@@ -1,0 +1,76 @@
+From 91d88f038ec61bc2d66f72c615629827350c5df1 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Thu, 22 Nov 2012 00:22:09 +0900
+Subject: [PATCH 850/951] ARM: dts: Set up power domains for exynos4
+
+This patch adds device tree nodes for power domains available
+on EXYNOS4 SoCs.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/boot/dts/exynos4.dtsi    | 30 ++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/exynos4210.dtsi |  5 +++++
+ 2 files changed, 35 insertions(+)
+
+diff --git a/arch/arm/boot/dts/exynos4.dtsi b/arch/arm/boot/dts/exynos4.dtsi
+index 824d362..3428f1a 100644
+--- a/arch/arm/boot/dts/exynos4.dtsi
++++ b/arch/arm/boot/dts/exynos4.dtsi
+@@ -38,6 +38,36 @@
+ 		i2c7 = &i2c_7;
+ 	};
+ 
++	pd_mfc: mfc-power-domain@10023C40 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023C40 0x20>;
++	};
++
++	pd_g3d: g3d-power-domain@10023C60 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023C60 0x20>;
++	};
++
++	pd_lcd0: lcd0-power-domain@10023C80 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023C80 0x20>;
++	};
++
++	pd_tv: tv-power-domain@10023C20 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023C20 0x20>;
++	};
++
++	pd_cam: cam-power-domain@10023C00 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023C00 0x20>;
++	};
++
++	pd_gps: gps-power-domain@10023CE0 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023CE0 0x20>;
++	};
++
+ 	gic:interrupt-controller@10490000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+diff --git a/arch/arm/boot/dts/exynos4210.dtsi b/arch/arm/boot/dts/exynos4210.dtsi
+index 939f639..e31bfc4 100644
+--- a/arch/arm/boot/dts/exynos4210.dtsi
++++ b/arch/arm/boot/dts/exynos4210.dtsi
+@@ -31,6 +31,11 @@
+ 		pinctrl2 = &pinctrl_2;
+ 	};
+ 
++	pd_lcd1: lcd1-power-domain@10023CA0 {
++		compatible = "samsung,exynos4210-pd";
++		reg = <0x10023CA0 0x20>;
++	};
++
+ 	gic:interrupt-controller@10490000 {
+ 		cpu-offset = <0x8000>;
+ 	};
+-- 
+1.8.0
+

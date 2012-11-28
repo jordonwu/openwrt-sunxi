@@ -1,0 +1,93 @@
+From 76d57ce6ef6060f611c14675249b7300a3c96368 Mon Sep 17 00:00:00 2001
+From: Sekhar Nori <nsekhar@ti.com>
+Date: Wed, 29 Aug 2012 22:48:52 +0530
+Subject: [PATCH 243/951] ARM: davinci: serial: provide API to initialze UART
+ clocks
+
+Provide an API to initialize a UART clock. Refactor existing
+davinci_serial_init() to separate out the part which enables
+the clock.
+
+This will later be used to help DA850 DT boot support.
+
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/mach-davinci/include/mach/serial.h |  1 +
+ arch/arm/mach-davinci/serial.c              | 39 ++++++++++++++++++++---------
+ 2 files changed, 28 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/mach-davinci/include/mach/serial.h b/arch/arm/mach-davinci/include/mach/serial.h
+index 46b3cd1..2d9d921 100644
+--- a/arch/arm/mach-davinci/include/mach/serial.h
++++ b/arch/arm/mach-davinci/include/mach/serial.h
+@@ -43,6 +43,7 @@ struct davinci_uart_config {
+ };
+ 
+ extern int davinci_serial_init(struct davinci_uart_config *);
++extern int davinci_serial_setup_clk(unsigned instance, unsigned int *rate);
+ #endif
+ 
+ #endif /* __ASM_ARCH_SERIAL_H */
+diff --git a/arch/arm/mach-davinci/serial.c b/arch/arm/mach-davinci/serial.c
+index 24ddb0d..f262581 100644
+--- a/arch/arm/mach-davinci/serial.c
++++ b/arch/arm/mach-davinci/serial.c
+@@ -70,11 +70,33 @@ static void __init davinci_serial_reset(struct plat_serial8250_port *p)
+ 				 UART_DM646X_SCR_TX_WATERMARK);
+ }
+ 
+-int __init davinci_serial_init(struct davinci_uart_config *info)
++/* Enable UART clock and obtain its rate */
++int __init davinci_serial_setup_clk(unsigned instance, unsigned int *rate)
+ {
+-	int i;
+ 	char name[16];
+-	struct clk *uart_clk;
++	struct clk *clk;
++	struct davinci_soc_info *soc_info = &davinci_soc_info;
++	struct device *dev = &soc_info->serial_dev->dev;
++
++	sprintf(name, "uart%d", instance);
++	clk = clk_get(dev, name);
++	if (IS_ERR(clk)) {
++		pr_err("%s:%d: failed to get UART%d clock\n",
++					__func__, __LINE__, instance);
++		return PTR_ERR(clk);
++	}
++
++	clk_prepare_enable(clk);
++
++	if (rate)
++		*rate = clk_get_rate(clk);
++
++	return 0;
++}
++
++int __init davinci_serial_init(struct davinci_uart_config *info)
++{
++	int i, ret;
+ 	struct davinci_soc_info *soc_info = &davinci_soc_info;
+ 	struct device *dev = &soc_info->serial_dev->dev;
+ 	struct plat_serial8250_port *p = dev->platform_data;
+@@ -87,16 +109,9 @@ int __init davinci_serial_init(struct davinci_uart_config *info)
+ 		if (!(info->enabled_uarts & (1 << i)))
+ 			continue;
+ 
+-		sprintf(name, "uart%d", i);
+-		uart_clk = clk_get(dev, name);
+-		if (IS_ERR(uart_clk)) {
+-			printk(KERN_ERR "%s:%d: failed to get UART%d clock\n",
+-					__func__, __LINE__, i);
++		ret = davinci_serial_setup_clk(i, &p->uartclk);
++		if (ret)
+ 			continue;
+-		}
+-
+-		clk_prepare_enable(uart_clk);
+-		p->uartclk = clk_get_rate(uart_clk);
+ 
+ 		if (!p->membase && p->mapbase) {
+ 			p->membase = ioremap(p->mapbase, SZ_4K);
+-- 
+1.8.0
+

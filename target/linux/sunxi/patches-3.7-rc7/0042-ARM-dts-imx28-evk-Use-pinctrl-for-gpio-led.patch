@@ -1,0 +1,58 @@
+From 30d6e2d5eb3b5614398879a98ccc119fa9ffb83c Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Sun, 23 Sep 2012 16:18:38 -0300
+Subject: [PATCH 042/951] ARM: dts: imx28-evk: Use pinctrl for gpio-led
+
+Since commit 8fe4554f (leds: leds-gpio: adopt pinctrl support) gpio-led driver
+has pinctrl support, so setup the gpio led pin via pinctrl and avoid the
+following warning:
+
+leds-gpio leds.12: pins are not configured from the driver
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx28-evk.dts | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/imx28-evk.dts b/arch/arm/boot/dts/imx28-evk.dts
+index a0ad71c..2da316e 100644
+--- a/arch/arm/boot/dts/imx28-evk.dts
++++ b/arch/arm/boot/dts/imx28-evk.dts
+@@ -76,7 +76,6 @@
+ 						0x20c3 /* MX28_PAD_SSP1_SCK__GPIO_2_12 */
+ 						0x31c3 /* MX28_PAD_PWM3__GPIO_3_28 */
+ 						0x31e3 /* MX28_PAD_LCD_RESET__GPIO_3_30 */
+-						0x3053 /* MX28_PAD_AUART1_TX__GPIO_3_5 */
+ 						0x3083 /* MX28_PAD_AUART2_RX__GPIO_3_8 */
+ 						0x3093 /* MX28_PAD_AUART2_TX__GPIO_3_9 */
+ 					>;
+@@ -85,6 +84,16 @@
+ 					fsl,pull-up = <0>;
+ 				};
+ 
++				led_pin_gpio3_5: led_gpio3_5@0 {
++					reg = <0>;
++					fsl,pinmux-ids = <
++						0x3053 /* MX28_PAD_AUART1_TX__GPIO_3_5 */
++					>;
++					fsl,drive-strength = <0>;
++					fsl,voltage = <1>;
++					fsl,pull-up = <0>;
++				};
++
+ 				gpmi_pins_evk: gpmi-nand-evk@0 {
+ 					reg = <0>;
+ 					fsl,pinmux-ids = <
+@@ -288,6 +297,8 @@
+ 
+ 	leds {
+ 		compatible = "gpio-leds";
++		pinctrl-names = "default";
++		pinctrl-0 = <&led_pin_gpio3_5>;
+ 
+ 		user {
+ 			label = "Heartbeat";
+-- 
+1.8.0
+

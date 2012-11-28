@@ -1,0 +1,79 @@
+From 32dee01e67e0d14e86708c4ca6c5a9f4f81d5144 Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Tue, 30 Oct 2012 10:44:00 -0700
+Subject: [PATCH 339/951] ARM: OMAP: Fix relative includes for debug-devices.h
+
+As discussed on linux-arm-kernel, we want to avoid
+relative includes for the arch/arm/*omap* shared code:
+
+http://www.spinics.net/lists/linux-omap/msg80520.html
+
+Let's add plat/debug-devices.h for debug_card_init()
+to fix the relative includes.
+
+Note that drivers must not use this header as it will
+break build for omap2+ CONFIG_MULTIPLATFORM builds.
+
+Cc: Paul Walmsley <paul@pwsan.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap2/board-h4.c                  | 2 +-
+ arch/arm/mach-omap2/debug-devices.h             | 9 ---------
+ arch/arm/plat-omap/debug-devices.c              | 2 +-
+ arch/arm/plat-omap/include/plat/debug-devices.h | 2 ++
+ 4 files changed, 4 insertions(+), 11 deletions(-)
+ delete mode 100644 arch/arm/mach-omap2/debug-devices.h
+ create mode 100644 arch/arm/plat-omap/include/plat/debug-devices.h
+
+diff --git a/arch/arm/mach-omap2/board-h4.c b/arch/arm/mach-omap2/board-h4.c
+index bd11b0a..8668c72 100644
+--- a/arch/arm/mach-omap2/board-h4.c
++++ b/arch/arm/mach-omap2/board-h4.c
+@@ -33,7 +33,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat-omap/dma-omap.h>
+-#include "debug-devices.h"
++#include <plat/debug-devices.h>
+ 
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+diff --git a/arch/arm/mach-omap2/debug-devices.h b/arch/arm/mach-omap2/debug-devices.h
+deleted file mode 100644
+index a4edbd2..0000000
+--- a/arch/arm/mach-omap2/debug-devices.h
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#ifndef _OMAP_DEBUG_DEVICES_H
+-#define _OMAP_DEBUG_DEVICES_H
+-
+-#include <linux/types.h>
+-
+-/* for TI reference platforms sharing the same debug card */
+-extern int debug_card_init(u32 addr, unsigned gpio);
+-
+-#endif
+diff --git a/arch/arm/plat-omap/debug-devices.c b/arch/arm/plat-omap/debug-devices.c
+index 5a4678e..b49be51 100644
+--- a/arch/arm/plat-omap/debug-devices.c
++++ b/arch/arm/plat-omap/debug-devices.c
+@@ -16,7 +16,7 @@
+ #include <linux/smc91x.h>
+ 
+ #include <mach/hardware.h>
+-#include "../mach-omap2/debug-devices.h"
++#include <plat/debug-devices.h>
+ 
+ /* Many OMAP development platforms reuse the same "debug board"; these
+  * platforms include H2, H3, H4, and Perseus2.
+diff --git a/arch/arm/plat-omap/include/plat/debug-devices.h b/arch/arm/plat-omap/include/plat/debug-devices.h
+new file mode 100644
+index 0000000..8fc4287
+--- /dev/null
++++ b/arch/arm/plat-omap/include/plat/debug-devices.h
+@@ -0,0 +1,2 @@
++/* for TI reference platforms sharing the same debug card */
++extern int debug_card_init(u32 addr, unsigned gpio);
+-- 
+1.8.0
+

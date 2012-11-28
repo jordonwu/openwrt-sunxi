@@ -1,0 +1,119 @@
+From 54ec52b6dd3b0ba4bc4eb97e7e1b2534705b326c Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Wed, 3 Oct 2012 15:31:58 -0700
+Subject: [PATCH 201/951] tty/serial/8250: Make omap hardware workarounds
+ local to 8250.h
+
+This allows us to get rid of the ifdefs in 8250.c.
+
+Cc: Alan Cox <alan@linux.intel.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ arch/arm/plat-omap/include/plat/serial.h |  9 --------
+ drivers/tty/serial/8250/8250.c           |  9 +++-----
+ drivers/tty/serial/8250/8250.h           | 36 ++++++++++++++++++++++++++++++++
+ 3 files changed, 39 insertions(+), 15 deletions(-)
+
+diff --git a/arch/arm/plat-omap/include/plat/serial.h b/arch/arm/plat-omap/include/plat/serial.h
+index 65fce44..b780470 100644
+--- a/arch/arm/plat-omap/include/plat/serial.h
++++ b/arch/arm/plat-omap/include/plat/serial.h
+@@ -109,15 +109,6 @@
+ #define OMAP5UART4		OMAP4UART4
+ #define ZOOM_UART		95		/* Only on zoom2/3 */
+ 
+-/* This is only used by 8250.c for omap1510 */
+-#define is_omap_port(pt)	({int __ret = 0;			\
+-			if ((pt)->port.mapbase == OMAP1_UART1_BASE ||	\
+-			    (pt)->port.mapbase == OMAP1_UART2_BASE ||	\
+-			    (pt)->port.mapbase == OMAP1_UART3_BASE)	\
+-				__ret = 1;				\
+-			__ret;						\
+-			})
+-
+ #ifndef __ASSEMBLER__
+ 
+ struct omap_board_data;
+diff --git a/drivers/tty/serial/8250/8250.c b/drivers/tty/serial/8250/8250.c
+index 3ba4234..5ccbd90 100644
+--- a/drivers/tty/serial/8250/8250.c
++++ b/drivers/tty/serial/8250/8250.c
+@@ -2349,16 +2349,14 @@ serial8250_do_set_termios(struct uart_port *port, struct ktermios *termios,
+ 			serial_port_out(port, UART_EFR, efr);
+ 	}
+ 
+-#ifdef CONFIG_ARCH_OMAP1
+ 	/* Workaround to enable 115200 baud on OMAP1510 internal ports */
+-	if (cpu_is_omap1510() && is_omap_port(up)) {
++	if (is_omap1510_8250(up)) {
+ 		if (baud == 115200) {
+ 			quot = 1;
+ 			serial_port_out(port, UART_OMAP_OSC_12M_SEL, 1);
+ 		} else
+ 			serial_port_out(port, UART_OMAP_OSC_12M_SEL, 0);
+ 	}
+-#endif
+ 
+ 	/*
+ 	 * For NatSemi, switch to bank 2 not bank 1, to avoid resetting EXCR2,
+@@ -2439,10 +2437,9 @@ static unsigned int serial8250_port_size(struct uart_8250_port *pt)
+ {
+ 	if (pt->port.iotype == UPIO_AU)
+ 		return 0x1000;
+-#ifdef CONFIG_ARCH_OMAP1
+-	if (is_omap_port(pt))
++	if (is_omap1_8250(pt))
+ 		return 0x16 << pt->port.regshift;
+-#endif
++
+ 	return 8 << pt->port.regshift;
+ }
+ 
+diff --git a/drivers/tty/serial/8250/8250.h b/drivers/tty/serial/8250/8250.h
+index 5a76f9c..3b4ea84 100644
+--- a/drivers/tty/serial/8250/8250.h
++++ b/drivers/tty/serial/8250/8250.h
+@@ -106,3 +106,39 @@ static inline int serial8250_pnp_init(void) { return 0; }
+ static inline void serial8250_pnp_exit(void) { }
+ #endif
+ 
++#ifdef CONFIG_ARCH_OMAP1
++static inline int is_omap1_8250(struct uart_8250_port *pt)
++{
++	int res;
++
++	switch (pt->port.mapbase) {
++	case OMAP1_UART1_BASE:
++	case OMAP1_UART2_BASE:
++	case OMAP1_UART3_BASE:
++		res = 1;
++		break;
++	default:
++		res = 0;
++		break;
++	}
++
++	return res;
++}
++
++static inline int is_omap1510_8250(struct uart_8250_port *pt)
++{
++	if (!cpu_is_omap1510())
++		return 0;
++
++	return is_omap1_8250(pt);
++}
++#else
++static inline int is_omap1_8250(struct uart_8250_port *pt)
++{
++	return 0;
++}
++static inline int is_omap1510_8250(struct uart_8250_port *pt)
++{
++	return 0;
++}
++#endif
+-- 
+1.8.0
+

@@ -19,7 +19,7 @@ CFLAGS:=-O2 -pipe -march=armv7-a -mfloat-abi=hard -mfpu=neon \
 
 MAINTAINER:=Andrew Andrianov <andrew@ncrmnt.org>
 
-LINUX_VERSION:=3.4.19
+LINUX_VERSION:=3.7-rc7
 
 include $(INCLUDE_DIR)/target.mk
 

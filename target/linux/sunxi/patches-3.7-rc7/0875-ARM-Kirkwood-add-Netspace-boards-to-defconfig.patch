@@ -1,0 +1,29 @@
+From 1136b9d124bea6d978be66337b5786e6df825a6e Mon Sep 17 00:00:00 2001
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Sun, 21 Oct 2012 00:57:16 +0000
+Subject: [PATCH 875/951] ARM: Kirkwood: add Netspace boards to defconfig
+
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/configs/kirkwood_defconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/configs/kirkwood_defconfig b/arch/arm/configs/kirkwood_defconfig
+index 74eee0c..66f7ae7 100644
+--- a/arch/arm/configs/kirkwood_defconfig
++++ b/arch/arm/configs/kirkwood_defconfig
+@@ -27,6 +27,11 @@ CONFIG_MACH_GOFLEXNET_DT=y
+ CONFIG_MACH_LSXL_DT=y
+ CONFIG_MACH_IOMEGA_IX2_200_DT=y
+ CONFIG_MACH_KM_KIRKWOOD_DT=y
++CONFIG_MACH_INETSPACE_V2_DT=y
++CONFIG_MACH_NETSPACE_V2_DT=y
++CONFIG_MACH_NETSPACE_MAX_V2_DT=y
++CONFIG_MACH_NETSPACE_LITE_V2_DT=y
++CONFIG_MACH_NETSPACE_MINI_V2_DT=y
+ CONFIG_MACH_TS219=y
+ CONFIG_MACH_TS41X=y
+ CONFIG_MACH_DOCKSTAR=y
+-- 
+1.8.0
+

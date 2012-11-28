@@ -1,0 +1,30 @@
+From de1d76258f438414633cb92cb1a195ba3835972c Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Wed, 24 Oct 2012 23:38:57 +0200
+Subject: [PATCH 573/951] pinctrl: mvebu: remove useless include
+
+Including the core.h header for the pinctrl subsystem is not
+necessary, and it is actually causing problems when moving the
+pinctrl-mvebu drivers into a separate subdirectory.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-mvebu.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/pinctrl/pinctrl-mvebu.c b/drivers/pinctrl/pinctrl-mvebu.c
+index 8e6266c..6c44b7e 100644
+--- a/drivers/pinctrl/pinctrl-mvebu.c
++++ b/drivers/pinctrl/pinctrl-mvebu.c
+@@ -24,7 +24,6 @@
+ #include <linux/pinctrl/pinctrl.h>
+ #include <linux/pinctrl/pinmux.h>
+ 
+-#include "core.h"
+ #include "pinctrl-mvebu.h"
+ 
+ #define MPPS_PER_REG	8
+-- 
+1.8.0
+

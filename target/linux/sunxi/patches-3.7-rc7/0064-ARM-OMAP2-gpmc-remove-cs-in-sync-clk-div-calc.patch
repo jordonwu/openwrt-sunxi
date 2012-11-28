@@ -1,0 +1,68 @@
+From 1b47ca1a127925acd73381edb8d1d462014bff1f Mon Sep 17 00:00:00 2001
+From: Afzal Mohammed <afzal@ti.com>
+Date: Sun, 19 Aug 2012 18:29:45 +0530
+Subject: [PATCH 064/951] ARM: OMAP2+: gpmc: remove cs# in sync clk div calc
+
+Divider value for a certain sync clk is determined solely
+based on gpmc fclk. CS# does not have any role here, thus
+remove presence of CS# in clock divider calculation API.
+
+Signed-off-by: Afzal Mohammed <afzal@ti.com>
+Reviewed-by: Jon Hunter <jon-hunter@ti.com>
+---
+ arch/arm/mach-omap2/gpmc-onenand.c     | 2 +-
+ arch/arm/mach-omap2/gpmc.c             | 4 ++--
+ arch/arm/plat-omap/include/plat/gpmc.h | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/gpmc-onenand.c b/arch/arm/mach-omap2/gpmc-onenand.c
+index 50165aa..06fd846 100644
+--- a/arch/arm/mach-omap2/gpmc-onenand.c
++++ b/arch/arm/mach-omap2/gpmc-onenand.c
+@@ -231,7 +231,7 @@ omap2_onenand_calc_sync_timings(struct omap_onenand_platform_data *cfg,
+ 		break;
+ 	}
+ 
+-	div = gpmc_cs_calc_divider(cs, min_gpmc_clk_period);
++	div = gpmc_calc_divider(min_gpmc_clk_period);
+ 	gpmc_clk_ns = gpmc_ticks_to_ns(div);
+ 	if (gpmc_clk_ns < 15) /* >66Mhz */
+ 		onenand_flags |= ONENAND_FLAG_HF;
+diff --git a/arch/arm/mach-omap2/gpmc.c b/arch/arm/mach-omap2/gpmc.c
+index 5ac5cf3..91af5ae 100644
+--- a/arch/arm/mach-omap2/gpmc.c
++++ b/arch/arm/mach-omap2/gpmc.c
+@@ -288,7 +288,7 @@ static int set_gpmc_timing_reg(int cs, int reg, int st_bit, int end_bit,
+ 		return -1
+ #endif
+ 
+-int gpmc_cs_calc_divider(int cs, unsigned int sync_clk)
++int gpmc_calc_divider(unsigned int sync_clk)
+ {
+ 	int div;
+ 	u32 l;
+@@ -308,7 +308,7 @@ int gpmc_cs_set_timings(int cs, const struct gpmc_timings *t)
+ 	int div;
+ 	u32 l;
+ 
+-	div = gpmc_cs_calc_divider(cs, t->sync_clk);
++	div = gpmc_calc_divider(t->sync_clk);
+ 	if (div < 0)
+ 		return div;
+ 
+diff --git a/arch/arm/plat-omap/include/plat/gpmc.h b/arch/arm/plat-omap/include/plat/gpmc.h
+index 2e6e259..f7e0990 100644
+--- a/arch/arm/plat-omap/include/plat/gpmc.h
++++ b/arch/arm/plat-omap/include/plat/gpmc.h
+@@ -160,7 +160,7 @@ extern unsigned long gpmc_get_fclk_period(void);
+ 
+ extern void gpmc_cs_write_reg(int cs, int idx, u32 val);
+ extern u32 gpmc_cs_read_reg(int cs, int idx);
+-extern int gpmc_cs_calc_divider(int cs, unsigned int sync_clk);
++extern int gpmc_calc_divider(unsigned int sync_clk);
+ extern int gpmc_cs_set_timings(int cs, const struct gpmc_timings *t);
+ extern int gpmc_cs_request(int cs, unsigned long size, unsigned long *base);
+ extern void gpmc_cs_free(int cs);
+-- 
+1.8.0
+

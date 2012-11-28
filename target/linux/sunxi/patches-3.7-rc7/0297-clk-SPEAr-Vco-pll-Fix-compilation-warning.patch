@@ -1,0 +1,36 @@
+From 7d4998f71b292ea8e88d1874b26866092f66412b Mon Sep 17 00:00:00 2001
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Thu, 4 Oct 2012 15:19:08 +0530
+Subject: [PATCH 297/951] clk: SPEAr: Vco-pll: Fix compilation warning
+
+Currently we are getting following warning for SPEAr clk-vco-pll.
+
+"warning: i is used uninitialized in this function."
+
+This is because we are getting value of i by passing its pointer to another
+routine.
+
+The variables here are really not used uninitialized.
+
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+---
+ drivers/clk/spear/clk-vco-pll.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/spear/clk-vco-pll.c b/drivers/clk/spear/clk-vco-pll.c
+index 5f1b6ba..1b9b65b 100644
+--- a/drivers/clk/spear/clk-vco-pll.c
++++ b/drivers/clk/spear/clk-vco-pll.c
+@@ -147,7 +147,7 @@ static int clk_pll_set_rate(struct clk_hw *hw, unsigned long drate,
+ 	struct clk_pll *pll = to_clk_pll(hw);
+ 	struct pll_rate_tbl *rtbl = pll->vco->rtbl;
+ 	unsigned long flags = 0, val;
+-	int i;
++	int uninitialized_var(i);
+ 
+ 	clk_pll_round_rate_index(hw, drate, NULL, &i);
+ 
+-- 
+1.8.0
+

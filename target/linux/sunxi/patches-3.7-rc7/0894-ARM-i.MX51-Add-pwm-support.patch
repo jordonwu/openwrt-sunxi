@@ -1,0 +1,43 @@
+From 82a618da1bc21dd9ff9a6fa66acbd7ec545b72c5 Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Mon, 19 Nov 2012 00:57:08 +0100
+Subject: [PATCH 894/951] ARM i.MX51: Add pwm support
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Acked-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx51.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx51.dtsi b/arch/arm/boot/dts/imx51.dtsi
+index 8cf69c7..2781e47 100644
+--- a/arch/arm/boot/dts/imx51.dtsi
++++ b/arch/arm/boot/dts/imx51.dtsi
+@@ -409,6 +409,24 @@
+ 				};
+ 			};
+ 
++			pwm1: pwm@73fb4000 {
++				#pwm-cells = <2>;
++				compatible = "fsl,imx51-pwm", "fsl,imx27-pwm";
++				reg = <0x73fb4000 0x4000>;
++				clocks = <&clks 37>, <&clks 38>;
++				clock-names = "ipg", "per";
++				interrupts = <61>;
++			};
++
++			pwm2: pwm@73fb8000 {
++				#pwm-cells = <2>;
++				compatible = "fsl,imx51-pwm", "fsl,imx27-pwm";
++				reg = <0x73fb8000 0x4000>;
++				clocks = <&clks 39>, <&clks 40>;
++				clock-names = "ipg", "per";
++				interrupts = <94>;
++			};
++
+ 			uart1: serial@73fbc000 {
+ 				compatible = "fsl,imx51-uart", "fsl,imx21-uart";
+ 				reg = <0x73fbc000 0x4000>;
+-- 
+1.8.0
+

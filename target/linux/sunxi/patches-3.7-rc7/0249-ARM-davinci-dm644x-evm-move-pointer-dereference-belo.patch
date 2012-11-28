@@ -1,0 +1,48 @@
+From 9ad90238bf4faa488680cf6dddf0d2b137960cc8 Mon Sep 17 00:00:00 2001
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Date: Mon, 10 Sep 2012 04:49:23 +0000
+Subject: [PATCH 249/951] ARM: davinci: dm644x evm: move pointer dereference
+ below NULL check
+
+Pointer dereference should be moved below the NULL test.
+
+spatch with a semantic match is used to found this.
+(http://coccinelle.lip6.fr/)
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/mach-davinci/board-dm644x-evm.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-davinci/board-dm644x-evm.c b/arch/arm/mach-davinci/board-dm644x-evm.c
+index f22572ce..f8a99ee 100644
+--- a/arch/arm/mach-davinci/board-dm644x-evm.c
++++ b/arch/arm/mach-davinci/board-dm644x-evm.c
+@@ -519,13 +519,11 @@ static int dm6444evm_msp430_get_pins(void)
+ 	char buf[4];
+ 	struct i2c_msg msg[2] = {
+ 		{
+-			.addr = dm6446evm_msp->addr,
+ 			.flags = 0,
+ 			.len = 2,
+ 			.buf = (void __force *)txbuf,
+ 		},
+ 		{
+-			.addr = dm6446evm_msp->addr,
+ 			.flags = I2C_M_RD,
+ 			.len = 4,
+ 			.buf = buf,
+@@ -536,6 +534,9 @@ static int dm6444evm_msp430_get_pins(void)
+ 	if (!dm6446evm_msp)
+ 		return -ENXIO;
+ 
++	msg[0].addr = dm6446evm_msp->addr;
++	msg[1].addr = dm6446evm_msp->addr;
++
+ 	/* Command 4 == get input state, returns port 2 and port3 data
+ 	 *   S Addr W [A] len=2 [A] cmd=4 [A]
+ 	 *   RS Addr R [A] [len=4] A [cmd=4] A [port2] A [port3] N P
+-- 
+1.8.0
+

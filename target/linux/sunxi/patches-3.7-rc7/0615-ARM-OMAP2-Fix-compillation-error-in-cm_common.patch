@@ -1,0 +1,41 @@
+From cc4b1e24b93dd529b1d49258bee044d319b5b129 Mon Sep 17 00:00:00 2001
+From: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Date: Mon, 12 Nov 2012 16:17:08 +0100
+Subject: [PATCH 615/951] ARM: OMAP2: Fix compillation error in cm_common
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes the following error:
+  CC      arch/arm/mach-omap2/cm_common.o
+arch/arm/mach-omap2/cm_common.c: In function ‘cm_register’:
+arch/arm/mach-omap2/cm_common.c:42:11: error: ‘EINVAL’ undeclared (first use in this function)
+arch/arm/mach-omap2/cm_common.c:42:11: note: each undeclared identifier is reported only once for each function it appears in
+arch/arm/mach-omap2/cm_common.c:45:11: error: ‘EEXIST’ undeclared (first use in this function)
+arch/arm/mach-omap2/cm_common.c: In function ‘cm_unregister’:
+arch/arm/mach-omap2/cm_common.c:66:11: error: ‘EINVAL’ undeclared (first use in this function)
+make[1]: *** [arch/arm/mach-omap2/cm_common.o] Error 1
+make: *** [arch/arm/mach-omap2] Error 2
+
+Signed-off-by: Peter Ujfalusi <peter.ujfalusi@ti.com>
+Acked-by: Paul Walmsley <paul@pwsan.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap2/cm_common.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-omap2/cm_common.c b/arch/arm/mach-omap2/cm_common.c
+index 0bab493..40b3b5a 100644
+--- a/arch/arm/mach-omap2/cm_common.c
++++ b/arch/arm/mach-omap2/cm_common.c
+@@ -13,6 +13,7 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/init.h>
++#include <linux/errno.h>
+ 
+ #include "cm2xxx.h"
+ #include "cm3xxx.h"
+-- 
+1.8.0
+

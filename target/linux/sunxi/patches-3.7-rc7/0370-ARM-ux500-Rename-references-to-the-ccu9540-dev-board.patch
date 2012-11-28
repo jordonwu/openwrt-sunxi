@@ -1,0 +1,203 @@
+From 58e5b9e3d0b5e1319fd24124e79b4d4e6188bf1b Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Mon, 15 Oct 2012 08:49:33 +0100
+Subject: [PATCH 370/951] ARM: ux500: Rename references to the ccu9540 dev
+ board accordingly
+
+When enabling ST-Ericsson's ccu9540 development board the board's
+full name has not been used. This patch adapts all references of
+the board's short name to how it should be referenced.
+
+Reviewed-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ arch/arm/boot/dts/ccu9540.dts    | 72 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/u9540.dts      | 72 ----------------------------------------
+ arch/arm/mach-ux500/cpu-db8500.c |  6 ++--
+ 3 files changed, 75 insertions(+), 75 deletions(-)
+ create mode 100644 arch/arm/boot/dts/ccu9540.dts
+ delete mode 100644 arch/arm/boot/dts/u9540.dts
+
+diff --git a/arch/arm/boot/dts/ccu9540.dts b/arch/arm/boot/dts/ccu9540.dts
+new file mode 100644
+index 0000000..26dfe83
+--- /dev/null
++++ b/arch/arm/boot/dts/ccu9540.dts
+@@ -0,0 +1,72 @@
++/*
++ * Copyright 2012 ST-Ericsson AB
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/dts-v1/;
++/include/ "dbx5x0.dtsi"
++
++/ {
++	model = "ST-Ericsson CCU9540 platform with Device Tree";
++	compatible = "st-ericsson,ccu9540";
++
++	memory {
++		reg = <0x00000000 0x20000000>;
++	};
++
++	soc-u9500 {
++		uart@80120000 {
++			status = "okay";
++		};
++
++		uart@80121000 {
++			status = "okay";
++		};
++
++		uart@80007000 {
++			status = "okay";
++		};
++
++		// External Micro SD slot
++		sdi0_per1@80126000 {
++			arm,primecell-periphid = <0x10480180>;
++			max-frequency = <100000000>;
++			bus-width = <4>;
++			mmc-cap-sd-highspeed;
++			mmc-cap-mmc-highspeed;
++			vmmc-supply = <&ab8500_ldo_aux3_reg>;
++
++			cd-gpios  = <&gpio7 6 0x4>; // 230
++			cd-inverted;
++
++			status = "okay";
++		};
++
++
++		// WLAN SDIO channel
++		sdi1_per2@80118000 {
++			arm,primecell-periphid = <0x10480180>;
++			max-frequency = <50000000>;
++			bus-width = <4>;
++
++			status = "okay";
++		};
++
++		// On-board eMMC
++		sdi4_per2@80114000 {
++			arm,primecell-periphid = <0x10480180>;
++		        max-frequency = <100000000>;
++			bus-width = <8>;
++			mmc-cap-mmc-highspeed;
++			vmmc-supply = <&ab8500_ldo_aux2_reg>;
++
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/u9540.dts b/arch/arm/boot/dts/u9540.dts
+deleted file mode 100644
+index 95892ec..0000000
+--- a/arch/arm/boot/dts/u9540.dts
++++ /dev/null
+@@ -1,72 +0,0 @@
+-/*
+- * Copyright 2012 ST-Ericsson AB
+- *
+- * The code contained herein is licensed under the GNU General Public
+- * License. You may obtain a copy of the GNU General Public License
+- * Version 2 or later at the following locations:
+- *
+- * http://www.opensource.org/licenses/gpl-license.html
+- * http://www.gnu.org/copyleft/gpl.html
+- */
+-
+-/dts-v1/;
+-/include/ "dbx5x0.dtsi"
+-
+-/ {
+-	model = "ST-Ericsson U9540 platform with Device Tree";
+-	compatible = "st-ericsson,u9540";
+-
+-	memory {
+-		reg = <0x00000000 0x20000000>;
+-	};
+-
+-	soc-u9500 {
+-		uart@80120000 {
+-			status = "okay";
+-		};
+-
+-		uart@80121000 {
+-			status = "okay";
+-		};
+-
+-		uart@80007000 {
+-			status = "okay";
+-		};
+-
+-		// External Micro SD slot
+-		sdi0_per1@80126000 {
+-			arm,primecell-periphid = <0x10480180>;
+-			max-frequency = <100000000>;
+-			bus-width = <4>;
+-			mmc-cap-sd-highspeed;
+-			mmc-cap-mmc-highspeed;
+-			vmmc-supply = <&ab8500_ldo_aux3_reg>;
+-
+-			cd-gpios  = <&gpio7 6 0x4>; // 230
+-			cd-inverted;
+-
+-			status = "okay";
+-		};
+-
+-
+-		// WLAN SDIO channel
+-		sdi1_per2@80118000 {
+-			arm,primecell-periphid = <0x10480180>;
+-			max-frequency = <50000000>;
+-			bus-width = <4>;
+-
+-			status = "okay";
+-		};
+-
+-		// On-board eMMC
+-		sdi4_per2@80114000 {
+-			arm,primecell-periphid = <0x10480180>;
+-		        max-frequency = <100000000>;
+-			bus-width = <8>;
+-			mmc-cap-mmc-highspeed;
+-			vmmc-supply = <&ab8500_ldo_aux2_reg>;
+-
+-			status = "okay";
+-		};
+-	};
+-};
+diff --git a/arch/arm/mach-ux500/cpu-db8500.c b/arch/arm/mach-ux500/cpu-db8500.c
+index 0b15591..6e9a06d 100644
+--- a/arch/arm/mach-ux500/cpu-db8500.c
++++ b/arch/arm/mach-ux500/cpu-db8500.c
+@@ -320,8 +320,8 @@ static void __init u8500_init_machine(void)
+ 		snowball_pinmaps_init();
+ 	else if (of_machine_is_compatible("st-ericsson,hrefv60+"))
+ 		hrefv60_pinmaps_init();
+-	else if (of_machine_is_compatible("st-ericsson,u9540")) {}
+-		/* TODO: Add u9540 pinmaps. */
++	else if (of_machine_is_compatible("st-ericsson,ccu9540")) {}
++		/* TODO: Add pinmaps for ccu9540 board. */
+ 
+ 	/* TODO: Export SoC, USB, cpu-freq and DMA40 */
+ 	parent = u8500_of_init_devices();
+@@ -334,7 +334,7 @@ static const char * u8500_dt_board_compat[] = {
+ 	"calaosystems,snowball-a9500",
+ 	"st-ericsson,hrefv60+",
+ 	"st-ericsson,mop500",
+-	"st-ericsson,u9540",
++	"st-ericsson,ccu9540",
+ 	NULL,
+ };
+ 
+-- 
+1.8.0
+

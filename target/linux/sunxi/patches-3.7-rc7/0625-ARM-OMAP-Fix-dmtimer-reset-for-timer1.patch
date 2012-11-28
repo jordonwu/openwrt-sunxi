@@ -1,0 +1,40 @@
+From ffc957bd83b623fa6ead068bf1a444decce2cc00 Mon Sep 17 00:00:00 2001
+From: Jon Hunter <jon-hunter@ti.com>
+Date: Fri, 6 Jul 2012 16:46:35 -0500
+Subject: [PATCH 625/951] ARM: OMAP: Fix dmtimer reset for timer1
+
+In commit e32f7ec2 (ARM: OMAP: Fix 32 kHz timer and modify GP timer to use GPT1)
+a fix was added to prevent timer1 being reset in the function
+omap_dm_timer_reset() because timer1 was being used as the system timer for
+OMAP2 devices. Although timer1 is still used by most OMAP2+ devices as a system
+timer, the function omap_dm_timer_reset() is now only being called for OMAP1
+devices and OMAP1 does not use timer1 as a system timer. Therefore, remove the
+check in omap_dm_timer_reset() so that timer1 is reset for OMAP1 devices.
+
+Signed-off-by: Jon Hunter <jon-hunter@ti.com>
+Acked-by: Santosh Shilimkar <santosh.shilimkar@ti.com>
+---
+ arch/arm/plat-omap/dmtimer.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/plat-omap/dmtimer.c b/arch/arm/plat-omap/dmtimer.c
+index 10ec31b..d4f9541 100644
+--- a/arch/arm/plat-omap/dmtimer.c
++++ b/arch/arm/plat-omap/dmtimer.c
+@@ -121,11 +121,8 @@ static void omap_dm_timer_wait_for_reset(struct omap_dm_timer *timer)
+ 
+ static void omap_dm_timer_reset(struct omap_dm_timer *timer)
+ {
+-	if (timer->pdev->id != 1) {
+-		omap_dm_timer_write_reg(timer, OMAP_TIMER_IF_CTRL_REG, 0x06);
+-		omap_dm_timer_wait_for_reset(timer);
+-	}
+-
++	omap_dm_timer_write_reg(timer, OMAP_TIMER_IF_CTRL_REG, 0x06);
++	omap_dm_timer_wait_for_reset(timer);
+ 	__omap_dm_timer_reset(timer, 0, 0);
+ }
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,45 @@
+From ac8e44ced54a9eb7fa1c2b02befc80a934d4cbe8 Mon Sep 17 00:00:00 2001
+From: Gwenhael Goavec-Merou <gwenhael.goavec-merou@armadeus.com>
+Date: Fri, 9 Nov 2012 13:42:41 +0100
+Subject: [PATCH 595/951] ARM: mxs: apf28dev: Add I2C and SPI support
+
+Signed-off-by: Gwenhael Goavec-Merou <gwenhael.goavec-merou@armadeus.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx28-apf28dev.dts | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx28-apf28dev.dts b/arch/arm/boot/dts/imx28-apf28dev.dts
+index 1643d25..6d8865b 100644
+--- a/arch/arm/boot/dts/imx28-apf28dev.dts
++++ b/arch/arm/boot/dts/imx28-apf28dev.dts
+@@ -27,6 +27,13 @@
+ 				status = "okay";
+ 			};
+ 
++			ssp2: ssp@80014000 {
++				compatible = "fsl,imx28-spi";
++				pinctrl-names = "default";
++				pinctrl-0 = <&spi2_pins_a>;
++				status = "okay";
++			};
++
+ 			pinctrl@80018000 {
+ 				pinctrl-names = "default";
+ 				pinctrl-0 = <&hog_pins_apf28dev>;
+@@ -74,6 +81,12 @@
+ 				status = "okay";
+ 			};
+ 
++			i2c0: i2c@80058000 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&i2c0_pins_a>;
++				status = "okay";
++			};
++
+ 			pwm: pwm@80064000 {
+ 				pinctrl-names = "default";
+ 				pinctrl-0 = <&pwm3_pins_a &pwm4_pins_a>;
+-- 
+1.8.0
+

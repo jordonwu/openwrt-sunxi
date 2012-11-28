@@ -1,0 +1,35 @@
+From 9ffb571cb1b9dd103bf8d47f8527cd37163d7e12 Mon Sep 17 00:00:00 2001
+From: Andrey Gusakov <dron_gus@mail.ru>
+Date: Mon, 12 Nov 2012 13:08:11 +0900
+Subject: [PATCH 596/951] ARM: S3C64XX: Remove duplicated camera clock
+
+Camera clock defined two times. One in init_clocks_off array with
+"cam" name, second in clksrcs array with "camera" name. Leave
+second definition because clock have divider.
+
+Signed-off-by: Andrey Gusakov <dron0gus@gmail.com>
+Reviewed-by: Tomasz Figa <tomasz.figa@gmail.com>
+Reviewed-by: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-s3c64xx/clock.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm/mach-s3c64xx/clock.c b/arch/arm/mach-s3c64xx/clock.c
+index 0fd7417..6562a06 100644
+--- a/arch/arm/mach-s3c64xx/clock.c
++++ b/arch/arm/mach-s3c64xx/clock.c
+@@ -315,10 +315,6 @@ static struct clk init_clocks_off[] = {
+ 		.enable		= s3c64xx_sclk_ctrl,
+ 		.ctrlbit	= S3C_CLKCON_SCLK_MFC,
+ 	}, {
+-		.name		= "cam",
+-		.enable		= s3c64xx_sclk_ctrl,
+-		.ctrlbit	= S3C_CLKCON_SCLK_CAM,
+-	}, {
+ 		.name		= "sclk_jpeg",
+ 		.enable		= s3c64xx_sclk_ctrl,
+ 		.ctrlbit	= S3C_CLKCON_SCLK_JPEG,
+-- 
+1.8.0
+

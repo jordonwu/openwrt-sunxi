@@ -1,0 +1,1424 @@
+From 2b6c4e73248758bac8e1ed81b0d0664da0fff6f8 Mon Sep 17 00:00:00 2001
+From: Lokesh Vutla <lokeshvutla@ti.com>
+Date: Mon, 15 Oct 2012 14:04:53 -0700
+Subject: [PATCH 093/951] ARM: OMAP: DMA: Move plat/dma.h to
+ plat-omap/dma-omap.h
+
+Move plat/dma.h to plat-omap/dma-omap.h as part of single
+zImage work
+
+Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/board-h2.c                     |   2 +-
+ arch/arm/mach-omap1/board-h3.c                     |   2 +-
+ arch/arm/mach-omap1/board-palmte.c                 |   2 +-
+ arch/arm/mach-omap1/board-palmtt.c                 |   2 +-
+ arch/arm/mach-omap1/board-palmz71.c                |   2 +-
+ arch/arm/mach-omap1/board-sx1.c                    |   2 +-
+ arch/arm/mach-omap1/devices.c                      |   1 -
+ arch/arm/mach-omap1/dma.c                          |   2 +-
+ arch/arm/mach-omap1/io.c                           |   2 +-
+ arch/arm/mach-omap1/lcd_dma.c                      |   2 +-
+ arch/arm/mach-omap1/mcbsp.c                        |   2 +-
+ arch/arm/mach-omap1/pm.c                           |   2 +-
+ arch/arm/mach-omap2/board-3430sdp.c                |   2 +-
+ arch/arm/mach-omap2/board-h4.c                     |   2 +-
+ arch/arm/mach-omap2/board-rx51-peripherals.c       |   2 +-
+ arch/arm/mach-omap2/board-rx51.c                   |   2 +-
+ arch/arm/mach-omap2/devices.c                      |   2 +-
+ arch/arm/mach-omap2/dma.c                          |   2 +-
+ arch/arm/mach-omap2/io.c                           |   2 +-
+ arch/arm/mach-omap2/mcbsp.c                        |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_2420_data.c         |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_2430_data.c         |   2 +-
+ .../mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_33xx_data.c         |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_3xxx_data.c         |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_44xx_data.c         |   2 +-
+ arch/arm/mach-omap2/pm24xx.c                       |   2 +-
+ arch/arm/mach-omap2/pm34xx.c                       |   2 +-
+ arch/arm/mach-omap2/serial.c                       |   2 +-
+ arch/arm/plat-omap/common.c                        |   2 +-
+ arch/arm/plat-omap/dma.c                           |   2 +-
+ arch/arm/plat-omap/include/plat-omap/dma-omap.h    | 367 +++++++++++++++++++++
+ arch/arm/plat-omap/include/plat/dma.h              | 367 ---------------------
+ drivers/crypto/omap-aes.c                          |   2 +-
+ drivers/crypto/omap-sham.c                         |   2 +-
+ drivers/dma/omap-dma.c                             |   2 +-
+ drivers/media/platform/omap/omap_vout.c            |   2 +-
+ drivers/media/platform/omap/omap_vout_vrfb.c       |   2 +-
+ drivers/media/platform/omap3isp/ispstat.h          |   2 +-
+ drivers/media/platform/soc_camera/omap1_camera.c   |   2 +-
+ drivers/mmc/host/omap.c                            |   2 +-
+ drivers/mtd/nand/omap2.c                           |   2 +-
+ drivers/mtd/onenand/omap2.c                        |   2 +-
+ drivers/usb/gadget/omap_udc.c                      |   2 +-
+ drivers/usb/musb/tusb6010_omap.c                   |   2 +-
+ drivers/video/omap/lcdc.c                          |   2 +-
+ drivers/video/omap/omapfb_main.c                   |   2 +-
+ drivers/video/omap/sossi.c                         |   2 +-
+ 49 files changed, 413 insertions(+), 414 deletions(-)
+ create mode 100644 arch/arm/plat-omap/include/plat-omap/dma-omap.h
+ delete mode 100644 arch/arm/plat-omap/include/plat/dma.h
+
+diff --git a/arch/arm/mach-omap1/board-h2.c b/arch/arm/mach-omap1/board-h2.c
+index 033483d..fc84e2b 100644
+--- a/arch/arm/mach-omap1/board-h2.c
++++ b/arch/arm/mach-omap1/board-h2.c
+@@ -39,7 +39,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <mach/mux.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/tc.h>
+ #include <mach/irda.h>
+ #include <linux/platform_data/keypad-omap.h>
+diff --git a/arch/arm/mach-omap1/board-h3.c b/arch/arm/mach-omap1/board-h3.c
+index ededdb7..81f55a6 100644
+--- a/arch/arm/mach-omap1/board-h3.c
++++ b/arch/arm/mach-omap1/board-h3.c
+@@ -43,7 +43,7 @@
+ #include <mach/mux.h>
+ #include <plat/tc.h>
+ #include <linux/platform_data/keypad-omap.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <mach/flash.h>
+ 
+ #include <mach/hardware.h>
+diff --git a/arch/arm/mach-omap1/board-palmte.c b/arch/arm/mach-omap1/board-palmte.c
+index 75ac3cd..eac94c2 100644
+--- a/arch/arm/mach-omap1/board-palmte.c
++++ b/arch/arm/mach-omap1/board-palmte.c
+@@ -37,7 +37,7 @@
+ #include <mach/flash.h>
+ #include <mach/mux.h>
+ #include <plat/tc.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <mach/irda.h>
+ #include <linux/platform_data/keypad-omap.h>
+ 
+diff --git a/arch/arm/mach-omap1/board-palmtt.c b/arch/arm/mach-omap1/board-palmtt.c
+index 14e1847..5b8ac0f 100644
+--- a/arch/arm/mach-omap1/board-palmtt.c
++++ b/arch/arm/mach-omap1/board-palmtt.c
+@@ -36,7 +36,7 @@
+ #include <plat/led.h>
+ #include <mach/flash.h>
+ #include <mach/mux.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/tc.h>
+ #include <mach/irda.h>
+ #include <linux/platform_data/keypad-omap.h>
+diff --git a/arch/arm/mach-omap1/board-palmz71.c b/arch/arm/mach-omap1/board-palmz71.c
+index e403bc9..9f34603 100644
+--- a/arch/arm/mach-omap1/board-palmz71.c
++++ b/arch/arm/mach-omap1/board-palmz71.c
+@@ -38,7 +38,7 @@
+ 
+ #include <mach/flash.h>
+ #include <mach/mux.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/tc.h>
+ #include <mach/irda.h>
+ #include <linux/platform_data/keypad-omap.h>
+diff --git a/arch/arm/mach-omap1/board-sx1.c b/arch/arm/mach-omap1/board-sx1.c
+index 1248fcc..f4c5db9 100644
+--- a/arch/arm/mach-omap1/board-sx1.c
++++ b/arch/arm/mach-omap1/board-sx1.c
+@@ -36,7 +36,7 @@
+ 
+ #include <mach/flash.h>
+ #include <mach/mux.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <mach/irda.h>
+ #include <plat/tc.h>
+ #include <mach/board-sx1.h>
+diff --git a/arch/arm/mach-omap1/devices.c b/arch/arm/mach-omap1/devices.c
+index d741525..894e7c9 100644
+--- a/arch/arm/mach-omap1/devices.c
++++ b/arch/arm/mach-omap1/devices.c
+@@ -21,7 +21,6 @@
+ 
+ #include <plat/tc.h>
+ #include <mach/mux.h>
+-#include <plat/dma.h>
+ #include <plat/mmc.h>
+ 
+ #include <mach/omap7xx.h>
+diff --git a/arch/arm/mach-omap1/dma.c b/arch/arm/mach-omap1/dma.c
+index 40f1dc4..9159417 100644
+--- a/arch/arm/mach-omap1/dma.c
++++ b/arch/arm/mach-omap1/dma.c
+@@ -25,7 +25,7 @@
+ #include <linux/device.h>
+ #include <linux/io.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/tc.h>
+ 
+ #include <mach/irqs.h>
+diff --git a/arch/arm/mach-omap1/io.c b/arch/arm/mach-omap1/io.c
+index 6a5baab..244cc75 100644
+--- a/arch/arm/mach-omap1/io.c
++++ b/arch/arm/mach-omap1/io.c
+@@ -18,7 +18,7 @@
+ 
+ #include <mach/mux.h>
+ #include <plat/tc.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "iomap.h"
+ #include "common.h"
+diff --git a/arch/arm/mach-omap1/lcd_dma.c b/arch/arm/mach-omap1/lcd_dma.c
+index 9a54d3b..7ed8c18 100644
+--- a/arch/arm/mach-omap1/lcd_dma.c
++++ b/arch/arm/mach-omap1/lcd_dma.c
+@@ -27,7 +27,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include <mach/hardware.h>
+ #include <mach/lcdc.h>
+diff --git a/arch/arm/mach-omap1/mcbsp.c b/arch/arm/mach-omap1/mcbsp.c
+index b92f15a..3d461e1 100644
+--- a/arch/arm/mach-omap1/mcbsp.c
++++ b/arch/arm/mach-omap1/mcbsp.c
+@@ -19,7 +19,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <mach/mux.h>
+ #include <plat/cpu.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
+diff --git a/arch/arm/mach-omap1/pm.c b/arch/arm/mach-omap1/pm.c
+index 47ec161..c16b03a 100644
+--- a/arch/arm/mach-omap1/pm.c
++++ b/arch/arm/mach-omap1/pm.c
+@@ -54,7 +54,7 @@
+ #include <plat/sram.h>
+ #include <plat/tc.h>
+ #include <mach/mux.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/dmtimer.h>
+ 
+ #include <mach/irqs.h>
+diff --git a/arch/arm/mach-omap2/board-3430sdp.c b/arch/arm/mach-omap2/board-3430sdp.c
+index 96cd369..2abbd6a 100644
+--- a/arch/arm/mach-omap2/board-3430sdp.c
++++ b/arch/arm/mach-omap2/board-3430sdp.c
+@@ -32,7 +32,7 @@
+ 
+ #include <plat/usb.h>
+ #include "common.h"
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/gpmc.h>
+ #include <video/omapdss.h>
+ #include <video/omap-panel-tfp410.h>
+diff --git a/arch/arm/mach-omap2/board-h4.c b/arch/arm/mach-omap2/board-h4.c
+index 8d04bf8..b3bab62 100644
+--- a/arch/arm/mach-omap2/board-h4.c
++++ b/arch/arm/mach-omap2/board-h4.c
+@@ -32,7 +32,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include <plat/menelaus.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/gpmc.h>
+ #include "debug-devices.h"
+ 
+diff --git a/arch/arm/mach-omap2/board-rx51-peripherals.c b/arch/arm/mach-omap2/board-rx51-peripherals.c
+index 020e03c..38b3f63 100644
+--- a/arch/arm/mach-omap2/board-rx51-peripherals.c
++++ b/arch/arm/mach-omap2/board-rx51-peripherals.c
+@@ -31,7 +31,7 @@
+ #include <asm/system_info.h>
+ 
+ #include "common.h"
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/gpmc.h>
+ #include <plat/omap-pm.h>
+ #include "gpmc-smc91x.h"
+diff --git a/arch/arm/mach-omap2/board-rx51.c b/arch/arm/mach-omap2/board-rx51.c
+index 7bbb05d..3b1c03e 100644
+--- a/arch/arm/mach-omap2/board-rx51.c
++++ b/arch/arm/mach-omap2/board-rx51.c
+@@ -24,7 +24,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include "common.h"
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/gpmc.h>
+ #include <plat/usb.h>
+ 
+diff --git a/arch/arm/mach-omap2/devices.c b/arch/arm/mach-omap2/devices.c
+index d28ff81..e9ee9d9 100644
+--- a/arch/arm/mach-omap2/devices.c
++++ b/arch/arm/mach-omap2/devices.c
+@@ -24,7 +24,7 @@
+ #include <asm/mach/map.h>
+ 
+ #include "iomap.h"
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/omap_hwmod.h>
+ #include <plat/omap_device.h>
+ #include "omap4-keypad.h"
+diff --git a/arch/arm/mach-omap2/dma.c b/arch/arm/mach-omap2/dma.c
+index ff75abe..4e3ac6b 100644
+--- a/arch/arm/mach-omap2/dma.c
++++ b/arch/arm/mach-omap2/dma.c
+@@ -30,7 +30,7 @@
+ 
+ #include <plat/omap_hwmod.h>
+ #include <plat/omap_device.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #define OMAP2_DMA_STRIDE	0x60
+ 
+diff --git a/arch/arm/mach-omap2/io.c b/arch/arm/mach-omap2/io.c
+index 4234d28..42a4b9c 100644
+--- a/arch/arm/mach-omap2/io.c
++++ b/arch/arm/mach-omap2/io.c
+@@ -31,7 +31,7 @@
+ #include <plat/omap-pm.h>
+ #include <plat/omap_hwmod.h>
+ #include <plat/multi.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "soc.h"
+ #include "iomap.h"
+diff --git a/arch/arm/mach-omap2/mcbsp.c b/arch/arm/mach-omap2/mcbsp.c
+index 37f8f94..b2c7f23 100644
+--- a/arch/arm/mach-omap2/mcbsp.c
++++ b/arch/arm/mach-omap2/mcbsp.c
+@@ -20,7 +20,7 @@
+ #include <linux/slab.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/omap_device.h>
+ #include <linux/pm_runtime.h>
+ 
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2420_data.c b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+index b5db600..917b1f4 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2420_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+@@ -15,7 +15,7 @@
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/serial.h>
+ #include <plat/i2c.h>
+ #include <plat/dmtimer.h>
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2430_data.c b/arch/arm/mach-omap2/omap_hwmod_2430_data.c
+index c455e41..2a6d1ab 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2430_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2430_data.c
+@@ -16,7 +16,7 @@
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/serial.h>
+ #include <plat/i2c.h>
+ #include <plat/dmtimer.h>
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c b/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
+index 04b99de..2420097 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2xxx_3xxx_ipblock_data.c
+@@ -11,7 +11,7 @@
+  */
+ #include <plat/omap_hwmod.h>
+ #include <plat/serial.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/common.h>
+ #include "hdq1w.h"
+ 
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c b/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
+index bd9220e..b902486 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2xxx_ipblock_data.c
+@@ -11,7 +11,7 @@
+ #include <plat/omap_hwmod.h>
+ #include <plat/serial.h>
+ #include <linux/platform_data/gpio-omap.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/dmtimer.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ 
+diff --git a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
+index 59d5c1c..f7f3c2d 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
+@@ -18,7 +18,7 @@
+ #include <plat/cpu.h>
+ #include <linux/platform_data/gpio-omap.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/mmc.h>
+ #include <plat/i2c.h>
+ 
+diff --git a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+index 6f4b62f..76ef2ad 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+@@ -18,7 +18,7 @@
+ #include <linux/platform_data/gpio-omap.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/serial.h>
+ #include "l3_3xxx.h"
+ #include "l4_3xxx.h"
+diff --git a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+index 652d028..5f59b16 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+@@ -24,7 +24,7 @@
+ 
+ #include <plat/omap_hwmod.h>
+ #include <plat/i2c.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
+ #include <plat/mmc.h>
+diff --git a/arch/arm/mach-omap2/pm24xx.c b/arch/arm/mach-omap2/pm24xx.c
+index 8af6cd6..601a49b 100644
+--- a/arch/arm/mach-omap2/pm24xx.c
++++ b/arch/arm/mach-omap2/pm24xx.c
+@@ -38,7 +38,7 @@
+ 
+ #include <plat/clock.h>
+ #include <plat/sram.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "common.h"
+ #include "prm2xxx_3xxx.h"
+diff --git a/arch/arm/mach-omap2/pm34xx.c b/arch/arm/mach-omap2/pm34xx.c
+index ba670db..baee872 100644
+--- a/arch/arm/mach-omap2/pm34xx.c
++++ b/arch/arm/mach-omap2/pm34xx.c
+@@ -41,7 +41,7 @@
+ #include <plat/sdrc.h>
+ #include <plat/prcm.h>
+ #include <plat/gpmc.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "common.h"
+ #include "cm2xxx_3xxx.h"
+diff --git a/arch/arm/mach-omap2/serial.c b/arch/arm/mach-omap2/serial.c
+index 0405c81..67c4196 100644
+--- a/arch/arm/mach-omap2/serial.c
++++ b/arch/arm/mach-omap2/serial.c
+@@ -29,7 +29,7 @@
+ 
+ #include <plat/omap-serial.h>
+ #include "common.h"
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/omap_hwmod.h>
+ #include <plat/omap_device.h>
+ #include <plat/omap-pm.h>
+diff --git a/arch/arm/plat-omap/common.c b/arch/arm/plat-omap/common.c
+index 111315a..b388e87 100644
+--- a/arch/arm/plat-omap/common.c
++++ b/arch/arm/plat-omap/common.c
+@@ -19,7 +19,7 @@
+ #include <plat/common.h>
+ #include <plat/vram.h>
+ #include <linux/platform_data/dsp-omap.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include <plat/omap-secure.h>
+ 
+diff --git a/arch/arm/plat-omap/dma.c b/arch/arm/plat-omap/dma.c
+index c76ed8b..b729623 100644
+--- a/arch/arm/plat-omap/dma.c
++++ b/arch/arm/plat-omap/dma.c
+@@ -37,7 +37,7 @@
+ #include <linux/delay.h>
+ 
+ #include <plat/cpu.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/tc.h>
+ 
+ /*
+diff --git a/arch/arm/plat-omap/include/plat-omap/dma-omap.h b/arch/arm/plat-omap/include/plat-omap/dma-omap.h
+new file mode 100644
+index 0000000..222be7e
+--- /dev/null
++++ b/arch/arm/plat-omap/include/plat-omap/dma-omap.h
+@@ -0,0 +1,367 @@
++/*
++ *  OMAP DMA handling defines and function
++ *
++ *  Copyright (C) 2003 Nokia Corporation
++ *  Author: Juha Yrjölä <juha.yrjola@nokia.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
++ */
++#ifndef __ASM_ARCH_DMA_H
++#define __ASM_ARCH_DMA_H
++
++#include <linux/platform_device.h>
++
++#define INT_DMA_LCD			25
++
++#define OMAP1_DMA_TOUT_IRQ		(1 << 0)
++#define OMAP_DMA_DROP_IRQ		(1 << 1)
++#define OMAP_DMA_HALF_IRQ		(1 << 2)
++#define OMAP_DMA_FRAME_IRQ		(1 << 3)
++#define OMAP_DMA_LAST_IRQ		(1 << 4)
++#define OMAP_DMA_BLOCK_IRQ		(1 << 5)
++#define OMAP1_DMA_SYNC_IRQ		(1 << 6)
++#define OMAP2_DMA_PKT_IRQ		(1 << 7)
++#define OMAP2_DMA_TRANS_ERR_IRQ		(1 << 8)
++#define OMAP2_DMA_SECURE_ERR_IRQ	(1 << 9)
++#define OMAP2_DMA_SUPERVISOR_ERR_IRQ	(1 << 10)
++#define OMAP2_DMA_MISALIGNED_ERR_IRQ	(1 << 11)
++
++#define OMAP_DMA_CCR_EN			(1 << 7)
++#define OMAP_DMA_CCR_RD_ACTIVE		(1 << 9)
++#define OMAP_DMA_CCR_WR_ACTIVE		(1 << 10)
++#define OMAP_DMA_CCR_SEL_SRC_DST_SYNC	(1 << 24)
++#define OMAP_DMA_CCR_BUFFERING_DISABLE	(1 << 25)
++
++#define OMAP_DMA_DATA_TYPE_S8		0x00
++#define OMAP_DMA_DATA_TYPE_S16		0x01
++#define OMAP_DMA_DATA_TYPE_S32		0x02
++
++#define OMAP_DMA_SYNC_ELEMENT		0x00
++#define OMAP_DMA_SYNC_FRAME		0x01
++#define OMAP_DMA_SYNC_BLOCK		0x02
++#define OMAP_DMA_SYNC_PACKET		0x03
++
++#define OMAP_DMA_DST_SYNC_PREFETCH	0x02
++#define OMAP_DMA_SRC_SYNC		0x01
++#define OMAP_DMA_DST_SYNC		0x00
++
++#define OMAP_DMA_PORT_EMIFF		0x00
++#define OMAP_DMA_PORT_EMIFS		0x01
++#define OMAP_DMA_PORT_OCP_T1		0x02
++#define OMAP_DMA_PORT_TIPB		0x03
++#define OMAP_DMA_PORT_OCP_T2		0x04
++#define OMAP_DMA_PORT_MPUI		0x05
++
++#define OMAP_DMA_AMODE_CONSTANT		0x00
++#define OMAP_DMA_AMODE_POST_INC		0x01
++#define OMAP_DMA_AMODE_SINGLE_IDX	0x02
++#define OMAP_DMA_AMODE_DOUBLE_IDX	0x03
++
++#define DMA_DEFAULT_FIFO_DEPTH		0x10
++#define DMA_DEFAULT_ARB_RATE		0x01
++/* Pass THREAD_RESERVE ORed with THREAD_FIFO for tparams */
++#define DMA_THREAD_RESERVE_NORM		(0x00 << 12) /* Def */
++#define DMA_THREAD_RESERVE_ONET		(0x01 << 12)
++#define DMA_THREAD_RESERVE_TWOT		(0x02 << 12)
++#define DMA_THREAD_RESERVE_THREET	(0x03 << 12)
++#define DMA_THREAD_FIFO_NONE		(0x00 << 14) /* Def */
++#define DMA_THREAD_FIFO_75		(0x01 << 14)
++#define DMA_THREAD_FIFO_25		(0x02 << 14)
++#define DMA_THREAD_FIFO_50		(0x03 << 14)
++
++/* DMA4_OCP_SYSCONFIG bits */
++#define DMA_SYSCONFIG_MIDLEMODE_MASK		(3 << 12)
++#define DMA_SYSCONFIG_CLOCKACTIVITY_MASK	(3 << 8)
++#define DMA_SYSCONFIG_EMUFREE			(1 << 5)
++#define DMA_SYSCONFIG_SIDLEMODE_MASK		(3 << 3)
++#define DMA_SYSCONFIG_SOFTRESET			(1 << 2)
++#define DMA_SYSCONFIG_AUTOIDLE			(1 << 0)
++
++#define DMA_SYSCONFIG_MIDLEMODE(n)		((n) << 12)
++#define DMA_SYSCONFIG_SIDLEMODE(n)		((n) << 3)
++
++#define DMA_IDLEMODE_SMARTIDLE			0x2
++#define DMA_IDLEMODE_NO_IDLE			0x1
++#define DMA_IDLEMODE_FORCE_IDLE			0x0
++
++/* Chaining modes*/
++#ifndef CONFIG_ARCH_OMAP1
++#define OMAP_DMA_STATIC_CHAIN		0x1
++#define OMAP_DMA_DYNAMIC_CHAIN		0x2
++#define OMAP_DMA_CHAIN_ACTIVE		0x1
++#define OMAP_DMA_CHAIN_INACTIVE		0x0
++#endif
++
++#define DMA_CH_PRIO_HIGH		0x1
++#define DMA_CH_PRIO_LOW			0x0 /* Def */
++
++/* Errata handling */
++#define IS_DMA_ERRATA(id)		(errata & (id))
++#define SET_DMA_ERRATA(id)		(errata |= (id))
++
++#define DMA_ERRATA_IFRAME_BUFFERING	BIT(0x0)
++#define DMA_ERRATA_PARALLEL_CHANNELS	BIT(0x1)
++#define DMA_ERRATA_i378			BIT(0x2)
++#define DMA_ERRATA_i541			BIT(0x3)
++#define DMA_ERRATA_i88			BIT(0x4)
++#define DMA_ERRATA_3_3			BIT(0x5)
++#define DMA_ROMCODE_BUG			BIT(0x6)
++
++/* Attributes for OMAP DMA Contrller */
++#define DMA_LINKED_LCH			BIT(0x0)
++#define GLOBAL_PRIORITY			BIT(0x1)
++#define RESERVE_CHANNEL			BIT(0x2)
++#define IS_CSSA_32			BIT(0x3)
++#define IS_CDSA_32			BIT(0x4)
++#define IS_RW_PRIORITY			BIT(0x5)
++#define ENABLE_1510_MODE		BIT(0x6)
++#define SRC_PORT			BIT(0x7)
++#define DST_PORT			BIT(0x8)
++#define SRC_INDEX			BIT(0x9)
++#define DST_INDEX			BIT(0xA)
++#define IS_BURST_ONLY4			BIT(0xB)
++#define CLEAR_CSR_ON_READ		BIT(0xC)
++#define IS_WORD_16			BIT(0xD)
++
++/* Defines for DMA Capabilities */
++#define DMA_HAS_TRANSPARENT_CAPS	(0x1 << 18)
++#define DMA_HAS_CONSTANT_FILL_CAPS	(0x1 << 19)
++#define DMA_HAS_DESCRIPTOR_CAPS		(0x3 << 20)
++
++enum omap_reg_offsets {
++
++GCR,		GSCR,		GRST1,		HW_ID,
++PCH2_ID,	PCH0_ID,	PCH1_ID,	PCHG_ID,
++PCHD_ID,	CAPS_0,		CAPS_1,		CAPS_2,
++CAPS_3,		CAPS_4,		PCH2_SR,	PCH0_SR,
++PCH1_SR,	PCHD_SR,	REVISION,	IRQSTATUS_L0,
++IRQSTATUS_L1,	IRQSTATUS_L2,	IRQSTATUS_L3,	IRQENABLE_L0,
++IRQENABLE_L1,	IRQENABLE_L2,	IRQENABLE_L3,	SYSSTATUS,
++OCP_SYSCONFIG,
++
++/* omap1+ specific */
++CPC, CCR2, LCH_CTRL,
++
++/* Common registers for all omap's */
++CSDP,		CCR,		CICR,		CSR,
++CEN,		CFN,		CSFI,		CSEI,
++CSAC,		CDAC,		CDEI,
++CDFI,		CLNK_CTRL,
++
++/* Channel specific registers */
++CSSA,		CDSA,		COLOR,
++CCEN,		CCFN,
++
++/* omap3630 and omap4 specific */
++CDP,		CNDP,		CCDN,
++
++};
++
++enum omap_dma_burst_mode {
++	OMAP_DMA_DATA_BURST_DIS = 0,
++	OMAP_DMA_DATA_BURST_4,
++	OMAP_DMA_DATA_BURST_8,
++	OMAP_DMA_DATA_BURST_16,
++};
++
++enum end_type {
++	OMAP_DMA_LITTLE_ENDIAN = 0,
++	OMAP_DMA_BIG_ENDIAN
++};
++
++enum omap_dma_color_mode {
++	OMAP_DMA_COLOR_DIS = 0,
++	OMAP_DMA_CONSTANT_FILL,
++	OMAP_DMA_TRANSPARENT_COPY
++};
++
++enum omap_dma_write_mode {
++	OMAP_DMA_WRITE_NON_POSTED = 0,
++	OMAP_DMA_WRITE_POSTED,
++	OMAP_DMA_WRITE_LAST_NON_POSTED
++};
++
++enum omap_dma_channel_mode {
++	OMAP_DMA_LCH_2D = 0,
++	OMAP_DMA_LCH_G,
++	OMAP_DMA_LCH_P,
++	OMAP_DMA_LCH_PD
++};
++
++struct omap_dma_channel_params {
++	int data_type;		/* data type 8,16,32 */
++	int elem_count;		/* number of elements in a frame */
++	int frame_count;	/* number of frames in a element */
++
++	int src_port;		/* Only on OMAP1 REVISIT: Is this needed? */
++	int src_amode;		/* constant, post increment, indexed,
++					double indexed */
++	unsigned long src_start;	/* source address : physical */
++	int src_ei;		/* source element index */
++	int src_fi;		/* source frame index */
++
++	int dst_port;		/* Only on OMAP1 REVISIT: Is this needed? */
++	int dst_amode;		/* constant, post increment, indexed,
++					double indexed */
++	unsigned long dst_start;	/* source address : physical */
++	int dst_ei;		/* source element index */
++	int dst_fi;		/* source frame index */
++
++	int trigger;		/* trigger attached if the channel is
++					synchronized */
++	int sync_mode;		/* sycn on element, frame , block or packet */
++	int src_or_dst_synch;	/* source synch(1) or destination synch(0) */
++
++	int ie;			/* interrupt enabled */
++
++	unsigned char read_prio;/* read priority */
++	unsigned char write_prio;/* write priority */
++
++#ifndef CONFIG_ARCH_OMAP1
++	enum omap_dma_burst_mode burst_mode; /* Burst mode 4/8/16 words */
++#endif
++};
++
++struct omap_dma_lch {
++	int next_lch;
++	int dev_id;
++	u16 saved_csr;
++	u16 enabled_irqs;
++	const char *dev_name;
++	void (*callback)(int lch, u16 ch_status, void *data);
++	void *data;
++	long flags;
++	/* required for Dynamic chaining */
++	int prev_linked_ch;
++	int next_linked_ch;
++	int state;
++	int chain_id;
++	int status;
++};
++
++struct omap_dma_dev_attr {
++	u32 dev_caps;
++	u16 lch_count;
++	u16 chan_count;
++	struct omap_dma_lch *chan;
++};
++
++/* System DMA platform data structure */
++struct omap_system_dma_plat_info {
++	struct omap_dma_dev_attr *dma_attr;
++	u32 errata;
++	void (*disable_irq_lch)(int lch);
++	void (*show_dma_caps)(void);
++	void (*clear_lch_regs)(int lch);
++	void (*clear_dma)(int lch);
++	void (*dma_write)(u32 val, int reg, int lch);
++	u32 (*dma_read)(int reg, int lch);
++};
++
++extern void __init omap_init_consistent_dma_size(void);
++extern void omap_set_dma_priority(int lch, int dst_port, int priority);
++extern int omap_request_dma(int dev_id, const char *dev_name,
++			void (*callback)(int lch, u16 ch_status, void *data),
++			void *data, int *dma_ch);
++extern void omap_enable_dma_irq(int ch, u16 irq_bits);
++extern void omap_disable_dma_irq(int ch, u16 irq_bits);
++extern void omap_free_dma(int ch);
++extern void omap_start_dma(int lch);
++extern void omap_stop_dma(int lch);
++extern void omap_set_dma_transfer_params(int lch, int data_type,
++					 int elem_count, int frame_count,
++					 int sync_mode,
++					 int dma_trigger, int src_or_dst_synch);
++extern void omap_set_dma_color_mode(int lch, enum omap_dma_color_mode mode,
++				    u32 color);
++extern void omap_set_dma_write_mode(int lch, enum omap_dma_write_mode mode);
++extern void omap_set_dma_channel_mode(int lch, enum omap_dma_channel_mode mode);
++
++extern void omap_set_dma_src_params(int lch, int src_port, int src_amode,
++				    unsigned long src_start,
++				    int src_ei, int src_fi);
++extern void omap_set_dma_src_index(int lch, int eidx, int fidx);
++extern void omap_set_dma_src_data_pack(int lch, int enable);
++extern void omap_set_dma_src_burst_mode(int lch,
++					enum omap_dma_burst_mode burst_mode);
++
++extern void omap_set_dma_dest_params(int lch, int dest_port, int dest_amode,
++				     unsigned long dest_start,
++				     int dst_ei, int dst_fi);
++extern void omap_set_dma_dest_index(int lch, int eidx, int fidx);
++extern void omap_set_dma_dest_data_pack(int lch, int enable);
++extern void omap_set_dma_dest_burst_mode(int lch,
++					 enum omap_dma_burst_mode burst_mode);
++
++extern void omap_set_dma_params(int lch,
++				struct omap_dma_channel_params *params);
++
++extern void omap_dma_link_lch(int lch_head, int lch_queue);
++extern void omap_dma_unlink_lch(int lch_head, int lch_queue);
++
++extern int omap_set_dma_callback(int lch,
++			void (*callback)(int lch, u16 ch_status, void *data),
++			void *data);
++extern dma_addr_t omap_get_dma_src_pos(int lch);
++extern dma_addr_t omap_get_dma_dst_pos(int lch);
++extern void omap_clear_dma(int lch);
++extern int omap_get_dma_active_status(int lch);
++extern int omap_dma_running(void);
++extern void omap_dma_set_global_params(int arb_rate, int max_fifo_depth,
++				       int tparams);
++extern int omap_dma_set_prio_lch(int lch, unsigned char read_prio,
++				 unsigned char write_prio);
++extern void omap_set_dma_dst_endian_type(int lch, enum end_type etype);
++extern void omap_set_dma_src_endian_type(int lch, enum end_type etype);
++extern int omap_get_dma_index(int lch, int *ei, int *fi);
++
++void omap_dma_global_context_save(void);
++void omap_dma_global_context_restore(void);
++
++extern void omap_dma_disable_irq(int lch);
++
++/* Chaining APIs */
++#ifndef CONFIG_ARCH_OMAP1
++extern int omap_request_dma_chain(int dev_id, const char *dev_name,
++				  void (*callback) (int lch, u16 ch_status,
++						    void *data),
++				  int *chain_id, int no_of_chans,
++				  int chain_mode,
++				  struct omap_dma_channel_params params);
++extern int omap_free_dma_chain(int chain_id);
++extern int omap_dma_chain_a_transfer(int chain_id, int src_start,
++				     int dest_start, int elem_count,
++				     int frame_count, void *callbk_data);
++extern int omap_start_dma_chain_transfers(int chain_id);
++extern int omap_stop_dma_chain_transfers(int chain_id);
++extern int omap_get_dma_chain_index(int chain_id, int *ei, int *fi);
++extern int omap_get_dma_chain_dst_pos(int chain_id);
++extern int omap_get_dma_chain_src_pos(int chain_id);
++
++extern int omap_modify_dma_chain_params(int chain_id,
++					struct omap_dma_channel_params params);
++extern int omap_dma_chain_status(int chain_id);
++#endif
++
++#if defined(CONFIG_ARCH_OMAP1) && defined(CONFIG_FB_OMAP)
++#include <mach/lcd_dma.h>
++#else
++static inline int omap_lcd_dma_running(void)
++{
++	return 0;
++}
++#endif
++
++#endif /* __ASM_ARCH_DMA_H */
+diff --git a/arch/arm/plat-omap/include/plat/dma.h b/arch/arm/plat-omap/include/plat/dma.h
+deleted file mode 100644
+index 3f81458..0000000
+--- a/arch/arm/plat-omap/include/plat/dma.h
++++ /dev/null
+@@ -1,367 +0,0 @@
+-/*
+- *  arch/arm/plat-omap/include/mach/dma.h
+- *
+- *  Copyright (C) 2003 Nokia Corporation
+- *  Author: Juha Yrjölä <juha.yrjola@nokia.com>
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+- */
+-#ifndef __ASM_ARCH_DMA_H
+-#define __ASM_ARCH_DMA_H
+-
+-#include <linux/platform_device.h>
+-
+-#define INT_DMA_LCD			25
+-
+-#define OMAP1_DMA_TOUT_IRQ		(1 << 0)
+-#define OMAP_DMA_DROP_IRQ		(1 << 1)
+-#define OMAP_DMA_HALF_IRQ		(1 << 2)
+-#define OMAP_DMA_FRAME_IRQ		(1 << 3)
+-#define OMAP_DMA_LAST_IRQ		(1 << 4)
+-#define OMAP_DMA_BLOCK_IRQ		(1 << 5)
+-#define OMAP1_DMA_SYNC_IRQ		(1 << 6)
+-#define OMAP2_DMA_PKT_IRQ		(1 << 7)
+-#define OMAP2_DMA_TRANS_ERR_IRQ		(1 << 8)
+-#define OMAP2_DMA_SECURE_ERR_IRQ	(1 << 9)
+-#define OMAP2_DMA_SUPERVISOR_ERR_IRQ	(1 << 10)
+-#define OMAP2_DMA_MISALIGNED_ERR_IRQ	(1 << 11)
+-
+-#define OMAP_DMA_CCR_EN			(1 << 7)
+-#define OMAP_DMA_CCR_RD_ACTIVE		(1 << 9)
+-#define OMAP_DMA_CCR_WR_ACTIVE		(1 << 10)
+-#define OMAP_DMA_CCR_SEL_SRC_DST_SYNC	(1 << 24)
+-#define OMAP_DMA_CCR_BUFFERING_DISABLE	(1 << 25)
+-
+-#define OMAP_DMA_DATA_TYPE_S8		0x00
+-#define OMAP_DMA_DATA_TYPE_S16		0x01
+-#define OMAP_DMA_DATA_TYPE_S32		0x02
+-
+-#define OMAP_DMA_SYNC_ELEMENT		0x00
+-#define OMAP_DMA_SYNC_FRAME		0x01
+-#define OMAP_DMA_SYNC_BLOCK		0x02
+-#define OMAP_DMA_SYNC_PACKET		0x03
+-
+-#define OMAP_DMA_DST_SYNC_PREFETCH	0x02
+-#define OMAP_DMA_SRC_SYNC		0x01
+-#define OMAP_DMA_DST_SYNC		0x00
+-
+-#define OMAP_DMA_PORT_EMIFF		0x00
+-#define OMAP_DMA_PORT_EMIFS		0x01
+-#define OMAP_DMA_PORT_OCP_T1		0x02
+-#define OMAP_DMA_PORT_TIPB		0x03
+-#define OMAP_DMA_PORT_OCP_T2		0x04
+-#define OMAP_DMA_PORT_MPUI		0x05
+-
+-#define OMAP_DMA_AMODE_CONSTANT		0x00
+-#define OMAP_DMA_AMODE_POST_INC		0x01
+-#define OMAP_DMA_AMODE_SINGLE_IDX	0x02
+-#define OMAP_DMA_AMODE_DOUBLE_IDX	0x03
+-
+-#define DMA_DEFAULT_FIFO_DEPTH		0x10
+-#define DMA_DEFAULT_ARB_RATE		0x01
+-/* Pass THREAD_RESERVE ORed with THREAD_FIFO for tparams */
+-#define DMA_THREAD_RESERVE_NORM		(0x00 << 12) /* Def */
+-#define DMA_THREAD_RESERVE_ONET		(0x01 << 12)
+-#define DMA_THREAD_RESERVE_TWOT		(0x02 << 12)
+-#define DMA_THREAD_RESERVE_THREET	(0x03 << 12)
+-#define DMA_THREAD_FIFO_NONE		(0x00 << 14) /* Def */
+-#define DMA_THREAD_FIFO_75		(0x01 << 14)
+-#define DMA_THREAD_FIFO_25		(0x02 << 14)
+-#define DMA_THREAD_FIFO_50		(0x03 << 14)
+-
+-/* DMA4_OCP_SYSCONFIG bits */
+-#define DMA_SYSCONFIG_MIDLEMODE_MASK		(3 << 12)
+-#define DMA_SYSCONFIG_CLOCKACTIVITY_MASK	(3 << 8)
+-#define DMA_SYSCONFIG_EMUFREE			(1 << 5)
+-#define DMA_SYSCONFIG_SIDLEMODE_MASK		(3 << 3)
+-#define DMA_SYSCONFIG_SOFTRESET			(1 << 2)
+-#define DMA_SYSCONFIG_AUTOIDLE			(1 << 0)
+-
+-#define DMA_SYSCONFIG_MIDLEMODE(n)		((n) << 12)
+-#define DMA_SYSCONFIG_SIDLEMODE(n)		((n) << 3)
+-
+-#define DMA_IDLEMODE_SMARTIDLE			0x2
+-#define DMA_IDLEMODE_NO_IDLE			0x1
+-#define DMA_IDLEMODE_FORCE_IDLE			0x0
+-
+-/* Chaining modes*/
+-#ifndef CONFIG_ARCH_OMAP1
+-#define OMAP_DMA_STATIC_CHAIN		0x1
+-#define OMAP_DMA_DYNAMIC_CHAIN		0x2
+-#define OMAP_DMA_CHAIN_ACTIVE		0x1
+-#define OMAP_DMA_CHAIN_INACTIVE		0x0
+-#endif
+-
+-#define DMA_CH_PRIO_HIGH		0x1
+-#define DMA_CH_PRIO_LOW			0x0 /* Def */
+-
+-/* Errata handling */
+-#define IS_DMA_ERRATA(id)		(errata & (id))
+-#define SET_DMA_ERRATA(id)		(errata |= (id))
+-
+-#define DMA_ERRATA_IFRAME_BUFFERING	BIT(0x0)
+-#define DMA_ERRATA_PARALLEL_CHANNELS	BIT(0x1)
+-#define DMA_ERRATA_i378			BIT(0x2)
+-#define DMA_ERRATA_i541			BIT(0x3)
+-#define DMA_ERRATA_i88			BIT(0x4)
+-#define DMA_ERRATA_3_3			BIT(0x5)
+-#define DMA_ROMCODE_BUG			BIT(0x6)
+-
+-/* Attributes for OMAP DMA Contrller */
+-#define DMA_LINKED_LCH			BIT(0x0)
+-#define GLOBAL_PRIORITY			BIT(0x1)
+-#define RESERVE_CHANNEL			BIT(0x2)
+-#define IS_CSSA_32			BIT(0x3)
+-#define IS_CDSA_32			BIT(0x4)
+-#define IS_RW_PRIORITY			BIT(0x5)
+-#define ENABLE_1510_MODE		BIT(0x6)
+-#define SRC_PORT			BIT(0x7)
+-#define DST_PORT			BIT(0x8)
+-#define SRC_INDEX			BIT(0x9)
+-#define DST_INDEX			BIT(0xA)
+-#define IS_BURST_ONLY4			BIT(0xB)
+-#define CLEAR_CSR_ON_READ		BIT(0xC)
+-#define IS_WORD_16			BIT(0xD)
+-
+-/* Defines for DMA Capabilities */
+-#define DMA_HAS_TRANSPARENT_CAPS	(0x1 << 18)
+-#define DMA_HAS_CONSTANT_FILL_CAPS	(0x1 << 19)
+-#define DMA_HAS_DESCRIPTOR_CAPS		(0x3 << 20)
+-
+-enum omap_reg_offsets {
+-
+-GCR,		GSCR,		GRST1,		HW_ID,
+-PCH2_ID,	PCH0_ID,	PCH1_ID,	PCHG_ID,
+-PCHD_ID,	CAPS_0,		CAPS_1,		CAPS_2,
+-CAPS_3,		CAPS_4,		PCH2_SR,	PCH0_SR,
+-PCH1_SR,	PCHD_SR,	REVISION,	IRQSTATUS_L0,
+-IRQSTATUS_L1,	IRQSTATUS_L2,	IRQSTATUS_L3,	IRQENABLE_L0,
+-IRQENABLE_L1,	IRQENABLE_L2,	IRQENABLE_L3,	SYSSTATUS,
+-OCP_SYSCONFIG,
+-
+-/* omap1+ specific */
+-CPC, CCR2, LCH_CTRL,
+-
+-/* Common registers for all omap's */
+-CSDP,		CCR,		CICR,		CSR,
+-CEN,		CFN,		CSFI,		CSEI,
+-CSAC,		CDAC,		CDEI,
+-CDFI,		CLNK_CTRL,
+-
+-/* Channel specific registers */
+-CSSA,		CDSA,		COLOR,
+-CCEN,		CCFN,
+-
+-/* omap3630 and omap4 specific */
+-CDP,		CNDP,		CCDN,
+-
+-};
+-
+-enum omap_dma_burst_mode {
+-	OMAP_DMA_DATA_BURST_DIS = 0,
+-	OMAP_DMA_DATA_BURST_4,
+-	OMAP_DMA_DATA_BURST_8,
+-	OMAP_DMA_DATA_BURST_16,
+-};
+-
+-enum end_type {
+-	OMAP_DMA_LITTLE_ENDIAN = 0,
+-	OMAP_DMA_BIG_ENDIAN
+-};
+-
+-enum omap_dma_color_mode {
+-	OMAP_DMA_COLOR_DIS = 0,
+-	OMAP_DMA_CONSTANT_FILL,
+-	OMAP_DMA_TRANSPARENT_COPY
+-};
+-
+-enum omap_dma_write_mode {
+-	OMAP_DMA_WRITE_NON_POSTED = 0,
+-	OMAP_DMA_WRITE_POSTED,
+-	OMAP_DMA_WRITE_LAST_NON_POSTED
+-};
+-
+-enum omap_dma_channel_mode {
+-	OMAP_DMA_LCH_2D = 0,
+-	OMAP_DMA_LCH_G,
+-	OMAP_DMA_LCH_P,
+-	OMAP_DMA_LCH_PD
+-};
+-
+-struct omap_dma_channel_params {
+-	int data_type;		/* data type 8,16,32 */
+-	int elem_count;		/* number of elements in a frame */
+-	int frame_count;	/* number of frames in a element */
+-
+-	int src_port;		/* Only on OMAP1 REVISIT: Is this needed? */
+-	int src_amode;		/* constant, post increment, indexed,
+-					double indexed */
+-	unsigned long src_start;	/* source address : physical */
+-	int src_ei;		/* source element index */
+-	int src_fi;		/* source frame index */
+-
+-	int dst_port;		/* Only on OMAP1 REVISIT: Is this needed? */
+-	int dst_amode;		/* constant, post increment, indexed,
+-					double indexed */
+-	unsigned long dst_start;	/* source address : physical */
+-	int dst_ei;		/* source element index */
+-	int dst_fi;		/* source frame index */
+-
+-	int trigger;		/* trigger attached if the channel is
+-					synchronized */
+-	int sync_mode;		/* sycn on element, frame , block or packet */
+-	int src_or_dst_synch;	/* source synch(1) or destination synch(0) */
+-
+-	int ie;			/* interrupt enabled */
+-
+-	unsigned char read_prio;/* read priority */
+-	unsigned char write_prio;/* write priority */
+-
+-#ifndef CONFIG_ARCH_OMAP1
+-	enum omap_dma_burst_mode burst_mode; /* Burst mode 4/8/16 words */
+-#endif
+-};
+-
+-struct omap_dma_lch {
+-	int next_lch;
+-	int dev_id;
+-	u16 saved_csr;
+-	u16 enabled_irqs;
+-	const char *dev_name;
+-	void (*callback)(int lch, u16 ch_status, void *data);
+-	void *data;
+-	long flags;
+-	/* required for Dynamic chaining */
+-	int prev_linked_ch;
+-	int next_linked_ch;
+-	int state;
+-	int chain_id;
+-	int status;
+-};
+-
+-struct omap_dma_dev_attr {
+-	u32 dev_caps;
+-	u16 lch_count;
+-	u16 chan_count;
+-	struct omap_dma_lch *chan;
+-};
+-
+-/* System DMA platform data structure */
+-struct omap_system_dma_plat_info {
+-	struct omap_dma_dev_attr *dma_attr;
+-	u32 errata;
+-	void (*disable_irq_lch)(int lch);
+-	void (*show_dma_caps)(void);
+-	void (*clear_lch_regs)(int lch);
+-	void (*clear_dma)(int lch);
+-	void (*dma_write)(u32 val, int reg, int lch);
+-	u32 (*dma_read)(int reg, int lch);
+-};
+-
+-extern void __init omap_init_consistent_dma_size(void);
+-extern void omap_set_dma_priority(int lch, int dst_port, int priority);
+-extern int omap_request_dma(int dev_id, const char *dev_name,
+-			void (*callback)(int lch, u16 ch_status, void *data),
+-			void *data, int *dma_ch);
+-extern void omap_enable_dma_irq(int ch, u16 irq_bits);
+-extern void omap_disable_dma_irq(int ch, u16 irq_bits);
+-extern void omap_free_dma(int ch);
+-extern void omap_start_dma(int lch);
+-extern void omap_stop_dma(int lch);
+-extern void omap_set_dma_transfer_params(int lch, int data_type,
+-					 int elem_count, int frame_count,
+-					 int sync_mode,
+-					 int dma_trigger, int src_or_dst_synch);
+-extern void omap_set_dma_color_mode(int lch, enum omap_dma_color_mode mode,
+-				    u32 color);
+-extern void omap_set_dma_write_mode(int lch, enum omap_dma_write_mode mode);
+-extern void omap_set_dma_channel_mode(int lch, enum omap_dma_channel_mode mode);
+-
+-extern void omap_set_dma_src_params(int lch, int src_port, int src_amode,
+-				    unsigned long src_start,
+-				    int src_ei, int src_fi);
+-extern void omap_set_dma_src_index(int lch, int eidx, int fidx);
+-extern void omap_set_dma_src_data_pack(int lch, int enable);
+-extern void omap_set_dma_src_burst_mode(int lch,
+-					enum omap_dma_burst_mode burst_mode);
+-
+-extern void omap_set_dma_dest_params(int lch, int dest_port, int dest_amode,
+-				     unsigned long dest_start,
+-				     int dst_ei, int dst_fi);
+-extern void omap_set_dma_dest_index(int lch, int eidx, int fidx);
+-extern void omap_set_dma_dest_data_pack(int lch, int enable);
+-extern void omap_set_dma_dest_burst_mode(int lch,
+-					 enum omap_dma_burst_mode burst_mode);
+-
+-extern void omap_set_dma_params(int lch,
+-				struct omap_dma_channel_params *params);
+-
+-extern void omap_dma_link_lch(int lch_head, int lch_queue);
+-extern void omap_dma_unlink_lch(int lch_head, int lch_queue);
+-
+-extern int omap_set_dma_callback(int lch,
+-			void (*callback)(int lch, u16 ch_status, void *data),
+-			void *data);
+-extern dma_addr_t omap_get_dma_src_pos(int lch);
+-extern dma_addr_t omap_get_dma_dst_pos(int lch);
+-extern void omap_clear_dma(int lch);
+-extern int omap_get_dma_active_status(int lch);
+-extern int omap_dma_running(void);
+-extern void omap_dma_set_global_params(int arb_rate, int max_fifo_depth,
+-				       int tparams);
+-extern int omap_dma_set_prio_lch(int lch, unsigned char read_prio,
+-				 unsigned char write_prio);
+-extern void omap_set_dma_dst_endian_type(int lch, enum end_type etype);
+-extern void omap_set_dma_src_endian_type(int lch, enum end_type etype);
+-extern int omap_get_dma_index(int lch, int *ei, int *fi);
+-
+-void omap_dma_global_context_save(void);
+-void omap_dma_global_context_restore(void);
+-
+-extern void omap_dma_disable_irq(int lch);
+-
+-/* Chaining APIs */
+-#ifndef CONFIG_ARCH_OMAP1
+-extern int omap_request_dma_chain(int dev_id, const char *dev_name,
+-				  void (*callback) (int lch, u16 ch_status,
+-						    void *data),
+-				  int *chain_id, int no_of_chans,
+-				  int chain_mode,
+-				  struct omap_dma_channel_params params);
+-extern int omap_free_dma_chain(int chain_id);
+-extern int omap_dma_chain_a_transfer(int chain_id, int src_start,
+-				     int dest_start, int elem_count,
+-				     int frame_count, void *callbk_data);
+-extern int omap_start_dma_chain_transfers(int chain_id);
+-extern int omap_stop_dma_chain_transfers(int chain_id);
+-extern int omap_get_dma_chain_index(int chain_id, int *ei, int *fi);
+-extern int omap_get_dma_chain_dst_pos(int chain_id);
+-extern int omap_get_dma_chain_src_pos(int chain_id);
+-
+-extern int omap_modify_dma_chain_params(int chain_id,
+-					struct omap_dma_channel_params params);
+-extern int omap_dma_chain_status(int chain_id);
+-#endif
+-
+-#if defined(CONFIG_ARCH_OMAP1) && defined(CONFIG_FB_OMAP)
+-#include <mach/lcd_dma.h>
+-#else
+-static inline int omap_lcd_dma_running(void)
+-{
+-	return 0;
+-}
+-#endif
+-
+-#endif /* __ASM_ARCH_DMA_H */
+diff --git a/drivers/crypto/omap-aes.c b/drivers/crypto/omap-aes.c
+index 093a8af..3e61feb 100644
+--- a/drivers/crypto/omap-aes.c
++++ b/drivers/crypto/omap-aes.c
+@@ -30,7 +30,7 @@
+ #include <crypto/aes.h>
+ 
+ #include <plat/cpu.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ /* OMAP TRM gives bitfields as start:end, where start is the higher bit
+    number. For example 7:0 */
+diff --git a/drivers/crypto/omap-sham.c b/drivers/crypto/omap-sham.c
+index a3fd6fc..6d79695 100644
+--- a/drivers/crypto/omap-sham.c
++++ b/drivers/crypto/omap-sham.c
+@@ -38,7 +38,7 @@
+ #include <crypto/internal/hash.h>
+ 
+ #include <plat/cpu.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <mach/irqs.h>
+ 
+ #define SHA_REG_DIGEST(x)		(0x00 + ((x) * 0x04))
+diff --git a/drivers/dma/omap-dma.c b/drivers/dma/omap-dma.c
+index bb2d8e7..0b4fa50 100644
+--- a/drivers/dma/omap-dma.c
++++ b/drivers/dma/omap-dma.c
+@@ -20,7 +20,7 @@
+ #include "virt-dma.h"
+ 
+ #include <plat/cpu.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ struct omap_dmadev {
+ 	struct dma_device ddev;
+diff --git a/drivers/media/platform/omap/omap_vout.c b/drivers/media/platform/omap/omap_vout.c
+index a3b1a34..1bd6a2e 100644
+--- a/drivers/media/platform/omap/omap_vout.c
++++ b/drivers/media/platform/omap/omap_vout.c
+@@ -45,7 +45,7 @@
+ #include <media/v4l2-ioctl.h>
+ 
+ #include <plat/cpu.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/vrfb.h>
+ #include <video/omapdss.h>
+ 
+diff --git a/drivers/media/platform/omap/omap_vout_vrfb.c b/drivers/media/platform/omap/omap_vout_vrfb.c
+index 11d7a29..bed4cbb 100644
+--- a/drivers/media/platform/omap/omap_vout_vrfb.c
++++ b/drivers/media/platform/omap/omap_vout_vrfb.c
+@@ -16,7 +16,7 @@
+ #include <media/videobuf-dma-contig.h>
+ #include <media/v4l2-device.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/vrfb.h>
+ 
+ #include "omap_voutdef.h"
+diff --git a/drivers/media/platform/omap3isp/ispstat.h b/drivers/media/platform/omap3isp/ispstat.h
+index a6fe653..40f87cd 100644
+--- a/drivers/media/platform/omap3isp/ispstat.h
++++ b/drivers/media/platform/omap3isp/ispstat.h
+@@ -30,7 +30,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/omap3isp.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <media/v4l2-event.h>
+ 
+ #include "isp.h"
+diff --git a/drivers/media/platform/soc_camera/omap1_camera.c b/drivers/media/platform/soc_camera/omap1_camera.c
+index 3046dba..cae9ce6 100644
+--- a/drivers/media/platform/soc_camera/omap1_camera.c
++++ b/drivers/media/platform/soc_camera/omap1_camera.c
+@@ -34,7 +34,7 @@
+ #include <media/videobuf-dma-contig.h>
+ #include <media/videobuf-dma-sg.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ 
+ #define DRIVER_NAME		"omap1-camera"
+diff --git a/drivers/mmc/host/omap.c b/drivers/mmc/host/omap.c
+index 9664fa9..c59c4d2 100644
+--- a/drivers/mmc/host/omap.c
++++ b/drivers/mmc/host/omap.c
+@@ -30,7 +30,7 @@
+ #include <linux/slab.h>
+ 
+ #include <plat/mmc.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #define	OMAP_MMC_REG_CMD	0x00
+ #define	OMAP_MMC_REG_ARGL	0x01
+diff --git a/drivers/mtd/nand/omap2.c b/drivers/mtd/nand/omap2.c
+index 3105f22..2cbdb8e 100644
+--- a/drivers/mtd/nand/omap2.c
++++ b/drivers/mtd/nand/omap2.c
+@@ -27,7 +27,7 @@
+ #include <linux/bch.h>
+ #endif
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/gpmc.h>
+ #include <linux/platform_data/mtd-nand-omap2.h>
+ 
+diff --git a/drivers/mtd/onenand/omap2.c b/drivers/mtd/onenand/omap2.c
+index 1961be9..b846eaf 100644
+--- a/drivers/mtd/onenand/omap2.c
++++ b/drivers/mtd/onenand/omap2.c
+@@ -42,7 +42,7 @@
+ #include <linux/platform_data/mtd-onenand-omap2.h>
+ #include <asm/gpio.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ #include <plat/cpu.h>
+ 
+ #define DRIVER_NAME "omap2-onenand"
+diff --git a/drivers/usb/gadget/omap_udc.c b/drivers/usb/gadget/omap_udc.c
+index 024c0b9..23afa06 100644
+--- a/drivers/usb/gadget/omap_udc.c
++++ b/drivers/usb/gadget/omap_udc.c
+@@ -44,7 +44,7 @@
+ #include <asm/unaligned.h>
+ #include <asm/mach-types.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include <mach/usb.h>
+ 
+diff --git a/drivers/usb/musb/tusb6010_omap.c b/drivers/usb/musb/tusb6010_omap.c
+index c032fc2..bfca114 100644
+--- a/drivers/usb/musb/tusb6010_omap.c
++++ b/drivers/usb/musb/tusb6010_omap.c
+@@ -16,7 +16,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/slab.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "musb_core.h"
+ #include "tusb6010.h"
+diff --git a/drivers/video/omap/lcdc.c b/drivers/video/omap/lcdc.c
+index 7767338..c39d6e4 100644
+--- a/drivers/video/omap/lcdc.c
++++ b/drivers/video/omap/lcdc.c
+@@ -31,7 +31,7 @@
+ #include <linux/gfp.h>
+ 
+ #include <mach/lcdc.h>
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include <asm/mach-types.h>
+ 
+diff --git a/drivers/video/omap/omapfb_main.c b/drivers/video/omap/omapfb_main.c
+index 4351c43..1b5ee8e 100644
+--- a/drivers/video/omap/omapfb_main.c
++++ b/drivers/video/omap/omapfb_main.c
+@@ -30,7 +30,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/module.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "omapfb.h"
+ #include "lcdc.h"
+diff --git a/drivers/video/omap/sossi.c b/drivers/video/omap/sossi.c
+index f79c137..c510a44 100644
+--- a/drivers/video/omap/sossi.c
++++ b/drivers/video/omap/sossi.c
+@@ -25,7 +25,7 @@
+ #include <linux/io.h>
+ #include <linux/interrupt.h>
+ 
+-#include <plat/dma.h>
++#include <plat-omap/dma-omap.h>
+ 
+ #include "omapfb.h"
+ #include "lcdc.h"
+-- 
+1.8.0
+

@@ -1,0 +1,89 @@
+From 0449410b0b8aeafa9b7e8bb719e4eeda8a5623fd Mon Sep 17 00:00:00 2001
+From: Sasha Levin <sasha.levin@oracle.com>
+Date: Thu, 8 Nov 2012 15:23:09 -0500
+Subject: [PATCH 632/951] ARM: OMAP1: use BUG_ON where possible
+
+Just use BUG_ON() instead of constructions such as:
+
+	if (...)
+		BUG()
+
+A simplified version of the semantic patch that makes this transformation
+is as follows: (http://coccinelle.lip6.fr/)
+
+// <smpl>
+@@
+expression e;
+@@
+- if (e) BUG();
++ BUG_ON(e);
+// </smpl>
+
+Signed-off-by: Sasha Levin <sasha.levin@oracle.com>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/board-fsample.c  | 3 +--
+ arch/arm/mach-omap1/board-h2.c       | 3 +--
+ arch/arm/mach-omap1/board-h3.c       | 3 +--
+ arch/arm/mach-omap1/board-perseus2.c | 3 +--
+ 4 files changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-omap1/board-fsample.c b/arch/arm/mach-omap1/board-fsample.c
+index 4b6de70..756872e 100644
+--- a/arch/arm/mach-omap1/board-fsample.c
++++ b/arch/arm/mach-omap1/board-fsample.c
+@@ -307,8 +307,7 @@ static void __init omap_fsample_init(void)
+ 
+ 	fsample_init_smc91x();
+ 
+-	if (gpio_request(FSAMPLE_NAND_RB_GPIO_PIN, "NAND ready") < 0)
+-		BUG();
++	BUG_ON(gpio_request(FSAMPLE_NAND_RB_GPIO_PIN, "NAND ready") < 0);
+ 	gpio_direction_input(FSAMPLE_NAND_RB_GPIO_PIN);
+ 
+ 	omap_cfg_reg(L3_1610_FLASH_CS2B_OE);
+diff --git a/arch/arm/mach-omap1/board-h2.c b/arch/arm/mach-omap1/board-h2.c
+index 376f7f2..9d533ee 100644
+--- a/arch/arm/mach-omap1/board-h2.c
++++ b/arch/arm/mach-omap1/board-h2.c
+@@ -411,8 +411,7 @@ static void __init h2_init(void)
+ 
+ 	h2_nand_resource.end = h2_nand_resource.start = OMAP_CS2B_PHYS;
+ 	h2_nand_resource.end += SZ_4K - 1;
+-	if (gpio_request(H2_NAND_RB_GPIO_PIN, "NAND ready") < 0)
+-		BUG();
++	BUG_ON(gpio_request(H2_NAND_RB_GPIO_PIN, "NAND ready") < 0);
+ 	gpio_direction_input(H2_NAND_RB_GPIO_PIN);
+ 
+ 	omap_cfg_reg(L3_1610_FLASH_CS2B_OE);
+diff --git a/arch/arm/mach-omap1/board-h3.c b/arch/arm/mach-omap1/board-h3.c
+index ededdb7..be60862 100644
+--- a/arch/arm/mach-omap1/board-h3.c
++++ b/arch/arm/mach-omap1/board-h3.c
+@@ -406,8 +406,7 @@ static void __init h3_init(void)
+ 
+ 	nand_resource.end = nand_resource.start = OMAP_CS2B_PHYS;
+ 	nand_resource.end += SZ_4K - 1;
+-	if (gpio_request(H3_NAND_RB_GPIO_PIN, "NAND ready") < 0)
+-		BUG();
++	BUG_ON(gpio_request(H3_NAND_RB_GPIO_PIN, "NAND ready") < 0);
+ 	gpio_direction_input(H3_NAND_RB_GPIO_PIN);
+ 
+ 	/* GPIO10 Func_MUX_CTRL reg bit 29:27, Configure V2 to mode1 as GPIO */
+diff --git a/arch/arm/mach-omap1/board-perseus2.c b/arch/arm/mach-omap1/board-perseus2.c
+index 198b054..327ffcf 100644
+--- a/arch/arm/mach-omap1/board-perseus2.c
++++ b/arch/arm/mach-omap1/board-perseus2.c
+@@ -275,8 +275,7 @@ static void __init omap_perseus2_init(void)
+ 
+ 	perseus2_init_smc91x();
+ 
+-	if (gpio_request(P2_NAND_RB_GPIO_PIN, "NAND ready") < 0)
+-		BUG();
++	BUG_ON(gpio_request(P2_NAND_RB_GPIO_PIN, "NAND ready") < 0);
+ 	gpio_direction_input(P2_NAND_RB_GPIO_PIN);
+ 
+ 	omap_cfg_reg(L3_1610_FLASH_CS2B_OE);
+-- 
+1.8.0
+

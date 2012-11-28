@@ -1,0 +1,35 @@
+From 439532ce1b6da6748c6d6c1e256292b69f84e298 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Sun, 4 Nov 2012 21:35:12 +0100
+Subject: [PATCH 777/951] ARM: integrator: delete SC mapping on the CP
+
+The Integrator/CP does not use the address space defined as
+used by the Integrator/AP system controller, it's just unused
+memory. So just delete this static mapping from the CP static
+mapping table.
+
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/mach-integrator/integrator_cp.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm/mach-integrator/integrator_cp.c b/arch/arm/mach-integrator/integrator_cp.c
+index 7220210..fc2b1e4 100644
+--- a/arch/arm/mach-integrator/integrator_cp.c
++++ b/arch/arm/mach-integrator/integrator_cp.c
+@@ -85,11 +85,6 @@ static struct map_desc intcp_io_desc[] __initdata = {
+ 		.length		= SZ_4K,
+ 		.type		= MT_DEVICE
+ 	}, {
+-		.virtual	= IO_ADDRESS(INTEGRATOR_SC_BASE),
+-		.pfn		= __phys_to_pfn(INTEGRATOR_SC_BASE),
+-		.length		= SZ_4K,
+-		.type		= MT_DEVICE
+-	}, {
+ 		.virtual	= IO_ADDRESS(INTEGRATOR_EBI_BASE),
+ 		.pfn		= __phys_to_pfn(INTEGRATOR_EBI_BASE),
+ 		.length		= SZ_4K,
+-- 
+1.8.0
+

@@ -1,0 +1,70 @@
+From d03a93bbec5edfe33f09d629d27c1afd50f043aa Mon Sep 17 00:00:00 2001
+From: Jon Hunter <jon-hunter@ti.com>
+Date: Thu, 1 Nov 2012 08:57:08 -0500
+Subject: [PATCH 379/951] ARM: dts: OMAP4: Update timer addresses
+
+For OMAP4 devices, timers 5-8 have both a L3 bus address and a Cortex-A9
+private bus address. Currently the device-tree source only contains the
+L3 bus address for these timers. Update these timers to include the
+Cortex-A9 private address and make the default address the Cortex-A9
+private bus address to match the current HWMOD implementation.
+
+Signed-off-by: Jon Hunter <jon-hunter@ti.com>
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/omap4.dtsi | 20 ++++++++++++--------
+ 1 file changed, 12 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/omap4.dtsi b/arch/arm/boot/dts/omap4.dtsi
+index 23ee149..739bb79 100644
+--- a/arch/arm/boot/dts/omap4.dtsi
++++ b/arch/arm/boot/dts/omap4.dtsi
+@@ -469,33 +469,37 @@
+ 			ti,hwmods = "timer4";
+ 		};
+ 
+-		timer5: timer@49038000 {
++		timer5: timer@40138000 {
+ 			compatible = "ti,omap2-timer";
+-			reg = <0x49038000 0x80>;
++			reg = <0x40138000 0x80>,
++			      <0x49038000 0x80>;
+ 			interrupts = <0 41 0x4>;
+ 			ti,hwmods = "timer5";
+ 			ti,timer-dsp;
+ 		};
+ 
+-		timer6: timer@4903a000 {
++		timer6: timer@4013a000 {
+ 			compatible = "ti,omap2-timer";
+-			reg = <0x4903a000 0x80>;
++			reg = <0x4013a000 0x80>,
++			      <0x4903a000 0x80>;
+ 			interrupts = <0 42 0x4>;
+ 			ti,hwmods = "timer6";
+ 			ti,timer-dsp;
+ 		};
+ 
+-		timer7: timer@4903c000 {
++		timer7: timer@4013c000 {
+ 			compatible = "ti,omap2-timer";
+-			reg = <0x4903c000 0x80>;
++			reg = <0x4013c000 0x80>,
++			      <0x4903c000 0x80>;
+ 			interrupts = <0 43 0x4>;
+ 			ti,hwmods = "timer7";
+ 			ti,timer-dsp;
+ 		};
+ 
+-		timer8: timer@4903e000 {
++		timer8: timer@4013e000 {
+ 			compatible = "ti,omap2-timer";
+-			reg = <0x4903e000 0x80>;
++			reg = <0x4013e000 0x80>,
++			      <0x4903e000 0x80>;
+ 			interrupts = <0 44 0x4>;
+ 			ti,hwmods = "timer8";
+ 			ti,timer-pwm;
+-- 
+1.8.0
+

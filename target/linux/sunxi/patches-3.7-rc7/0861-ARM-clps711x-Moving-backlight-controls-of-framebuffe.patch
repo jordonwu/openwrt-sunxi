@@ -1,0 +1,298 @@
+From 94760bf2523b4b5d3938e85ea0964ca7cd59a42b Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Sat, 17 Nov 2012 17:57:20 +0400
+Subject: [PATCH 861/951] ARM: clps711x: Moving backlight controls of
+ framebuffer driver to the board
+
+This patch moves the backlight controls for clps711x-framebuffer driver
+to the board code. To control we use "generic-bl" driver.
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+[olof: fixed space/tab whitespace in drivers/video/clps711xfb.c]
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/mach-clps711x/edb7211.c               |  18 +++++
+ arch/arm/mach-clps711x/include/mach/hardware.h |   6 --
+ arch/arm/mach-clps711x/p720t.c                 |  21 ++++-
+ drivers/video/clps711xfb.c                     | 107 ++-----------------------
+ 4 files changed, 44 insertions(+), 108 deletions(-)
+
+diff --git a/arch/arm/mach-clps711x/edb7211.c b/arch/arm/mach-clps711x/edb7211.c
+index 81cc683..d5832b3 100644
+--- a/arch/arm/mach-clps711x/edb7211.c
++++ b/arch/arm/mach-clps711x/edb7211.c
+@@ -13,6 +13,7 @@
+ #include <linux/memblock.h>
+ #include <linux/types.h>
+ #include <linux/interrupt.h>
++#include <linux/backlight.h>
+ #include <linux/platform_device.h>
+ 
+ #include <asm/setup.h>
+@@ -30,6 +31,7 @@
+ 
+ #define EDB7211_LCD_DC_DC_EN	CLPS711X_GPIO(3, 1)
+ #define EDB7211_LCDEN		CLPS711X_GPIO(3, 2)
++#define EDB7211_LCDBL		CLPS711X_GPIO(3, 3)
+ 
+ #define EDB7211_CS8900_BASE	(CS2_PHYS_BASE + 0x300)
+ #define EDB7211_CS8900_IRQ	(IRQ_EINT3)
+@@ -56,9 +58,22 @@ static struct plat_lcd_data edb7211_lcd_power_pdata = {
+ 	.set_power	= edb7211_lcd_power_set,
+ };
+ 
++static void edb7211_lcd_backlight_set_intensity(int intensity)
++{
++	gpio_set_value(EDB7211_LCDBL, intensity);
++}
++
++static struct generic_bl_info edb7211_lcd_backlight_pdata = {
++	.name			= "lcd-backlight.0",
++	.default_intensity	= 0x01,
++	.max_intensity		= 0x01,
++	.set_bl_intensity	= edb7211_lcd_backlight_set_intensity,
++};
++
+ static struct gpio edb7211_gpios[] __initconst = {
+ 	{ EDB7211_LCD_DC_DC_EN,	GPIOF_OUT_INIT_LOW,	"LCD DC-DC" },
+ 	{ EDB7211_LCDEN,	GPIOF_OUT_INIT_LOW,	"LCD POWER" },
++	{ EDB7211_LCDBL,	GPIOF_OUT_INIT_LOW,	"LCD BACKLIGHT" },
+ };
+ 
+ static struct map_desc edb7211_io_desc[] __initdata = {
+@@ -117,6 +132,9 @@ static void __init edb7211_init(void)
+ 	platform_device_register_data(&platform_bus, "platform-lcd", 0,
+ 				      &edb7211_lcd_power_pdata,
+ 				      sizeof(edb7211_lcd_power_pdata));
++	platform_device_register_data(&platform_bus, "generic-bl", 0,
++				      &edb7211_lcd_backlight_pdata,
++				      sizeof(edb7211_lcd_backlight_pdata));
+ 	platform_device_register_simple("video-clps711x", 0, NULL, 0);
+ 	platform_device_register_simple("cs89x0", 0, edb7211_cs8900_resource,
+ 					ARRAY_SIZE(edb7211_cs8900_resource));
+diff --git a/arch/arm/mach-clps711x/include/mach/hardware.h b/arch/arm/mach-clps711x/include/mach/hardware.h
+index 6acf714..1ebf7b9 100644
+--- a/arch/arm/mach-clps711x/include/mach/hardware.h
++++ b/arch/arm/mach-clps711x/include/mach/hardware.h
+@@ -81,10 +81,4 @@
+ 
+ #endif /* CONFIG_ARCH_EDB7211 */
+ 
+-/*
+- * Relevant bits in port D, which controls power to the various parts of
+- * the LCD on the EDB7211.
+- */
+-#define EDB_PD3_LCDBL		(1<<3)
+-
+ #endif
+diff --git a/arch/arm/mach-clps711x/p720t.c b/arch/arm/mach-clps711x/p720t.c
+index e25f10e..1518fc8 100644
+--- a/arch/arm/mach-clps711x/p720t.c
++++ b/arch/arm/mach-clps711x/p720t.c
+@@ -25,6 +25,8 @@
+ #include <linux/io.h>
+ #include <linux/slab.h>
+ #include <linux/leds.h>
++#include <linux/sizes.h>
++#include <linux/backlight.h>
+ #include <linux/platform_device.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/nand-gpio.h>
+@@ -33,7 +35,6 @@
+ #include <asm/pgtable.h>
+ #include <asm/page.h>
+ #include <asm/setup.h>
+-#include <asm/sizes.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+@@ -103,6 +104,21 @@ static struct plat_lcd_data p720t_lcd_power_pdata = {
+ 	.set_power	= p720t_lcd_power_set,
+ };
+ 
++static void p720t_lcd_backlight_set_intensity(int intensity)
++{
++	if (intensity)
++		PLD_PWR |= PLD_S3_ON;
++	else
++		PLD_PWR = 0;
++}
++
++static struct generic_bl_info p720t_lcd_backlight_pdata = {
++	.name			= "lcd-backlight.0",
++	.default_intensity	= 0x01,
++	.max_intensity		= 0x01,
++	.set_bl_intensity	= p720t_lcd_backlight_set_intensity,
++};
++
+ /*
+  * Map the P720T system PLD. It occupies two address spaces:
+  * 0x10000000 and 0x10400000. We map both regions as one.
+@@ -187,6 +203,9 @@ static void __init p720t_init(void)
+ 	platform_device_register_data(&platform_bus, "platform-lcd", 0,
+ 				      &p720t_lcd_power_pdata,
+ 				      sizeof(p720t_lcd_power_pdata));
++	platform_device_register_data(&platform_bus, "generic-bl", 0,
++				      &p720t_lcd_backlight_pdata,
++				      sizeof(p720t_lcd_backlight_pdata));
+ 	platform_device_register_simple("video-clps711x", 0, NULL, 0);
+ }
+ 
+diff --git a/drivers/video/clps711xfb.c b/drivers/video/clps711xfb.c
+index 1902551..63ecdf8 100644
+--- a/drivers/video/clps711xfb.c
++++ b/drivers/video/clps711xfb.c
+@@ -22,19 +22,15 @@
+ #include <linux/mm.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+-#include <linux/seq_file.h>
+ #include <linux/slab.h>
+ #include <linux/fb.h>
+ #include <linux/init.h>
+-#include <linux/proc_fs.h>
+ #include <linux/delay.h>
+ 
+ #include <mach/hardware.h>
+ #include <asm/mach-types.h>
+ #include <linux/uaccess.h>
+ 
+-#include <mach/syspld.h>
+-
+ struct fb_info	*cfb;
+ 
+ #define CMAP_MAX_SIZE	16
+@@ -162,25 +158,12 @@ clps7111fb_set_par(struct fb_info *info)
+ 
+ static int clps7111fb_blank(int blank, struct fb_info *info)
+ {
+-    	if (blank) {
+-		if (machine_is_edb7211()) {
+-			/* Turn off the LCD backlight. */
+-			clps_writeb(clps_readb(PDDR) & ~EDB_PD3_LCDBL, PDDR);
+-
+-			/* Disable LCD controller. */
+-			clps_writel(clps_readl(SYSCON1) & ~SYSCON1_LCDEN, 
+-					SYSCON1);
+-		}
+-	} else {
+-		if (machine_is_edb7211()) {
+-			/* Enable LCD controller. */
+-			clps_writel(clps_readl(SYSCON1) | SYSCON1_LCDEN,
+-					SYSCON1);
+-
+-			/* Turn on the LCD backlight. */
+-			clps_writeb(clps_readb(PDDR) | EDB_PD3_LCDBL, PDDR);
+-		}
+-	}
++	/* Enable/Disable LCD controller. */
++	if (blank)
++		clps_writel(clps_readl(SYSCON1) & ~SYSCON1_LCDEN, SYSCON1);
++	else
++		clps_writel(clps_readl(SYSCON1) | SYSCON1_LCDEN, SYSCON1);
++
+ 	return 0;
+ }
+ 
+@@ -195,62 +178,6 @@ static struct fb_ops clps7111fb_ops = {
+ 	.fb_imageblit	= cfb_imageblit,
+ };
+ 
+-static int backlight_proc_show(struct seq_file *m, void *v)
+-{
+-	if (machine_is_edb7211()) {
+-		seq_printf(m, "%d\n",
+-				(clps_readb(PDDR) & EDB_PD3_LCDBL) ? 1 : 0);
+-	}
+-
+-	return 0;
+-}
+-
+-static int backlight_proc_open(struct inode *inode, struct file *file)
+-{
+-	return single_open(file, backlight_proc_show, NULL);
+-}
+-
+-static ssize_t backlight_proc_write(struct file *file, const char *buffer,
+-				    size_t count, loff_t *pos)
+-{
+-	unsigned char char_value;
+-	int value;
+-
+-	if (count < 1) {
+-		return -EINVAL;
+-	}
+-
+-	if (copy_from_user(&char_value, buffer, 1)) 
+-		return -EFAULT;
+-
+-	value = char_value - '0';
+-
+-	if (machine_is_edb7211()) {
+-		unsigned char port_d;
+-
+-		port_d = clps_readb(PDDR);
+-
+-		if (value) {
+-			port_d |= EDB_PD3_LCDBL;
+-		} else {
+-			port_d &= ~EDB_PD3_LCDBL;
+-		}
+-
+-		clps_writeb(port_d, PDDR);
+-	}
+-
+-	return count;
+-}
+-
+-static const struct file_operations backlight_proc_fops = {
+-	.owner		= THIS_MODULE,
+-	.open		= backlight_proc_open,
+-	.read		= seq_read,
+-	.llseek		= seq_lseek,
+-	.release	= single_release,
+-	.write		= backlight_proc_write,
+-};
+-
+ static void __devinit clps711x_guess_lcd_params(struct fb_info *info)
+ {
+ 	unsigned int lcdcon, syscon, size;
+@@ -359,22 +286,6 @@ static int __devinit clps711x_fb_probe(struct platform_device *pdev)
+ 
+ 	fb_alloc_cmap(&cfb->cmap, CMAP_MAX_SIZE, 0);
+ 
+-	if (!proc_create("backlight", 0444, NULL, &backlight_proc_fops)) {
+-		printk("Couldn't create the /proc entry for the backlight.\n");
+-		return -EINVAL;
+-	}
+-
+-	/*
+-	 * Power up the LCD
+-	 */
+-	if (machine_is_p720t())
+-		PLD_PWR |= PLD_S3_ON;
+-
+-	if (machine_is_edb7211()) {
+-		/* Turn on the LCD backlight. */
+-		clps_writeb(clps_readb(PDDR) | EDB_PD3_LCDBL, PDDR);
+-	}
+-
+ 	err = register_framebuffer(cfb);
+ 
+ out:	return err;
+@@ -385,12 +296,6 @@ static int __devexit clps711x_fb_remove(struct platform_device *pdev)
+ 	unregister_framebuffer(cfb);
+ 	kfree(cfb);
+ 
+-	/*
+-	 * Power down the LCD
+-	 */
+-	if (machine_is_p720t())
+-		PLD_PWR &= ~PLD_S3_ON;
+-
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

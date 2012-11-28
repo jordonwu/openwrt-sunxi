@@ -1,0 +1,51 @@
+From 82c45705743c8f9e9662bc42f02d34731f0a24df Mon Sep 17 00:00:00 2001
+From: Liu Ying <Ying.Liu@freescale.com>
+Date: Mon, 12 Nov 2012 16:26:18 +0800
+Subject: [PATCH 723/951] ARM: dts: imx6q-sabresd: add volume up/down gpio
+ keys
+
+Add volume up/down gpio keys support in imx6q-sabresd.dts.
+
+Signed-off-by: Liu Ying <Ying.Liu@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx6q-sabresd.dts | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6q-sabresd.dts b/arch/arm/boot/dts/imx6q-sabresd.dts
+index e596c28c..a424025 100644
+--- a/arch/arm/boot/dts/imx6q-sabresd.dts
++++ b/arch/arm/boot/dts/imx6q-sabresd.dts
+@@ -38,6 +38,8 @@
+ 				hog {
+ 					pinctrl_hog: hoggrp {
+ 						fsl,pins = <
++							1004 0x80000000 /* MX6Q_PAD_GPIO_4__GPIO_1_4 */
++							1012 0x80000000 /* MX6Q_PAD_GPIO_5__GPIO_1_5 */
+ 							1402 0x80000000	/* MX6Q_PAD_NANDF_D0__GPIO_2_0 */
+ 							1410 0x80000000	/* MX6Q_PAD_NANDF_D1__GPIO_2_1 */
+ 							1418 0x80000000	/* MX6Q_PAD_NANDF_D2__GPIO_2_2 */
+@@ -73,4 +75,20 @@
+ 			};
+ 		};
+ 	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++
++		volume-up {
++			label = "Volume Up";
++			gpios = <&gpio1 4 0>;
++			linux,code = <115>; /* KEY_VOLUMEUP */
++		};
++
++		volume-down {
++			label = "Volume Down";
++			gpios = <&gpio1 5 0>;
++			linux,code = <114>; /* KEY_VOLUMEDOWN */
++		};
++	};
+ };
+-- 
+1.8.0
+

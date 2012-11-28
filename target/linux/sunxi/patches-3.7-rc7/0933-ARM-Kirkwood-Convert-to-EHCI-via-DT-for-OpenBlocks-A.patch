@@ -1,0 +1,29 @@
+From 5cd0e6e79bc1064f26a137a33217a7dfbd541a50 Mon Sep 17 00:00:00 2001
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Fri, 23 Nov 2012 06:30:12 +0900
+Subject: [PATCH 933/951] ARM: Kirkwood: Convert to EHCI via DT for OpenBlocks
+ A6
+
+EHCI driver enables by default in kirkwood.dtsi.
+This removes kirkwood_ehci_init function.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/mach-kirkwood/board-openblocks_a6.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-kirkwood/board-openblocks_a6.c b/arch/arm/mach-kirkwood/board-openblocks_a6.c
+index e807e8c..e71f984 100644
+--- a/arch/arm/mach-kirkwood/board-openblocks_a6.c
++++ b/arch/arm/mach-kirkwood/board-openblocks_a6.c
+@@ -66,6 +66,5 @@ void __init openblocks_a6_init(void)
+ 	 * Basic setup. Needs to be called early.
+ 	 */
+ 	kirkwood_mpp_conf(openblocks_a6_mpp_config);
+-	kirkwood_ehci_init();
+ 	kirkwood_ge00_init(&openblocks_ge00_data);
+ }
+-- 
+1.8.0
+

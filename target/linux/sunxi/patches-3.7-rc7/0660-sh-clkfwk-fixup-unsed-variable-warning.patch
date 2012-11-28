@@ -1,0 +1,31 @@
+From 94091c6b9498116abe3035137d8c3e707528efd0 Mon Sep 17 00:00:00 2001
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 12 Nov 2012 16:33:17 -0800
+Subject: [PATCH 660/951] sh: clkfwk: fixup unsed variable warning
+
+This patch solves above warning
+
+${LINUX}/drivers/sh/clk/cpg.c:404:6: warning: \
+unused variable 'val' [-Wunused-variable]
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/sh/clk/cpg.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index b3dc441..5aedcdf 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -401,7 +401,6 @@ static int fsidiv_enable(struct clk *clk)
+ 
+ static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
+ {
+-	u32 val;
+ 	int idx;
+ 
+ 	idx = (clk->parent->rate / rate) & 0xffff;
+-- 
+1.8.0
+

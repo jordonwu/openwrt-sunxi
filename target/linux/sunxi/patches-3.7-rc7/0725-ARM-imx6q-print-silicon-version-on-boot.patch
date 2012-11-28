@@ -1,0 +1,70 @@
+From b29b3e6f6c5a71a48475ac5ea7015ff267d60af8 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Tue, 23 Oct 2012 19:00:39 +0800
+Subject: [PATCH 725/951] ARM: imx6q: print silicon version on boot
+
+i.MX6Q has 3 revisions 1.0, 1.1 and 1.2.  Print revision on boot.
+
+Signed-off-by: Drew Moseley <drew_moseley@mentor.com>
+[drew: add proper error checking for function imx6q_revision()]
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/mach-imx/mach-imx6q.c | 35 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 978b6dd..9511142 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -38,6 +38,40 @@
+ #include "cpuidle.h"
+ #include "hardware.h"
+ 
++#define IMX6Q_ANALOG_DIGPROG	0x260
++
++static int imx6q_revision(void)
++{
++	struct device_node *np;
++	void __iomem *base;
++	static u32 rev;
++
++	if (!rev) {
++		np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-anatop");
++		if (!np)
++			return IMX_CHIP_REVISION_UNKNOWN;
++		base = of_iomap(np, 0);
++		if (!base) {
++			of_node_put(np);
++			return IMX_CHIP_REVISION_UNKNOWN;
++		}
++		rev =  readl_relaxed(base + IMX6Q_ANALOG_DIGPROG);
++		iounmap(base);
++		of_node_put(np);
++	}
++
++	switch (rev & 0xff) {
++	case 0:
++		return IMX_CHIP_REVISION_1_0;
++	case 1:
++		return IMX_CHIP_REVISION_1_1;
++	case 2:
++		return IMX_CHIP_REVISION_1_2;
++	default:
++		return IMX_CHIP_REVISION_UNKNOWN;
++	}
++}
++
+ void imx6q_restart(char mode, const char *cmd)
+ {
+ 	struct device_node *np;
+@@ -192,6 +226,7 @@ static void __init imx6q_timer_init(void)
+ {
+ 	mx6q_clocks_init();
+ 	twd_local_timer_of_register();
++	imx_print_silicon_rev("i.MX6Q", imx6q_revision());
+ }
+ 
+ static struct sys_timer imx6q_timer = {
+-- 
+1.8.0
+

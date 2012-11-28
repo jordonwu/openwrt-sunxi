@@ -1,0 +1,33 @@
+From b34aa18502446379494529b863eb0743856b1a25 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Mon, 24 Sep 2012 23:52:19 -0300
+Subject: [PATCH 043/951] ARM: dts: imx23-olinuxino: Remove unneeded
+ "default-on"
+
+The initial state of the gpio led can be set directly in "gpios" node.
+
+Hence, linux,default-trigger can be removed.
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx23-olinuxino.dts | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx23-olinuxino.dts b/arch/arm/boot/dts/imx23-olinuxino.dts
+index 384d8b6..35489a1 100644
+--- a/arch/arm/boot/dts/imx23-olinuxino.dts
++++ b/arch/arm/boot/dts/imx23-olinuxino.dts
+@@ -94,8 +94,7 @@
+ 
+ 		user {
+ 			label = "green";
+-			gpios = <&gpio2 1 0>;
+-			linux,default-trigger = "default-on";
++			gpios = <&gpio2 1 1>;
+ 		};
+ 	};
+ };
+-- 
+1.8.0
+

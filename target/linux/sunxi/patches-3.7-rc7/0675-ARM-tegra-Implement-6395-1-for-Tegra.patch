@@ -1,0 +1,32 @@
+From fd072a86bde1c5f7cf04618903c5ce8658011c1c Mon Sep 17 00:00:00 2001
+From: Peter De Schrijver <pdeschrijver@nvidia.com>
+Date: Wed, 14 Nov 2012 16:27:23 +0200
+Subject: [PATCH 675/951] ARM: tegra: Implement 6395/1 for Tegra
+
+This patch implements ARM linux patch 6395/1 for Tegra. See commit
+1a8e41c "ARM: 6395/1: VExpress: Set bit 22 in the PL310 (cache
+controller) AuxCtlr register" for details.
+
+Signed-off-by: Peter De Schrijver <pdeschrijver@nvidia.com>
+[swarren: added commit subject for referenced patch]
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/mach-tegra/common.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-tegra/common.c b/arch/arm/mach-tegra/common.c
+index 89d3ebc..3e03e5f 100644
+--- a/arch/arm/mach-tegra/common.c
++++ b/arch/arm/mach-tegra/common.c
+@@ -121,7 +121,7 @@ static void __init tegra_init_cache(void)
+ 
+ 	cache_type = readl(p + L2X0_CACHE_TYPE);
+ 	aux_ctrl = (cache_type & 0x700) << (17-8);
+-	aux_ctrl |= 0x7C000001;
++	aux_ctrl |= 0x7C400001;
+ 
+ 	l2x0_of_init(aux_ctrl, 0x8200c3fe);
+ #endif
+-- 
+1.8.0
+

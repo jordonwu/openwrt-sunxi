@@ -1,0 +1,44 @@
+From bff0844513f46e97e3cffa7b137c2eeb263810a6 Mon Sep 17 00:00:00 2001
+From: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
+Date: Mon, 1 Oct 2012 17:59:32 -0600
+Subject: [PATCH 870/951] ARM: Kirkwood: Enable the second I2C bus
+
+mv64xxx_of_config requires that the tclk frequency be found
+through the clk stuff rather than through device tree, so add
+another override for the 2nd controller.
+
+Signed-off-by: Jason Gunthorpe <jgunthorpe@obsidianresearch.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/mach-kirkwood/board-dt.c | 2 ++
+ arch/arm/mach-kirkwood/common.c   | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
+index d94872f..ecbb26f 100644
+--- a/arch/arm/mach-kirkwood/board-dt.c
++++ b/arch/arm/mach-kirkwood/board-dt.c
+@@ -30,6 +30,8 @@ struct of_dev_auxdata kirkwood_auxdata_lookup[] __initdata = {
+ 	OF_DEV_AUXDATA("marvell,orion-spi", 0xf1010600, "orion_spi.0", NULL),
+ 	OF_DEV_AUXDATA("marvell,mv64xxx-i2c", 0xf1011000, "mv64xxx_i2c.0",
+ 		       NULL),
++	OF_DEV_AUXDATA("marvell,mv64xxx-i2c", 0xf1011100, "mv64xxx_i2c.1",
++		       NULL),
+ 	OF_DEV_AUXDATA("marvell,orion-wdt", 0xf1020300, "orion_wdt", NULL),
+ 	OF_DEV_AUXDATA("marvell,orion-sata", 0xf1080000, "sata_mv.0", NULL),
+ 	OF_DEV_AUXDATA("marvell,orion-nand", 0xf4000000, "orion_nand", NULL),
+diff --git a/arch/arm/mach-kirkwood/common.c b/arch/arm/mach-kirkwood/common.c
+index 2c6c218..906c22e 100644
+--- a/arch/arm/mach-kirkwood/common.c
++++ b/arch/arm/mach-kirkwood/common.c
+@@ -266,6 +266,7 @@ void __init kirkwood_clk_init(void)
+ 	orion_clkdev_add("1", "pcie", pex1);
+ 	orion_clkdev_add(NULL, "kirkwood-i2s", audio);
+ 	orion_clkdev_add(NULL, MV64XXX_I2C_CTLR_NAME ".0", runit);
++	orion_clkdev_add(NULL, MV64XXX_I2C_CTLR_NAME ".1", runit);
+ 
+ 	/* Marvell says runit is used by SPI, UART, NAND, TWSI, ...,
+ 	 * so should never be gated.
+-- 
+1.8.0
+

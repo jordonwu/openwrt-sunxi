@@ -1,0 +1,54 @@
+From c42cb1c379a6e59e2a04380616f530713658c68b Mon Sep 17 00:00:00 2001
+From: Laxman Dewangan <ldewangan@nvidia.com>
+Date: Wed, 31 Oct 2012 14:32:54 +0530
+Subject: [PATCH 694/951] ARM: tegra: dts: cardhu: enable SLINK4
+
+Enable SLINK4 and connected device in Tegra30 based
+platform Cardhu.
+Setting maximum spi frequency to 25MHz.
+
+SPI serial flash is connected on CS1 of SLINK4 on
+cardhu platform.
+
+Signed-off-by: Laxman Dewangan <ldewangan@nvidia.com>
+[swarren: swapped reg/compatible order to be consistent]
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ Documentation/devicetree/bindings/vendor-prefixes.txt |  1 +
+ arch/arm/boot/dts/tegra30-cardhu.dtsi                 | 10 ++++++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
+index 9de2b9f..ac2c2c4 100644
+--- a/Documentation/devicetree/bindings/vendor-prefixes.txt
++++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
+@@ -51,4 +51,5 @@ ti	Texas Instruments
+ via	VIA Technologies, Inc.
+ wlf	Wolfson Microelectronics
+ wm	Wondermedia Technologies, Inc.
++winbond Winbond Electronics corp.
+ xlnx	Xilinx
+diff --git a/arch/arm/boot/dts/tegra30-cardhu.dtsi b/arch/arm/boot/dts/tegra30-cardhu.dtsi
+index b245e6c..bdb2a66 100644
+--- a/arch/arm/boot/dts/tegra30-cardhu.dtsi
++++ b/arch/arm/boot/dts/tegra30-cardhu.dtsi
+@@ -275,6 +275,16 @@
+ 		};
+ 	};
+ 
++	spi@7000da00 {
++		status = "okay";
++		spi-max-frequency = <25000000>;
++		spi-flash@1 {
++			compatible = "winbond,w25q32";
++			reg = <1>;
++			spi-max-frequency = <20000000>;
++		};
++	};
++
+ 	ahub {
+ 		i2s@70080400 {
+ 			status = "okay";
+-- 
+1.8.0
+

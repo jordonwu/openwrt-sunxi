@@ -1,0 +1,46 @@
+From d3004bb43de180c2f6e965716a3abe9b43c8b861 Mon Sep 17 00:00:00 2001
+From: Jon Hunter <jon-hunter@ti.com>
+Date: Fri, 28 Sep 2012 16:09:03 -0500
+Subject: [PATCH 626/951] ARM: OMAP: Don't restore of DMTIMER TISTAT register
+
+The timer TISTAT register is a read-only register and therefore restoring the
+context is not needed. Furthermore, the context of TISTAT is never saved
+anywhere in the current code. The TISTAT register is read-only for all OMAP
+devices from OMAP1 to OMAP4. OMAP5 timers no longer have this register.
+
+Signed-off-by: Jon Hunter <jon-hunter@ti.com>
+Acked-by: Santosh Shilimkar <santosh.shilimkar@ti.com>
+---
+ arch/arm/plat-omap/dmtimer.c              | 3 ---
+ arch/arm/plat-omap/include/plat/dmtimer.h | 1 -
+ 2 files changed, 4 deletions(-)
+
+diff --git a/arch/arm/plat-omap/dmtimer.c b/arch/arm/plat-omap/dmtimer.c
+index d4f9541..320d103 100644
+--- a/arch/arm/plat-omap/dmtimer.c
++++ b/arch/arm/plat-omap/dmtimer.c
+@@ -83,9 +83,6 @@ static void omap_dm_timer_write_reg(struct omap_dm_timer *timer, u32 reg,
+ 
+ static void omap_timer_restore_context(struct omap_dm_timer *timer)
+ {
+-	if (timer->revision == 1)
+-		__raw_writel(timer->context.tistat, timer->sys_stat);
+-
+ 	__raw_writel(timer->context.tisr, timer->irq_stat);
+ 	omap_dm_timer_write_reg(timer, OMAP_TIMER_WAKEUP_EN_REG,
+ 				timer->context.twer);
+diff --git a/arch/arm/plat-omap/include/plat/dmtimer.h b/arch/arm/plat-omap/include/plat/dmtimer.h
+index ac16f1e..2f9fd1d 100644
+--- a/arch/arm/plat-omap/include/plat/dmtimer.h
++++ b/arch/arm/plat-omap/include/plat/dmtimer.h
+@@ -84,7 +84,6 @@ struct omap_dm_timer;
+ 
+ struct timer_regs {
+ 	u32 tidr;
+-	u32 tistat;
+ 	u32 tisr;
+ 	u32 tier;
+ 	u32 twer;
+-- 
+1.8.0
+

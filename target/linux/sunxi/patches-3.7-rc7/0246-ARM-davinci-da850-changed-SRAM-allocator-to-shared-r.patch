@@ -1,0 +1,52 @@
+From c94472d4ad11c5b7d8cd527d136c198269d390fc Mon Sep 17 00:00:00 2001
+From: Subhasish Ghosh <subhasish@mistralsolutions.com>
+Date: Fri, 5 Oct 2012 13:04:42 -0400
+Subject: [PATCH 246/951] ARM: davinci: da850: changed SRAM allocator to
+ shared ram.
+
+This patch modifies the sram allocator to allocate memory
+from the DA8XX shared RAM.
+
+Regression tested suspend/resume on AM180x EVM.
+
+Signed-off-by: Subhasish Ghosh <subhasish@mistralsolutions.com>
+[rebased onto consolidated SRAM patches]
+Signed-off-by: Ben Gardiner <bengardiner@nanometrics.ca>
+[rebased to mainline as consolidated SRAM patches were dropped]
+Signed-off-by: Matt Porter <mporter@ti.com>
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/mach-davinci/da850.c              | 4 ++--
+ arch/arm/mach-davinci/include/mach/da8xx.h | 1 +
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-davinci/da850.c b/arch/arm/mach-davinci/da850.c
+index ffc84f5..41d2cab 100644
+--- a/arch/arm/mach-davinci/da850.c
++++ b/arch/arm/mach-davinci/da850.c
+@@ -1233,8 +1233,8 @@ static struct davinci_soc_info davinci_soc_info_da850 = {
+ 	.gpio_irq		= IRQ_DA8XX_GPIO0,
+ 	.serial_dev		= &da8xx_serial_device,
+ 	.emac_pdata		= &da8xx_emac_pdata,
+-	.sram_dma		= DA8XX_ARM_RAM_BASE,
+-	.sram_len		= SZ_8K,
++	.sram_dma		= DA8XX_SHARED_RAM_BASE,
++	.sram_len		= SZ_128K,
+ };
+ 
+ void __init da850_init(void)
+diff --git a/arch/arm/mach-davinci/include/mach/da8xx.h b/arch/arm/mach-davinci/include/mach/da8xx.h
+index aaccdc4..97bc700 100644
+--- a/arch/arm/mach-davinci/include/mach/da8xx.h
++++ b/arch/arm/mach-davinci/include/mach/da8xx.h
+@@ -72,6 +72,7 @@ extern unsigned int da850_max_speed;
+ #define DA8XX_AEMIF_CS2_BASE	0x60000000
+ #define DA8XX_AEMIF_CS3_BASE	0x62000000
+ #define DA8XX_AEMIF_CTL_BASE	0x68000000
++#define DA8XX_SHARED_RAM_BASE	0x80000000
+ #define DA8XX_ARM_RAM_BASE	0xffff0000
+ 
+ void __init da830_init(void);
+-- 
+1.8.0
+

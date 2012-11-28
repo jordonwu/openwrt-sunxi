@@ -1,0 +1,66 @@
+From a19fe2d45cc550ca42a3b0be3e716a8452e4b0c6 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Thu, 11 Oct 2012 10:11:20 +0200
+Subject: [PATCH 059/951] pinctrl: samsung: Add GPIO to IRQ translation
+
+Some drivers require a way to translate GPIO pins to their IRQ numbers.
+
+This patch adds the .to_irq() gpiolib callback to pinctrl-samsung
+driver, which creates (if not present yet) and returns an IRQ mapping
+for given GPIO pin.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Reviewed-by: Kyungmin Park <kyungmin.park@samsung.com>
+Acked-by: Thomas Abraham <thomas.abraham@linaro.org>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-samsung.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/pinctrl/pinctrl-samsung.c b/drivers/pinctrl/pinctrl-samsung.c
+index 0a38368..0db88bb 100644
+--- a/drivers/pinctrl/pinctrl-samsung.c
++++ b/drivers/pinctrl/pinctrl-samsung.c
+@@ -26,6 +26,7 @@
+ #include <linux/slab.h>
+ #include <linux/err.h>
+ #include <linux/gpio.h>
++#include <linux/irqdomain.h>
+ 
+ #include "core.h"
+ #include "pinctrl-samsung.h"
+@@ -528,6 +529,23 @@ static int samsung_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
+ }
+ 
+ /*
++ * gpiolib gpio_to_irq callback function. Creates a mapping between a GPIO pin
++ * and a virtual IRQ, if not already present.
++ */
++static int samsung_gpio_to_irq(struct gpio_chip *gc, unsigned offset)
++{
++	struct samsung_pin_bank *bank = gc_to_pin_bank(gc);
++	unsigned int virq;
++
++	if (!bank->irq_domain)
++		return -ENXIO;
++
++	virq = irq_create_mapping(bank->irq_domain, offset);
++
++	return (virq) ? : -ENXIO;
++}
++
++/*
+  * Parse the pin names listed in the 'samsung,pins' property and convert it
+  * into a list of gpio numbers are create a pin group from it.
+  */
+@@ -755,6 +773,7 @@ static const struct gpio_chip samsung_gpiolib_chip = {
+ 	.get = samsung_gpio_get,
+ 	.direction_input = samsung_gpio_direction_input,
+ 	.direction_output = samsung_gpio_direction_output,
++	.to_irq = samsung_gpio_to_irq,
+ 	.owner = THIS_MODULE,
+ };
+ 
+-- 
+1.8.0
+

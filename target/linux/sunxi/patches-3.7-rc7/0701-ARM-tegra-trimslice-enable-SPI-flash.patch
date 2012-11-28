@@ -1,0 +1,36 @@
+From fea221e254e9842df0740688f30f1ce5a692a775 Mon Sep 17 00:00:00 2001
+From: Stephen Warren <swarren@nvidia.com>
+Date: Mon, 12 Nov 2012 12:51:22 -0700
+Subject: [PATCH 701/951] ARM: tegra: trimslice: enable SPI flash
+
+TrimSlice contains a 1MiB SPI flash. Represent this in the device tree.
+
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/boot/dts/tegra20-trimslice.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/tegra20-trimslice.dts b/arch/arm/boot/dts/tegra20-trimslice.dts
+index 27fb8a6..f4e0428 100644
+--- a/arch/arm/boot/dts/tegra20-trimslice.dts
++++ b/arch/arm/boot/dts/tegra20-trimslice.dts
+@@ -254,6 +254,16 @@
+ 		clock-frequency = <400000>;
+ 	};
+ 
++	spi@7000c380 {
++		status = "okay";
++		spi-max-frequency = <48000000>;
++		spi-flash@0 {
++			compatible = "winbond,w25q80bl";
++			reg = <0>;
++			spi-max-frequency = <48000000>;
++		};
++	};
++
+ 	i2c@7000c400 {
+ 		status = "okay";
+ 		clock-frequency = <400000>;
+-- 
+1.8.0
+

@@ -1,0 +1,79 @@
+From 2c0e7ee61b335dea4bd2678591923c02703f4eeb Mon Sep 17 00:00:00 2001
+From: Andrew Lunn <andrew@lunn.ch>
+Date: Sat, 17 Nov 2012 09:51:05 +0100
+Subject: [PATCH 904/951] ARM: Kirkwood: Convert DNSKW to use gpio-poweroff.
+
+Also enable the gpio-poweroff driver when DT is used.
+
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Jamie Lentin <jm@lentin.co.uk>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-dnskw.dtsi |  5 +++++
+ arch/arm/mach-kirkwood/Kconfig        |  3 +++
+ arch/arm/mach-kirkwood/board-dnskw.c  | 12 ------------
+ 3 files changed, 8 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/kirkwood-dnskw.dtsi b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
+index fd23e63..28263a1 100644
+--- a/arch/arm/boot/dts/kirkwood-dnskw.dtsi
++++ b/arch/arm/boot/dts/kirkwood-dnskw.dtsi
+@@ -35,6 +35,11 @@
+ 				      6000 2>;
+ 	};
+ 
++	gpio_poweroff {
++		compatible = "gpio-poweroff";
++		gpios = <&gpio1 4 0>;
++	};
++
+ 	ocp@f1000000 {
+ 		sata@80000 {
+ 			status = "okay";
+diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
+index d018ad4..35b3258 100644
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -46,6 +46,9 @@ config MACH_GURUPLUG
+ 
+ config ARCH_KIRKWOOD_DT
+ 	bool "Marvell Kirkwood Flattened Device Tree"
++	select POWER_SUPPLY
++	select POWER_RESET
++	select POWER_RESET_GPIO
+ 	select USE_OF
+ 	help
+ 	  Say 'Y' here if you want your kernel to support the
+diff --git a/arch/arm/mach-kirkwood/board-dnskw.c b/arch/arm/mach-kirkwood/board-dnskw.c
+index 2ac6c60..9036801 100644
+--- a/arch/arm/mach-kirkwood/board-dnskw.c
++++ b/arch/arm/mach-kirkwood/board-dnskw.c
+@@ -57,11 +57,6 @@ static unsigned int dnskw_mpp_config[] __initdata = {
+ 	0
+ };
+ 
+-static void dnskw_power_off(void)
+-{
+-	gpio_set_value(36, 1);
+-}
+-
+ /* Register any GPIO for output and set the value */
+ static void __init dnskw_gpio_register(unsigned gpio, char *name, int def)
+ {
+@@ -80,13 +75,6 @@ void __init dnskw_init(void)
+ 
+ 	kirkwood_ge00_init(&dnskw_ge00_data);
+ 
+-	/* Register power-off GPIO. */
+-	if (gpio_request(36, "dnskw:power:off") == 0
+-	    && gpio_direction_output(36, 0) == 0)
+-		pm_power_off = dnskw_power_off;
+-	else
+-		pr_err("dnskw: failed to configure power-off GPIO\n");
+-
+ 	/* Ensure power is supplied to both HDDs */
+ 	dnskw_gpio_register(39, "dnskw:power:sata0", 1);
+ 	dnskw_gpio_register(40, "dnskw:power:sata1", 1);
+-- 
+1.8.0
+

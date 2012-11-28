@@ -1,0 +1,45 @@
+From 1fd7b4dd8b107aec9ec28d2682ef1967e696d6a6 Mon Sep 17 00:00:00 2001
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Fri, 23 Nov 2012 06:30:10 +0900
+Subject: [PATCH 931/951] ARM: kirkwood: Add support second I2C bus and RTC on
+ OpenBlocks A6
+
+OpenBlocks A6 uses second I2C with RTC of s35390a.
+This supports them.
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-openblocks_a6.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
+index 9a2606c..bada756 100644
+--- a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
++++ b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
+@@ -1,6 +1,7 @@
+ /dts-v1/;
+ 
+ /include/ "kirkwood.dtsi"
++/include/ "kirkwood-6282.dtsi"
+ 
+ / {
+ 	model = "Plat'Home OpenBlocksA6";
+@@ -35,5 +36,14 @@
+ 			nr-ports = <1>;
+ 			status = "okay";
+ 		};
++
++		i2c@11100 {
++			status = "okay";
++
++			s35390a: s35390a@30 {
++				compatible = "s35390a";
++				reg = <0x30>;
++			};
++		};
+ 	};
+ };
+-- 
+1.8.0
+

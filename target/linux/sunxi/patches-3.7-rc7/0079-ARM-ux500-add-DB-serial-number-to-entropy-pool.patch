@@ -1,0 +1,49 @@
+From 4040d10a3d44023703f81083bb90a3eb45a39eee Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 3 Oct 2012 14:26:12 +0200
+Subject: [PATCH 079/951] ARM: ux500: add DB serial number to entropy pool
+
+This throws the DB (digital baseband, ASIC) serial number, process
+type etc into the entropy pool by way of the device_add_randomness()
+call. This should make every device have a unique pool state upon
+boot.
+
+Cc: Theodore Tso <tytso@mit.edu>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/mach-ux500/cpu-db8500.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-ux500/cpu-db8500.c b/arch/arm/mach-ux500/cpu-db8500.c
+index bcdfe6b..50202a1 100644
+--- a/arch/arm/mach-ux500/cpu-db8500.c
++++ b/arch/arm/mach-ux500/cpu-db8500.c
+@@ -17,6 +17,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
+ #include <linux/mfd/abx500/ab8500.h>
++#include <linux/platform_data/usb-musb-ux500.h>
++#include <linux/random.h>
+ 
+ #include <asm/pmu.h>
+ #include <asm/mach/map.h>
+@@ -24,7 +26,6 @@
+ #include <mach/hardware.h>
+ #include <mach/setup.h>
+ #include <mach/devices.h>
+-#include <linux/platform_data/usb-musb-ux500.h>
+ #include <mach/db8500-regs.h>
+ 
+ #include "devices-db8500.h"
+@@ -187,6 +188,8 @@ static const char *db8500_read_soc_id(void)
+ {
+ 	void __iomem *uid = __io_address(U8500_BB_UID_BASE);
+ 
++	/* Throw these device-specific numbers into the entropy pool */
++	add_device_randomness(uid, 0x14);
+ 	return kasprintf(GFP_KERNEL, "%08x%08x%08x%08x%08x",
+ 			 readl((u32 *)uid+1),
+ 			 readl((u32 *)uid+1), readl((u32 *)uid+2),
+-- 
+1.8.0
+

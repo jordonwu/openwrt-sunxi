@@ -1,0 +1,839 @@
+From 3ed0bcb4c5b0aba8b11e826f6fa2e189c56f8a5a Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Thu, 13 Sep 2012 09:37:49 +0800
+Subject: [PATCH 008/951] ARM: imx: include board headers in the same folder
+
+The headers that are only used by board files do not necessarily
+need to be in plat-mxc/include/mach.  Move them to the same place
+as those board files.
+
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/mach-imx/3ds_debugboard.h                 | 18 ++++++++
+ arch/arm/mach-imx/board-mx31lilly.h                | 41 ++++++++++++++++++
+ arch/arm/mach-imx/board-mx31lite.h                 | 42 ++++++++++++++++++
+ arch/arm/mach-imx/board-mx31moboard.h              | 43 +++++++++++++++++++
+ arch/arm/mach-imx/board-pcm038.h                   | 36 ++++++++++++++++
+ arch/arm/mach-imx/eukrea-baseboards.h              | 50 ++++++++++++++++++++++
+ arch/arm/mach-imx/mach-cpuimx27.c                  |  2 +-
+ arch/arm/mach-imx/mach-cpuimx35.c                  |  2 +-
+ arch/arm/mach-imx/mach-cpuimx51sd.c                |  2 +-
+ arch/arm/mach-imx/mach-eukrea_cpuimx25.c           |  2 +-
+ arch/arm/mach-imx/mach-mx27_3ds.c                  |  2 +-
+ arch/arm/mach-imx/mach-mx31_3ds.c                  |  2 +-
+ arch/arm/mach-imx/mach-mx31lilly.c                 |  2 +-
+ arch/arm/mach-imx/mach-mx31lite.c                  |  2 +-
+ arch/arm/mach-imx/mach-mx31moboard.c               |  2 +-
+ arch/arm/mach-imx/mach-mx35_3ds.c                  |  2 +-
+ arch/arm/mach-imx/mach-mx51_3ds.c                  |  2 +-
+ arch/arm/mach-imx/mach-pcm038.c                    |  2 +-
+ arch/arm/mach-imx/mx31lilly-db.c                   |  2 +-
+ arch/arm/mach-imx/mx31lite-db.c                    |  2 +-
+ arch/arm/mach-imx/mx31moboard-smartbot.c           |  2 +-
+ arch/arm/plat-mxc/include/mach/3ds_debugboard.h    | 18 --------
+ arch/arm/plat-mxc/include/mach/board-mx31lilly.h   | 41 ------------------
+ arch/arm/plat-mxc/include/mach/board-mx31lite.h    | 42 ------------------
+ arch/arm/plat-mxc/include/mach/board-mx31moboard.h | 43 -------------------
+ arch/arm/plat-mxc/include/mach/board-pcm038.h      | 36 ----------------
+ arch/arm/plat-mxc/include/mach/eukrea-baseboards.h | 50 ----------------------
+ 27 files changed, 245 insertions(+), 245 deletions(-)
+ create mode 100644 arch/arm/mach-imx/3ds_debugboard.h
+ create mode 100644 arch/arm/mach-imx/board-mx31lilly.h
+ create mode 100644 arch/arm/mach-imx/board-mx31lite.h
+ create mode 100644 arch/arm/mach-imx/board-mx31moboard.h
+ create mode 100644 arch/arm/mach-imx/board-pcm038.h
+ create mode 100644 arch/arm/mach-imx/eukrea-baseboards.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/3ds_debugboard.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/board-mx31lilly.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/board-mx31lite.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/board-mx31moboard.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/board-pcm038.h
+ delete mode 100644 arch/arm/plat-mxc/include/mach/eukrea-baseboards.h
+
+diff --git a/arch/arm/mach-imx/3ds_debugboard.h b/arch/arm/mach-imx/3ds_debugboard.h
+new file mode 100644
+index 0000000..9fd6cb3
+--- /dev/null
++++ b/arch/arm/mach-imx/3ds_debugboard.h
+@@ -0,0 +1,18 @@
++/*
++ * Copyright 2008-2009 Freescale Semiconductor, Inc. All Rights Reserved.
++ *
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#ifndef __ASM_ARCH_MXC_3DS_DB_H__
++#define __ASM_ARCH_MXC_3DS_DB_H__
++
++extern int __init mxc_expio_init(u32 base, u32 intr_gpio);
++
++#endif /* __ASM_ARCH_MXC_3DS_DB_H__ */
+diff --git a/arch/arm/mach-imx/board-mx31lilly.h b/arch/arm/mach-imx/board-mx31lilly.h
+new file mode 100644
+index 0000000..0df71bf
+--- /dev/null
++++ b/arch/arm/mach-imx/board-mx31lilly.h
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (C) 2009 Daniel Mack <daniel@caiaq.de>
++ *
++ * Based on code for mobots boards,
++ *   Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_MXC_BOARD_MX31LILLY_H__
++#define __ASM_ARCH_MXC_BOARD_MX31LILLY_H__
++
++#ifndef __ASSEMBLY__
++
++enum mx31lilly_boards {
++	MX31LILLY_NOBOARD	= 0,
++	MX31LILLY_DB		= 1,
++};
++
++/*
++ * This CPU module needs a baseboard to work. After basic initializing
++ * its own devices, it calls the baseboard's init function.
++ */
++
++extern void mx31lilly_db_init(void);
++
++#endif
++
++#endif /* __ASM_ARCH_MXC_BOARD_MX31LILLY_H__ */
+diff --git a/arch/arm/mach-imx/board-mx31lite.h b/arch/arm/mach-imx/board-mx31lite.h
+new file mode 100644
+index 0000000..c1ad0ae
+--- /dev/null
++++ b/arch/arm/mach-imx/board-mx31lite.h
+@@ -0,0 +1,42 @@
++/*
++ * Copyright 2007 Freescale Semiconductor, Inc. All Rights Reserved.
++ * Copyright (C) 2009 Daniel Mack <daniel@caiaq.de>
++ *
++ * Based on code for mobots boards,
++ *   Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_MXC_BOARD_MX31LITE_H__
++#define __ASM_ARCH_MXC_BOARD_MX31LITE_H__
++
++#ifndef __ASSEMBLY__
++
++enum mx31lite_boards {
++	MX31LITE_NOBOARD	= 0,
++	MX31LITE_DB		= 1,
++};
++
++/*
++ * This CPU module needs a baseboard to work. After basic initializing
++ * its own devices, it calls the baseboard's init function.
++ */
++
++extern void mx31lite_db_init(void);
++
++#endif
++
++#endif /* __ASM_ARCH_MXC_BOARD_MX31LITE_H__ */
+diff --git a/arch/arm/mach-imx/board-mx31moboard.h b/arch/arm/mach-imx/board-mx31moboard.h
+new file mode 100644
+index 0000000..de14543
+--- /dev/null
++++ b/arch/arm/mach-imx/board-mx31moboard.h
+@@ -0,0 +1,43 @@
++/*
++ * Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__
++#define __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__
++
++#ifndef __ASSEMBLY__
++
++enum mx31moboard_boards {
++	MX31NOBOARD	= 0,
++	MX31DEVBOARD	= 1,
++	MX31MARXBOT	= 2,
++	MX31SMARTBOT	= 3,
++	MX31EYEBOT	= 4,
++};
++
++/*
++ * This CPU module needs a baseboard to work. After basic initializing
++ * its own devices, it calls the baseboard's init function.
++ */
++
++extern void mx31moboard_devboard_init(void);
++extern void mx31moboard_marxbot_init(void);
++extern void mx31moboard_smartbot_init(int board);
++
++#endif
++
++#endif /* __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__ */
+diff --git a/arch/arm/mach-imx/board-pcm038.h b/arch/arm/mach-imx/board-pcm038.h
+new file mode 100644
+index 0000000..6f371e3
+--- /dev/null
++++ b/arch/arm/mach-imx/board-pcm038.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (C) 2008 Juergen Beisert (kernel@pengutronix.de)
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __ASM_ARCH_MXC_BOARD_PCM038_H__
++#define __ASM_ARCH_MXC_BOARD_PCM038_H__
++
++#ifndef __ASSEMBLY__
++/*
++ * This CPU module needs a baseboard to work. After basic initializing
++ * its own devices, it calls the baseboard's init function.
++ * TODO: Add your own baseboard init function and call it from
++ * inside pcm038_init().
++ *
++ * This example here is for the development board. Refer pcm970-baseboard.c
++ */
++
++extern void pcm970_baseboard_init(void);
++
++#endif
++
++#endif /* __ASM_ARCH_MXC_BOARD_PCM038_H__ */
+diff --git a/arch/arm/mach-imx/eukrea-baseboards.h b/arch/arm/mach-imx/eukrea-baseboards.h
+new file mode 100644
+index 0000000..a21d331
+--- /dev/null
++++ b/arch/arm/mach-imx/eukrea-baseboards.h
+@@ -0,0 +1,50 @@
++/*
++ * Copyright (C) 2010 Eric Benard - eric@eukrea.com
++ *
++ * Based on board-pcm038.h which is :
++ * Copyright (C) 2008 Juergen Beisert (kernel@pengutronix.de)
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * as published by the Free Software Foundation; either version 2
++ * of the License, or (at your option) any later version.
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
++ * MA 02110-1301, USA.
++ */
++
++#ifndef __MACH_EUKREA_BASEBOARDS_H__
++#define __MACH_EUKREA_BASEBOARDS_H__
++
++#ifndef __ASSEMBLY__
++/*
++ * This CPU module needs a baseboard to work. After basic initializing
++ * its own devices, it calls baseboard's init function.
++ * TODO: Add your own baseboard init function and call it from
++ * inside eukrea_cpuimx25_init() eukrea_cpuimx27_init()
++ * eukrea_cpuimx35_init() eukrea_cpuimx51_init()
++ * or eukrea_cpuimx51sd_init().
++ *
++ * This example here is for the development board. Refer
++ * mach-mx25/eukrea_mbimxsd-baseboard.c for cpuimx25
++ * mach-imx/eukrea_mbimx27-baseboard.c for cpuimx27
++ * mach-mx3/eukrea_mbimxsd-baseboard.c for cpuimx35
++ * mach-mx5/eukrea_mbimx51-baseboard.c for cpuimx51
++ * mach-mx5/eukrea_mbimxsd-baseboard.c for cpuimx51sd
++ */
++
++extern void eukrea_mbimxsd25_baseboard_init(void);
++extern void eukrea_mbimx27_baseboard_init(void);
++extern void eukrea_mbimxsd35_baseboard_init(void);
++extern void eukrea_mbimx51_baseboard_init(void);
++extern void eukrea_mbimxsd51_baseboard_init(void);
++
++#endif
++
++#endif /* __MACH_EUKREA_BASEBOARDS_H__ */
+diff --git a/arch/arm/mach-imx/mach-cpuimx27.c b/arch/arm/mach-imx/mach-cpuimx27.c
+index 2bb9e18..1734320 100644
+--- a/arch/arm/mach-imx/mach-cpuimx27.c
++++ b/arch/arm/mach-imx/mach-cpuimx27.c
+@@ -34,13 +34,13 @@
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
+ 
+-#include <mach/eukrea-baseboards.h>
+ #include <mach/common.h>
+ #include <mach/hardware.h>
+ #include <mach/iomux-mx27.h>
+ #include <mach/ulpi.h>
+ 
+ #include "devices-imx27.h"
++#include "eukrea-baseboards.h"
+ 
+ static const int eukrea_cpuimx27_pins[] __initconst = {
+ 	/* UART1 */
+diff --git a/arch/arm/mach-imx/mach-cpuimx35.c b/arch/arm/mach-imx/mach-cpuimx35.c
+index d49b0ec..0abfcb4 100644
+--- a/arch/arm/mach-imx/mach-cpuimx35.c
++++ b/arch/arm/mach-imx/mach-cpuimx35.c
+@@ -37,12 +37,12 @@
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
+ 
+-#include <mach/eukrea-baseboards.h>
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx35.h>
+ 
+ #include "devices-imx35.h"
++#include "eukrea-baseboards.h"
+ 
+ static const struct imxuart_platform_data uart_pdata __initconst = {
+ 	.flags = IMXUART_HAVE_RTSCTS,
+diff --git a/arch/arm/mach-imx/mach-cpuimx51sd.c b/arch/arm/mach-imx/mach-cpuimx51sd.c
+index b87cc49..6cb3887 100644
+--- a/arch/arm/mach-imx/mach-cpuimx51sd.c
++++ b/arch/arm/mach-imx/mach-cpuimx51sd.c
+@@ -26,7 +26,6 @@
+ #include <linux/spi/spi.h>
+ #include <linux/can/platform/mcp251x.h>
+ 
+-#include <mach/eukrea-baseboards.h>
+ #include <mach/common.h>
+ #include <mach/hardware.h>
+ #include <mach/iomux-mx51.h>
+@@ -38,6 +37,7 @@
+ 
+ #include "devices-imx51.h"
+ #include "cpu_op-mx51.h"
++#include "eukrea-baseboards.h"
+ 
+ #define USBH1_RST		IMX_GPIO_NR(2, 28)
+ #define ETH_RST			IMX_GPIO_NR(2, 31)
+diff --git a/arch/arm/mach-imx/mach-eukrea_cpuimx25.c b/arch/arm/mach-imx/mach-eukrea_cpuimx25.c
+index 017bbb7..4eab1d7 100644
+--- a/arch/arm/mach-imx/mach-eukrea_cpuimx25.c
++++ b/arch/arm/mach-imx/mach-eukrea_cpuimx25.c
+@@ -27,7 +27,6 @@
+ #include <linux/usb/otg.h>
+ #include <linux/usb/ulpi.h>
+ 
+-#include <mach/eukrea-baseboards.h>
+ #include <mach/hardware.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -39,6 +38,7 @@
+ #include <mach/iomux-mx25.h>
+ 
+ #include "devices-imx25.h"
++#include "eukrea-baseboards.h"
+ 
+ static const struct imxuart_platform_data uart_pdata __initconst = {
+ 	.flags = IMXUART_HAVE_RTSCTS,
+diff --git a/arch/arm/mach-imx/mach-mx27_3ds.c b/arch/arm/mach-imx/mach-mx27_3ds.c
+index 05996f3..c69df6c 100644
+--- a/arch/arm/mach-imx/mach-mx27_3ds.c
++++ b/arch/arm/mach-imx/mach-mx27_3ds.c
+@@ -40,8 +40,8 @@
+ #include <mach/common.h>
+ #include <mach/iomux-mx27.h>
+ #include <mach/ulpi.h>
+-#include <mach/3ds_debugboard.h>
+ 
++#include "3ds_debugboard.h"
+ #include "devices-imx27.h"
+ 
+ #define SD1_EN_GPIO		IMX_GPIO_NR(2, 25)
+diff --git a/arch/arm/mach-imx/mach-mx31_3ds.c b/arch/arm/mach-imx/mach-mx31_3ds.c
+index 8915f93..6750443 100644
+--- a/arch/arm/mach-imx/mach-mx31_3ds.c
++++ b/arch/arm/mach-imx/mach-mx31_3ds.c
+@@ -39,9 +39,9 @@
+ #include <asm/memblock.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx3.h>
+-#include <mach/3ds_debugboard.h>
+ #include <mach/ulpi.h>
+ 
++#include "3ds_debugboard.h"
+ #include "devices-imx31.h"
+ 
+ static int mx31_3ds_pins[] = {
+diff --git a/arch/arm/mach-imx/mach-mx31lilly.c b/arch/arm/mach-imx/mach-mx31lilly.c
+index 34b9bf0..2be500a 100644
+--- a/arch/arm/mach-imx/mach-mx31lilly.c
++++ b/arch/arm/mach-imx/mach-mx31lilly.c
+@@ -45,9 +45,9 @@
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx3.h>
+-#include <mach/board-mx31lilly.h>
+ #include <mach/ulpi.h>
+ 
++#include "board-mx31lilly.h"
+ #include "devices-imx31.h"
+ 
+ /*
+diff --git a/arch/arm/mach-imx/mach-mx31lite.c b/arch/arm/mach-imx/mach-mx31lite.c
+index ef57cff..f693558 100644
+--- a/arch/arm/mach-imx/mach-mx31lite.c
++++ b/arch/arm/mach-imx/mach-mx31lite.c
+@@ -41,10 +41,10 @@
+ 
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+-#include <mach/board-mx31lite.h>
+ #include <mach/iomux-mx3.h>
+ #include <mach/ulpi.h>
+ 
++#include "board-mx31lite.h"
+ #include "devices-imx31.h"
+ 
+ /*
+diff --git a/arch/arm/mach-imx/mach-mx31moboard.c b/arch/arm/mach-imx/mach-mx31moboard.c
+index 459e754..2290d30 100644
+--- a/arch/arm/mach-imx/mach-mx31moboard.c
++++ b/arch/arm/mach-imx/mach-mx31moboard.c
+@@ -42,13 +42,13 @@
+ #include <asm/mach/time.h>
+ #include <asm/mach/map.h>
+ #include <asm/memblock.h>
+-#include <mach/board-mx31moboard.h>
+ #include <mach/common.h>
+ #include <mach/hardware.h>
+ #include <mach/iomux-mx3.h>
+ #include <mach/ulpi.h>
+ #include <linux/platform_data/asoc-imx-ssi.h>
+ 
++#include "board-mx31moboard.h"
+ #include "devices-imx31.h"
+ 
+ static unsigned int moboard_pins[] = {
+diff --git a/arch/arm/mach-imx/mach-mx35_3ds.c b/arch/arm/mach-imx/mach-mx35_3ds.c
+index 504983c..aac59b0 100644
+--- a/arch/arm/mach-imx/mach-mx35_3ds.c
++++ b/arch/arm/mach-imx/mach-mx35_3ds.c
+@@ -46,11 +46,11 @@
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx35.h>
+-#include <mach/3ds_debugboard.h>
+ #include <video/platform_lcd.h>
+ 
+ #include <media/soc_camera.h>
+ 
++#include "3ds_debugboard.h"
+ #include "devices-imx35.h"
+ 
+ #define GPIO_MC9S08DZ60_GPS_ENABLE 0
+diff --git a/arch/arm/mach-imx/mach-mx51_3ds.c b/arch/arm/mach-imx/mach-mx51_3ds.c
+index 9ee84a4..4e84f80 100644
+--- a/arch/arm/mach-imx/mach-mx51_3ds.c
++++ b/arch/arm/mach-imx/mach-mx51_3ds.c
+@@ -22,8 +22,8 @@
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx51.h>
+-#include <mach/3ds_debugboard.h>
+ 
++#include "3ds_debugboard.h"
+ #include "devices-imx51.h"
+ 
+ #define MX51_3DS_ECSPI2_CS	(GPIO_PORTC + 28)
+diff --git a/arch/arm/mach-imx/mach-pcm038.c b/arch/arm/mach-imx/mach-pcm038.c
+index 95f49d9..ad329d5 100644
+--- a/arch/arm/mach-imx/mach-pcm038.c
++++ b/arch/arm/mach-imx/mach-pcm038.c
+@@ -33,12 +33,12 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ 
+-#include <mach/board-pcm038.h>
+ #include <mach/common.h>
+ #include <mach/hardware.h>
+ #include <mach/iomux-mx27.h>
+ #include <mach/ulpi.h>
+ 
++#include "board-pcm038.h"
+ #include "devices-imx27.h"
+ 
+ static const int pcm038_pins[] __initconst = {
+diff --git a/arch/arm/mach-imx/mx31lilly-db.c b/arch/arm/mach-imx/mx31lilly-db.c
+index 29e890f..f2acf22 100644
+--- a/arch/arm/mach-imx/mx31lilly-db.c
++++ b/arch/arm/mach-imx/mx31lilly-db.c
+@@ -33,8 +33,8 @@
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx3.h>
+-#include <mach/board-mx31lilly.h>
+ 
++#include "board-mx31lilly.h"
+ #include "devices-imx31.h"
+ 
+ /*
+diff --git a/arch/arm/mach-imx/mx31lite-db.c b/arch/arm/mach-imx/mx31lite-db.c
+index 83d17d9..fe4048d 100644
+--- a/arch/arm/mach-imx/mx31lite-db.c
++++ b/arch/arm/mach-imx/mx31lite-db.c
+@@ -34,8 +34,8 @@
+ #include <mach/hardware.h>
+ #include <mach/common.h>
+ #include <mach/iomux-mx3.h>
+-#include <mach/board-mx31lite.h>
+ 
++#include "board-mx31lite.h"
+ #include "devices-imx31.h"
+ 
+ /*
+diff --git a/arch/arm/mach-imx/mx31moboard-smartbot.c b/arch/arm/mach-imx/mx31moboard-smartbot.c
+index fabb801..fc8d178 100644
+--- a/arch/arm/mach-imx/mx31moboard-smartbot.c
++++ b/arch/arm/mach-imx/mx31moboard-smartbot.c
+@@ -26,11 +26,11 @@
+ #include <mach/common.h>
+ #include <mach/hardware.h>
+ #include <mach/iomux-mx3.h>
+-#include <mach/board-mx31moboard.h>
+ #include <mach/ulpi.h>
+ 
+ #include <media/soc_camera.h>
+ 
++#include "board-mx31moboard.h"
+ #include "devices-imx31.h"
+ 
+ static unsigned int smartbot_pins[] = {
+diff --git a/arch/arm/plat-mxc/include/mach/3ds_debugboard.h b/arch/arm/plat-mxc/include/mach/3ds_debugboard.h
+deleted file mode 100644
+index 9fd6cb3..0000000
+--- a/arch/arm/plat-mxc/include/mach/3ds_debugboard.h
++++ /dev/null
+@@ -1,18 +0,0 @@
+-/*
+- * Copyright 2008-2009 Freescale Semiconductor, Inc. All Rights Reserved.
+- *
+- *
+- * The code contained herein is licensed under the GNU General Public
+- * License. You may obtain a copy of the GNU General Public License
+- * Version 2 or later at the following locations:
+- *
+- * http://www.opensource.org/licenses/gpl-license.html
+- * http://www.gnu.org/copyleft/gpl.html
+- */
+-
+-#ifndef __ASM_ARCH_MXC_3DS_DB_H__
+-#define __ASM_ARCH_MXC_3DS_DB_H__
+-
+-extern int __init mxc_expio_init(u32 base, u32 intr_gpio);
+-
+-#endif /* __ASM_ARCH_MXC_3DS_DB_H__ */
+diff --git a/arch/arm/plat-mxc/include/mach/board-mx31lilly.h b/arch/arm/plat-mxc/include/mach/board-mx31lilly.h
+deleted file mode 100644
+index 0df71bf..0000000
+--- a/arch/arm/plat-mxc/include/mach/board-mx31lilly.h
++++ /dev/null
+@@ -1,41 +0,0 @@
+-/*
+- * Copyright (C) 2009 Daniel Mack <daniel@caiaq.de>
+- *
+- * Based on code for mobots boards,
+- *   Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+- * MA 02110-1301, USA.
+- */
+-
+-#ifndef __ASM_ARCH_MXC_BOARD_MX31LILLY_H__
+-#define __ASM_ARCH_MXC_BOARD_MX31LILLY_H__
+-
+-#ifndef __ASSEMBLY__
+-
+-enum mx31lilly_boards {
+-	MX31LILLY_NOBOARD	= 0,
+-	MX31LILLY_DB		= 1,
+-};
+-
+-/*
+- * This CPU module needs a baseboard to work. After basic initializing
+- * its own devices, it calls the baseboard's init function.
+- */
+-
+-extern void mx31lilly_db_init(void);
+-
+-#endif
+-
+-#endif /* __ASM_ARCH_MXC_BOARD_MX31LILLY_H__ */
+diff --git a/arch/arm/plat-mxc/include/mach/board-mx31lite.h b/arch/arm/plat-mxc/include/mach/board-mx31lite.h
+deleted file mode 100644
+index c1ad0ae..0000000
+--- a/arch/arm/plat-mxc/include/mach/board-mx31lite.h
++++ /dev/null
+@@ -1,42 +0,0 @@
+-/*
+- * Copyright 2007 Freescale Semiconductor, Inc. All Rights Reserved.
+- * Copyright (C) 2009 Daniel Mack <daniel@caiaq.de>
+- *
+- * Based on code for mobots boards,
+- *   Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+- * MA 02110-1301, USA.
+- */
+-
+-#ifndef __ASM_ARCH_MXC_BOARD_MX31LITE_H__
+-#define __ASM_ARCH_MXC_BOARD_MX31LITE_H__
+-
+-#ifndef __ASSEMBLY__
+-
+-enum mx31lite_boards {
+-	MX31LITE_NOBOARD	= 0,
+-	MX31LITE_DB		= 1,
+-};
+-
+-/*
+- * This CPU module needs a baseboard to work. After basic initializing
+- * its own devices, it calls the baseboard's init function.
+- */
+-
+-extern void mx31lite_db_init(void);
+-
+-#endif
+-
+-#endif /* __ASM_ARCH_MXC_BOARD_MX31LITE_H__ */
+diff --git a/arch/arm/plat-mxc/include/mach/board-mx31moboard.h b/arch/arm/plat-mxc/include/mach/board-mx31moboard.h
+deleted file mode 100644
+index de14543..0000000
+--- a/arch/arm/plat-mxc/include/mach/board-mx31moboard.h
++++ /dev/null
+@@ -1,43 +0,0 @@
+-/*
+- * Copyright (C) 2009 Valentin Longchamp, EPFL Mobots group
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+- * MA 02110-1301, USA.
+- */
+-
+-#ifndef __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__
+-#define __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__
+-
+-#ifndef __ASSEMBLY__
+-
+-enum mx31moboard_boards {
+-	MX31NOBOARD	= 0,
+-	MX31DEVBOARD	= 1,
+-	MX31MARXBOT	= 2,
+-	MX31SMARTBOT	= 3,
+-	MX31EYEBOT	= 4,
+-};
+-
+-/*
+- * This CPU module needs a baseboard to work. After basic initializing
+- * its own devices, it calls the baseboard's init function.
+- */
+-
+-extern void mx31moboard_devboard_init(void);
+-extern void mx31moboard_marxbot_init(void);
+-extern void mx31moboard_smartbot_init(int board);
+-
+-#endif
+-
+-#endif /* __ASM_ARCH_MXC_BOARD_MX31MOBOARD_H__ */
+diff --git a/arch/arm/plat-mxc/include/mach/board-pcm038.h b/arch/arm/plat-mxc/include/mach/board-pcm038.h
+deleted file mode 100644
+index 6f371e3..0000000
+--- a/arch/arm/plat-mxc/include/mach/board-pcm038.h
++++ /dev/null
+@@ -1,36 +0,0 @@
+-/*
+- * Copyright (C) 2008 Juergen Beisert (kernel@pengutronix.de)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+- * MA 02110-1301, USA.
+- */
+-
+-#ifndef __ASM_ARCH_MXC_BOARD_PCM038_H__
+-#define __ASM_ARCH_MXC_BOARD_PCM038_H__
+-
+-#ifndef __ASSEMBLY__
+-/*
+- * This CPU module needs a baseboard to work. After basic initializing
+- * its own devices, it calls the baseboard's init function.
+- * TODO: Add your own baseboard init function and call it from
+- * inside pcm038_init().
+- *
+- * This example here is for the development board. Refer pcm970-baseboard.c
+- */
+-
+-extern void pcm970_baseboard_init(void);
+-
+-#endif
+-
+-#endif /* __ASM_ARCH_MXC_BOARD_PCM038_H__ */
+diff --git a/arch/arm/plat-mxc/include/mach/eukrea-baseboards.h b/arch/arm/plat-mxc/include/mach/eukrea-baseboards.h
+deleted file mode 100644
+index a21d331..0000000
+--- a/arch/arm/plat-mxc/include/mach/eukrea-baseboards.h
++++ /dev/null
+@@ -1,50 +0,0 @@
+-/*
+- * Copyright (C) 2010 Eric Benard - eric@eukrea.com
+- *
+- * Based on board-pcm038.h which is :
+- * Copyright (C) 2008 Juergen Beisert (kernel@pengutronix.de)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public License
+- * as published by the Free Software Foundation; either version 2
+- * of the License, or (at your option) any later version.
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+- * MA 02110-1301, USA.
+- */
+-
+-#ifndef __MACH_EUKREA_BASEBOARDS_H__
+-#define __MACH_EUKREA_BASEBOARDS_H__
+-
+-#ifndef __ASSEMBLY__
+-/*
+- * This CPU module needs a baseboard to work. After basic initializing
+- * its own devices, it calls baseboard's init function.
+- * TODO: Add your own baseboard init function and call it from
+- * inside eukrea_cpuimx25_init() eukrea_cpuimx27_init()
+- * eukrea_cpuimx35_init() eukrea_cpuimx51_init()
+- * or eukrea_cpuimx51sd_init().
+- *
+- * This example here is for the development board. Refer
+- * mach-mx25/eukrea_mbimxsd-baseboard.c for cpuimx25
+- * mach-imx/eukrea_mbimx27-baseboard.c for cpuimx27
+- * mach-mx3/eukrea_mbimxsd-baseboard.c for cpuimx35
+- * mach-mx5/eukrea_mbimx51-baseboard.c for cpuimx51
+- * mach-mx5/eukrea_mbimxsd-baseboard.c for cpuimx51sd
+- */
+-
+-extern void eukrea_mbimxsd25_baseboard_init(void);
+-extern void eukrea_mbimx27_baseboard_init(void);
+-extern void eukrea_mbimxsd35_baseboard_init(void);
+-extern void eukrea_mbimx51_baseboard_init(void);
+-extern void eukrea_mbimxsd51_baseboard_init(void);
+-
+-#endif
+-
+-#endif /* __MACH_EUKREA_BASEBOARDS_H__ */
+-- 
+1.8.0
+

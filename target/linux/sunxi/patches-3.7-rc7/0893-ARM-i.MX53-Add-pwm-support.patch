@@ -1,0 +1,43 @@
+From 9ae90afaeba3469eccce140fb0a1d5fa5c816ddc Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 4 Jul 2012 12:30:37 +0200
+Subject: [PATCH 893/951] ARM i.MX53: Add pwm support
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Acked-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx53.dtsi | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx53.dtsi b/arch/arm/boot/dts/imx53.dtsi
+index 3be2772..da9a047 100644
+--- a/arch/arm/boot/dts/imx53.dtsi
++++ b/arch/arm/boot/dts/imx53.dtsi
+@@ -393,6 +393,24 @@
+ 				};
+ 			};
+ 
++			pwm1: pwm@53fb4000 {
++				#pwm-cells = <2>;
++				compatible = "fsl,imx53-pwm", "fsl,imx27-pwm";
++				reg = <0x53fb4000 0x4000>;
++				clocks = <&clks 37>, <&clks 38>;
++				clock-names = "ipg", "per";
++				interrupts = <61>;
++			};
++
++			pwm2: pwm@53fb8000 {
++				#pwm-cells = <2>;
++				compatible = "fsl,imx53-pwm", "fsl,imx27-pwm";
++				reg = <0x53fb8000 0x4000>;
++				clocks = <&clks 39>, <&clks 40>;
++				clock-names = "ipg", "per";
++				interrupts = <94>;
++			};
++
+ 			uart1: serial@53fbc000 {
+ 				compatible = "fsl,imx53-uart", "fsl,imx21-uart";
+ 				reg = <0x53fbc000 0x4000>;
+-- 
+1.8.0
+

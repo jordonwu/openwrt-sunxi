@@ -1,0 +1,488 @@
+From ed1ebc4948fdfe4c68865e5543b4a68e5a55973b Mon Sep 17 00:00:00 2001
+From: Rajendra Nayak <rnayak@ti.com>
+Date: Fri, 27 Apr 2012 15:59:32 +0530
+Subject: [PATCH 634/951] ARM: OMAP2: clock: Convert to common clk
+
+Convert all OMAP2 specific platform files to use COMMON clk
+and keep all the changes under the CONFIG_COMMON_CLK macro check
+so it does not break any existing code. At a later point switch
+to COMMON clk and get rid of all old/legacy code.
+
+Signed-off-by: Rajendra Nayak <rnayak@ti.com>
+Signed-off-by: Mike Turquette <mturquette@ti.com>
+[paul@pwsan.com: updated to apply]
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+---
+ arch/arm/mach-omap2/clkt2xxx_apll.c          | 43 ++++++++++++++++++++++++++++
+ arch/arm/mach-omap2/clkt2xxx_dpll.c          | 16 ++++++++++-
+ arch/arm/mach-omap2/clkt2xxx_dpllcore.c      | 24 ++++++++++++++++
+ arch/arm/mach-omap2/clkt2xxx_osc.c           | 15 ++++++++++
+ arch/arm/mach-omap2/clkt2xxx_sys.c           |  9 +++++-
+ arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c | 15 ++++++++++
+ arch/arm/mach-omap2/clock2430.c              | 11 +++++++
+ arch/arm/mach-omap2/clock2xxx.c              |  1 +
+ arch/arm/mach-omap2/clock2xxx.h              | 33 ++++++++++++++++++++-
+ arch/arm/mach-omap2/pm24xx.c                 |  8 ++++++
+ 10 files changed, 172 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/clkt2xxx_apll.c b/arch/arm/mach-omap2/clkt2xxx_apll.c
+index 8c5b13e..1bd1527 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_apll.c
++++ b/arch/arm/mach-omap2/clkt2xxx_apll.c
+@@ -38,48 +38,90 @@
+ 
+ /* Private functions */
+ 
++#ifdef CONFIG_COMMON_CLK
++int omap2_clk_apll96_enable(struct clk_hw *hw)
++#else
+ static int _apll96_enable(struct clk *clk)
++#endif
+ {
+ 	return omap2xxx_cm_apll96_enable();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++int omap2_clk_apll54_enable(struct clk_hw *hw)
++#else
+ static int _apll54_enable(struct clk *clk)
++#endif
+ {
+ 	return omap2xxx_cm_apll54_enable();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++static void _apll96_allow_idle(struct clk_hw_omap *clk)
++#else
+ static void _apll96_allow_idle(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_set_apll96_auto_low_power_stop();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++static void _apll96_deny_idle(struct clk_hw_omap *clk)
++#else
+ static void _apll96_deny_idle(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_set_apll96_disable_autoidle();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++static void _apll54_allow_idle(struct clk_hw_omap *clk)
++#else
+ static void _apll54_allow_idle(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_set_apll54_auto_low_power_stop();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++static void _apll54_deny_idle(struct clk_hw_omap *clk)
++#else
+ static void _apll54_deny_idle(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_set_apll54_disable_autoidle();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++void omap2_clk_apll96_disable(struct clk_hw *hw)
++#else
+ static void _apll96_disable(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_apll96_disable();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++void omap2_clk_apll54_disable(struct clk_hw *hw)
++#else
+ static void _apll54_disable(struct clk *clk)
++#endif
+ {
+ 	omap2xxx_cm_apll54_disable();
+ }
+ 
+ /* Public data */
++#ifdef CONFIG_COMMON_CLK
++const struct clk_hw_omap_ops clkhwops_apll54 = {
++	.allow_idle	= _apll54_allow_idle,
++	.deny_idle	= _apll54_deny_idle,
++};
+ 
++const struct clk_hw_omap_ops clkhwops_apll96 = {
++	.allow_idle	= _apll96_allow_idle,
++	.deny_idle	= _apll96_deny_idle,
++};
++#else
+ const struct clkops clkops_apll96 = {
+ 	.enable		= _apll96_enable,
+ 	.disable	= _apll96_disable,
+@@ -93,6 +135,7 @@ const struct clkops clkops_apll54 = {
+ 	.allow_idle	= _apll54_allow_idle,
+ 	.deny_idle	= _apll54_deny_idle,
+ };
++#endif
+ 
+ /* Public functions */
+ 
+diff --git a/arch/arm/mach-omap2/clkt2xxx_dpll.c b/arch/arm/mach-omap2/clkt2xxx_dpll.c
+index 399534c..d0fd77b 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_dpll.c
++++ b/arch/arm/mach-omap2/clkt2xxx_dpll.c
+@@ -29,7 +29,11 @@
+  * REVISIT: DPLL can optionally enter low-power bypass by writing 0x1
+  * instead.  Add some mechanism to optionally enter this mode.
+  */
++#ifdef CONFIG_COMMON_CLK
++static void _allow_idle(struct clk_hw_omap *clk)
++#else
+ static void _allow_idle(struct clk *clk)
++#endif
+ {
+ 	if (!clk || !clk->dpll_data)
+ 		return;
+@@ -43,7 +47,11 @@ static void _allow_idle(struct clk *clk)
+  *
+  * Disable DPLL automatic idle control.  No return value.
+  */
++#ifdef CONFIG_COMMON_CLK
++static void _deny_idle(struct clk_hw_omap *clk)
++#else
+ static void _deny_idle(struct clk *clk)
++#endif
+ {
+ 	if (!clk || !clk->dpll_data)
+ 		return;
+@@ -53,9 +61,15 @@ static void _deny_idle(struct clk *clk)
+ 
+ 
+ /* Public data */
+-
++#ifdef CONFIG_COMMON_CLK
++const struct clk_hw_omap_ops clkhwops_omap2xxx_dpll = {
++	.allow_idle	= _allow_idle,
++	.deny_idle	= _deny_idle,
++};
++#else
+ const struct clkops clkops_omap2xxx_dpll_ops = {
+ 	.allow_idle	= _allow_idle,
+ 	.deny_idle	= _deny_idle,
+ };
++#endif
+ 
+diff --git a/arch/arm/mach-omap2/clkt2xxx_dpllcore.c b/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
+index e687163..9d8388b 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
++++ b/arch/arm/mach-omap2/clkt2xxx_dpllcore.c
+@@ -41,7 +41,11 @@
+  * (currently defined as "dpll_ck" in the OMAP2xxx clock tree).  Set
+  * during dpll_ck init and used later by omap2xxx_clk_get_core_rate().
+  */
++#ifdef CONFIG_COMMON_CLK
++static struct clk_hw_omap *dpll_core_ck;
++#else
+ static struct clk *dpll_core_ck;
++#endif
+ 
+ /**
+  * omap2xxx_clk_get_core_rate - return the CORE_CLK rate
+@@ -105,13 +109,25 @@ static long omap2_dpllcore_round_rate(unsigned long target_rate)
+ 
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++unsigned long omap2_dpllcore_recalc(struct clk_hw *hw,
++				    unsigned long parent_rate)
++#else
+ unsigned long omap2_dpllcore_recalc(struct clk *clk)
++#endif
+ {
+ 	return omap2xxx_clk_get_core_rate();
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++int omap2_reprogram_dpllcore(struct clk_hw *hw, unsigned long rate,
++			     unsigned long parent_rate)
++{
++	struct clk_hw_omap *clk = to_clk_hw_omap(hw);
++#else
+ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate)
+ {
++#endif
+ 	u32 cur_rate, low, mult, div, valid_rate, done_rate;
+ 	u32 bypass = 0;
+ 	struct prcm_config tmpset;
+@@ -189,8 +205,16 @@ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate)
+  * statically defined, this code may need to change to increment some
+  * kind of use count on dpll_ck.
+  */
++#ifdef CONFIG_COMMON_CLK
++void omap2xxx_clkt_dpllcore_init(struct clk_hw *hw)
++#else
+ void omap2xxx_clkt_dpllcore_init(struct clk *clk)
++#endif
+ {
+ 	WARN(dpll_core_ck, "dpll_core_ck already set - should never happen");
++#ifdef CONFIG_COMMON_CLK
++	dpll_core_ck = to_clk_hw_omap(hw);
++#else
+ 	dpll_core_ck = clk;
++#endif
+ }
+diff --git a/arch/arm/mach-omap2/clkt2xxx_osc.c b/arch/arm/mach-omap2/clkt2xxx_osc.c
+index e177737..395e0c1 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_osc.c
++++ b/arch/arm/mach-omap2/clkt2xxx_osc.c
+@@ -35,7 +35,11 @@
+  * clk_enable/clk_disable()-based usecounting for osc_ck should be
+  * replaced with autoidle-based usecounting.
+  */
++#ifdef CONFIG_COMMON_CLK
++int omap2_enable_osc_ck(struct clk_hw *clk)
++#else
+ static int omap2_enable_osc_ck(struct clk *clk)
++#endif
+ {
+ 	u32 pcc;
+ 
+@@ -53,7 +57,11 @@ static int omap2_enable_osc_ck(struct clk *clk)
+  * clk_enable/clk_disable()-based usecounting for osc_ck should be
+  * replaced with autoidle-based usecounting.
+  */
++#ifdef CONFIG_COMMON_CLK
++void omap2_disable_osc_ck(struct clk_hw *clk)
++#else
+ static void omap2_disable_osc_ck(struct clk *clk)
++#endif
+ {
+ 	u32 pcc;
+ 
+@@ -62,12 +70,19 @@ static void omap2_disable_osc_ck(struct clk *clk)
+ 	__raw_writel(pcc | OMAP_AUTOEXTCLKMODE_MASK, prcm_clksrc_ctrl);
+ }
+ 
++#ifndef CONFIG_COMMON_CLK
+ const struct clkops clkops_oscck = {
+ 	.enable		= omap2_enable_osc_ck,
+ 	.disable	= omap2_disable_osc_ck,
+ };
++#endif
+ 
++#ifdef CONFIG_COMMON_CLK
++unsigned long omap2_osc_clk_recalc(struct clk_hw *clk,
++				   unsigned long parent_rate)
++#else
+ unsigned long omap2_osc_clk_recalc(struct clk *clk)
++#endif
+ {
+ 	return omap2xxx_get_apll_clkin() * omap2xxx_get_sysclkdiv();
+ }
+diff --git a/arch/arm/mach-omap2/clkt2xxx_sys.c b/arch/arm/mach-omap2/clkt2xxx_sys.c
+index 46683b3..e6e73cf 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_sys.c
++++ b/arch/arm/mach-omap2/clkt2xxx_sys.c
+@@ -40,9 +40,16 @@ u32 omap2xxx_get_sysclkdiv(void)
+ 	return div;
+ }
+ 
++#ifdef CONFIG_COMMON_CLK
++unsigned long omap2xxx_sys_clk_recalc(struct clk_hw *clk,
++				      unsigned long parent_rate)
++{
++	return parent_rate / omap2xxx_get_sysclkdiv();
++}
++#else
+ unsigned long omap2xxx_sys_clk_recalc(struct clk *clk)
+ {
+ 	return clk->parent->rate / omap2xxx_get_sysclkdiv();
+ }
+-
++#endif
+ 
+diff --git a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+index b9b981b..9a79ffa 100644
+--- a/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
++++ b/arch/arm/mach-omap2/clkt2xxx_virt_prcm_set.c
+@@ -59,7 +59,12 @@ static unsigned long sys_ck_rate;
+  *
+  * Set virt_prcm_set's rate to the mpu_speed field of the current PRCM set.
+  */
++#ifdef CONFIG_COMMON_CLK
++unsigned long omap2_table_mpu_recalc(struct clk_hw *clk,
++				     unsigned long parent_rate)
++#else
+ unsigned long omap2_table_mpu_recalc(struct clk *clk)
++#endif
+ {
+ 	return curr_prcm_set->mpu_speed;
+ }
+@@ -71,7 +76,12 @@ unsigned long omap2_table_mpu_recalc(struct clk *clk)
+  * Some might argue L3-DDR, others ARM, others IVA. This code is simple and
+  * just uses the ARM rates.
+  */
++#ifdef CONFIG_COMMON_CLK
++long omap2_round_to_table_rate(struct clk_hw *hw, unsigned long rate,
++			       unsigned long *parent_rate)
++#else
+ long omap2_round_to_table_rate(struct clk *clk, unsigned long rate)
++#endif
+ {
+ 	const struct prcm_config *ptr;
+ 	long highest_rate;
+@@ -94,7 +104,12 @@ long omap2_round_to_table_rate(struct clk *clk, unsigned long rate)
+ }
+ 
+ /* Sets basic clocks based on the specified rate */
++#ifdef CONFIG_COMMON_CLK
++int omap2_select_table_rate(struct clk_hw *hw, unsigned long rate,
++			    unsigned long parent_rate)
++#else
+ int omap2_select_table_rate(struct clk *clk, unsigned long rate)
++#endif
+ {
+ 	u32 cur_rate, done_rate, bypass = 0, tmp;
+ 	const struct prcm_config *prcm;
+diff --git a/arch/arm/mach-omap2/clock2430.c b/arch/arm/mach-omap2/clock2430.c
+index e37df53..7a61d78 100644
+--- a/arch/arm/mach-omap2/clock2430.c
++++ b/arch/arm/mach-omap2/clock2430.c
+@@ -40,7 +40,11 @@
+  * passes back the correct CM_IDLEST register address for I2CHS
+  * modules.  No return value.
+  */
++#ifdef CONFIG_COMMON_CLK
++static void omap2430_clk_i2chs_find_idlest(struct clk_hw_omap *clk,
++#else
+ static void omap2430_clk_i2chs_find_idlest(struct clk *clk,
++#endif
+ 					   void __iomem **idlest_reg,
+ 					   u8 *idlest_bit,
+ 					   u8 *idlest_val)
+@@ -51,9 +55,16 @@ static void omap2430_clk_i2chs_find_idlest(struct clk *clk,
+ }
+ 
+ /* 2430 I2CHS has non-standard IDLEST register */
++#ifdef CONFIG_COMMON_CLK
++const struct clk_hw_omap_ops clkhwops_omap2430_i2chs_wait = {
++	.find_idlest	= omap2430_clk_i2chs_find_idlest,
++	.find_companion	= omap2_clk_dflt_find_companion,
++};
++#else
+ const struct clkops clkops_omap2430_i2chs_wait = {
+ 	.enable		= omap2_dflt_clk_enable,
+ 	.disable	= omap2_dflt_clk_disable,
+ 	.find_idlest	= omap2430_clk_i2chs_find_idlest,
+ 	.find_companion = omap2_clk_dflt_find_companion,
+ };
++#endif
+diff --git a/arch/arm/mach-omap2/clock2xxx.c b/arch/arm/mach-omap2/clock2xxx.c
+index 5f7faeb..1ff6469 100644
+--- a/arch/arm/mach-omap2/clock2xxx.c
++++ b/arch/arm/mach-omap2/clock2xxx.c
+@@ -28,6 +28,7 @@
+ #include "cm.h"
+ #include "cm-regbits-24xx.h"
+ 
++struct clk_hw *dclk_hw;
+ /*
+  * Omap24xx specific clock functions
+  */
+diff --git a/arch/arm/mach-omap2/clock2xxx.h b/arch/arm/mach-omap2/clock2xxx.h
+index ce809c9..5858151 100644
+--- a/arch/arm/mach-omap2/clock2xxx.h
++++ b/arch/arm/mach-omap2/clock2xxx.h
+@@ -8,6 +8,26 @@
+ #ifndef __ARCH_ARM_MACH_OMAP2_CLOCK2XXX_H
+ #define __ARCH_ARM_MACH_OMAP2_CLOCK2XXX_H
+ 
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk-provider.h>
++#include "clock.h"
++
++unsigned long omap2_table_mpu_recalc(struct clk_hw *clk,
++				     unsigned long parent_rate);
++int omap2_select_table_rate(struct clk_hw *hw, unsigned long rate,
++			    unsigned long parent_rate);
++long omap2_round_to_table_rate(struct clk_hw *hw, unsigned long rate,
++			       unsigned long *parent_rate);
++unsigned long omap2xxx_sys_clk_recalc(struct clk_hw *clk,
++				      unsigned long parent_rate);
++unsigned long omap2_osc_clk_recalc(struct clk_hw *clk,
++				   unsigned long parent_rate);
++unsigned long omap2_dpllcore_recalc(struct clk_hw *hw,
++				    unsigned long parent_rate);
++int omap2_reprogram_dpllcore(struct clk_hw *clk, unsigned long rate,
++			     unsigned long parent_rate);
++void omap2xxx_clkt_dpllcore_init(struct clk_hw *hw);
++#else
+ unsigned long omap2_table_mpu_recalc(struct clk *clk);
+ int omap2_select_table_rate(struct clk *clk, unsigned long rate);
+ long omap2_round_to_table_rate(struct clk *clk, unsigned long rate);
+@@ -15,11 +35,12 @@ unsigned long omap2xxx_sys_clk_recalc(struct clk *clk);
+ unsigned long omap2_osc_clk_recalc(struct clk *clk);
+ unsigned long omap2_dpllcore_recalc(struct clk *clk);
+ int omap2_reprogram_dpllcore(struct clk *clk, unsigned long rate);
++void omap2xxx_clkt_dpllcore_init(struct clk *clk);
++#endif
+ unsigned long omap2xxx_clk_get_core_rate(void);
+ u32 omap2xxx_get_apll_clkin(void);
+ u32 omap2xxx_get_sysclkdiv(void);
+ void omap2xxx_clk_prepare_for_reboot(void);
+-void omap2xxx_clkt_dpllcore_init(struct clk *clk);
+ void omap2xxx_clkt_vps_check_bootloader_rates(void);
+ void omap2xxx_clkt_vps_late_init(void);
+ 
+@@ -37,9 +58,19 @@ int omap2430_clk_init(void);
+ 
+ extern void __iomem *prcm_clksrc_ctrl;
+ 
++#ifdef CONFIG_COMMON_CLK
++extern struct clk_hw *dclk_hw;
++int omap2_enable_osc_ck(struct clk_hw *hw);
++void omap2_disable_osc_ck(struct clk_hw *hw);
++int omap2_clk_apll96_enable(struct clk_hw *hw);
++int omap2_clk_apll54_enable(struct clk_hw *hw);
++void omap2_clk_apll96_disable(struct clk_hw *hw);
++void omap2_clk_apll54_disable(struct clk_hw *hw);
++#else
+ extern const struct clkops clkops_omap2430_i2chs_wait;
+ extern const struct clkops clkops_oscck;
+ extern const struct clkops clkops_apll96;
+ extern const struct clkops clkops_apll54;
++#endif
+ 
+ #endif
+diff --git a/arch/arm/mach-omap2/pm24xx.c b/arch/arm/mach-omap2/pm24xx.c
+index 83815dd..87ae36c 100644
+--- a/arch/arm/mach-omap2/pm24xx.c
++++ b/arch/arm/mach-omap2/pm24xx.c
+@@ -25,7 +25,11 @@
+ #include <linux/sysfs.h>
+ #include <linux/module.h>
+ #include <linux/delay.h>
++#ifdef CONFIG_COMMON_CLK
++#include <linux/clk-provider.h>
++#else
+ #include <linux/clk.h>
++#endif
+ #include <linux/irq.h>
+ #include <linux/time.h>
+ #include <linux/gpio.h>
+@@ -202,7 +206,11 @@ static int omap2_can_sleep(void)
+ {
+ 	if (omap2_fclks_active())
+ 		return 0;
++#ifdef CONFIG_COMMON_CLK
++	if (__clk_is_enabled(osc_ck))
++#else
+ 	if (osc_ck->usecount > 1)
++#endif
+ 		return 0;
+ 	if (omap_dma_running())
+ 		return 0;
+-- 
+1.8.0
+

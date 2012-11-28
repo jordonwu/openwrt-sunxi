@@ -1,0 +1,293 @@
+From 0b25e25bef0e03c0465c3eb1119b32cb906db689 Mon Sep 17 00:00:00 2001
+From: Joseph Lo <josephl@nvidia.com>
+Date: Wed, 31 Oct 2012 17:41:15 +0800
+Subject: [PATCH 706/951] ARM: tegra: cpuidle: separate cpuidle driver for
+ different chips
+
+The different Tegra chips may have different CPU idle states and data.
+Individual CPU idle driver make it more easy to maintain.
+
+Signed-off-by: Joseph Lo <josephl@nvidia.com>
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/mach-tegra/Makefile          |  7 ++++
+ arch/arm/mach-tegra/cpuidle-tegra20.c | 66 +++++++++++++++++++++++++++++++++++
+ arch/arm/mach-tegra/cpuidle-tegra30.c | 66 +++++++++++++++++++++++++++++++++++
+ arch/arm/mach-tegra/cpuidle.c         | 47 +++++++------------------
+ arch/arm/mach-tegra/cpuidle.h         | 32 +++++++++++++++++
+ 5 files changed, 184 insertions(+), 34 deletions(-)
+ create mode 100644 arch/arm/mach-tegra/cpuidle-tegra20.c
+ create mode 100644 arch/arm/mach-tegra/cpuidle-tegra30.c
+ create mode 100644 arch/arm/mach-tegra/cpuidle.h
+
+diff --git a/arch/arm/mach-tegra/Makefile b/arch/arm/mach-tegra/Makefile
+index dcd4726..488159e 100644
+--- a/arch/arm/mach-tegra/Makefile
++++ b/arch/arm/mach-tegra/Makefile
+@@ -15,9 +15,16 @@ obj-$(CONFIG_ARCH_TEGRA_2x_SOC)         += tegra20_clocks_data.o
+ obj-$(CONFIG_ARCH_TEGRA_2x_SOC)		+= tegra20_speedo.o
+ obj-$(CONFIG_ARCH_TEGRA_2x_SOC)		+= tegra2_emc.o
+ obj-$(CONFIG_ARCH_TEGRA_2x_SOC)		+= sleep-tegra20.o
++ifeq ($(CONFIG_CPU_IDLE),y)
++obj-$(CONFIG_ARCH_TEGRA_2x_SOC)		+= cpuidle-tegra20.o
++endif
+ obj-$(CONFIG_ARCH_TEGRA_3x_SOC)		+= tegra30_clocks.o
+ obj-$(CONFIG_ARCH_TEGRA_3x_SOC)		+= tegra30_clocks_data.o
+ obj-$(CONFIG_ARCH_TEGRA_3x_SOC)		+= tegra30_speedo.o
++obj-$(CONFIG_ARCH_TEGRA_3x_SOC)		+= sleep-tegra30.o
++ifeq ($(CONFIG_CPU_IDLE),y)
++obj-$(CONFIG_ARCH_TEGRA_3x_SOC)		+= cpuidle-tegra30.o
++endif
+ obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o
+ obj-$(CONFIG_SMP)                       += reset.o
+ obj-$(CONFIG_HOTPLUG_CPU)               += hotplug.o
+diff --git a/arch/arm/mach-tegra/cpuidle-tegra20.c b/arch/arm/mach-tegra/cpuidle-tegra20.c
+new file mode 100644
+index 0000000..d32e8b0
+--- /dev/null
++++ b/arch/arm/mach-tegra/cpuidle-tegra20.c
+@@ -0,0 +1,66 @@
++/*
++ * CPU idle driver for Tegra CPUs
++ *
++ * Copyright (c) 2010-2012, NVIDIA Corporation.
++ * Copyright (c) 2011 Google, Inc.
++ * Author: Colin Cross <ccross@android.com>
++ *         Gary King <gking@nvidia.com>
++ *
++ * Rework for 3.3 by Peter De Schrijver <pdeschrijver@nvidia.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/cpuidle.h>
++
++#include <asm/cpuidle.h>
++
++static struct cpuidle_driver tegra_idle_driver = {
++	.name = "tegra_idle",
++	.owner = THIS_MODULE,
++	.en_core_tk_irqen = 1,
++	.state_count = 1,
++	.states = {
++		[0] = ARM_CPUIDLE_WFI_STATE_PWR(600),
++	},
++};
++
++static DEFINE_PER_CPU(struct cpuidle_device, tegra_idle_device);
++
++int __init tegra20_cpuidle_init(void)
++{
++	int ret;
++	unsigned int cpu;
++	struct cpuidle_device *dev;
++	struct cpuidle_driver *drv = &tegra_idle_driver;
++
++	ret = cpuidle_register_driver(&tegra_idle_driver);
++	if (ret) {
++		pr_err("CPUidle driver registration failed\n");
++		return ret;
++	}
++
++	for_each_possible_cpu(cpu) {
++		dev = &per_cpu(tegra_idle_device, cpu);
++		dev->cpu = cpu;
++
++		dev->state_count = drv->state_count;
++		ret = cpuidle_register_device(dev);
++		if (ret) {
++			pr_err("CPU%u: CPUidle device registration failed\n",
++				cpu);
++			return ret;
++		}
++	}
++	return 0;
++}
+diff --git a/arch/arm/mach-tegra/cpuidle-tegra30.c b/arch/arm/mach-tegra/cpuidle-tegra30.c
+new file mode 100644
+index 0000000..37e7551
+--- /dev/null
++++ b/arch/arm/mach-tegra/cpuidle-tegra30.c
+@@ -0,0 +1,66 @@
++/*
++ * CPU idle driver for Tegra CPUs
++ *
++ * Copyright (c) 2010-2012, NVIDIA Corporation.
++ * Copyright (c) 2011 Google, Inc.
++ * Author: Colin Cross <ccross@android.com>
++ *         Gary King <gking@nvidia.com>
++ *
++ * Rework for 3.3 by Peter De Schrijver <pdeschrijver@nvidia.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/cpuidle.h>
++
++#include <asm/cpuidle.h>
++
++static struct cpuidle_driver tegra_idle_driver = {
++	.name = "tegra_idle",
++	.owner = THIS_MODULE,
++	.en_core_tk_irqen = 1,
++	.state_count = 1,
++	.states = {
++		[0] = ARM_CPUIDLE_WFI_STATE_PWR(600),
++	},
++};
++
++static DEFINE_PER_CPU(struct cpuidle_device, tegra_idle_device);
++
++int __init tegra30_cpuidle_init(void)
++{
++	int ret;
++	unsigned int cpu;
++	struct cpuidle_device *dev;
++	struct cpuidle_driver *drv = &tegra_idle_driver;
++
++	ret = cpuidle_register_driver(&tegra_idle_driver);
++	if (ret) {
++		pr_err("CPUidle driver registration failed\n");
++		return ret;
++	}
++
++	for_each_possible_cpu(cpu) {
++		dev = &per_cpu(tegra_idle_device, cpu);
++		dev->cpu = cpu;
++
++		dev->state_count = drv->state_count;
++		ret = cpuidle_register_device(dev);
++		if (ret) {
++			pr_err("CPU%u: CPUidle device registration failed\n",
++				cpu);
++			return ret;
++		}
++	}
++	return 0;
++}
+diff --git a/arch/arm/mach-tegra/cpuidle.c b/arch/arm/mach-tegra/cpuidle.c
+index 4e0b07c..d065139 100644
+--- a/arch/arm/mach-tegra/cpuidle.c
++++ b/arch/arm/mach-tegra/cpuidle.c
+@@ -23,47 +23,26 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/cpuidle.h>
+ 
+-#include <asm/cpuidle.h>
+-
+-struct cpuidle_driver tegra_idle_driver = {
+-	.name = "tegra_idle",
+-	.owner = THIS_MODULE,
+-	.en_core_tk_irqen = 1,
+-	.state_count = 1,
+-	.states = {
+-		[0] = ARM_CPUIDLE_WFI_STATE_PWR(600),
+-	},
+-};
+-
+-static DEFINE_PER_CPU(struct cpuidle_device, tegra_idle_device);
++#include "fuse.h"
++#include "cpuidle.h"
+ 
+ static int __init tegra_cpuidle_init(void)
+ {
+ 	int ret;
+-	unsigned int cpu;
+-	struct cpuidle_device *dev;
+-	struct cpuidle_driver *drv = &tegra_idle_driver;
+ 
+-	ret = cpuidle_register_driver(&tegra_idle_driver);
+-	if (ret) {
+-		pr_err("CPUidle driver registration failed\n");
+-		return ret;
++	switch (tegra_chip_id) {
++	case TEGRA20:
++		ret = tegra20_cpuidle_init();
++		break;
++	case TEGRA30:
++		ret = tegra30_cpuidle_init();
++		break;
++	default:
++		ret = -ENODEV;
++		break;
+ 	}
+ 
+-	for_each_possible_cpu(cpu) {
+-		dev = &per_cpu(tegra_idle_device, cpu);
+-		dev->cpu = cpu;
+-
+-		dev->state_count = drv->state_count;
+-		ret = cpuidle_register_device(dev);
+-		if (ret) {
+-			pr_err("CPU%u: CPUidle device registration failed\n",
+-				cpu);
+-			return ret;
+-		}
+-	}
+-	return 0;
++	return ret;
+ }
+ device_initcall(tegra_cpuidle_init);
+diff --git a/arch/arm/mach-tegra/cpuidle.h b/arch/arm/mach-tegra/cpuidle.h
+new file mode 100644
+index 0000000..496204d
+--- /dev/null
++++ b/arch/arm/mach-tegra/cpuidle.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (c) 2012, NVIDIA Corporation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms and conditions of the GNU General Public License,
++ * version 2, as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef __MACH_TEGRA_CPUIDLE_H
++#define __MACH_TEGRA_CPUIDLE_H
++
++#ifdef CONFIG_ARCH_TEGRA_2x_SOC
++int tegra20_cpuidle_init(void);
++#else
++static inline int tegra20_cpuidle_init(void) { return -ENODEV; }
++#endif
++
++#ifdef CONFIG_ARCH_TEGRA_3x_SOC
++int tegra30_cpuidle_init(void);
++#else
++static inline int tegra30_cpuidle_init(void) { return -ENODEV; }
++#endif
++
++#endif
+-- 
+1.8.0
+

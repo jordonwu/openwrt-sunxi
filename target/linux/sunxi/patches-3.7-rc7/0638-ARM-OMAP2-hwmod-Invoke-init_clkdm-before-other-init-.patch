@@ -1,0 +1,40 @@
+From b797be1d4c079e78a3cb4e95f4a74274a4aef9f5 Mon Sep 17 00:00:00 2001
+From: Vaibhav Hiremath <hvaibhav@ti.com>
+Date: Mon, 9 Jul 2012 18:24:30 +0530
+Subject: [PATCH 638/951] ARM: OMAP2+: hwmod: Invoke init_clkdm before other
+ init functions
+
+Without this kernel would crash, since clkdm inside omap_hwmod
+is accessed in some of the init functions like, _init_main_clk.
+
+So call init_clkdm before _init_main_clk().
+
+Signed-off-by: Vaibhav Hiremath <hvaibhav@ti.com>
+Signed-off-by: Mike Turquette <mturquette@ti.com>
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+---
+ arch/arm/mach-omap2/omap_hwmod.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-omap2/omap_hwmod.c b/arch/arm/mach-omap2/omap_hwmod.c
+index f38e4ce..c3d3e62 100644
+--- a/arch/arm/mach-omap2/omap_hwmod.c
++++ b/arch/arm/mach-omap2/omap_hwmod.c
+@@ -1519,11 +1519,12 @@ static int _init_clocks(struct omap_hwmod *oh, void *data)
+ 
+ 	pr_debug("omap_hwmod: %s: looking up clocks\n", oh->name);
+ 
++	if (soc_ops.init_clkdm)
++		ret |= soc_ops.init_clkdm(oh);
++
+ 	ret |= _init_main_clk(oh);
+ 	ret |= _init_interface_clks(oh);
+ 	ret |= _init_opt_clks(oh);
+-	if (soc_ops.init_clkdm)
+-		ret |= soc_ops.init_clkdm(oh);
+ 
+ 	if (!ret)
+ 		oh->_state = _HWMOD_STATE_CLKS_INITED;
+-- 
+1.8.0
+

@@ -1,0 +1,3333 @@
+From 25c7d49ed48b4843da7dea56a81ae7f620211ee0 Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Tue, 2 Oct 2012 17:25:48 -0700
+Subject: [PATCH 128/951] ARM: OMAP: Make omap_device local to mach-omap2
+
+Let's make omap_device local to mach-omap2 for
+ARM common zImage support.
+
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/pm_bus.c                  |    1 -
+ arch/arm/mach-omap2/Makefile                  |    3 +-
+ arch/arm/mach-omap2/am35xx-emac.c             |    2 +-
+ arch/arm/mach-omap2/board-omap3beagle.c       |    2 +-
+ arch/arm/mach-omap2/devices.c                 |    2 +-
+ arch/arm/mach-omap2/display.c                 |    2 +-
+ arch/arm/mach-omap2/dma.c                     |    3 +-
+ arch/arm/mach-omap2/drm.c                     |    2 +-
+ arch/arm/mach-omap2/gpio.c                    |    2 +-
+ arch/arm/mach-omap2/gpmc.c                    |    2 +-
+ arch/arm/mach-omap2/hdq1w.c                   |    2 +-
+ arch/arm/mach-omap2/hsmmc.c                   |    2 +-
+ arch/arm/mach-omap2/hwspinlock.c              |    2 +-
+ arch/arm/mach-omap2/i2c.c                     |    2 +-
+ arch/arm/mach-omap2/mcbsp.c                   |    5 +-
+ arch/arm/mach-omap2/msdi.c                    |    3 +-
+ arch/arm/mach-omap2/omap_device.c             | 1278 +++++++++++++++++++++++++
+ arch/arm/mach-omap2/omap_device.h             |  176 ++++
+ arch/arm/mach-omap2/opp.c                     |    2 +-
+ arch/arm/mach-omap2/pm.c                      |    2 +-
+ arch/arm/mach-omap2/pmu.c                     |    2 +-
+ arch/arm/mach-omap2/serial.c                  |    2 +-
+ arch/arm/mach-omap2/sr_device.c               |    2 +-
+ arch/arm/mach-omap2/timer.c                   |    2 +-
+ arch/arm/mach-omap2/usb-host.c                |    2 +-
+ arch/arm/mach-omap2/usb-musb.c                |    2 +-
+ arch/arm/plat-omap/Makefile                   |    1 -
+ arch/arm/plat-omap/include/plat/omap_device.h |  176 ----
+ arch/arm/plat-omap/omap-pm-noop.c             |    3 +-
+ arch/arm/plat-omap/omap_device.c              | 1278 -------------------------
+ 30 files changed, 1483 insertions(+), 1482 deletions(-)
+ create mode 100644 arch/arm/mach-omap2/omap_device.c
+ create mode 100644 arch/arm/mach-omap2/omap_device.h
+ delete mode 100644 arch/arm/plat-omap/include/plat/omap_device.h
+ delete mode 100644 arch/arm/plat-omap/omap_device.c
+
+diff --git a/arch/arm/mach-omap1/pm_bus.c b/arch/arm/mach-omap1/pm_bus.c
+index 7868e75..8a74ec5 100644
+--- a/arch/arm/mach-omap1/pm_bus.c
++++ b/arch/arm/mach-omap1/pm_bus.c
+@@ -19,7 +19,6 @@
+ #include <linux/clk.h>
+ #include <linux/err.h>
+ 
+-#include <plat/omap_device.h>
+ #include <plat/omap-pm.h>
+ 
+ #ifdef CONFIG_PM_RUNTIME
+diff --git a/arch/arm/mach-omap2/Makefile b/arch/arm/mach-omap2/Makefile
+index fe40d9e..46d9071 100644
+--- a/arch/arm/mach-omap2/Makefile
++++ b/arch/arm/mach-omap2/Makefile
+@@ -4,7 +4,8 @@
+ 
+ # Common support
+ obj-y := id.o io.o control.o mux.o devices.o serial.o gpmc.o timer.o pm.o \
+-	 common.o gpio.o dma.o wd_timer.o display.o i2c.o hdq1w.o omap_hwmod.o
++	 common.o gpio.o dma.o wd_timer.o display.o i2c.o hdq1w.o omap_hwmod.o \
++	 omap_device.o
+ 
+ # INTCPS IP block support - XXX should be moved to drivers/
+ obj-$(CONFIG_ARCH_OMAP2)		+= irq.o
+diff --git a/arch/arm/mach-omap2/am35xx-emac.c b/arch/arm/mach-omap2/am35xx-emac.c
+index d0c54c5..af11dcd 100644
+--- a/arch/arm/mach-omap2/am35xx-emac.c
++++ b/arch/arm/mach-omap2/am35xx-emac.c
+@@ -18,7 +18,7 @@
+ #include <linux/err.h>
+ #include <linux/davinci_emac.h>
+ #include <asm/system.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include "am35xx.h"
+ #include "control.h"
+ #include "am35xx-emac.h"
+diff --git a/arch/arm/mach-omap2/board-omap3beagle.c b/arch/arm/mach-omap2/board-omap3beagle.c
+index f11a5eb..2064917 100644
+--- a/arch/arm/mach-omap2/board-omap3beagle.c
++++ b/arch/arm/mach-omap2/board-omap3beagle.c
+@@ -44,7 +44,7 @@
+ #include "gpmc.h"
+ #include <linux/platform_data/mtd-nand-omap2.h>
+ #include <plat/usb.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "mux.h"
+ #include "hsmmc.h"
+diff --git a/arch/arm/mach-omap2/devices.c b/arch/arm/mach-omap2/devices.c
+index e9ee9d9..48c0def 100644
+--- a/arch/arm/mach-omap2/devices.c
++++ b/arch/arm/mach-omap2/devices.c
+@@ -26,7 +26,7 @@
+ #include "iomap.h"
+ #include <plat-omap/dma-omap.h>
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include "omap4-keypad.h"
+ 
+ #include "soc.h"
+diff --git a/arch/arm/mach-omap2/display.c b/arch/arm/mach-omap2/display.c
+index 28f5087..55661d0 100644
+--- a/arch/arm/mach-omap2/display.c
++++ b/arch/arm/mach-omap2/display.c
+@@ -26,7 +26,7 @@
+ 
+ #include <video/omapdss.h>
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include <plat/omap-pm.h>
+ #include "common.h"
+ 
+diff --git a/arch/arm/mach-omap2/dma.c b/arch/arm/mach-omap2/dma.c
+index 4e3ac6b..7ddc6c9 100644
+--- a/arch/arm/mach-omap2/dma.c
++++ b/arch/arm/mach-omap2/dma.c
+@@ -29,9 +29,10 @@
+ #include <linux/device.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
+ #include <plat-omap/dma-omap.h>
+ 
++#include "omap_device.h"
++
+ #define OMAP2_DMA_STRIDE	0x60
+ 
+ static u32 errata;
+diff --git a/arch/arm/mach-omap2/drm.c b/arch/arm/mach-omap2/drm.c
+index 72e0f01b..67991ea 100644
+--- a/arch/arm/mach-omap2/drm.c
++++ b/arch/arm/mach-omap2/drm.c
+@@ -24,7 +24,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/dma-mapping.h>
+ 
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include <plat/omap_hwmod.h>
+ 
+ #if defined(CONFIG_DRM_OMAP) || (CONFIG_DRM_OMAP_MODULE)
+diff --git a/arch/arm/mach-omap2/gpio.c b/arch/arm/mach-omap2/gpio.c
+index d1058f1..2bd2467 100644
+--- a/arch/arm/mach-omap2/gpio.c
++++ b/arch/arm/mach-omap2/gpio.c
+@@ -24,7 +24,7 @@
+ #include <linux/platform_data/gpio-omap.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include <plat/omap-pm.h>
+ 
+ #include "powerdomain.h"
+diff --git a/arch/arm/mach-omap2/gpmc.c b/arch/arm/mach-omap2/gpmc.c
+index 9472541..7dff7ff 100644
+--- a/arch/arm/mach-omap2/gpmc.c
++++ b/arch/arm/mach-omap2/gpmc.c
+@@ -31,10 +31,10 @@
+ #include <asm/mach-types.h>
+ 
+ #include <plat/cpu.h>
+-#include <plat/omap_device.h>
+ 
+ #include "soc.h"
+ #include "common.h"
++#include "omap_device.h"
+ #include "gpmc.h"
+ 
+ #define	DEVICE_NAME		"omap-gpmc"
+diff --git a/arch/arm/mach-omap2/hdq1w.c b/arch/arm/mach-omap2/hdq1w.c
+index e003f2b..a533ce3 100644
+--- a/arch/arm/mach-omap2/hdq1w.c
++++ b/arch/arm/mach-omap2/hdq1w.c
+@@ -28,7 +28,7 @@
+ #include <linux/platform_device.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include "hdq1w.h"
+ 
+ #include "common.h"
+diff --git a/arch/arm/mach-omap2/hsmmc.c b/arch/arm/mach-omap2/hsmmc.c
+index ec6c223..797e8c6 100644
+--- a/arch/arm/mach-omap2/hsmmc.c
++++ b/arch/arm/mach-omap2/hsmmc.c
+@@ -18,7 +18,7 @@
+ #include <linux/platform_data/gpio-omap.h>
+ 
+ #include <plat/omap-pm.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "mux.h"
+ #include "mmc.h"
+diff --git a/arch/arm/mach-omap2/hwspinlock.c b/arch/arm/mach-omap2/hwspinlock.c
+index 8763c85..5856521 100644
+--- a/arch/arm/mach-omap2/hwspinlock.c
++++ b/arch/arm/mach-omap2/hwspinlock.c
+@@ -22,7 +22,7 @@
+ #include <linux/hwspinlock.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ static struct hwspinlock_pdata omap_hwspinlock_pdata __initdata = {
+ 	.base_id = 0,
+diff --git a/arch/arm/mach-omap2/i2c.c b/arch/arm/mach-omap2/i2c.c
+index 9f12f63..84b0d9f 100644
+--- a/arch/arm/mach-omap2/i2c.c
++++ b/arch/arm/mach-omap2/i2c.c
+@@ -21,7 +21,7 @@
+ 
+ #include "common.h"
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "mux.h"
+ #include "i2c.h"
+diff --git a/arch/arm/mach-omap2/mcbsp.c b/arch/arm/mach-omap2/mcbsp.c
+index b2c7f23..a106c75 100644
+--- a/arch/arm/mach-omap2/mcbsp.c
++++ b/arch/arm/mach-omap2/mcbsp.c
+@@ -19,10 +19,11 @@
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
++#include <linux/pm_runtime.h>
+ 
+ #include <plat-omap/dma-omap.h>
+-#include <plat/omap_device.h>
+-#include <linux/pm_runtime.h>
++
++#include "omap_device.h"
+ 
+ /*
+  * FIXME: Find a mechanism to enable/disable runtime the McBSP ICLK autoidle.
+diff --git a/arch/arm/mach-omap2/msdi.c b/arch/arm/mach-omap2/msdi.c
+index a6020d7..46bf98a 100644
+--- a/arch/arm/mach-omap2/msdi.c
++++ b/arch/arm/mach-omap2/msdi.c
+@@ -26,10 +26,9 @@
+ #include <linux/platform_data/gpio-omap.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
+-
+ #include "common.h"
+ #include "control.h"
++#include "omap_device.h"
+ #include "mux.h"
+ #include "mmc.h"
+ 
+diff --git a/arch/arm/mach-omap2/omap_device.c b/arch/arm/mach-omap2/omap_device.c
+new file mode 100644
+index 0000000..e5fbcb5
+--- /dev/null
++++ b/arch/arm/mach-omap2/omap_device.c
+@@ -0,0 +1,1278 @@
++/*
++ * omap_device implementation
++ *
++ * Copyright (C) 2009-2010 Nokia Corporation
++ * Paul Walmsley, Kevin Hilman
++ *
++ * Developed in collaboration with (alphabetical order): Benoit
++ * Cousson, Thara Gopinath, Tony Lindgren, Rajendra Nayak, Vikram
++ * Pandita, Sakari Poussa, Anand Sawant, Santosh Shilimkar, Richard
++ * Woodruff
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This code provides a consistent interface for OMAP device drivers
++ * to control power management and interconnect properties of their
++ * devices.
++ *
++ * In the medium- to long-term, this code should either be
++ * a) implemented via arch-specific pointers in platform_data
++ * or
++ * b) implemented as a proper omap_bus/omap_device in Linux, no more
++ *    platform_data func pointers
++ *
++ *
++ * Guidelines for usage by driver authors:
++ *
++ * 1. These functions are intended to be used by device drivers via
++ * function pointers in struct platform_data.  As an example,
++ * omap_device_enable() should be passed to the driver as
++ *
++ * struct foo_driver_platform_data {
++ * ...
++ *      int (*device_enable)(struct platform_device *pdev);
++ * ...
++ * }
++ *
++ * Note that the generic "device_enable" name is used, rather than
++ * "omap_device_enable".  This is so other architectures can pass in their
++ * own enable/disable functions here.
++ *
++ * This should be populated during device setup:
++ *
++ * ...
++ * pdata->device_enable = omap_device_enable;
++ * ...
++ *
++ * 2. Drivers should first check to ensure the function pointer is not null
++ * before calling it, as in:
++ *
++ * if (pdata->device_enable)
++ *     pdata->device_enable(pdev);
++ *
++ * This allows other architectures that don't use similar device_enable()/
++ * device_shutdown() functions to execute normally.
++ *
++ * ...
++ *
++ * Suggested usage by device drivers:
++ *
++ * During device initialization:
++ * device_enable()
++ *
++ * During device idle:
++ * (save remaining device context if necessary)
++ * device_idle();
++ *
++ * During device resume:
++ * device_enable();
++ * (restore context if necessary)
++ *
++ * During device shutdown:
++ * device_shutdown()
++ * (device must be reinitialized at this point to use it again)
++ *
++ */
++#undef DEBUG
++
++#include <linux/kernel.h>
++#include <linux/export.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/err.h>
++#include <linux/io.h>
++#include <linux/clk.h>
++#include <linux/clkdev.h>
++#include <linux/pm_runtime.h>
++#include <linux/of.h>
++#include <linux/notifier.h>
++
++#include "omap_device.h"
++#include <plat/omap_hwmod.h>
++#include <plat/clock.h>
++
++/* These parameters are passed to _omap_device_{de,}activate() */
++#define USE_WAKEUP_LAT			0
++#define IGNORE_WAKEUP_LAT		1
++
++static int omap_early_device_register(struct platform_device *pdev);
++
++static struct omap_device_pm_latency omap_default_latency[] = {
++	{
++		.deactivate_func = omap_device_idle_hwmods,
++		.activate_func   = omap_device_enable_hwmods,
++		.flags = OMAP_DEVICE_LATENCY_AUTO_ADJUST,
++	}
++};
++
++/* Private functions */
++
++/**
++ * _omap_device_activate - increase device readiness
++ * @od: struct omap_device *
++ * @ignore_lat: increase to latency target (0) or full readiness (1)?
++ *
++ * Increase readiness of omap_device @od (thus decreasing device
++ * wakeup latency, but consuming more power).  If @ignore_lat is
++ * IGNORE_WAKEUP_LAT, make the omap_device fully active.  Otherwise,
++ * if @ignore_lat is USE_WAKEUP_LAT, and the device's maximum wakeup
++ * latency is greater than the requested maximum wakeup latency, step
++ * backwards in the omap_device_pm_latency table to ensure the
++ * device's maximum wakeup latency is less than or equal to the
++ * requested maximum wakeup latency.  Returns 0.
++ */
++static int _omap_device_activate(struct omap_device *od, u8 ignore_lat)
++{
++	struct timespec a, b, c;
++
++	dev_dbg(&od->pdev->dev, "omap_device: activating\n");
++
++	while (od->pm_lat_level > 0) {
++		struct omap_device_pm_latency *odpl;
++		unsigned long long act_lat = 0;
++
++		od->pm_lat_level--;
++
++		odpl = od->pm_lats + od->pm_lat_level;
++
++		if (!ignore_lat &&
++		    (od->dev_wakeup_lat <= od->_dev_wakeup_lat_limit))
++			break;
++
++		read_persistent_clock(&a);
++
++		/* XXX check return code */
++		odpl->activate_func(od);
++
++		read_persistent_clock(&b);
++
++		c = timespec_sub(b, a);
++		act_lat = timespec_to_ns(&c);
++
++		dev_dbg(&od->pdev->dev,
++			"omap_device: pm_lat %d: activate: elapsed time %llu nsec\n",
++			od->pm_lat_level, act_lat);
++
++		if (act_lat > odpl->activate_lat) {
++			odpl->activate_lat_worst = act_lat;
++			if (odpl->flags & OMAP_DEVICE_LATENCY_AUTO_ADJUST) {
++				odpl->activate_lat = act_lat;
++				dev_dbg(&od->pdev->dev,
++					"new worst case activate latency %d: %llu\n",
++					od->pm_lat_level, act_lat);
++			} else
++				dev_warn(&od->pdev->dev,
++					 "activate latency %d higher than expected. (%llu > %d)\n",
++					 od->pm_lat_level, act_lat,
++					 odpl->activate_lat);
++		}
++
++		od->dev_wakeup_lat -= odpl->activate_lat;
++	}
++
++	return 0;
++}
++
++/**
++ * _omap_device_deactivate - decrease device readiness
++ * @od: struct omap_device *
++ * @ignore_lat: decrease to latency target (0) or full inactivity (1)?
++ *
++ * Decrease readiness of omap_device @od (thus increasing device
++ * wakeup latency, but conserving power).  If @ignore_lat is
++ * IGNORE_WAKEUP_LAT, make the omap_device fully inactive.  Otherwise,
++ * if @ignore_lat is USE_WAKEUP_LAT, and the device's maximum wakeup
++ * latency is less than the requested maximum wakeup latency, step
++ * forwards in the omap_device_pm_latency table to ensure the device's
++ * maximum wakeup latency is less than or equal to the requested
++ * maximum wakeup latency.  Returns 0.
++ */
++static int _omap_device_deactivate(struct omap_device *od, u8 ignore_lat)
++{
++	struct timespec a, b, c;
++
++	dev_dbg(&od->pdev->dev, "omap_device: deactivating\n");
++
++	while (od->pm_lat_level < od->pm_lats_cnt) {
++		struct omap_device_pm_latency *odpl;
++		unsigned long long deact_lat = 0;
++
++		odpl = od->pm_lats + od->pm_lat_level;
++
++		if (!ignore_lat &&
++		    ((od->dev_wakeup_lat + odpl->activate_lat) >
++		     od->_dev_wakeup_lat_limit))
++			break;
++
++		read_persistent_clock(&a);
++
++		/* XXX check return code */
++		odpl->deactivate_func(od);
++
++		read_persistent_clock(&b);
++
++		c = timespec_sub(b, a);
++		deact_lat = timespec_to_ns(&c);
++
++		dev_dbg(&od->pdev->dev,
++			"omap_device: pm_lat %d: deactivate: elapsed time %llu nsec\n",
++			od->pm_lat_level, deact_lat);
++
++		if (deact_lat > odpl->deactivate_lat) {
++			odpl->deactivate_lat_worst = deact_lat;
++			if (odpl->flags & OMAP_DEVICE_LATENCY_AUTO_ADJUST) {
++				odpl->deactivate_lat = deact_lat;
++				dev_dbg(&od->pdev->dev,
++					"new worst case deactivate latency %d: %llu\n",
++					od->pm_lat_level, deact_lat);
++			} else
++				dev_warn(&od->pdev->dev,
++					 "deactivate latency %d higher than expected. (%llu > %d)\n",
++					 od->pm_lat_level, deact_lat,
++					 odpl->deactivate_lat);
++		}
++
++		od->dev_wakeup_lat += odpl->activate_lat;
++
++		od->pm_lat_level++;
++	}
++
++	return 0;
++}
++
++static void _add_clkdev(struct omap_device *od, const char *clk_alias,
++		       const char *clk_name)
++{
++	struct clk *r;
++	struct clk_lookup *l;
++
++	if (!clk_alias || !clk_name)
++		return;
++
++	dev_dbg(&od->pdev->dev, "Creating %s -> %s\n", clk_alias, clk_name);
++
++	r = clk_get_sys(dev_name(&od->pdev->dev), clk_alias);
++	if (!IS_ERR(r)) {
++		dev_warn(&od->pdev->dev,
++			 "alias %s already exists\n", clk_alias);
++		clk_put(r);
++		return;
++	}
++
++	r = clk_get(NULL, clk_name);
++	if (IS_ERR(r)) {
++		dev_err(&od->pdev->dev,
++			"clk_get for %s failed\n", clk_name);
++		return;
++	}
++
++	l = clkdev_alloc(r, clk_alias, dev_name(&od->pdev->dev));
++	if (!l) {
++		dev_err(&od->pdev->dev,
++			"clkdev_alloc for %s failed\n", clk_alias);
++		return;
++	}
++
++	clkdev_add(l);
++}
++
++/**
++ * _add_hwmod_clocks_clkdev - Add clkdev entry for hwmod optional clocks
++ * and main clock
++ * @od: struct omap_device *od
++ * @oh: struct omap_hwmod *oh
++ *
++ * For the main clock and every optional clock present per hwmod per
++ * omap_device, this function adds an entry in the clkdev table of the
++ * form <dev-id=dev_name, con-id=role> if it does not exist already.
++ *
++ * The function is called from inside omap_device_build_ss(), after
++ * omap_device_register.
++ *
++ * This allows drivers to get a pointer to its optional clocks based on its role
++ * by calling clk_get(<dev*>, <role>).
++ * In the case of the main clock, a "fck" alias is used.
++ *
++ * No return value.
++ */
++static void _add_hwmod_clocks_clkdev(struct omap_device *od,
++				     struct omap_hwmod *oh)
++{
++	int i;
++
++	_add_clkdev(od, "fck", oh->main_clk);
++
++	for (i = 0; i < oh->opt_clks_cnt; i++)
++		_add_clkdev(od, oh->opt_clks[i].role, oh->opt_clks[i].clk);
++}
++
++
++/**
++ * omap_device_build_from_dt - build an omap_device with multiple hwmods
++ * @pdev_name: name of the platform_device driver to use
++ * @pdev_id: this platform_device's connection ID
++ * @oh: ptr to the single omap_hwmod that backs this omap_device
++ * @pdata: platform_data ptr to associate with the platform_device
++ * @pdata_len: amount of memory pointed to by @pdata
++ * @pm_lats: pointer to a omap_device_pm_latency array for this device
++ * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
++ * @is_early_device: should the device be registered as an early device or not
++ *
++ * Function for building an omap_device already registered from device-tree
++ *
++ * Returns 0 or PTR_ERR() on error.
++ */
++static int omap_device_build_from_dt(struct platform_device *pdev)
++{
++	struct omap_hwmod **hwmods;
++	struct omap_device *od;
++	struct omap_hwmod *oh;
++	struct device_node *node = pdev->dev.of_node;
++	const char *oh_name;
++	int oh_cnt, i, ret = 0;
++
++	oh_cnt = of_property_count_strings(node, "ti,hwmods");
++	if (!oh_cnt || IS_ERR_VALUE(oh_cnt)) {
++		dev_dbg(&pdev->dev, "No 'hwmods' to build omap_device\n");
++		return -ENODEV;
++	}
++
++	hwmods = kzalloc(sizeof(struct omap_hwmod *) * oh_cnt, GFP_KERNEL);
++	if (!hwmods) {
++		ret = -ENOMEM;
++		goto odbfd_exit;
++	}
++
++	for (i = 0; i < oh_cnt; i++) {
++		of_property_read_string_index(node, "ti,hwmods", i, &oh_name);
++		oh = omap_hwmod_lookup(oh_name);
++		if (!oh) {
++			dev_err(&pdev->dev, "Cannot lookup hwmod '%s'\n",
++				oh_name);
++			ret = -EINVAL;
++			goto odbfd_exit1;
++		}
++		hwmods[i] = oh;
++	}
++
++	od = omap_device_alloc(pdev, hwmods, oh_cnt, NULL, 0);
++	if (!od) {
++		dev_err(&pdev->dev, "Cannot allocate omap_device for :%s\n",
++			oh_name);
++		ret = PTR_ERR(od);
++		goto odbfd_exit1;
++	}
++
++	/* Fix up missing resource names */
++	for (i = 0; i < pdev->num_resources; i++) {
++		struct resource *r = &pdev->resource[i];
++
++		if (r->name == NULL)
++			r->name = dev_name(&pdev->dev);
++	}
++
++	if (of_get_property(node, "ti,no_idle_on_suspend", NULL))
++		omap_device_disable_idle_on_suspend(pdev);
++
++	pdev->dev.pm_domain = &omap_device_pm_domain;
++
++odbfd_exit1:
++	kfree(hwmods);
++odbfd_exit:
++	return ret;
++}
++
++static int _omap_device_notifier_call(struct notifier_block *nb,
++				      unsigned long event, void *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct omap_device *od;
++
++	switch (event) {
++	case BUS_NOTIFY_DEL_DEVICE:
++		if (pdev->archdata.od)
++			omap_device_delete(pdev->archdata.od);
++		break;
++	case BUS_NOTIFY_ADD_DEVICE:
++		if (pdev->dev.of_node)
++			omap_device_build_from_dt(pdev);
++		/* fall through */
++	default:
++		od = to_omap_device(pdev);
++		if (od)
++			od->_driver_status = event;
++	}
++
++	return NOTIFY_DONE;
++}
++
++
++/* Public functions for use by core code */
++
++/**
++ * omap_device_get_context_loss_count - get lost context count
++ * @od: struct omap_device *
++ *
++ * Using the primary hwmod, query the context loss count for this
++ * device.
++ *
++ * Callers should consider context for this device lost any time this
++ * function returns a value different than the value the caller got
++ * the last time it called this function.
++ *
++ * If any hwmods exist for the omap_device assoiated with @pdev,
++ * return the context loss counter for that hwmod, otherwise return
++ * zero.
++ */
++int omap_device_get_context_loss_count(struct platform_device *pdev)
++{
++	struct omap_device *od;
++	u32 ret = 0;
++
++	od = to_omap_device(pdev);
++
++	if (od->hwmods_cnt)
++		ret = omap_hwmod_get_context_loss_count(od->hwmods[0]);
++
++	return ret;
++}
++
++/**
++ * omap_device_count_resources - count number of struct resource entries needed
++ * @od: struct omap_device *
++ *
++ * Count the number of struct resource entries needed for this
++ * omap_device @od.  Used by omap_device_build_ss() to determine how
++ * much memory to allocate before calling
++ * omap_device_fill_resources().  Returns the count.
++ */
++static int omap_device_count_resources(struct omap_device *od)
++{
++	int c = 0;
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		c += omap_hwmod_count_resources(od->hwmods[i]);
++
++	pr_debug("omap_device: %s: counted %d total resources across %d hwmods\n",
++		 od->pdev->name, c, od->hwmods_cnt);
++
++	return c;
++}
++
++/**
++ * omap_device_fill_resources - fill in array of struct resource
++ * @od: struct omap_device *
++ * @res: pointer to an array of struct resource to be filled in
++ *
++ * Populate one or more empty struct resource pointed to by @res with
++ * the resource data for this omap_device @od.  Used by
++ * omap_device_build_ss() after calling omap_device_count_resources().
++ * Ideally this function would not be needed at all.  If omap_device
++ * replaces platform_device, then we can specify our own
++ * get_resource()/ get_irq()/etc functions that use the underlying
++ * omap_hwmod information.  Or if platform_device is extended to use
++ * subarchitecture-specific function pointers, the various
++ * platform_device functions can simply call omap_device internal
++ * functions to get device resources.  Hacking around the existing
++ * platform_device code wastes memory.  Returns 0.
++ */
++static int omap_device_fill_resources(struct omap_device *od,
++				      struct resource *res)
++{
++	int i, r;
++
++	for (i = 0; i < od->hwmods_cnt; i++) {
++		r = omap_hwmod_fill_resources(od->hwmods[i], res);
++		res += r;
++	}
++
++	return 0;
++}
++
++/**
++ * _od_fill_dma_resources - fill in array of struct resource with dma resources
++ * @od: struct omap_device *
++ * @res: pointer to an array of struct resource to be filled in
++ *
++ * Populate one or more empty struct resource pointed to by @res with
++ * the dma resource data for this omap_device @od.  Used by
++ * omap_device_alloc() after calling omap_device_count_resources().
++ *
++ * Ideally this function would not be needed at all.  If we have
++ * mechanism to get dma resources from DT.
++ *
++ * Returns 0.
++ */
++static int _od_fill_dma_resources(struct omap_device *od,
++				      struct resource *res)
++{
++	int i, r;
++
++	for (i = 0; i < od->hwmods_cnt; i++) {
++		r = omap_hwmod_fill_dma_resources(od->hwmods[i], res);
++		res += r;
++	}
++
++	return 0;
++}
++
++/**
++ * omap_device_alloc - allocate an omap_device
++ * @pdev: platform_device that will be included in this omap_device
++ * @oh: ptr to the single omap_hwmod that backs this omap_device
++ * @pdata: platform_data ptr to associate with the platform_device
++ * @pdata_len: amount of memory pointed to by @pdata
++ * @pm_lats: pointer to a omap_device_pm_latency array for this device
++ * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
++ *
++ * Convenience function for allocating an omap_device structure and filling
++ * hwmods, resources and pm_latency attributes.
++ *
++ * Returns an struct omap_device pointer or ERR_PTR() on error;
++ */
++struct omap_device *omap_device_alloc(struct platform_device *pdev,
++					struct omap_hwmod **ohs, int oh_cnt,
++					struct omap_device_pm_latency *pm_lats,
++					int pm_lats_cnt)
++{
++	int ret = -ENOMEM;
++	struct omap_device *od;
++	struct resource *res = NULL;
++	int i, res_count;
++	struct omap_hwmod **hwmods;
++
++	od = kzalloc(sizeof(struct omap_device), GFP_KERNEL);
++	if (!od) {
++		ret = -ENOMEM;
++		goto oda_exit1;
++	}
++	od->hwmods_cnt = oh_cnt;
++
++	hwmods = kmemdup(ohs, sizeof(struct omap_hwmod *) * oh_cnt, GFP_KERNEL);
++	if (!hwmods)
++		goto oda_exit2;
++
++	od->hwmods = hwmods;
++	od->pdev = pdev;
++
++	res_count = omap_device_count_resources(od);
++	/*
++	 * DT Boot:
++	 *   OF framework will construct the resource structure (currently
++	 *   does for MEM & IRQ resource) and we should respect/use these
++	 *   resources, killing hwmod dependency.
++	 *   If pdev->num_resources > 0, we assume that MEM & IRQ resources
++	 *   have been allocated by OF layer already (through DTB).
++	 *
++	 * Non-DT Boot:
++	 *   Here, pdev->num_resources = 0, and we should get all the
++	 *   resources from hwmod.
++	 *
++	 * TODO: Once DMA resource is available from OF layer, we should
++	 *   kill filling any resources from hwmod.
++	 */
++	if (res_count > pdev->num_resources) {
++		/* Allocate resources memory to account for new resources */
++		res = kzalloc(sizeof(struct resource) * res_count, GFP_KERNEL);
++		if (!res)
++			goto oda_exit3;
++
++		/*
++		 * If pdev->num_resources > 0, then assume that,
++		 * MEM and IRQ resources will only come from DT and only
++		 * fill DMA resource from hwmod layer.
++		 */
++		if (pdev->num_resources && pdev->resource) {
++			dev_dbg(&pdev->dev, "%s(): resources already allocated %d\n",
++				__func__, res_count);
++			memcpy(res, pdev->resource,
++			       sizeof(struct resource) * pdev->num_resources);
++			_od_fill_dma_resources(od, &res[pdev->num_resources]);
++		} else {
++			dev_dbg(&pdev->dev, "%s(): using resources from hwmod %d\n",
++				__func__, res_count);
++			omap_device_fill_resources(od, res);
++		}
++
++		ret = platform_device_add_resources(pdev, res, res_count);
++		kfree(res);
++
++		if (ret)
++			goto oda_exit3;
++	}
++
++	if (!pm_lats) {
++		pm_lats = omap_default_latency;
++		pm_lats_cnt = ARRAY_SIZE(omap_default_latency);
++	}
++
++	od->pm_lats_cnt = pm_lats_cnt;
++	od->pm_lats = kmemdup(pm_lats,
++			sizeof(struct omap_device_pm_latency) * pm_lats_cnt,
++			GFP_KERNEL);
++	if (!od->pm_lats)
++		goto oda_exit3;
++
++	pdev->archdata.od = od;
++
++	for (i = 0; i < oh_cnt; i++) {
++		hwmods[i]->od = od;
++		_add_hwmod_clocks_clkdev(od, hwmods[i]);
++	}
++
++	return od;
++
++oda_exit3:
++	kfree(hwmods);
++oda_exit2:
++	kfree(od);
++oda_exit1:
++	dev_err(&pdev->dev, "omap_device: build failed (%d)\n", ret);
++
++	return ERR_PTR(ret);
++}
++
++void omap_device_delete(struct omap_device *od)
++{
++	if (!od)
++		return;
++
++	od->pdev->archdata.od = NULL;
++	kfree(od->pm_lats);
++	kfree(od->hwmods);
++	kfree(od);
++}
++
++/**
++ * omap_device_build - build and register an omap_device with one omap_hwmod
++ * @pdev_name: name of the platform_device driver to use
++ * @pdev_id: this platform_device's connection ID
++ * @oh: ptr to the single omap_hwmod that backs this omap_device
++ * @pdata: platform_data ptr to associate with the platform_device
++ * @pdata_len: amount of memory pointed to by @pdata
++ * @pm_lats: pointer to a omap_device_pm_latency array for this device
++ * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
++ * @is_early_device: should the device be registered as an early device or not
++ *
++ * Convenience function for building and registering a single
++ * omap_device record, which in turn builds and registers a
++ * platform_device record.  See omap_device_build_ss() for more
++ * information.  Returns ERR_PTR(-EINVAL) if @oh is NULL; otherwise,
++ * passes along the return value of omap_device_build_ss().
++ */
++struct platform_device __init *omap_device_build(const char *pdev_name, int pdev_id,
++				      struct omap_hwmod *oh, void *pdata,
++				      int pdata_len,
++				      struct omap_device_pm_latency *pm_lats,
++				      int pm_lats_cnt, int is_early_device)
++{
++	struct omap_hwmod *ohs[] = { oh };
++
++	if (!oh)
++		return ERR_PTR(-EINVAL);
++
++	return omap_device_build_ss(pdev_name, pdev_id, ohs, 1, pdata,
++				    pdata_len, pm_lats, pm_lats_cnt,
++				    is_early_device);
++}
++
++/**
++ * omap_device_build_ss - build and register an omap_device with multiple hwmods
++ * @pdev_name: name of the platform_device driver to use
++ * @pdev_id: this platform_device's connection ID
++ * @oh: ptr to the single omap_hwmod that backs this omap_device
++ * @pdata: platform_data ptr to associate with the platform_device
++ * @pdata_len: amount of memory pointed to by @pdata
++ * @pm_lats: pointer to a omap_device_pm_latency array for this device
++ * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
++ * @is_early_device: should the device be registered as an early device or not
++ *
++ * Convenience function for building and registering an omap_device
++ * subsystem record.  Subsystem records consist of multiple
++ * omap_hwmods.  This function in turn builds and registers a
++ * platform_device record.  Returns an ERR_PTR() on error, or passes
++ * along the return value of omap_device_register().
++ */
++struct platform_device __init *omap_device_build_ss(const char *pdev_name, int pdev_id,
++					 struct omap_hwmod **ohs, int oh_cnt,
++					 void *pdata, int pdata_len,
++					 struct omap_device_pm_latency *pm_lats,
++					 int pm_lats_cnt, int is_early_device)
++{
++	int ret = -ENOMEM;
++	struct platform_device *pdev;
++	struct omap_device *od;
++
++	if (!ohs || oh_cnt == 0 || !pdev_name)
++		return ERR_PTR(-EINVAL);
++
++	if (!pdata && pdata_len > 0)
++		return ERR_PTR(-EINVAL);
++
++	pdev = platform_device_alloc(pdev_name, pdev_id);
++	if (!pdev) {
++		ret = -ENOMEM;
++		goto odbs_exit;
++	}
++
++	/* Set the dev_name early to allow dev_xxx in omap_device_alloc */
++	if (pdev->id != -1)
++		dev_set_name(&pdev->dev, "%s.%d", pdev->name,  pdev->id);
++	else
++		dev_set_name(&pdev->dev, "%s", pdev->name);
++
++	od = omap_device_alloc(pdev, ohs, oh_cnt, pm_lats, pm_lats_cnt);
++	if (IS_ERR(od))
++		goto odbs_exit1;
++
++	ret = platform_device_add_data(pdev, pdata, pdata_len);
++	if (ret)
++		goto odbs_exit2;
++
++	if (is_early_device)
++		ret = omap_early_device_register(pdev);
++	else
++		ret = omap_device_register(pdev);
++	if (ret)
++		goto odbs_exit2;
++
++	return pdev;
++
++odbs_exit2:
++	omap_device_delete(od);
++odbs_exit1:
++	platform_device_put(pdev);
++odbs_exit:
++
++	pr_err("omap_device: %s: build failed (%d)\n", pdev_name, ret);
++
++	return ERR_PTR(ret);
++}
++
++/**
++ * omap_early_device_register - register an omap_device as an early platform
++ * device.
++ * @od: struct omap_device * to register
++ *
++ * Register the omap_device structure.  This currently just calls
++ * platform_early_add_device() on the underlying platform_device.
++ * Returns 0 by default.
++ */
++static int __init omap_early_device_register(struct platform_device *pdev)
++{
++	struct platform_device *devices[1];
++
++	devices[0] = pdev;
++	early_platform_add_devices(devices, 1);
++	return 0;
++}
++
++#ifdef CONFIG_PM_RUNTIME
++static int _od_runtime_suspend(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	int ret;
++
++	ret = pm_generic_runtime_suspend(dev);
++
++	if (!ret)
++		omap_device_idle(pdev);
++
++	return ret;
++}
++
++static int _od_runtime_idle(struct device *dev)
++{
++	return pm_generic_runtime_idle(dev);
++}
++
++static int _od_runtime_resume(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++
++	omap_device_enable(pdev);
++
++	return pm_generic_runtime_resume(dev);
++}
++#endif
++
++#ifdef CONFIG_SUSPEND
++static int _od_suspend_noirq(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct omap_device *od = to_omap_device(pdev);
++	int ret;
++
++	/* Don't attempt late suspend on a driver that is not bound */
++	if (od->_driver_status != BUS_NOTIFY_BOUND_DRIVER)
++		return 0;
++
++	ret = pm_generic_suspend_noirq(dev);
++
++	if (!ret && !pm_runtime_status_suspended(dev)) {
++		if (pm_generic_runtime_suspend(dev) == 0) {
++			if (!(od->flags & OMAP_DEVICE_NO_IDLE_ON_SUSPEND))
++				omap_device_idle(pdev);
++			od->flags |= OMAP_DEVICE_SUSPENDED;
++		}
++	}
++
++	return ret;
++}
++
++static int _od_resume_noirq(struct device *dev)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct omap_device *od = to_omap_device(pdev);
++
++	if ((od->flags & OMAP_DEVICE_SUSPENDED) &&
++	    !pm_runtime_status_suspended(dev)) {
++		od->flags &= ~OMAP_DEVICE_SUSPENDED;
++		if (!(od->flags & OMAP_DEVICE_NO_IDLE_ON_SUSPEND))
++			omap_device_enable(pdev);
++		pm_generic_runtime_resume(dev);
++	}
++
++	return pm_generic_resume_noirq(dev);
++}
++#else
++#define _od_suspend_noirq NULL
++#define _od_resume_noirq NULL
++#endif
++
++struct dev_pm_domain omap_device_pm_domain = {
++	.ops = {
++		SET_RUNTIME_PM_OPS(_od_runtime_suspend, _od_runtime_resume,
++				   _od_runtime_idle)
++		USE_PLATFORM_PM_SLEEP_OPS
++		.suspend_noirq = _od_suspend_noirq,
++		.resume_noirq = _od_resume_noirq,
++	}
++};
++
++/**
++ * omap_device_register - register an omap_device with one omap_hwmod
++ * @od: struct omap_device * to register
++ *
++ * Register the omap_device structure.  This currently just calls
++ * platform_device_register() on the underlying platform_device.
++ * Returns the return value of platform_device_register().
++ */
++int omap_device_register(struct platform_device *pdev)
++{
++	pr_debug("omap_device: %s: registering\n", pdev->name);
++
++	pdev->dev.pm_domain = &omap_device_pm_domain;
++	return platform_device_add(pdev);
++}
++
++
++/* Public functions for use by device drivers through struct platform_data */
++
++/**
++ * omap_device_enable - fully activate an omap_device
++ * @od: struct omap_device * to activate
++ *
++ * Do whatever is necessary for the hwmods underlying omap_device @od
++ * to be accessible and ready to operate.  This generally involves
++ * enabling clocks, setting SYSCONFIG registers; and in the future may
++ * involve remuxing pins.  Device drivers should call this function
++ * (through platform_data function pointers) where they would normally
++ * enable clocks, etc.  Returns -EINVAL if called when the omap_device
++ * is already enabled, or passes along the return value of
++ * _omap_device_activate().
++ */
++int omap_device_enable(struct platform_device *pdev)
++{
++	int ret;
++	struct omap_device *od;
++
++	od = to_omap_device(pdev);
++
++	if (od->_state == OMAP_DEVICE_STATE_ENABLED) {
++		dev_warn(&pdev->dev,
++			 "omap_device: %s() called from invalid state %d\n",
++			 __func__, od->_state);
++		return -EINVAL;
++	}
++
++	/* Enable everything if we're enabling this device from scratch */
++	if (od->_state == OMAP_DEVICE_STATE_UNKNOWN)
++		od->pm_lat_level = od->pm_lats_cnt;
++
++	ret = _omap_device_activate(od, IGNORE_WAKEUP_LAT);
++
++	od->dev_wakeup_lat = 0;
++	od->_dev_wakeup_lat_limit = UINT_MAX;
++	od->_state = OMAP_DEVICE_STATE_ENABLED;
++
++	return ret;
++}
++
++/**
++ * omap_device_idle - idle an omap_device
++ * @od: struct omap_device * to idle
++ *
++ * Idle omap_device @od by calling as many .deactivate_func() entries
++ * in the omap_device's pm_lats table as is possible without exceeding
++ * the device's maximum wakeup latency limit, pm_lat_limit.  Device
++ * drivers should call this function (through platform_data function
++ * pointers) where they would normally disable clocks after operations
++ * complete, etc..  Returns -EINVAL if the omap_device is not
++ * currently enabled, or passes along the return value of
++ * _omap_device_deactivate().
++ */
++int omap_device_idle(struct platform_device *pdev)
++{
++	int ret;
++	struct omap_device *od;
++
++	od = to_omap_device(pdev);
++
++	if (od->_state != OMAP_DEVICE_STATE_ENABLED) {
++		dev_warn(&pdev->dev,
++			 "omap_device: %s() called from invalid state %d\n",
++			 __func__, od->_state);
++		return -EINVAL;
++	}
++
++	ret = _omap_device_deactivate(od, USE_WAKEUP_LAT);
++
++	od->_state = OMAP_DEVICE_STATE_IDLE;
++
++	return ret;
++}
++
++/**
++ * omap_device_shutdown - shut down an omap_device
++ * @od: struct omap_device * to shut down
++ *
++ * Shut down omap_device @od by calling all .deactivate_func() entries
++ * in the omap_device's pm_lats table and then shutting down all of
++ * the underlying omap_hwmods.  Used when a device is being "removed"
++ * or a device driver is being unloaded.  Returns -EINVAL if the
++ * omap_device is not currently enabled or idle, or passes along the
++ * return value of _omap_device_deactivate().
++ */
++int omap_device_shutdown(struct platform_device *pdev)
++{
++	int ret, i;
++	struct omap_device *od;
++
++	od = to_omap_device(pdev);
++
++	if (od->_state != OMAP_DEVICE_STATE_ENABLED &&
++	    od->_state != OMAP_DEVICE_STATE_IDLE) {
++		dev_warn(&pdev->dev,
++			 "omap_device: %s() called from invalid state %d\n",
++			 __func__, od->_state);
++		return -EINVAL;
++	}
++
++	ret = _omap_device_deactivate(od, IGNORE_WAKEUP_LAT);
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		omap_hwmod_shutdown(od->hwmods[i]);
++
++	od->_state = OMAP_DEVICE_STATE_SHUTDOWN;
++
++	return ret;
++}
++
++/**
++ * omap_device_assert_hardreset - set a device's hardreset line
++ * @pdev: struct platform_device * to reset
++ * @name: const char * name of the reset line
++ *
++ * Set the hardreset line identified by @name on the IP blocks
++ * associated with the hwmods backing the platform_device @pdev.  All
++ * of the hwmods associated with @pdev must have the same hardreset
++ * line linked to them for this to work.  Passes along the return value
++ * of omap_hwmod_assert_hardreset() in the event of any failure, or
++ * returns 0 upon success.
++ */
++int omap_device_assert_hardreset(struct platform_device *pdev, const char *name)
++{
++	struct omap_device *od = to_omap_device(pdev);
++	int ret = 0;
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++) {
++		ret = omap_hwmod_assert_hardreset(od->hwmods[i], name);
++		if (ret)
++			break;
++	}
++
++	return ret;
++}
++
++/**
++ * omap_device_deassert_hardreset - release a device's hardreset line
++ * @pdev: struct platform_device * to reset
++ * @name: const char * name of the reset line
++ *
++ * Release the hardreset line identified by @name on the IP blocks
++ * associated with the hwmods backing the platform_device @pdev.  All
++ * of the hwmods associated with @pdev must have the same hardreset
++ * line linked to them for this to work.  Passes along the return
++ * value of omap_hwmod_deassert_hardreset() in the event of any
++ * failure, or returns 0 upon success.
++ */
++int omap_device_deassert_hardreset(struct platform_device *pdev,
++				   const char *name)
++{
++	struct omap_device *od = to_omap_device(pdev);
++	int ret = 0;
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++) {
++		ret = omap_hwmod_deassert_hardreset(od->hwmods[i], name);
++		if (ret)
++			break;
++	}
++
++	return ret;
++}
++
++/**
++ * omap_device_align_pm_lat - activate/deactivate device to match wakeup lat lim
++ * @od: struct omap_device *
++ *
++ * When a device's maximum wakeup latency limit changes, call some of
++ * the .activate_func or .deactivate_func function pointers in the
++ * omap_device's pm_lats array to ensure that the device's maximum
++ * wakeup latency is less than or equal to the new latency limit.
++ * Intended to be called by OMAP PM code whenever a device's maximum
++ * wakeup latency limit changes (e.g., via
++ * omap_pm_set_dev_wakeup_lat()).  Returns 0 if nothing needs to be
++ * done (e.g., if the omap_device is not currently idle, or if the
++ * wakeup latency is already current with the new limit) or passes
++ * along the return value of _omap_device_deactivate() or
++ * _omap_device_activate().
++ */
++int omap_device_align_pm_lat(struct platform_device *pdev,
++			     u32 new_wakeup_lat_limit)
++{
++	int ret = -EINVAL;
++	struct omap_device *od;
++
++	od = to_omap_device(pdev);
++
++	if (new_wakeup_lat_limit == od->dev_wakeup_lat)
++		return 0;
++
++	od->_dev_wakeup_lat_limit = new_wakeup_lat_limit;
++
++	if (od->_state != OMAP_DEVICE_STATE_IDLE)
++		return 0;
++	else if (new_wakeup_lat_limit > od->dev_wakeup_lat)
++		ret = _omap_device_deactivate(od, USE_WAKEUP_LAT);
++	else if (new_wakeup_lat_limit < od->dev_wakeup_lat)
++		ret = _omap_device_activate(od, USE_WAKEUP_LAT);
++
++	return ret;
++}
++
++/**
++ * omap_device_get_pwrdm - return the powerdomain * associated with @od
++ * @od: struct omap_device *
++ *
++ * Return the powerdomain associated with the first underlying
++ * omap_hwmod for this omap_device.  Intended for use by core OMAP PM
++ * code.  Returns NULL on error or a struct powerdomain * upon
++ * success.
++ */
++struct powerdomain *omap_device_get_pwrdm(struct omap_device *od)
++{
++	/*
++	 * XXX Assumes that all omap_hwmod powerdomains are identical.
++	 * This may not necessarily be true.  There should be a sanity
++	 * check in here to WARN() if any difference appears.
++	 */
++	if (!od->hwmods_cnt)
++		return NULL;
++
++	return omap_hwmod_get_pwrdm(od->hwmods[0]);
++}
++
++/**
++ * omap_device_get_mpu_rt_va - return the MPU's virtual addr for the hwmod base
++ * @od: struct omap_device *
++ *
++ * Return the MPU's virtual address for the base of the hwmod, from
++ * the ioremap() that the hwmod code does.  Only valid if there is one
++ * hwmod associated with this device.  Returns NULL if there are zero
++ * or more than one hwmods associated with this omap_device;
++ * otherwise, passes along the return value from
++ * omap_hwmod_get_mpu_rt_va().
++ */
++void __iomem *omap_device_get_rt_va(struct omap_device *od)
++{
++	if (od->hwmods_cnt != 1)
++		return NULL;
++
++	return omap_hwmod_get_mpu_rt_va(od->hwmods[0]);
++}
++
++/**
++ * omap_device_get_by_hwmod_name() - convert a hwmod name to
++ * device pointer.
++ * @oh_name: name of the hwmod device
++ *
++ * Returns back a struct device * pointer associated with a hwmod
++ * device represented by a hwmod_name
++ */
++struct device *omap_device_get_by_hwmod_name(const char *oh_name)
++{
++	struct omap_hwmod *oh;
++
++	if (!oh_name) {
++		WARN(1, "%s: no hwmod name!\n", __func__);
++		return ERR_PTR(-EINVAL);
++	}
++
++	oh = omap_hwmod_lookup(oh_name);
++	if (IS_ERR_OR_NULL(oh)) {
++		WARN(1, "%s: no hwmod for %s\n", __func__,
++			oh_name);
++		return ERR_PTR(oh ? PTR_ERR(oh) : -ENODEV);
++	}
++	if (IS_ERR_OR_NULL(oh->od)) {
++		WARN(1, "%s: no omap_device for %s\n", __func__,
++			oh_name);
++		return ERR_PTR(oh->od ? PTR_ERR(oh->od) : -ENODEV);
++	}
++
++	if (IS_ERR_OR_NULL(oh->od->pdev))
++		return ERR_PTR(oh->od->pdev ? PTR_ERR(oh->od->pdev) : -ENODEV);
++
++	return &oh->od->pdev->dev;
++}
++EXPORT_SYMBOL(omap_device_get_by_hwmod_name);
++
++/*
++ * Public functions intended for use in omap_device_pm_latency
++ * .activate_func and .deactivate_func function pointers
++ */
++
++/**
++ * omap_device_enable_hwmods - call omap_hwmod_enable() on all hwmods
++ * @od: struct omap_device *od
++ *
++ * Enable all underlying hwmods.  Returns 0.
++ */
++int omap_device_enable_hwmods(struct omap_device *od)
++{
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		omap_hwmod_enable(od->hwmods[i]);
++
++	/* XXX pass along return value here? */
++	return 0;
++}
++
++/**
++ * omap_device_idle_hwmods - call omap_hwmod_idle() on all hwmods
++ * @od: struct omap_device *od
++ *
++ * Idle all underlying hwmods.  Returns 0.
++ */
++int omap_device_idle_hwmods(struct omap_device *od)
++{
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		omap_hwmod_idle(od->hwmods[i]);
++
++	/* XXX pass along return value here? */
++	return 0;
++}
++
++/**
++ * omap_device_disable_clocks - disable all main and interface clocks
++ * @od: struct omap_device *od
++ *
++ * Disable the main functional clock and interface clock for all of the
++ * omap_hwmods associated with the omap_device.  Returns 0.
++ */
++int omap_device_disable_clocks(struct omap_device *od)
++{
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		omap_hwmod_disable_clocks(od->hwmods[i]);
++
++	/* XXX pass along return value here? */
++	return 0;
++}
++
++/**
++ * omap_device_enable_clocks - enable all main and interface clocks
++ * @od: struct omap_device *od
++ *
++ * Enable the main functional clock and interface clock for all of the
++ * omap_hwmods associated with the omap_device.  Returns 0.
++ */
++int omap_device_enable_clocks(struct omap_device *od)
++{
++	int i;
++
++	for (i = 0; i < od->hwmods_cnt; i++)
++		omap_hwmod_enable_clocks(od->hwmods[i]);
++
++	/* XXX pass along return value here? */
++	return 0;
++}
++
++static struct notifier_block platform_nb = {
++	.notifier_call = _omap_device_notifier_call,
++};
++
++static int __init omap_device_init(void)
++{
++	bus_register_notifier(&platform_bus_type, &platform_nb);
++	return 0;
++}
++core_initcall(omap_device_init);
++
++/**
++ * omap_device_late_idle - idle devices without drivers
++ * @dev: struct device * associated with omap_device
++ * @data: unused
++ *
++ * Check the driver bound status of this device, and idle it
++ * if there is no driver attached.
++ */
++static int __init omap_device_late_idle(struct device *dev, void *data)
++{
++	struct platform_device *pdev = to_platform_device(dev);
++	struct omap_device *od = to_omap_device(pdev);
++
++	if (!od)
++		return 0;
++
++	/*
++	 * If omap_device state is enabled, but has no driver bound,
++	 * idle it.
++	 */
++	if (od->_driver_status != BUS_NOTIFY_BOUND_DRIVER) {
++		if (od->_state == OMAP_DEVICE_STATE_ENABLED) {
++			dev_warn(dev, "%s: enabled but no driver.  Idling\n",
++				 __func__);
++			omap_device_idle(pdev);
++		}
++	}
++
++	return 0;
++}
++
++static int __init omap_device_late_init(void)
++{
++	bus_for_each_dev(&platform_bus_type, NULL, NULL, omap_device_late_idle);
++	return 0;
++}
++late_initcall(omap_device_late_init);
+diff --git a/arch/arm/mach-omap2/omap_device.h b/arch/arm/mach-omap2/omap_device.h
+new file mode 100644
+index 0000000..106f506
+--- /dev/null
++++ b/arch/arm/mach-omap2/omap_device.h
+@@ -0,0 +1,176 @@
++/*
++ * omap_device headers
++ *
++ * Copyright (C) 2009 Nokia Corporation
++ * Paul Walmsley
++ *
++ * Developed in collaboration with (alphabetical order): Benoit
++ * Cousson, Kevin Hilman, Tony Lindgren, Rajendra Nayak, Vikram
++ * Pandita, Sakari Poussa, Anand Sawant, Santosh Shilimkar, Richard
++ * Woodruff
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * Eventually this type of functionality should either be
++ * a) implemented via arch-specific pointers in platform_device
++ * or
++ * b) implemented as a proper omap_bus/omap_device in Linux, no more
++ *    platform_device
++ *
++ * omap_device differs from omap_hwmod in that it includes external
++ * (e.g., board- and system-level) integration details.  omap_hwmod
++ * stores hardware data that is invariant for a given OMAP chip.
++ *
++ * To do:
++ * - GPIO integration
++ * - regulator integration
++ *
++ */
++#ifndef __ARCH_ARM_PLAT_OMAP_INCLUDE_MACH_OMAP_DEVICE_H
++#define __ARCH_ARM_PLAT_OMAP_INCLUDE_MACH_OMAP_DEVICE_H
++
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++
++#include <plat/omap_hwmod.h>
++
++extern struct dev_pm_domain omap_device_pm_domain;
++
++/* omap_device._state values */
++#define OMAP_DEVICE_STATE_UNKNOWN	0
++#define OMAP_DEVICE_STATE_ENABLED	1
++#define OMAP_DEVICE_STATE_IDLE		2
++#define OMAP_DEVICE_STATE_SHUTDOWN	3
++
++/* omap_device.flags values */
++#define OMAP_DEVICE_SUSPENDED BIT(0)
++#define OMAP_DEVICE_NO_IDLE_ON_SUSPEND BIT(1)
++
++/**
++ * struct omap_device - omap_device wrapper for platform_devices
++ * @pdev: platform_device
++ * @hwmods: (one .. many per omap_device)
++ * @hwmods_cnt: ARRAY_SIZE() of @hwmods
++ * @pm_lats: ptr to an omap_device_pm_latency table
++ * @pm_lats_cnt: ARRAY_SIZE() of what is passed to @pm_lats
++ * @pm_lat_level: array index of the last odpl entry executed - -1 if never
++ * @dev_wakeup_lat: dev wakeup latency in nanoseconds
++ * @_dev_wakeup_lat_limit: dev wakeup latency limit in nsec - set by OMAP PM
++ * @_state: one of OMAP_DEVICE_STATE_* (see above)
++ * @flags: device flags
++ * @_driver_status: one of BUS_NOTIFY_*_DRIVER from <linux/device.h>
++ *
++ * Integrates omap_hwmod data into Linux platform_device.
++ *
++ * Field names beginning with underscores are for the internal use of
++ * the omap_device code.
++ *
++ */
++struct omap_device {
++	struct platform_device		*pdev;
++	struct omap_hwmod		**hwmods;
++	struct omap_device_pm_latency	*pm_lats;
++	u32				dev_wakeup_lat;
++	u32				_dev_wakeup_lat_limit;
++	unsigned long			_driver_status;
++	u8				pm_lats_cnt;
++	s8				pm_lat_level;
++	u8				hwmods_cnt;
++	u8				_state;
++	u8                              flags;
++};
++
++/* Device driver interface (call via platform_data fn ptrs) */
++
++int omap_device_enable(struct platform_device *pdev);
++int omap_device_idle(struct platform_device *pdev);
++int omap_device_shutdown(struct platform_device *pdev);
++
++/* Core code interface */
++
++struct platform_device *omap_device_build(const char *pdev_name, int pdev_id,
++				      struct omap_hwmod *oh, void *pdata,
++				      int pdata_len,
++				      struct omap_device_pm_latency *pm_lats,
++				      int pm_lats_cnt, int is_early_device);
++
++struct platform_device *omap_device_build_ss(const char *pdev_name, int pdev_id,
++					 struct omap_hwmod **oh, int oh_cnt,
++					 void *pdata, int pdata_len,
++					 struct omap_device_pm_latency *pm_lats,
++					 int pm_lats_cnt, int is_early_device);
++
++struct omap_device *omap_device_alloc(struct platform_device *pdev,
++				      struct omap_hwmod **ohs, int oh_cnt,
++				      struct omap_device_pm_latency *pm_lats,
++				      int pm_lats_cnt);
++void omap_device_delete(struct omap_device *od);
++int omap_device_register(struct platform_device *pdev);
++
++void __iomem *omap_device_get_rt_va(struct omap_device *od);
++struct device *omap_device_get_by_hwmod_name(const char *oh_name);
++
++/* OMAP PM interface */
++int omap_device_align_pm_lat(struct platform_device *pdev,
++			     u32 new_wakeup_lat_limit);
++struct powerdomain *omap_device_get_pwrdm(struct omap_device *od);
++int omap_device_get_context_loss_count(struct platform_device *pdev);
++
++/* Other */
++
++int omap_device_assert_hardreset(struct platform_device *pdev,
++				 const char *name);
++int omap_device_deassert_hardreset(struct platform_device *pdev,
++				 const char *name);
++int omap_device_idle_hwmods(struct omap_device *od);
++int omap_device_enable_hwmods(struct omap_device *od);
++
++int omap_device_disable_clocks(struct omap_device *od);
++int omap_device_enable_clocks(struct omap_device *od);
++
++/*
++ * Entries should be kept in latency order ascending
++ *
++ * deact_lat is the maximum number of microseconds required to complete
++ * deactivate_func() at the device's slowest OPP.
++ *
++ * act_lat is the maximum number of microseconds required to complete
++ * activate_func() at the device's slowest OPP.
++ *
++ * This will result in some suboptimal power management decisions at fast
++ * OPPs, but avoids having to recompute all device power management decisions
++ * if the system shifts from a fast OPP to a slow OPP (in order to meet
++ * latency requirements).
++ *
++ * XXX should deactivate_func/activate_func() take platform_device pointers
++ * rather than omap_device pointers?
++ */
++struct omap_device_pm_latency {
++	u32 deactivate_lat;
++	u32 deactivate_lat_worst;
++	int (*deactivate_func)(struct omap_device *od);
++	u32 activate_lat;
++	u32 activate_lat_worst;
++	int (*activate_func)(struct omap_device *od);
++	u32 flags;
++};
++
++#define OMAP_DEVICE_LATENCY_AUTO_ADJUST BIT(1)
++
++/* Get omap_device pointer from platform_device pointer */
++static inline struct omap_device *to_omap_device(struct platform_device *pdev)
++{
++	return pdev ? pdev->archdata.od : NULL;
++}
++
++static inline
++void omap_device_disable_idle_on_suspend(struct platform_device *pdev)
++{
++	struct omap_device *od = to_omap_device(pdev);
++
++	od->flags |= OMAP_DEVICE_NO_IDLE_ON_SUSPEND;
++}
++
++#endif
+diff --git a/arch/arm/mach-omap2/opp.c b/arch/arm/mach-omap2/opp.c
+index 58e16ae..bd41d59 100644
+--- a/arch/arm/mach-omap2/opp.c
++++ b/arch/arm/mach-omap2/opp.c
+@@ -20,7 +20,7 @@
+ #include <linux/opp.h>
+ #include <linux/cpu.h>
+ 
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "omap_opp_data.h"
+ 
+diff --git a/arch/arm/mach-omap2/pm.c b/arch/arm/mach-omap2/pm.c
+index ea61c32..4f749a1 100644
+--- a/arch/arm/mach-omap2/pm.c
++++ b/arch/arm/mach-omap2/pm.c
+@@ -21,7 +21,7 @@
+ #include <asm/system_misc.h>
+ 
+ #include <plat/omap-pm.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include "common.h"
+ 
+ #include "prcm-common.h"
+diff --git a/arch/arm/mach-omap2/pmu.c b/arch/arm/mach-omap2/pmu.c
+index 2a79176..4b3230f 100644
+--- a/arch/arm/mach-omap2/pmu.c
++++ b/arch/arm/mach-omap2/pmu.c
+@@ -16,7 +16,7 @@
+ #include <asm/pmu.h>
+ 
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ static char *omap2_pmu_oh_names[] = {"mpu"};
+ static char *omap3_pmu_oh_names[] = {"mpu", "debugss"};
+diff --git a/arch/arm/mach-omap2/serial.c b/arch/arm/mach-omap2/serial.c
+index 67c4196..5df6dd9 100644
+--- a/arch/arm/mach-omap2/serial.c
++++ b/arch/arm/mach-omap2/serial.c
+@@ -31,7 +31,7 @@
+ #include "common.h"
+ #include <plat-omap/dma-omap.h>
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include <plat/omap-pm.h>
+ #include <plat/serial.h>
+ 
+diff --git a/arch/arm/mach-omap2/sr_device.c b/arch/arm/mach-omap2/sr_device.c
+index f8217a5..1536aa8f 100644
+--- a/arch/arm/mach-omap2/sr_device.c
++++ b/arch/arm/mach-omap2/sr_device.c
+@@ -23,7 +23,7 @@
+ #include <linux/slab.h>
+ #include <linux/io.h>
+ 
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "voltage.h"
+ #include "control.h"
+diff --git a/arch/arm/mach-omap2/timer.c b/arch/arm/mach-omap2/timer.c
+index 44f9aa7..a2ea2f3 100644
+--- a/arch/arm/mach-omap2/timer.c
++++ b/arch/arm/mach-omap2/timer.c
+@@ -44,7 +44,7 @@
+ 
+ #include <asm/arch_timer.h>
+ #include <plat/omap_hwmod.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ #include <plat/dmtimer.h>
+ #include <plat/omap-pm.h>
+ 
+diff --git a/arch/arm/mach-omap2/usb-host.c b/arch/arm/mach-omap2/usb-host.c
+index 3c43449..84d8228 100644
+--- a/arch/arm/mach-omap2/usb-host.c
++++ b/arch/arm/mach-omap2/usb-host.c
+@@ -26,7 +26,7 @@
+ #include <asm/io.h>
+ 
+ #include <plat/usb.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "mux.h"
+ 
+diff --git a/arch/arm/mach-omap2/usb-musb.c b/arch/arm/mach-omap2/usb-musb.c
+index 51da21c..24f300a 100644
+--- a/arch/arm/mach-omap2/usb-musb.c
++++ b/arch/arm/mach-omap2/usb-musb.c
+@@ -26,7 +26,7 @@
+ #include <linux/usb/musb.h>
+ 
+ #include <plat/usb.h>
+-#include <plat/omap_device.h>
++#include "omap_device.h"
+ 
+ #include "am35xx.h"
+ 
+diff --git a/arch/arm/plat-omap/Makefile b/arch/arm/plat-omap/Makefile
+index dacaee0..9c81cf5 100644
+--- a/arch/arm/plat-omap/Makefile
++++ b/arch/arm/plat-omap/Makefile
+@@ -9,7 +9,6 @@ obj-n :=
+ obj-  :=
+ 
+ # omap_device support (OMAP2+ only at the moment)
+-obj-$(CONFIG_ARCH_OMAP2PLUS) += omap_device.o
+ 
+ obj-$(CONFIG_OMAP_DM_TIMER) += dmtimer.o
+ obj-$(CONFIG_OMAP_DEBUG_DEVICES) += debug-devices.o
+diff --git a/arch/arm/plat-omap/include/plat/omap_device.h b/arch/arm/plat-omap/include/plat/omap_device.h
+deleted file mode 100644
+index 106f506..0000000
+--- a/arch/arm/plat-omap/include/plat/omap_device.h
++++ /dev/null
+@@ -1,176 +0,0 @@
+-/*
+- * omap_device headers
+- *
+- * Copyright (C) 2009 Nokia Corporation
+- * Paul Walmsley
+- *
+- * Developed in collaboration with (alphabetical order): Benoit
+- * Cousson, Kevin Hilman, Tony Lindgren, Rajendra Nayak, Vikram
+- * Pandita, Sakari Poussa, Anand Sawant, Santosh Shilimkar, Richard
+- * Woodruff
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * Eventually this type of functionality should either be
+- * a) implemented via arch-specific pointers in platform_device
+- * or
+- * b) implemented as a proper omap_bus/omap_device in Linux, no more
+- *    platform_device
+- *
+- * omap_device differs from omap_hwmod in that it includes external
+- * (e.g., board- and system-level) integration details.  omap_hwmod
+- * stores hardware data that is invariant for a given OMAP chip.
+- *
+- * To do:
+- * - GPIO integration
+- * - regulator integration
+- *
+- */
+-#ifndef __ARCH_ARM_PLAT_OMAP_INCLUDE_MACH_OMAP_DEVICE_H
+-#define __ARCH_ARM_PLAT_OMAP_INCLUDE_MACH_OMAP_DEVICE_H
+-
+-#include <linux/kernel.h>
+-#include <linux/platform_device.h>
+-
+-#include <plat/omap_hwmod.h>
+-
+-extern struct dev_pm_domain omap_device_pm_domain;
+-
+-/* omap_device._state values */
+-#define OMAP_DEVICE_STATE_UNKNOWN	0
+-#define OMAP_DEVICE_STATE_ENABLED	1
+-#define OMAP_DEVICE_STATE_IDLE		2
+-#define OMAP_DEVICE_STATE_SHUTDOWN	3
+-
+-/* omap_device.flags values */
+-#define OMAP_DEVICE_SUSPENDED BIT(0)
+-#define OMAP_DEVICE_NO_IDLE_ON_SUSPEND BIT(1)
+-
+-/**
+- * struct omap_device - omap_device wrapper for platform_devices
+- * @pdev: platform_device
+- * @hwmods: (one .. many per omap_device)
+- * @hwmods_cnt: ARRAY_SIZE() of @hwmods
+- * @pm_lats: ptr to an omap_device_pm_latency table
+- * @pm_lats_cnt: ARRAY_SIZE() of what is passed to @pm_lats
+- * @pm_lat_level: array index of the last odpl entry executed - -1 if never
+- * @dev_wakeup_lat: dev wakeup latency in nanoseconds
+- * @_dev_wakeup_lat_limit: dev wakeup latency limit in nsec - set by OMAP PM
+- * @_state: one of OMAP_DEVICE_STATE_* (see above)
+- * @flags: device flags
+- * @_driver_status: one of BUS_NOTIFY_*_DRIVER from <linux/device.h>
+- *
+- * Integrates omap_hwmod data into Linux platform_device.
+- *
+- * Field names beginning with underscores are for the internal use of
+- * the omap_device code.
+- *
+- */
+-struct omap_device {
+-	struct platform_device		*pdev;
+-	struct omap_hwmod		**hwmods;
+-	struct omap_device_pm_latency	*pm_lats;
+-	u32				dev_wakeup_lat;
+-	u32				_dev_wakeup_lat_limit;
+-	unsigned long			_driver_status;
+-	u8				pm_lats_cnt;
+-	s8				pm_lat_level;
+-	u8				hwmods_cnt;
+-	u8				_state;
+-	u8                              flags;
+-};
+-
+-/* Device driver interface (call via platform_data fn ptrs) */
+-
+-int omap_device_enable(struct platform_device *pdev);
+-int omap_device_idle(struct platform_device *pdev);
+-int omap_device_shutdown(struct platform_device *pdev);
+-
+-/* Core code interface */
+-
+-struct platform_device *omap_device_build(const char *pdev_name, int pdev_id,
+-				      struct omap_hwmod *oh, void *pdata,
+-				      int pdata_len,
+-				      struct omap_device_pm_latency *pm_lats,
+-				      int pm_lats_cnt, int is_early_device);
+-
+-struct platform_device *omap_device_build_ss(const char *pdev_name, int pdev_id,
+-					 struct omap_hwmod **oh, int oh_cnt,
+-					 void *pdata, int pdata_len,
+-					 struct omap_device_pm_latency *pm_lats,
+-					 int pm_lats_cnt, int is_early_device);
+-
+-struct omap_device *omap_device_alloc(struct platform_device *pdev,
+-				      struct omap_hwmod **ohs, int oh_cnt,
+-				      struct omap_device_pm_latency *pm_lats,
+-				      int pm_lats_cnt);
+-void omap_device_delete(struct omap_device *od);
+-int omap_device_register(struct platform_device *pdev);
+-
+-void __iomem *omap_device_get_rt_va(struct omap_device *od);
+-struct device *omap_device_get_by_hwmod_name(const char *oh_name);
+-
+-/* OMAP PM interface */
+-int omap_device_align_pm_lat(struct platform_device *pdev,
+-			     u32 new_wakeup_lat_limit);
+-struct powerdomain *omap_device_get_pwrdm(struct omap_device *od);
+-int omap_device_get_context_loss_count(struct platform_device *pdev);
+-
+-/* Other */
+-
+-int omap_device_assert_hardreset(struct platform_device *pdev,
+-				 const char *name);
+-int omap_device_deassert_hardreset(struct platform_device *pdev,
+-				 const char *name);
+-int omap_device_idle_hwmods(struct omap_device *od);
+-int omap_device_enable_hwmods(struct omap_device *od);
+-
+-int omap_device_disable_clocks(struct omap_device *od);
+-int omap_device_enable_clocks(struct omap_device *od);
+-
+-/*
+- * Entries should be kept in latency order ascending
+- *
+- * deact_lat is the maximum number of microseconds required to complete
+- * deactivate_func() at the device's slowest OPP.
+- *
+- * act_lat is the maximum number of microseconds required to complete
+- * activate_func() at the device's slowest OPP.
+- *
+- * This will result in some suboptimal power management decisions at fast
+- * OPPs, but avoids having to recompute all device power management decisions
+- * if the system shifts from a fast OPP to a slow OPP (in order to meet
+- * latency requirements).
+- *
+- * XXX should deactivate_func/activate_func() take platform_device pointers
+- * rather than omap_device pointers?
+- */
+-struct omap_device_pm_latency {
+-	u32 deactivate_lat;
+-	u32 deactivate_lat_worst;
+-	int (*deactivate_func)(struct omap_device *od);
+-	u32 activate_lat;
+-	u32 activate_lat_worst;
+-	int (*activate_func)(struct omap_device *od);
+-	u32 flags;
+-};
+-
+-#define OMAP_DEVICE_LATENCY_AUTO_ADJUST BIT(1)
+-
+-/* Get omap_device pointer from platform_device pointer */
+-static inline struct omap_device *to_omap_device(struct platform_device *pdev)
+-{
+-	return pdev ? pdev->archdata.od : NULL;
+-}
+-
+-static inline
+-void omap_device_disable_idle_on_suspend(struct platform_device *pdev)
+-{
+-	struct omap_device *od = to_omap_device(pdev);
+-
+-	od->flags |= OMAP_DEVICE_NO_IDLE_ON_SUSPEND;
+-}
+-
+-#endif
+diff --git a/arch/arm/plat-omap/omap-pm-noop.c b/arch/arm/plat-omap/omap-pm-noop.c
+index 9722f41..3c96b56 100644
+--- a/arch/arm/plat-omap/omap-pm-noop.c
++++ b/arch/arm/plat-omap/omap-pm-noop.c
+@@ -24,7 +24,8 @@
+ 
+ /* Interface documentation is in mach/omap-pm.h */
+ #include <plat/omap-pm.h>
+-#include <plat/omap_device.h>
++
++#include "../mach-omap2/omap_device.h"
+ 
+ static bool off_mode_enabled;
+ static int dummy_context_loss_counter;
+diff --git a/arch/arm/plat-omap/omap_device.c b/arch/arm/plat-omap/omap_device.c
+deleted file mode 100644
+index 7a7d1f2..0000000
+--- a/arch/arm/plat-omap/omap_device.c
++++ /dev/null
+@@ -1,1278 +0,0 @@
+-/*
+- * omap_device implementation
+- *
+- * Copyright (C) 2009-2010 Nokia Corporation
+- * Paul Walmsley, Kevin Hilman
+- *
+- * Developed in collaboration with (alphabetical order): Benoit
+- * Cousson, Thara Gopinath, Tony Lindgren, Rajendra Nayak, Vikram
+- * Pandita, Sakari Poussa, Anand Sawant, Santosh Shilimkar, Richard
+- * Woodruff
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- *
+- * This code provides a consistent interface for OMAP device drivers
+- * to control power management and interconnect properties of their
+- * devices.
+- *
+- * In the medium- to long-term, this code should either be
+- * a) implemented via arch-specific pointers in platform_data
+- * or
+- * b) implemented as a proper omap_bus/omap_device in Linux, no more
+- *    platform_data func pointers
+- *
+- *
+- * Guidelines for usage by driver authors:
+- *
+- * 1. These functions are intended to be used by device drivers via
+- * function pointers in struct platform_data.  As an example,
+- * omap_device_enable() should be passed to the driver as
+- *
+- * struct foo_driver_platform_data {
+- * ...
+- *      int (*device_enable)(struct platform_device *pdev);
+- * ...
+- * }
+- *
+- * Note that the generic "device_enable" name is used, rather than
+- * "omap_device_enable".  This is so other architectures can pass in their
+- * own enable/disable functions here.
+- *
+- * This should be populated during device setup:
+- *
+- * ...
+- * pdata->device_enable = omap_device_enable;
+- * ...
+- *
+- * 2. Drivers should first check to ensure the function pointer is not null
+- * before calling it, as in:
+- *
+- * if (pdata->device_enable)
+- *     pdata->device_enable(pdev);
+- *
+- * This allows other architectures that don't use similar device_enable()/
+- * device_shutdown() functions to execute normally.
+- *
+- * ...
+- *
+- * Suggested usage by device drivers:
+- *
+- * During device initialization:
+- * device_enable()
+- *
+- * During device idle:
+- * (save remaining device context if necessary)
+- * device_idle();
+- *
+- * During device resume:
+- * device_enable();
+- * (restore context if necessary)
+- *
+- * During device shutdown:
+- * device_shutdown()
+- * (device must be reinitialized at this point to use it again)
+- *
+- */
+-#undef DEBUG
+-
+-#include <linux/kernel.h>
+-#include <linux/export.h>
+-#include <linux/platform_device.h>
+-#include <linux/slab.h>
+-#include <linux/err.h>
+-#include <linux/io.h>
+-#include <linux/clk.h>
+-#include <linux/clkdev.h>
+-#include <linux/pm_runtime.h>
+-#include <linux/of.h>
+-#include <linux/notifier.h>
+-
+-#include <plat/omap_device.h>
+-#include <plat/omap_hwmod.h>
+-#include <plat/clock.h>
+-
+-/* These parameters are passed to _omap_device_{de,}activate() */
+-#define USE_WAKEUP_LAT			0
+-#define IGNORE_WAKEUP_LAT		1
+-
+-static int omap_early_device_register(struct platform_device *pdev);
+-
+-static struct omap_device_pm_latency omap_default_latency[] = {
+-	{
+-		.deactivate_func = omap_device_idle_hwmods,
+-		.activate_func   = omap_device_enable_hwmods,
+-		.flags = OMAP_DEVICE_LATENCY_AUTO_ADJUST,
+-	}
+-};
+-
+-/* Private functions */
+-
+-/**
+- * _omap_device_activate - increase device readiness
+- * @od: struct omap_device *
+- * @ignore_lat: increase to latency target (0) or full readiness (1)?
+- *
+- * Increase readiness of omap_device @od (thus decreasing device
+- * wakeup latency, but consuming more power).  If @ignore_lat is
+- * IGNORE_WAKEUP_LAT, make the omap_device fully active.  Otherwise,
+- * if @ignore_lat is USE_WAKEUP_LAT, and the device's maximum wakeup
+- * latency is greater than the requested maximum wakeup latency, step
+- * backwards in the omap_device_pm_latency table to ensure the
+- * device's maximum wakeup latency is less than or equal to the
+- * requested maximum wakeup latency.  Returns 0.
+- */
+-static int _omap_device_activate(struct omap_device *od, u8 ignore_lat)
+-{
+-	struct timespec a, b, c;
+-
+-	dev_dbg(&od->pdev->dev, "omap_device: activating\n");
+-
+-	while (od->pm_lat_level > 0) {
+-		struct omap_device_pm_latency *odpl;
+-		unsigned long long act_lat = 0;
+-
+-		od->pm_lat_level--;
+-
+-		odpl = od->pm_lats + od->pm_lat_level;
+-
+-		if (!ignore_lat &&
+-		    (od->dev_wakeup_lat <= od->_dev_wakeup_lat_limit))
+-			break;
+-
+-		read_persistent_clock(&a);
+-
+-		/* XXX check return code */
+-		odpl->activate_func(od);
+-
+-		read_persistent_clock(&b);
+-
+-		c = timespec_sub(b, a);
+-		act_lat = timespec_to_ns(&c);
+-
+-		dev_dbg(&od->pdev->dev,
+-			"omap_device: pm_lat %d: activate: elapsed time %llu nsec\n",
+-			od->pm_lat_level, act_lat);
+-
+-		if (act_lat > odpl->activate_lat) {
+-			odpl->activate_lat_worst = act_lat;
+-			if (odpl->flags & OMAP_DEVICE_LATENCY_AUTO_ADJUST) {
+-				odpl->activate_lat = act_lat;
+-				dev_dbg(&od->pdev->dev,
+-					"new worst case activate latency %d: %llu\n",
+-					od->pm_lat_level, act_lat);
+-			} else
+-				dev_warn(&od->pdev->dev,
+-					 "activate latency %d higher than expected. (%llu > %d)\n",
+-					 od->pm_lat_level, act_lat,
+-					 odpl->activate_lat);
+-		}
+-
+-		od->dev_wakeup_lat -= odpl->activate_lat;
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * _omap_device_deactivate - decrease device readiness
+- * @od: struct omap_device *
+- * @ignore_lat: decrease to latency target (0) or full inactivity (1)?
+- *
+- * Decrease readiness of omap_device @od (thus increasing device
+- * wakeup latency, but conserving power).  If @ignore_lat is
+- * IGNORE_WAKEUP_LAT, make the omap_device fully inactive.  Otherwise,
+- * if @ignore_lat is USE_WAKEUP_LAT, and the device's maximum wakeup
+- * latency is less than the requested maximum wakeup latency, step
+- * forwards in the omap_device_pm_latency table to ensure the device's
+- * maximum wakeup latency is less than or equal to the requested
+- * maximum wakeup latency.  Returns 0.
+- */
+-static int _omap_device_deactivate(struct omap_device *od, u8 ignore_lat)
+-{
+-	struct timespec a, b, c;
+-
+-	dev_dbg(&od->pdev->dev, "omap_device: deactivating\n");
+-
+-	while (od->pm_lat_level < od->pm_lats_cnt) {
+-		struct omap_device_pm_latency *odpl;
+-		unsigned long long deact_lat = 0;
+-
+-		odpl = od->pm_lats + od->pm_lat_level;
+-
+-		if (!ignore_lat &&
+-		    ((od->dev_wakeup_lat + odpl->activate_lat) >
+-		     od->_dev_wakeup_lat_limit))
+-			break;
+-
+-		read_persistent_clock(&a);
+-
+-		/* XXX check return code */
+-		odpl->deactivate_func(od);
+-
+-		read_persistent_clock(&b);
+-
+-		c = timespec_sub(b, a);
+-		deact_lat = timespec_to_ns(&c);
+-
+-		dev_dbg(&od->pdev->dev,
+-			"omap_device: pm_lat %d: deactivate: elapsed time %llu nsec\n",
+-			od->pm_lat_level, deact_lat);
+-
+-		if (deact_lat > odpl->deactivate_lat) {
+-			odpl->deactivate_lat_worst = deact_lat;
+-			if (odpl->flags & OMAP_DEVICE_LATENCY_AUTO_ADJUST) {
+-				odpl->deactivate_lat = deact_lat;
+-				dev_dbg(&od->pdev->dev,
+-					"new worst case deactivate latency %d: %llu\n",
+-					od->pm_lat_level, deact_lat);
+-			} else
+-				dev_warn(&od->pdev->dev,
+-					 "deactivate latency %d higher than expected. (%llu > %d)\n",
+-					 od->pm_lat_level, deact_lat,
+-					 odpl->deactivate_lat);
+-		}
+-
+-		od->dev_wakeup_lat += odpl->activate_lat;
+-
+-		od->pm_lat_level++;
+-	}
+-
+-	return 0;
+-}
+-
+-static void _add_clkdev(struct omap_device *od, const char *clk_alias,
+-		       const char *clk_name)
+-{
+-	struct clk *r;
+-	struct clk_lookup *l;
+-
+-	if (!clk_alias || !clk_name)
+-		return;
+-
+-	dev_dbg(&od->pdev->dev, "Creating %s -> %s\n", clk_alias, clk_name);
+-
+-	r = clk_get_sys(dev_name(&od->pdev->dev), clk_alias);
+-	if (!IS_ERR(r)) {
+-		dev_warn(&od->pdev->dev,
+-			 "alias %s already exists\n", clk_alias);
+-		clk_put(r);
+-		return;
+-	}
+-
+-	r = clk_get(NULL, clk_name);
+-	if (IS_ERR(r)) {
+-		dev_err(&od->pdev->dev,
+-			"clk_get for %s failed\n", clk_name);
+-		return;
+-	}
+-
+-	l = clkdev_alloc(r, clk_alias, dev_name(&od->pdev->dev));
+-	if (!l) {
+-		dev_err(&od->pdev->dev,
+-			"clkdev_alloc for %s failed\n", clk_alias);
+-		return;
+-	}
+-
+-	clkdev_add(l);
+-}
+-
+-/**
+- * _add_hwmod_clocks_clkdev - Add clkdev entry for hwmod optional clocks
+- * and main clock
+- * @od: struct omap_device *od
+- * @oh: struct omap_hwmod *oh
+- *
+- * For the main clock and every optional clock present per hwmod per
+- * omap_device, this function adds an entry in the clkdev table of the
+- * form <dev-id=dev_name, con-id=role> if it does not exist already.
+- *
+- * The function is called from inside omap_device_build_ss(), after
+- * omap_device_register.
+- *
+- * This allows drivers to get a pointer to its optional clocks based on its role
+- * by calling clk_get(<dev*>, <role>).
+- * In the case of the main clock, a "fck" alias is used.
+- *
+- * No return value.
+- */
+-static void _add_hwmod_clocks_clkdev(struct omap_device *od,
+-				     struct omap_hwmod *oh)
+-{
+-	int i;
+-
+-	_add_clkdev(od, "fck", oh->main_clk);
+-
+-	for (i = 0; i < oh->opt_clks_cnt; i++)
+-		_add_clkdev(od, oh->opt_clks[i].role, oh->opt_clks[i].clk);
+-}
+-
+-
+-/**
+- * omap_device_build_from_dt - build an omap_device with multiple hwmods
+- * @pdev_name: name of the platform_device driver to use
+- * @pdev_id: this platform_device's connection ID
+- * @oh: ptr to the single omap_hwmod that backs this omap_device
+- * @pdata: platform_data ptr to associate with the platform_device
+- * @pdata_len: amount of memory pointed to by @pdata
+- * @pm_lats: pointer to a omap_device_pm_latency array for this device
+- * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
+- * @is_early_device: should the device be registered as an early device or not
+- *
+- * Function for building an omap_device already registered from device-tree
+- *
+- * Returns 0 or PTR_ERR() on error.
+- */
+-static int omap_device_build_from_dt(struct platform_device *pdev)
+-{
+-	struct omap_hwmod **hwmods;
+-	struct omap_device *od;
+-	struct omap_hwmod *oh;
+-	struct device_node *node = pdev->dev.of_node;
+-	const char *oh_name;
+-	int oh_cnt, i, ret = 0;
+-
+-	oh_cnt = of_property_count_strings(node, "ti,hwmods");
+-	if (!oh_cnt || IS_ERR_VALUE(oh_cnt)) {
+-		dev_dbg(&pdev->dev, "No 'hwmods' to build omap_device\n");
+-		return -ENODEV;
+-	}
+-
+-	hwmods = kzalloc(sizeof(struct omap_hwmod *) * oh_cnt, GFP_KERNEL);
+-	if (!hwmods) {
+-		ret = -ENOMEM;
+-		goto odbfd_exit;
+-	}
+-
+-	for (i = 0; i < oh_cnt; i++) {
+-		of_property_read_string_index(node, "ti,hwmods", i, &oh_name);
+-		oh = omap_hwmod_lookup(oh_name);
+-		if (!oh) {
+-			dev_err(&pdev->dev, "Cannot lookup hwmod '%s'\n",
+-				oh_name);
+-			ret = -EINVAL;
+-			goto odbfd_exit1;
+-		}
+-		hwmods[i] = oh;
+-	}
+-
+-	od = omap_device_alloc(pdev, hwmods, oh_cnt, NULL, 0);
+-	if (!od) {
+-		dev_err(&pdev->dev, "Cannot allocate omap_device for :%s\n",
+-			oh_name);
+-		ret = PTR_ERR(od);
+-		goto odbfd_exit1;
+-	}
+-
+-	/* Fix up missing resource names */
+-	for (i = 0; i < pdev->num_resources; i++) {
+-		struct resource *r = &pdev->resource[i];
+-
+-		if (r->name == NULL)
+-			r->name = dev_name(&pdev->dev);
+-	}
+-
+-	if (of_get_property(node, "ti,no_idle_on_suspend", NULL))
+-		omap_device_disable_idle_on_suspend(pdev);
+-
+-	pdev->dev.pm_domain = &omap_device_pm_domain;
+-
+-odbfd_exit1:
+-	kfree(hwmods);
+-odbfd_exit:
+-	return ret;
+-}
+-
+-static int _omap_device_notifier_call(struct notifier_block *nb,
+-				      unsigned long event, void *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct omap_device *od;
+-
+-	switch (event) {
+-	case BUS_NOTIFY_DEL_DEVICE:
+-		if (pdev->archdata.od)
+-			omap_device_delete(pdev->archdata.od);
+-		break;
+-	case BUS_NOTIFY_ADD_DEVICE:
+-		if (pdev->dev.of_node)
+-			omap_device_build_from_dt(pdev);
+-		/* fall through */
+-	default:
+-		od = to_omap_device(pdev);
+-		if (od)
+-			od->_driver_status = event;
+-	}
+-
+-	return NOTIFY_DONE;
+-}
+-
+-
+-/* Public functions for use by core code */
+-
+-/**
+- * omap_device_get_context_loss_count - get lost context count
+- * @od: struct omap_device *
+- *
+- * Using the primary hwmod, query the context loss count for this
+- * device.
+- *
+- * Callers should consider context for this device lost any time this
+- * function returns a value different than the value the caller got
+- * the last time it called this function.
+- *
+- * If any hwmods exist for the omap_device assoiated with @pdev,
+- * return the context loss counter for that hwmod, otherwise return
+- * zero.
+- */
+-int omap_device_get_context_loss_count(struct platform_device *pdev)
+-{
+-	struct omap_device *od;
+-	u32 ret = 0;
+-
+-	od = to_omap_device(pdev);
+-
+-	if (od->hwmods_cnt)
+-		ret = omap_hwmod_get_context_loss_count(od->hwmods[0]);
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_count_resources - count number of struct resource entries needed
+- * @od: struct omap_device *
+- *
+- * Count the number of struct resource entries needed for this
+- * omap_device @od.  Used by omap_device_build_ss() to determine how
+- * much memory to allocate before calling
+- * omap_device_fill_resources().  Returns the count.
+- */
+-static int omap_device_count_resources(struct omap_device *od)
+-{
+-	int c = 0;
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		c += omap_hwmod_count_resources(od->hwmods[i]);
+-
+-	pr_debug("omap_device: %s: counted %d total resources across %d hwmods\n",
+-		 od->pdev->name, c, od->hwmods_cnt);
+-
+-	return c;
+-}
+-
+-/**
+- * omap_device_fill_resources - fill in array of struct resource
+- * @od: struct omap_device *
+- * @res: pointer to an array of struct resource to be filled in
+- *
+- * Populate one or more empty struct resource pointed to by @res with
+- * the resource data for this omap_device @od.  Used by
+- * omap_device_build_ss() after calling omap_device_count_resources().
+- * Ideally this function would not be needed at all.  If omap_device
+- * replaces platform_device, then we can specify our own
+- * get_resource()/ get_irq()/etc functions that use the underlying
+- * omap_hwmod information.  Or if platform_device is extended to use
+- * subarchitecture-specific function pointers, the various
+- * platform_device functions can simply call omap_device internal
+- * functions to get device resources.  Hacking around the existing
+- * platform_device code wastes memory.  Returns 0.
+- */
+-static int omap_device_fill_resources(struct omap_device *od,
+-				      struct resource *res)
+-{
+-	int i, r;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++) {
+-		r = omap_hwmod_fill_resources(od->hwmods[i], res);
+-		res += r;
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * _od_fill_dma_resources - fill in array of struct resource with dma resources
+- * @od: struct omap_device *
+- * @res: pointer to an array of struct resource to be filled in
+- *
+- * Populate one or more empty struct resource pointed to by @res with
+- * the dma resource data for this omap_device @od.  Used by
+- * omap_device_alloc() after calling omap_device_count_resources().
+- *
+- * Ideally this function would not be needed at all.  If we have
+- * mechanism to get dma resources from DT.
+- *
+- * Returns 0.
+- */
+-static int _od_fill_dma_resources(struct omap_device *od,
+-				      struct resource *res)
+-{
+-	int i, r;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++) {
+-		r = omap_hwmod_fill_dma_resources(od->hwmods[i], res);
+-		res += r;
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * omap_device_alloc - allocate an omap_device
+- * @pdev: platform_device that will be included in this omap_device
+- * @oh: ptr to the single omap_hwmod that backs this omap_device
+- * @pdata: platform_data ptr to associate with the platform_device
+- * @pdata_len: amount of memory pointed to by @pdata
+- * @pm_lats: pointer to a omap_device_pm_latency array for this device
+- * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
+- *
+- * Convenience function for allocating an omap_device structure and filling
+- * hwmods, resources and pm_latency attributes.
+- *
+- * Returns an struct omap_device pointer or ERR_PTR() on error;
+- */
+-struct omap_device *omap_device_alloc(struct platform_device *pdev,
+-					struct omap_hwmod **ohs, int oh_cnt,
+-					struct omap_device_pm_latency *pm_lats,
+-					int pm_lats_cnt)
+-{
+-	int ret = -ENOMEM;
+-	struct omap_device *od;
+-	struct resource *res = NULL;
+-	int i, res_count;
+-	struct omap_hwmod **hwmods;
+-
+-	od = kzalloc(sizeof(struct omap_device), GFP_KERNEL);
+-	if (!od) {
+-		ret = -ENOMEM;
+-		goto oda_exit1;
+-	}
+-	od->hwmods_cnt = oh_cnt;
+-
+-	hwmods = kmemdup(ohs, sizeof(struct omap_hwmod *) * oh_cnt, GFP_KERNEL);
+-	if (!hwmods)
+-		goto oda_exit2;
+-
+-	od->hwmods = hwmods;
+-	od->pdev = pdev;
+-
+-	res_count = omap_device_count_resources(od);
+-	/*
+-	 * DT Boot:
+-	 *   OF framework will construct the resource structure (currently
+-	 *   does for MEM & IRQ resource) and we should respect/use these
+-	 *   resources, killing hwmod dependency.
+-	 *   If pdev->num_resources > 0, we assume that MEM & IRQ resources
+-	 *   have been allocated by OF layer already (through DTB).
+-	 *
+-	 * Non-DT Boot:
+-	 *   Here, pdev->num_resources = 0, and we should get all the
+-	 *   resources from hwmod.
+-	 *
+-	 * TODO: Once DMA resource is available from OF layer, we should
+-	 *   kill filling any resources from hwmod.
+-	 */
+-	if (res_count > pdev->num_resources) {
+-		/* Allocate resources memory to account for new resources */
+-		res = kzalloc(sizeof(struct resource) * res_count, GFP_KERNEL);
+-		if (!res)
+-			goto oda_exit3;
+-
+-		/*
+-		 * If pdev->num_resources > 0, then assume that,
+-		 * MEM and IRQ resources will only come from DT and only
+-		 * fill DMA resource from hwmod layer.
+-		 */
+-		if (pdev->num_resources && pdev->resource) {
+-			dev_dbg(&pdev->dev, "%s(): resources already allocated %d\n",
+-				__func__, res_count);
+-			memcpy(res, pdev->resource,
+-			       sizeof(struct resource) * pdev->num_resources);
+-			_od_fill_dma_resources(od, &res[pdev->num_resources]);
+-		} else {
+-			dev_dbg(&pdev->dev, "%s(): using resources from hwmod %d\n",
+-				__func__, res_count);
+-			omap_device_fill_resources(od, res);
+-		}
+-
+-		ret = platform_device_add_resources(pdev, res, res_count);
+-		kfree(res);
+-
+-		if (ret)
+-			goto oda_exit3;
+-	}
+-
+-	if (!pm_lats) {
+-		pm_lats = omap_default_latency;
+-		pm_lats_cnt = ARRAY_SIZE(omap_default_latency);
+-	}
+-
+-	od->pm_lats_cnt = pm_lats_cnt;
+-	od->pm_lats = kmemdup(pm_lats,
+-			sizeof(struct omap_device_pm_latency) * pm_lats_cnt,
+-			GFP_KERNEL);
+-	if (!od->pm_lats)
+-		goto oda_exit3;
+-
+-	pdev->archdata.od = od;
+-
+-	for (i = 0; i < oh_cnt; i++) {
+-		hwmods[i]->od = od;
+-		_add_hwmod_clocks_clkdev(od, hwmods[i]);
+-	}
+-
+-	return od;
+-
+-oda_exit3:
+-	kfree(hwmods);
+-oda_exit2:
+-	kfree(od);
+-oda_exit1:
+-	dev_err(&pdev->dev, "omap_device: build failed (%d)\n", ret);
+-
+-	return ERR_PTR(ret);
+-}
+-
+-void omap_device_delete(struct omap_device *od)
+-{
+-	if (!od)
+-		return;
+-
+-	od->pdev->archdata.od = NULL;
+-	kfree(od->pm_lats);
+-	kfree(od->hwmods);
+-	kfree(od);
+-}
+-
+-/**
+- * omap_device_build - build and register an omap_device with one omap_hwmod
+- * @pdev_name: name of the platform_device driver to use
+- * @pdev_id: this platform_device's connection ID
+- * @oh: ptr to the single omap_hwmod that backs this omap_device
+- * @pdata: platform_data ptr to associate with the platform_device
+- * @pdata_len: amount of memory pointed to by @pdata
+- * @pm_lats: pointer to a omap_device_pm_latency array for this device
+- * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
+- * @is_early_device: should the device be registered as an early device or not
+- *
+- * Convenience function for building and registering a single
+- * omap_device record, which in turn builds and registers a
+- * platform_device record.  See omap_device_build_ss() for more
+- * information.  Returns ERR_PTR(-EINVAL) if @oh is NULL; otherwise,
+- * passes along the return value of omap_device_build_ss().
+- */
+-struct platform_device __init *omap_device_build(const char *pdev_name, int pdev_id,
+-				      struct omap_hwmod *oh, void *pdata,
+-				      int pdata_len,
+-				      struct omap_device_pm_latency *pm_lats,
+-				      int pm_lats_cnt, int is_early_device)
+-{
+-	struct omap_hwmod *ohs[] = { oh };
+-
+-	if (!oh)
+-		return ERR_PTR(-EINVAL);
+-
+-	return omap_device_build_ss(pdev_name, pdev_id, ohs, 1, pdata,
+-				    pdata_len, pm_lats, pm_lats_cnt,
+-				    is_early_device);
+-}
+-
+-/**
+- * omap_device_build_ss - build and register an omap_device with multiple hwmods
+- * @pdev_name: name of the platform_device driver to use
+- * @pdev_id: this platform_device's connection ID
+- * @oh: ptr to the single omap_hwmod that backs this omap_device
+- * @pdata: platform_data ptr to associate with the platform_device
+- * @pdata_len: amount of memory pointed to by @pdata
+- * @pm_lats: pointer to a omap_device_pm_latency array for this device
+- * @pm_lats_cnt: ARRAY_SIZE() of @pm_lats
+- * @is_early_device: should the device be registered as an early device or not
+- *
+- * Convenience function for building and registering an omap_device
+- * subsystem record.  Subsystem records consist of multiple
+- * omap_hwmods.  This function in turn builds and registers a
+- * platform_device record.  Returns an ERR_PTR() on error, or passes
+- * along the return value of omap_device_register().
+- */
+-struct platform_device __init *omap_device_build_ss(const char *pdev_name, int pdev_id,
+-					 struct omap_hwmod **ohs, int oh_cnt,
+-					 void *pdata, int pdata_len,
+-					 struct omap_device_pm_latency *pm_lats,
+-					 int pm_lats_cnt, int is_early_device)
+-{
+-	int ret = -ENOMEM;
+-	struct platform_device *pdev;
+-	struct omap_device *od;
+-
+-	if (!ohs || oh_cnt == 0 || !pdev_name)
+-		return ERR_PTR(-EINVAL);
+-
+-	if (!pdata && pdata_len > 0)
+-		return ERR_PTR(-EINVAL);
+-
+-	pdev = platform_device_alloc(pdev_name, pdev_id);
+-	if (!pdev) {
+-		ret = -ENOMEM;
+-		goto odbs_exit;
+-	}
+-
+-	/* Set the dev_name early to allow dev_xxx in omap_device_alloc */
+-	if (pdev->id != -1)
+-		dev_set_name(&pdev->dev, "%s.%d", pdev->name,  pdev->id);
+-	else
+-		dev_set_name(&pdev->dev, "%s", pdev->name);
+-
+-	od = omap_device_alloc(pdev, ohs, oh_cnt, pm_lats, pm_lats_cnt);
+-	if (IS_ERR(od))
+-		goto odbs_exit1;
+-
+-	ret = platform_device_add_data(pdev, pdata, pdata_len);
+-	if (ret)
+-		goto odbs_exit2;
+-
+-	if (is_early_device)
+-		ret = omap_early_device_register(pdev);
+-	else
+-		ret = omap_device_register(pdev);
+-	if (ret)
+-		goto odbs_exit2;
+-
+-	return pdev;
+-
+-odbs_exit2:
+-	omap_device_delete(od);
+-odbs_exit1:
+-	platform_device_put(pdev);
+-odbs_exit:
+-
+-	pr_err("omap_device: %s: build failed (%d)\n", pdev_name, ret);
+-
+-	return ERR_PTR(ret);
+-}
+-
+-/**
+- * omap_early_device_register - register an omap_device as an early platform
+- * device.
+- * @od: struct omap_device * to register
+- *
+- * Register the omap_device structure.  This currently just calls
+- * platform_early_add_device() on the underlying platform_device.
+- * Returns 0 by default.
+- */
+-static int __init omap_early_device_register(struct platform_device *pdev)
+-{
+-	struct platform_device *devices[1];
+-
+-	devices[0] = pdev;
+-	early_platform_add_devices(devices, 1);
+-	return 0;
+-}
+-
+-#ifdef CONFIG_PM_RUNTIME
+-static int _od_runtime_suspend(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	int ret;
+-
+-	ret = pm_generic_runtime_suspend(dev);
+-
+-	if (!ret)
+-		omap_device_idle(pdev);
+-
+-	return ret;
+-}
+-
+-static int _od_runtime_idle(struct device *dev)
+-{
+-	return pm_generic_runtime_idle(dev);
+-}
+-
+-static int _od_runtime_resume(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-
+-	omap_device_enable(pdev);
+-
+-	return pm_generic_runtime_resume(dev);
+-}
+-#endif
+-
+-#ifdef CONFIG_SUSPEND
+-static int _od_suspend_noirq(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct omap_device *od = to_omap_device(pdev);
+-	int ret;
+-
+-	/* Don't attempt late suspend on a driver that is not bound */
+-	if (od->_driver_status != BUS_NOTIFY_BOUND_DRIVER)
+-		return 0;
+-
+-	ret = pm_generic_suspend_noirq(dev);
+-
+-	if (!ret && !pm_runtime_status_suspended(dev)) {
+-		if (pm_generic_runtime_suspend(dev) == 0) {
+-			if (!(od->flags & OMAP_DEVICE_NO_IDLE_ON_SUSPEND))
+-				omap_device_idle(pdev);
+-			od->flags |= OMAP_DEVICE_SUSPENDED;
+-		}
+-	}
+-
+-	return ret;
+-}
+-
+-static int _od_resume_noirq(struct device *dev)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct omap_device *od = to_omap_device(pdev);
+-
+-	if ((od->flags & OMAP_DEVICE_SUSPENDED) &&
+-	    !pm_runtime_status_suspended(dev)) {
+-		od->flags &= ~OMAP_DEVICE_SUSPENDED;
+-		if (!(od->flags & OMAP_DEVICE_NO_IDLE_ON_SUSPEND))
+-			omap_device_enable(pdev);
+-		pm_generic_runtime_resume(dev);
+-	}
+-
+-	return pm_generic_resume_noirq(dev);
+-}
+-#else
+-#define _od_suspend_noirq NULL
+-#define _od_resume_noirq NULL
+-#endif
+-
+-struct dev_pm_domain omap_device_pm_domain = {
+-	.ops = {
+-		SET_RUNTIME_PM_OPS(_od_runtime_suspend, _od_runtime_resume,
+-				   _od_runtime_idle)
+-		USE_PLATFORM_PM_SLEEP_OPS
+-		.suspend_noirq = _od_suspend_noirq,
+-		.resume_noirq = _od_resume_noirq,
+-	}
+-};
+-
+-/**
+- * omap_device_register - register an omap_device with one omap_hwmod
+- * @od: struct omap_device * to register
+- *
+- * Register the omap_device structure.  This currently just calls
+- * platform_device_register() on the underlying platform_device.
+- * Returns the return value of platform_device_register().
+- */
+-int omap_device_register(struct platform_device *pdev)
+-{
+-	pr_debug("omap_device: %s: registering\n", pdev->name);
+-
+-	pdev->dev.pm_domain = &omap_device_pm_domain;
+-	return platform_device_add(pdev);
+-}
+-
+-
+-/* Public functions for use by device drivers through struct platform_data */
+-
+-/**
+- * omap_device_enable - fully activate an omap_device
+- * @od: struct omap_device * to activate
+- *
+- * Do whatever is necessary for the hwmods underlying omap_device @od
+- * to be accessible and ready to operate.  This generally involves
+- * enabling clocks, setting SYSCONFIG registers; and in the future may
+- * involve remuxing pins.  Device drivers should call this function
+- * (through platform_data function pointers) where they would normally
+- * enable clocks, etc.  Returns -EINVAL if called when the omap_device
+- * is already enabled, or passes along the return value of
+- * _omap_device_activate().
+- */
+-int omap_device_enable(struct platform_device *pdev)
+-{
+-	int ret;
+-	struct omap_device *od;
+-
+-	od = to_omap_device(pdev);
+-
+-	if (od->_state == OMAP_DEVICE_STATE_ENABLED) {
+-		dev_warn(&pdev->dev,
+-			 "omap_device: %s() called from invalid state %d\n",
+-			 __func__, od->_state);
+-		return -EINVAL;
+-	}
+-
+-	/* Enable everything if we're enabling this device from scratch */
+-	if (od->_state == OMAP_DEVICE_STATE_UNKNOWN)
+-		od->pm_lat_level = od->pm_lats_cnt;
+-
+-	ret = _omap_device_activate(od, IGNORE_WAKEUP_LAT);
+-
+-	od->dev_wakeup_lat = 0;
+-	od->_dev_wakeup_lat_limit = UINT_MAX;
+-	od->_state = OMAP_DEVICE_STATE_ENABLED;
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_idle - idle an omap_device
+- * @od: struct omap_device * to idle
+- *
+- * Idle omap_device @od by calling as many .deactivate_func() entries
+- * in the omap_device's pm_lats table as is possible without exceeding
+- * the device's maximum wakeup latency limit, pm_lat_limit.  Device
+- * drivers should call this function (through platform_data function
+- * pointers) where they would normally disable clocks after operations
+- * complete, etc..  Returns -EINVAL if the omap_device is not
+- * currently enabled, or passes along the return value of
+- * _omap_device_deactivate().
+- */
+-int omap_device_idle(struct platform_device *pdev)
+-{
+-	int ret;
+-	struct omap_device *od;
+-
+-	od = to_omap_device(pdev);
+-
+-	if (od->_state != OMAP_DEVICE_STATE_ENABLED) {
+-		dev_warn(&pdev->dev,
+-			 "omap_device: %s() called from invalid state %d\n",
+-			 __func__, od->_state);
+-		return -EINVAL;
+-	}
+-
+-	ret = _omap_device_deactivate(od, USE_WAKEUP_LAT);
+-
+-	od->_state = OMAP_DEVICE_STATE_IDLE;
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_shutdown - shut down an omap_device
+- * @od: struct omap_device * to shut down
+- *
+- * Shut down omap_device @od by calling all .deactivate_func() entries
+- * in the omap_device's pm_lats table and then shutting down all of
+- * the underlying omap_hwmods.  Used when a device is being "removed"
+- * or a device driver is being unloaded.  Returns -EINVAL if the
+- * omap_device is not currently enabled or idle, or passes along the
+- * return value of _omap_device_deactivate().
+- */
+-int omap_device_shutdown(struct platform_device *pdev)
+-{
+-	int ret, i;
+-	struct omap_device *od;
+-
+-	od = to_omap_device(pdev);
+-
+-	if (od->_state != OMAP_DEVICE_STATE_ENABLED &&
+-	    od->_state != OMAP_DEVICE_STATE_IDLE) {
+-		dev_warn(&pdev->dev,
+-			 "omap_device: %s() called from invalid state %d\n",
+-			 __func__, od->_state);
+-		return -EINVAL;
+-	}
+-
+-	ret = _omap_device_deactivate(od, IGNORE_WAKEUP_LAT);
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		omap_hwmod_shutdown(od->hwmods[i]);
+-
+-	od->_state = OMAP_DEVICE_STATE_SHUTDOWN;
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_assert_hardreset - set a device's hardreset line
+- * @pdev: struct platform_device * to reset
+- * @name: const char * name of the reset line
+- *
+- * Set the hardreset line identified by @name on the IP blocks
+- * associated with the hwmods backing the platform_device @pdev.  All
+- * of the hwmods associated with @pdev must have the same hardreset
+- * line linked to them for this to work.  Passes along the return value
+- * of omap_hwmod_assert_hardreset() in the event of any failure, or
+- * returns 0 upon success.
+- */
+-int omap_device_assert_hardreset(struct platform_device *pdev, const char *name)
+-{
+-	struct omap_device *od = to_omap_device(pdev);
+-	int ret = 0;
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++) {
+-		ret = omap_hwmod_assert_hardreset(od->hwmods[i], name);
+-		if (ret)
+-			break;
+-	}
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_deassert_hardreset - release a device's hardreset line
+- * @pdev: struct platform_device * to reset
+- * @name: const char * name of the reset line
+- *
+- * Release the hardreset line identified by @name on the IP blocks
+- * associated with the hwmods backing the platform_device @pdev.  All
+- * of the hwmods associated with @pdev must have the same hardreset
+- * line linked to them for this to work.  Passes along the return
+- * value of omap_hwmod_deassert_hardreset() in the event of any
+- * failure, or returns 0 upon success.
+- */
+-int omap_device_deassert_hardreset(struct platform_device *pdev,
+-				   const char *name)
+-{
+-	struct omap_device *od = to_omap_device(pdev);
+-	int ret = 0;
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++) {
+-		ret = omap_hwmod_deassert_hardreset(od->hwmods[i], name);
+-		if (ret)
+-			break;
+-	}
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_align_pm_lat - activate/deactivate device to match wakeup lat lim
+- * @od: struct omap_device *
+- *
+- * When a device's maximum wakeup latency limit changes, call some of
+- * the .activate_func or .deactivate_func function pointers in the
+- * omap_device's pm_lats array to ensure that the device's maximum
+- * wakeup latency is less than or equal to the new latency limit.
+- * Intended to be called by OMAP PM code whenever a device's maximum
+- * wakeup latency limit changes (e.g., via
+- * omap_pm_set_dev_wakeup_lat()).  Returns 0 if nothing needs to be
+- * done (e.g., if the omap_device is not currently idle, or if the
+- * wakeup latency is already current with the new limit) or passes
+- * along the return value of _omap_device_deactivate() or
+- * _omap_device_activate().
+- */
+-int omap_device_align_pm_lat(struct platform_device *pdev,
+-			     u32 new_wakeup_lat_limit)
+-{
+-	int ret = -EINVAL;
+-	struct omap_device *od;
+-
+-	od = to_omap_device(pdev);
+-
+-	if (new_wakeup_lat_limit == od->dev_wakeup_lat)
+-		return 0;
+-
+-	od->_dev_wakeup_lat_limit = new_wakeup_lat_limit;
+-
+-	if (od->_state != OMAP_DEVICE_STATE_IDLE)
+-		return 0;
+-	else if (new_wakeup_lat_limit > od->dev_wakeup_lat)
+-		ret = _omap_device_deactivate(od, USE_WAKEUP_LAT);
+-	else if (new_wakeup_lat_limit < od->dev_wakeup_lat)
+-		ret = _omap_device_activate(od, USE_WAKEUP_LAT);
+-
+-	return ret;
+-}
+-
+-/**
+- * omap_device_get_pwrdm - return the powerdomain * associated with @od
+- * @od: struct omap_device *
+- *
+- * Return the powerdomain associated with the first underlying
+- * omap_hwmod for this omap_device.  Intended for use by core OMAP PM
+- * code.  Returns NULL on error or a struct powerdomain * upon
+- * success.
+- */
+-struct powerdomain *omap_device_get_pwrdm(struct omap_device *od)
+-{
+-	/*
+-	 * XXX Assumes that all omap_hwmod powerdomains are identical.
+-	 * This may not necessarily be true.  There should be a sanity
+-	 * check in here to WARN() if any difference appears.
+-	 */
+-	if (!od->hwmods_cnt)
+-		return NULL;
+-
+-	return omap_hwmod_get_pwrdm(od->hwmods[0]);
+-}
+-
+-/**
+- * omap_device_get_mpu_rt_va - return the MPU's virtual addr for the hwmod base
+- * @od: struct omap_device *
+- *
+- * Return the MPU's virtual address for the base of the hwmod, from
+- * the ioremap() that the hwmod code does.  Only valid if there is one
+- * hwmod associated with this device.  Returns NULL if there are zero
+- * or more than one hwmods associated with this omap_device;
+- * otherwise, passes along the return value from
+- * omap_hwmod_get_mpu_rt_va().
+- */
+-void __iomem *omap_device_get_rt_va(struct omap_device *od)
+-{
+-	if (od->hwmods_cnt != 1)
+-		return NULL;
+-
+-	return omap_hwmod_get_mpu_rt_va(od->hwmods[0]);
+-}
+-
+-/**
+- * omap_device_get_by_hwmod_name() - convert a hwmod name to
+- * device pointer.
+- * @oh_name: name of the hwmod device
+- *
+- * Returns back a struct device * pointer associated with a hwmod
+- * device represented by a hwmod_name
+- */
+-struct device *omap_device_get_by_hwmod_name(const char *oh_name)
+-{
+-	struct omap_hwmod *oh;
+-
+-	if (!oh_name) {
+-		WARN(1, "%s: no hwmod name!\n", __func__);
+-		return ERR_PTR(-EINVAL);
+-	}
+-
+-	oh = omap_hwmod_lookup(oh_name);
+-	if (IS_ERR_OR_NULL(oh)) {
+-		WARN(1, "%s: no hwmod for %s\n", __func__,
+-			oh_name);
+-		return ERR_PTR(oh ? PTR_ERR(oh) : -ENODEV);
+-	}
+-	if (IS_ERR_OR_NULL(oh->od)) {
+-		WARN(1, "%s: no omap_device for %s\n", __func__,
+-			oh_name);
+-		return ERR_PTR(oh->od ? PTR_ERR(oh->od) : -ENODEV);
+-	}
+-
+-	if (IS_ERR_OR_NULL(oh->od->pdev))
+-		return ERR_PTR(oh->od->pdev ? PTR_ERR(oh->od->pdev) : -ENODEV);
+-
+-	return &oh->od->pdev->dev;
+-}
+-EXPORT_SYMBOL(omap_device_get_by_hwmod_name);
+-
+-/*
+- * Public functions intended for use in omap_device_pm_latency
+- * .activate_func and .deactivate_func function pointers
+- */
+-
+-/**
+- * omap_device_enable_hwmods - call omap_hwmod_enable() on all hwmods
+- * @od: struct omap_device *od
+- *
+- * Enable all underlying hwmods.  Returns 0.
+- */
+-int omap_device_enable_hwmods(struct omap_device *od)
+-{
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		omap_hwmod_enable(od->hwmods[i]);
+-
+-	/* XXX pass along return value here? */
+-	return 0;
+-}
+-
+-/**
+- * omap_device_idle_hwmods - call omap_hwmod_idle() on all hwmods
+- * @od: struct omap_device *od
+- *
+- * Idle all underlying hwmods.  Returns 0.
+- */
+-int omap_device_idle_hwmods(struct omap_device *od)
+-{
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		omap_hwmod_idle(od->hwmods[i]);
+-
+-	/* XXX pass along return value here? */
+-	return 0;
+-}
+-
+-/**
+- * omap_device_disable_clocks - disable all main and interface clocks
+- * @od: struct omap_device *od
+- *
+- * Disable the main functional clock and interface clock for all of the
+- * omap_hwmods associated with the omap_device.  Returns 0.
+- */
+-int omap_device_disable_clocks(struct omap_device *od)
+-{
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		omap_hwmod_disable_clocks(od->hwmods[i]);
+-
+-	/* XXX pass along return value here? */
+-	return 0;
+-}
+-
+-/**
+- * omap_device_enable_clocks - enable all main and interface clocks
+- * @od: struct omap_device *od
+- *
+- * Enable the main functional clock and interface clock for all of the
+- * omap_hwmods associated with the omap_device.  Returns 0.
+- */
+-int omap_device_enable_clocks(struct omap_device *od)
+-{
+-	int i;
+-
+-	for (i = 0; i < od->hwmods_cnt; i++)
+-		omap_hwmod_enable_clocks(od->hwmods[i]);
+-
+-	/* XXX pass along return value here? */
+-	return 0;
+-}
+-
+-static struct notifier_block platform_nb = {
+-	.notifier_call = _omap_device_notifier_call,
+-};
+-
+-static int __init omap_device_init(void)
+-{
+-	bus_register_notifier(&platform_bus_type, &platform_nb);
+-	return 0;
+-}
+-core_initcall(omap_device_init);
+-
+-/**
+- * omap_device_late_idle - idle devices without drivers
+- * @dev: struct device * associated with omap_device
+- * @data: unused
+- *
+- * Check the driver bound status of this device, and idle it
+- * if there is no driver attached.
+- */
+-static int __init omap_device_late_idle(struct device *dev, void *data)
+-{
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct omap_device *od = to_omap_device(pdev);
+-
+-	if (!od)
+-		return 0;
+-
+-	/*
+-	 * If omap_device state is enabled, but has no driver bound,
+-	 * idle it.
+-	 */
+-	if (od->_driver_status != BUS_NOTIFY_BOUND_DRIVER) {
+-		if (od->_state == OMAP_DEVICE_STATE_ENABLED) {
+-			dev_warn(dev, "%s: enabled but no driver.  Idling\n",
+-				 __func__);
+-			omap_device_idle(pdev);
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-static int __init omap_device_late_init(void)
+-{
+-	bus_for_each_dev(&platform_bus_type, NULL, NULL, omap_device_late_idle);
+-	return 0;
+-}
+-late_initcall(omap_device_late_init);
+-- 
+1.8.0
+

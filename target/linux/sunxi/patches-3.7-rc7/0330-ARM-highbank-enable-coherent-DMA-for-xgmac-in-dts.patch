@@ -1,0 +1,35 @@
+From 185bdffb4b2997a2d4ee2e88d52a6539bde59eea Mon Sep 17 00:00:00 2001
+From: Rob Herring <rob.herring@calxeda.com>
+Date: Tue, 18 Sep 2012 21:03:42 -0500
+Subject: [PATCH 330/951] ARM: highbank: enable coherent DMA for xgmac in dts
+
+Enable the xgmac to use the coherent DMA path in highbank.dts
+
+Signed-off-by: Rob Herring <rob.herring@calxeda.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/boot/dts/highbank.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/boot/dts/highbank.dts b/arch/arm/boot/dts/highbank.dts
+index 28d5872..e39a79a 100644
+--- a/arch/arm/boot/dts/highbank.dts
++++ b/arch/arm/boot/dts/highbank.dts
+@@ -308,12 +308,14 @@
+ 			compatible = "calxeda,hb-xgmac";
+ 			reg = <0xfff50000 0x1000>;
+ 			interrupts = <0 77 4  0 78 4  0 79 4>;
++			dma-coherent;
+ 		};
+ 
+ 		ethernet@fff51000 {
+ 			compatible = "calxeda,hb-xgmac";
+ 			reg = <0xfff51000 0x1000>;
+ 			interrupts = <0 80 4  0 81 4  0 82 4>;
++			dma-coherent;
+ 		};
+ 
+ 		combophy0: combo-phy@fff58000 {
+-- 
+1.8.0
+

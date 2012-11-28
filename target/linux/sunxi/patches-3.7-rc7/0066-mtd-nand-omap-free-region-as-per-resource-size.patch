@@ -1,0 +1,29 @@
+From 48b51d4dda3195320ec95b3393f44bfb060653c1 Mon Sep 17 00:00:00 2001
+From: Afzal Mohammed <afzal@ti.com>
+Date: Sat, 29 Sep 2012 11:14:47 +0530
+Subject: [PATCH 066/951] mtd: nand: omap: free region as per resource size
+
+memory as is now obtained via resource, upon freeing use
+resource size. This also helps get rid of one macro.
+
+Signed-off-by: Afzal Mohammed <afzal@ti.com>
+---
+ drivers/mtd/nand/omap2.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/nand/omap2.c b/drivers/mtd/nand/omap2.c
+index 5b31386..4c33135 100644
+--- a/drivers/mtd/nand/omap2.c
++++ b/drivers/mtd/nand/omap2.c
+@@ -1513,7 +1513,7 @@ static int omap_nand_remove(struct platform_device *pdev)
+ 	/* Release NAND device, its internal structures and partitions */
+ 	nand_release(&info->mtd);
+ 	iounmap(info->nand.IO_ADDR_R);
+-	release_mem_region(info->phys_base, NAND_IO_SIZE);
++	release_mem_region(info->phys_base, info->mem_size);
+ 	kfree(info);
+ 	return 0;
+ }
+-- 
+1.8.0
+

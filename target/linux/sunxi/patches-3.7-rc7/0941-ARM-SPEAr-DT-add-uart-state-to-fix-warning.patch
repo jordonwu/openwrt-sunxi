@@ -1,0 +1,159 @@
+From 7bceba83734dd4d50e978492959bd327f697fc23 Mon Sep 17 00:00:00 2001
+From: Vipul Kumar Samar <vipulkumar.samar@st.com>
+Date: Thu, 30 Aug 2012 09:32:24 +0530
+Subject: [PATCH 941/951] ARM: SPEAr: DT: add uart state to fix warning
+
+amba-pl011 driver supports two pin state "default" and "sleep" and it
+expect from dt to provide this pinctrl states and phandler otherwise it
+gives a warning message.
+
+To remove this warning message pass default state with null phandler to uart
+pins in device node (In our case all the pins are configured in default states
+so we pass null phandler to pins).
+
+Signed-off-by: Vipul Kumar Samar <vipulkumar.samar@st.com>
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+---
+ arch/arm/boot/dts/spear1310-evb.dts |  2 ++
+ arch/arm/boot/dts/spear1340-evb.dts |  4 ++++
+ arch/arm/boot/dts/spear300-evb.dts  |  2 ++
+ arch/arm/boot/dts/spear310-evb.dts  | 12 ++++++++++++
+ arch/arm/boot/dts/spear320-evb.dts  |  6 ++++++
+ arch/arm/boot/dts/spear600-evb.dts  |  4 ++++
+ 6 files changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/spear1310-evb.dts b/arch/arm/boot/dts/spear1310-evb.dts
+index 72f4675..8c97f34 100644
+--- a/arch/arm/boot/dts/spear1310-evb.dts
++++ b/arch/arm/boot/dts/spear1310-evb.dts
+@@ -324,6 +324,8 @@
+ 
+ 			serial@e0000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			spi0: spi@e0100000 {
+diff --git a/arch/arm/boot/dts/spear1340-evb.dts b/arch/arm/boot/dts/spear1340-evb.dts
+index cfe82d1..05c2549 100644
+--- a/arch/arm/boot/dts/spear1340-evb.dts
++++ b/arch/arm/boot/dts/spear1340-evb.dts
+@@ -336,10 +336,14 @@
+ 
+ 			serial@e0000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b4100000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			spi0: spi@e0100000 {
+diff --git a/arch/arm/boot/dts/spear300-evb.dts b/arch/arm/boot/dts/spear300-evb.dts
+index b3265f6..5de1431 100644
+--- a/arch/arm/boot/dts/spear300-evb.dts
++++ b/arch/arm/boot/dts/spear300-evb.dts
+@@ -243,6 +243,8 @@
+ 
+ 			serial@d0000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			wdt@fc880000 {
+diff --git a/arch/arm/boot/dts/spear310-evb.dts b/arch/arm/boot/dts/spear310-evb.dts
+index b30fa0e..b096329 100644
+--- a/arch/arm/boot/dts/spear310-evb.dts
++++ b/arch/arm/boot/dts/spear310-evb.dts
+@@ -166,26 +166,38 @@
+ 
+ 			serial@d0000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b2000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b2080000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b2100000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b2180000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@b2200000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			wdt@fc880000 {
+diff --git a/arch/arm/boot/dts/spear320-evb.dts b/arch/arm/boot/dts/spear320-evb.dts
+index bf5848d..fdedbb5 100644
+--- a/arch/arm/boot/dts/spear320-evb.dts
++++ b/arch/arm/boot/dts/spear320-evb.dts
+@@ -183,14 +183,20 @@
+ 
+ 			serial@d0000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@a3000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@a4000000 {
+ 			       status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			wdt@fc880000 {
+diff --git a/arch/arm/boot/dts/spear600-evb.dts b/arch/arm/boot/dts/spear600-evb.dts
+index 16e4de4..5e6ef03 100644
+--- a/arch/arm/boot/dts/spear600-evb.dts
++++ b/arch/arm/boot/dts/spear600-evb.dts
+@@ -73,10 +73,14 @@
+ 		apb {
+ 			serial@d0000000 {
+ 				status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			serial@d0080000 {
+ 				status = "okay";
++				pinctrl-names = "default";
++				pinctrl-0 = <>;
+ 			};
+ 
+ 			i2c@d0200000 {
+-- 
+1.8.0
+

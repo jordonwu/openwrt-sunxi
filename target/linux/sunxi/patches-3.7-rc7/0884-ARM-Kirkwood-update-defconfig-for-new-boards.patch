@@ -1,0 +1,41 @@
+From 83a3ac3bd2b0c00591bd26e9ee7e48da3154f865 Mon Sep 17 00:00:00 2001
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Mon, 19 Nov 2012 07:42:49 +0000
+Subject: [PATCH 884/951] ARM: Kirkwood: update defconfig for new boards
+
+MPLCEC4_DT is relocated because it had been added manually.
+
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/configs/kirkwood_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/kirkwood_defconfig b/arch/arm/configs/kirkwood_defconfig
+index 2fd4d25..1128d18 100644
+--- a/arch/arm/configs/kirkwood_defconfig
++++ b/arch/arm/configs/kirkwood_defconfig
+@@ -28,12 +28,12 @@ CONFIG_MACH_LSXL_DT=y
+ CONFIG_MACH_IOMEGA_IX2_200_DT=y
+ CONFIG_MACH_KM_KIRKWOOD_DT=y
+ CONFIG_MACH_INETSPACE_V2_DT=y
++CONFIG_MACH_MPLCEC4_DT=y
+ CONFIG_MACH_NETSPACE_V2_DT=y
+ CONFIG_MACH_NETSPACE_MAX_V2_DT=y
+ CONFIG_MACH_NETSPACE_LITE_V2_DT=y
+ CONFIG_MACH_NETSPACE_MINI_V2_DT=y
+ CONFIG_MACH_TOPKICK_DT=y
+-CONFIG_MACH_MPLCEC4_DT=y
+ CONFIG_MACH_TS219=y
+ CONFIG_MACH_TS41X=y
+ CONFIG_MACH_DOCKSTAR=y
+@@ -47,6 +47,7 @@ CONFIG_MACH_D2NET_V2=y
+ CONFIG_MACH_NET2BIG_V2=y
+ CONFIG_MACH_NET5BIG_V2=y
+ CONFIG_MACH_T5325=y
++CONFIG_MACH_NSA310_DT=y
+ # CONFIG_CPU_FEROCEON_OLD_ID is not set
+ CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+-- 
+1.8.0
+

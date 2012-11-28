@@ -1,0 +1,236 @@
+From 1355bbc480b12ea5b5ec7d171ee34399dc57ec23 Mon Sep 17 00:00:00 2001
+From: Kukjin Kim <kgene.kim@samsung.com>
+Date: Wed, 24 Oct 2012 13:41:15 +0900
+Subject: [PATCH 888/951] ARM: dts: add initial dts file for EXYNOS5440,
+ SSDK5440
+
+This patch adds initial dts file for EXYNOS5440 SoC and adds the
+dts file for SSDK5440 board which is a kind of reference board.
+More properties will be added later.
+
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/boot/dts/Makefile                |   3 +-
+ arch/arm/boot/dts/exynos5440-ssdk5440.dts |  46 ++++++++++
+ arch/arm/boot/dts/exynos5440.dtsi         | 142 ++++++++++++++++++++++++++++++
+ 3 files changed, 190 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/exynos5440-ssdk5440.dts
+ create mode 100644 arch/arm/boot/dts/exynos5440.dtsi
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index f37cf9f..a27d491 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -23,7 +23,8 @@ dtb-$(CONFIG_ARCH_DOVE) += dove-cm-a510.dtb \
+ dtb-$(CONFIG_ARCH_EXYNOS) += exynos4210-origen.dtb \
+ 	exynos4210-smdkv310.dtb \
+ 	exynos4210-trats.dtb \
+-	exynos5250-smdk5250.dtb
++	exynos5250-smdk5250.dtb \
++	exynos5440-ssdk5440.dtb
+ dtb-$(CONFIG_ARCH_HIGHBANK) += highbank.dtb
+ dtb-$(CONFIG_ARCH_INTEGRATOR) += integratorap.dtb \
+ 	integratorcp.dtb
+diff --git a/arch/arm/boot/dts/exynos5440-ssdk5440.dts b/arch/arm/boot/dts/exynos5440-ssdk5440.dts
+new file mode 100644
+index 0000000..921c83c
+--- /dev/null
++++ b/arch/arm/boot/dts/exynos5440-ssdk5440.dts
+@@ -0,0 +1,46 @@
++/*
++ * SAMSUNG SSDK5440 board device tree source
++ *
++ * Copyright (c) 2012 Samsung Electronics Co., Ltd.
++ *		http://www.samsung.com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++*/
++
++/dts-v1/;
++/include/ "exynos5440.dtsi"
++
++/ {
++	model = "SAMSUNG SSDK5440 board based on EXYNOS5440";
++	compatible = "samsung,ssdk5440", "samsung,exynos5440";
++
++	memory {
++		reg = <0x80000000 0x80000000>;
++	};
++
++	chosen {
++		bootargs = "root=/dev/ram0 rw ramdisk=8192 initrd=0x81000000,8M console=ttySAC2,115200 init=/linuxrc";
++	};
++
++	spi {
++		status = "disabled";
++	};
++
++	i2c@F0000 {
++		status = "disabled";
++	};
++
++	i2c@100000 {
++		status = "disabled";
++	};
++
++	watchdog {
++		status = "disabled";
++	};
++
++	rtc {
++		status = "disabled";
++	};
++};
+diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
+new file mode 100644
+index 0000000..6f13d4e
+--- /dev/null
++++ b/arch/arm/boot/dts/exynos5440.dtsi
+@@ -0,0 +1,142 @@
++/*
++ * SAMSUNG EXYNOS5440 SoC device tree source
++ *
++ * Copyright (c) 2012 Samsung Electronics Co., Ltd.
++ *		http://www.samsung.com
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++*/
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "samsung,exynos5440";
++
++	interrupt-parent = <&gic>;
++
++	gic:interrupt-controller@2E0000 {
++		compatible = "arm,cortex-a15-gic";
++		#interrupt-cells = <3>;
++		interrupt-controller;
++		reg = <0x2E1000 0x1000>, <0x2E2000 0x1000>;
++	};
++
++	cpus {
++		cpu@0 {
++			compatible = "arm,cortex-a15";
++			timer {
++				compatible = "arm,armv7-timer";
++				interrupts = <1 13 0xf08>;
++				clock-frequency = <1000000>;
++			};
++		};
++		cpu@1 {
++			compatible = "arm,cortex-a15";
++			timer {
++				compatible = "arm,armv7-timer";
++				interrupts = <1 14 0xf08>;
++				clock-frequency = <1000000>;
++			};
++		};
++		cpu@2 {
++			compatible = "arm,cortex-a15";
++			timer {
++				compatible = "arm,armv7-timer";
++				interrupts = <1 14 0xf08>;
++				clock-frequency = <1000000>;
++			};
++		};
++		cpu@3 {
++			compatible = "arm,cortex-a15";
++			timer {
++				compatible = "arm,armv7-timer";
++				interrupts = <1 14 0xf08>;
++				clock-frequency = <1000000>;
++			};
++		};
++	};
++
++	common {
++		compatible = "samsung,exynos5440";
++
++	};
++
++	serial@B0000 {
++		compatible = "samsung,exynos4210-uart";
++		reg = <0xB0000 0x1000>;
++		interrupts = <0 2 0>;
++	};
++
++	serial@C0000 {
++		compatible = "samsung,exynos4210-uart";
++		reg = <0xC0000 0x1000>;
++		interrupts = <0 3 0>;
++	};
++
++	spi {
++		compatible = "samsung,exynos4210-spi";
++		reg = <0xD0000 0x1000>;
++		interrupts = <0 4 0>;
++		tx-dma-channel = <&pdma0 5>; /* preliminary */
++		rx-dma-channel = <&pdma0 4>; /* preliminary */
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	pinctrl {
++		compatible = "samsung,pinctrl-exynos5440";
++		reg = <0xE0000 0x1000>;
++		interrupt-controller;
++		#interrupt-cells = <2>;
++	};
++
++	i2c@F0000 {
++		compatible = "samsung,s3c2440-i2c";
++		reg = <0xF0000 0x1000>;
++		interrupts = <0 5 0>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	i2c@100000 {
++		compatible = "samsung,s3c2440-i2c";
++		reg = <0x100000 0x1000>;
++		interrupts = <0 6 0>;
++		#address-cells = <1>;
++		#size-cells = <0>;
++	};
++
++	watchdog {
++		compatible = "samsung,s3c2410-wdt";
++		reg = <0x110000 0x1000>;
++		interrupts = <0 1 0>;
++	};
++
++	amba {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		compatible = "arm,amba-bus";
++		interrupt-parent = <&gic>;
++		ranges;
++
++		pdma0: pdma@121A0000 {
++			compatible = "arm,pl330", "arm,primecell";
++			reg = <0x120000 0x1000>;
++			interrupts = <0 34 0>;
++		};
++
++		pdma1: pdma@121B0000 {
++			compatible = "arm,pl330", "arm,primecell";
++			reg = <0x121000 0x1000>;
++			interrupts = <0 35 0>;
++		};
++	};
++
++	rtc {
++		compatible = "samsung,s3c6410-rtc";
++		reg = <0x130000 0x1000>;
++		interrupts = <0 16 0>, <0 17 0>;
++	};
++};
+-- 
+1.8.0
+

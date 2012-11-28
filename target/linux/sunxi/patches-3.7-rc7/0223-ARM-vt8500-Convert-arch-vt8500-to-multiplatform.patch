@@ -1,0 +1,62 @@
+From 6f35f9a9fabe8f0a89a17e353a77a7edef461bb2 Mon Sep 17 00:00:00 2001
+From: Tony Prisk <linux@prisktech.co.nz>
+Date: Thu, 11 Oct 2012 20:13:09 +1300
+Subject: [PATCH 223/951] ARM: vt8500: Convert arch-vt8500 to multiplatform
+
+This patch almosts completes the conversion to ARCH_MULTI_V5
+for arch-vt8500.
+
+Both single platform and multiplatform configurations are supported
+until earlyprintk support is available for multiplatform.
+
+Signed-off-by: Tony Prisk <linux@prisktech.co.nz>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/Kconfig             |  4 +++-
+ arch/arm/mach-vt8500/Kconfig | 12 ++++++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-vt8500/Kconfig
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 97b40d0..2a262a8 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -941,7 +941,7 @@ config ARCH_OMAP
+ 	help
+ 	  Support for TI's OMAP platform (OMAP1/2/3/4).
+ 
+-config ARCH_VT8500
++config ARCH_VT8500_SINGLE
+ 	bool "VIA/WonderMedia 85xx"
+ 	select ARCH_HAS_CPUFREQ
+ 	select ARCH_REQUIRE_GPIOLIB
+@@ -1128,6 +1128,8 @@ source "arch/arm/mach-versatile/Kconfig"
+ source "arch/arm/mach-vexpress/Kconfig"
+ source "arch/arm/plat-versatile/Kconfig"
+ 
++source "arch/arm/mach-vt8500/Kconfig"
++
+ source "arch/arm/mach-w90x900/Kconfig"
+ 
+ # Definitions to make life easier
+diff --git a/arch/arm/mach-vt8500/Kconfig b/arch/arm/mach-vt8500/Kconfig
+new file mode 100644
+index 0000000..2ed0b7d
+--- /dev/null
++++ b/arch/arm/mach-vt8500/Kconfig
+@@ -0,0 +1,12 @@
++config ARCH_VT8500
++	bool "VIA/WonderMedia 85xx" if ARCH_MULTI_V5
++	default ARCH_VT8500_SINGLE
++	select ARCH_HAS_CPUFREQ
++	select ARCH_REQUIRE_GPIOLIB
++	select CLKDEV_LOOKUP
++	select CPU_ARM926T
++	select GENERIC_CLOCKEVENTS
++	select GENERIC_GPIO
++	select HAVE_CLK
++	help
++	  Support for VIA/WonderMedia VT8500/WM85xx System-on-Chip.
+-- 
+1.8.0
+

@@ -1,0 +1,109 @@
+From d1d0c04b951e8eb650e84925bcbd78c6b331cfc0 Mon Sep 17 00:00:00 2001
+From: Andrew Lunn <andrew@lunn.ch>
+Date: Sat, 17 Nov 2012 17:00:52 +0100
+Subject: [PATCH 924/951] ARM: Kirkwood: Convert ib62x0 to pinctrl.
+
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Simon Baatz <gmbnomis@gmail.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-ib62x0.dts | 34 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-kirkwood/board-ib62x0.c | 21 ---------------------
+ 2 files changed, 34 insertions(+), 21 deletions(-)
+
+diff --git a/arch/arm/boot/dts/kirkwood-ib62x0.dts b/arch/arm/boot/dts/kirkwood-ib62x0.dts
+index 6a9558d..71902da 100644
+--- a/arch/arm/boot/dts/kirkwood-ib62x0.dts
++++ b/arch/arm/boot/dts/kirkwood-ib62x0.dts
+@@ -1,6 +1,7 @@
+ /dts-v1/;
+ 
+ /include/ "kirkwood.dtsi"
++/include/ "kirkwood-6281.dtsi"
+ 
+ / {
+ 	model = "RaidSonic ICY BOX IB-NAS62x0 (Rev B)";
+@@ -16,6 +17,39 @@
+ 	};
+ 
+ 	ocp@f1000000 {
++		pinctrl: pinctrl@10000 {
++
++			pinctrl-0 = < &pmx_nand
++				      &pmx_led_os_red &pmx_power_off
++				      &pmx_led_os_green &pmx_led_usb_transfer
++				      &pmx_button_reset &pmx_button_usb_copy >;
++			pinctrl-names = "default";
++
++			pmx_led_os_red: pmx-led-os-red {
++				marvell,pins = "mpp22";
++				marvell,function = "gpio";
++			};
++			pmx_power_off: pmx-power-off {
++				marvell,pins = "mpp24";
++				marvell,function = "gpio";
++			};
++			pmx_led_os_green: pmx-led-os-green {
++				marvell,pins = "mpp25";
++				marvell,function = "gpio";
++			};
++			pmx_led_usb_transfer: pmx-led-usb-transfer {
++				marvell,pins = "mpp27";
++				marvell,function = "gpio";
++			};
++			pmx_button_reset: pmx-button-reset {
++				marvell,pins = "mpp28";
++				marvell,function = "gpio";
++			};
++			pmx_button_usb_copy: pmx-button-usb-copy {
++				marvell,pins = "mpp29";
++				marvell,function = "gpio";
++			};
++		};
+ 		serial@12000 {
+ 			clock-frequency = <200000000>;
+ 			status = "okay";
+diff --git a/arch/arm/mach-kirkwood/board-ib62x0.c b/arch/arm/mach-kirkwood/board-ib62x0.c
+index 2a58b4fc..b6e5db9 100644
+--- a/arch/arm/mach-kirkwood/board-ib62x0.c
++++ b/arch/arm/mach-kirkwood/board-ib62x0.c
+@@ -22,36 +22,15 @@
+ #include <asm/mach/arch.h>
+ #include <mach/kirkwood.h>
+ #include "common.h"
+-#include "mpp.h"
+ 
+ static struct mv643xx_eth_platform_data ib62x0_ge00_data = {
+ 	.phy_addr	= MV643XX_ETH_PHY_ADDR(8),
+ };
+ 
+-static unsigned int ib62x0_mpp_config[] __initdata = {
+-	MPP0_NF_IO2,
+-	MPP1_NF_IO3,
+-	MPP2_NF_IO4,
+-	MPP3_NF_IO5,
+-	MPP4_NF_IO6,
+-	MPP5_NF_IO7,
+-	MPP18_NF_IO0,
+-	MPP19_NF_IO1,
+-	MPP22_GPIO,	/* OS LED red */
+-	MPP24_GPIO,	/* Power off device */
+-	MPP25_GPIO,	/* OS LED green */
+-	MPP27_GPIO,	/* USB transfer LED */
+-	MPP28_GPIO,	/* Reset button */
+-	MPP29_GPIO,	/* USB Copy button */
+-	0
+-};
+-
+ void __init ib62x0_init(void)
+ {
+ 	/*
+ 	 * Basic setup. Needs to be called early.
+ 	 */
+-	kirkwood_mpp_conf(ib62x0_mpp_config);
+-
+ 	kirkwood_ge00_init(&ib62x0_ge00_data);
+ }
+-- 
+1.8.0
+

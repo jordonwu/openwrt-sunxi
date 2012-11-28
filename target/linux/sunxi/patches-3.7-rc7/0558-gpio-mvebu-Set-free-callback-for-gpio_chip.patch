@@ -1,0 +1,48 @@
+From 3764bdde1dc2fe53a87db1777440c2532cfccd58 Mon Sep 17 00:00:00 2001
+From: Axel Lin <axel.lin@ingics.com>
+Date: Thu, 8 Nov 2012 10:27:29 +0800
+Subject: [PATCH 558/951] gpio: mvebu: Set free callback for gpio_chip
+
+We call pinctrl_request_gpio() in request callback, thus we need to call
+pinctrl_free_gpio() in free callback.
+
+Both mvebu_gpio_request() and mvebu_gpio_free() are not referenced outside of
+this file, make them static.
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/gpio/gpio-mvebu.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/gpio/gpio-mvebu.c b/drivers/gpio/gpio-mvebu.c
+index e0bde06..8b30657 100644
+--- a/drivers/gpio/gpio-mvebu.c
++++ b/drivers/gpio/gpio-mvebu.c
+@@ -163,12 +163,12 @@ static void __iomem *mvebu_gpioreg_level_mask(struct mvebu_gpio_chip *mvchip)
+  * Functions implementing the gpio_chip methods
+  */
+ 
+-int mvebu_gpio_request(struct gpio_chip *chip, unsigned pin)
++static int mvebu_gpio_request(struct gpio_chip *chip, unsigned pin)
+ {
+ 	return pinctrl_request_gpio(chip->base + pin);
+ }
+ 
+-void mvebu_gpio_free(struct gpio_chip *chip, unsigned pin)
++static void mvebu_gpio_free(struct gpio_chip *chip, unsigned pin)
+ {
+ 	pinctrl_free_gpio(chip->base + pin);
+ }
+@@ -518,6 +518,7 @@ static int __devinit mvebu_gpio_probe(struct platform_device *pdev)
+ 	mvchip->chip.label = dev_name(&pdev->dev);
+ 	mvchip->chip.dev = &pdev->dev;
+ 	mvchip->chip.request = mvebu_gpio_request;
++	mvchip->chip.free = mvebu_gpio_free;
+ 	mvchip->chip.direction_input = mvebu_gpio_direction_input;
+ 	mvchip->chip.get = mvebu_gpio_get;
+ 	mvchip->chip.direction_output = mvebu_gpio_direction_output;
+-- 
+1.8.0
+

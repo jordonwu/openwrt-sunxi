@@ -1,0 +1,41 @@
+From 0d09bf69fc9f99f0d56c420acb1abb018292632c Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Tue, 20 Nov 2012 16:26:18 +0900
+Subject: [PATCH 803/951] ARM: dts: Add node for touchscreen for
+ exynos4210-trats
+
+This patch adds a device tree node for the Melfas MMS114-controlled
+touchscreen present on Samsung Trats board.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/boot/dts/exynos4210-trats.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/exynos4210-trats.dts b/arch/arm/boot/dts/exynos4210-trats.dts
+index 5dfd231..dab2e08 100644
+--- a/arch/arm/boot/dts/exynos4210-trats.dts
++++ b/arch/arm/boot/dts/exynos4210-trats.dts
+@@ -114,6 +114,17 @@
+ 		pinctrl-0 = <&i2c3_bus>;
+ 		pinctrl-names = "default";
+ 		status = "okay";
++
++		mms114-touchscreen@48 {
++			compatible = "melfas,mms114";
++			reg = <0x48>;
++			interrupt-parent = <&gpx0>;
++			interrupts = <4 2>;
++			x-size = <720>;
++			y-size = <1280>;
++			avdd-supply = <&tsp_reg>;
++			vdd-supply = <&tsp_reg>;
++		};
+ 	};
+ 
+ 	i2c@138B0000 {
+-- 
+1.8.0
+

@@ -1,0 +1,766 @@
+From 694e33a7f42de7dcc8b43c3990c597b19ef9b438 Mon Sep 17 00:00:00 2001
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 18 Oct 2012 14:01:25 +0200
+Subject: [PATCH 405/951] ARM: plat-nomadik: move MTU, kill plat-nomadik
+
+This moves the MTU timer driver from arch/arm/plat-nomadik
+to drivers/clocksource and moves the header file to the
+platform_data directory.
+
+As this moves the last file being compiled to an object out
+of arch/arm/plat-nomadik, we have to "turn off the light"
+and delete the plat-nomadik directory, because it is not
+allowed to have an empty Makefile in a plat-* directory.
+This is probably also a desired side effect of depopulating
+the arch/arm directory of drivers. Luckily we have just
+deleted all the <plat/*> include files prior to this so
+by moving the last one we may delete the directory.
+
+After this all the Ux500 and Nomadik device drivers live
+outside of the arch/arm hierarchy.
+
+Cc: Alessandro Rubini <rubini@unipv.it>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/Kconfig                                   |   1 -
+ arch/arm/Makefile                                  |   1 -
+ arch/arm/mach-nomadik/Kconfig                      |   2 +-
+ arch/arm/mach-nomadik/board-nhk8815.c              |   6 +-
+ arch/arm/mach-ux500/Kconfig                        |   2 +-
+ arch/arm/mach-ux500/timer.c                        |   3 +-
+ arch/arm/plat-nomadik/Kconfig                      |  29 ---
+ arch/arm/plat-nomadik/Makefile                     |   5 -
+ arch/arm/plat-nomadik/include/plat/mtu.h           |   9 -
+ arch/arm/plat-nomadik/timer.c                      | 224 ---------------------
+ drivers/char/hw_random/Kconfig                     |   2 +-
+ drivers/clocksource/Kconfig                        |  17 +-
+ drivers/clocksource/Makefile                       |   1 +
+ drivers/clocksource/nomadik-mtu.c                  | 224 +++++++++++++++++++++
+ drivers/input/keyboard/Kconfig                     |   2 +-
+ drivers/mtd/nand/Kconfig                           |   2 +-
+ .../linux/platform_data/clocksource-nomadik-mtu.h  |   9 +
+ 17 files changed, 258 insertions(+), 281 deletions(-)
+ delete mode 100644 arch/arm/plat-nomadik/Kconfig
+ delete mode 100644 arch/arm/plat-nomadik/Makefile
+ delete mode 100644 arch/arm/plat-nomadik/include/plat/mtu.h
+ delete mode 100644 arch/arm/plat-nomadik/timer.c
+ create mode 100644 drivers/clocksource/nomadik-mtu.c
+ create mode 100644 include/linux/platform_data/clocksource-nomadik-mtu.h
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index ade7e92..8dae1e0 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1065,7 +1065,6 @@ source "arch/arm/mach-mxs/Kconfig"
+ source "arch/arm/mach-netx/Kconfig"
+ 
+ source "arch/arm/mach-nomadik/Kconfig"
+-source "arch/arm/plat-nomadik/Kconfig"
+ 
+ source "arch/arm/plat-omap/Kconfig"
+ 
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index 5f914fc..89087d5 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -201,7 +201,6 @@ plat-$(CONFIG_ARCH_OMAP)	+= omap
+ plat-$(CONFIG_ARCH_S3C64XX)	+= samsung
+ plat-$(CONFIG_ARCH_ZYNQ)	+= versatile
+ plat-$(CONFIG_PLAT_IOP)		+= iop
+-plat-$(CONFIG_PLAT_NOMADIK)	+= nomadik
+ plat-$(CONFIG_PLAT_ORION)	+= orion
+ plat-$(CONFIG_PLAT_PXA)		+= pxa
+ plat-$(CONFIG_PLAT_S3C24XX)	+= s3c24xx samsung
+diff --git a/arch/arm/mach-nomadik/Kconfig b/arch/arm/mach-nomadik/Kconfig
+index c744946..706dc57 100644
+--- a/arch/arm/mach-nomadik/Kconfig
++++ b/arch/arm/mach-nomadik/Kconfig
+@@ -4,7 +4,7 @@ menu "Nomadik boards"
+ 
+ config MACH_NOMADIK_8815NHK
+ 	bool "ST 8815 Nomadik Hardware Kit (evaluation board)"
+-	select HAS_MTU
++	select CLKSRC_NOMADIK_MTU
+ 	select NOMADIK_8815
+ 
+ endmenu
+diff --git a/arch/arm/mach-nomadik/board-nhk8815.c b/arch/arm/mach-nomadik/board-nhk8815.c
+index 16f10e0..5ccdf53 100644
+--- a/arch/arm/mach-nomadik/board-nhk8815.c
++++ b/arch/arm/mach-nomadik/board-nhk8815.c
+@@ -25,16 +25,14 @@
+ #include <linux/io.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_data/pinctrl-nomadik.h>
++#include <linux/platform_data/clocksource-nomadik-mtu.h>
++#include <linux/platform_data/mtd-nomadik-nand.h>
+ #include <asm/hardware/vic.h>
+ #include <asm/sizes.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/flash.h>
+ #include <asm/mach/time.h>
+-
+-#include <plat/mtu.h>
+-
+-#include <linux/platform_data/mtd-nomadik-nand.h>
+ #include <mach/fsmc.h>
+ #include <mach/irqs.h>
+ 
+diff --git a/arch/arm/mach-ux500/Kconfig b/arch/arm/mach-ux500/Kconfig
+index e8c3f0d..5dea906 100644
+--- a/arch/arm/mach-ux500/Kconfig
++++ b/arch/arm/mach-ux500/Kconfig
+@@ -7,8 +7,8 @@ config UX500_SOC_COMMON
+ 	select ARM_ERRATA_764369 if SMP
+ 	select ARM_GIC
+ 	select CACHE_L2X0
++	select CLKSRC_NOMADIK_MTU
+ 	select COMMON_CLK
+-	select HAS_MTU
+ 	select PINCTRL
+ 	select PINCTRL_NOMADIK
+ 	select PL310_ERRATA_753970 if CACHE_PL310
+diff --git a/arch/arm/mach-ux500/timer.c b/arch/arm/mach-ux500/timer.c
+index 20d02fa..875309a 100644
+--- a/arch/arm/mach-ux500/timer.c
++++ b/arch/arm/mach-ux500/timer.c
+@@ -9,11 +9,10 @@
+ #include <linux/clksrc-dbx500-prcmu.h>
+ #include <linux/of.h>
+ #include <linux/of_address.h>
++#include <linux/platform_data/clocksource-nomadik-mtu.h>
+ 
+ #include <asm/smp_twd.h>
+ 
+-#include <plat/mtu.h>
+-
+ #include <mach/setup.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+diff --git a/arch/arm/plat-nomadik/Kconfig b/arch/arm/plat-nomadik/Kconfig
+deleted file mode 100644
+index 19f55ca..0000000
+--- a/arch/arm/plat-nomadik/Kconfig
++++ /dev/null
+@@ -1,29 +0,0 @@
+-# We keep common IP's here for Nomadik and other similar
+-# familiy of processors from ST-Ericsson. At the moment we have
+-# just MTU, others to follow soon.
+-
+-config PLAT_NOMADIK
+-	bool
+-	depends on ARCH_NOMADIK || ARCH_U8500
+-	default y
+-	select CLKSRC_MMIO
+-	help
+-	  Common platform code for Nomadik and other ST-Ericsson
+-	  platforms.
+-
+-if PLAT_NOMADIK
+-
+-config HAS_MTU
+-	bool
+-	help
+-	  Support for Multi Timer Unit. MTU provides access
+-	  to multiple interrupt generating programmable
+-	  32-bit free running decrementing counters.
+-
+-config NOMADIK_MTU_SCHED_CLOCK
+-	bool
+-	depends on HAS_MTU
+-	help
+-	  Use the Multi Timer Unit as the sched_clock.
+-
+-endif
+diff --git a/arch/arm/plat-nomadik/Makefile b/arch/arm/plat-nomadik/Makefile
+deleted file mode 100644
+index 37c7cdd..0000000
+--- a/arch/arm/plat-nomadik/Makefile
++++ /dev/null
+@@ -1,5 +0,0 @@
+-# arch/arm/plat-nomadik/Makefile
+-# Copyright 2009 ST-Ericsson
+-# Licensed under GPLv2
+-
+-obj-$(CONFIG_HAS_MTU)	+= timer.o
+diff --git a/arch/arm/plat-nomadik/include/plat/mtu.h b/arch/arm/plat-nomadik/include/plat/mtu.h
+deleted file mode 100644
+index 8008897..0000000
+--- a/arch/arm/plat-nomadik/include/plat/mtu.h
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#ifndef __PLAT_MTU_H
+-#define __PLAT_MTU_H
+-
+-void nmdk_timer_init(void __iomem *base, int irq);
+-void nmdk_clkevt_reset(void);
+-void nmdk_clksrc_reset(void);
+-
+-#endif /* __PLAT_MTU_H */
+-
+diff --git a/arch/arm/plat-nomadik/timer.c b/arch/arm/plat-nomadik/timer.c
+deleted file mode 100644
+index f911430..0000000
+--- a/arch/arm/plat-nomadik/timer.c
++++ /dev/null
+@@ -1,224 +0,0 @@
+-/*
+- *  linux/arch/arm/plat-nomadik/timer.c
+- *
+- * Copyright (C) 2008 STMicroelectronics
+- * Copyright (C) 2010 Alessandro Rubini
+- * Copyright (C) 2010 Linus Walleij for ST-Ericsson
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2, as
+- * published by the Free Software Foundation.
+- */
+-#include <linux/init.h>
+-#include <linux/interrupt.h>
+-#include <linux/irq.h>
+-#include <linux/io.h>
+-#include <linux/clockchips.h>
+-#include <linux/clk.h>
+-#include <linux/jiffies.h>
+-#include <linux/err.h>
+-#include <asm/mach/time.h>
+-#include <asm/sched_clock.h>
+-
+-/*
+- * The MTU device hosts four different counters, with 4 set of
+- * registers. These are register names.
+- */
+-
+-#define MTU_IMSC	0x00	/* Interrupt mask set/clear */
+-#define MTU_RIS		0x04	/* Raw interrupt status */
+-#define MTU_MIS		0x08	/* Masked interrupt status */
+-#define MTU_ICR		0x0C	/* Interrupt clear register */
+-
+-/* per-timer registers take 0..3 as argument */
+-#define MTU_LR(x)	(0x10 + 0x10 * (x) + 0x00)	/* Load value */
+-#define MTU_VAL(x)	(0x10 + 0x10 * (x) + 0x04)	/* Current value */
+-#define MTU_CR(x)	(0x10 + 0x10 * (x) + 0x08)	/* Control reg */
+-#define MTU_BGLR(x)	(0x10 + 0x10 * (x) + 0x0c)	/* At next overflow */
+-
+-/* bits for the control register */
+-#define MTU_CRn_ENA		0x80
+-#define MTU_CRn_PERIODIC	0x40	/* if 0 = free-running */
+-#define MTU_CRn_PRESCALE_MASK	0x0c
+-#define MTU_CRn_PRESCALE_1		0x00
+-#define MTU_CRn_PRESCALE_16		0x04
+-#define MTU_CRn_PRESCALE_256		0x08
+-#define MTU_CRn_32BITS		0x02
+-#define MTU_CRn_ONESHOT		0x01	/* if 0 = wraps reloading from BGLR*/
+-
+-/* Other registers are usual amba/primecell registers, currently not used */
+-#define MTU_ITCR	0xff0
+-#define MTU_ITOP	0xff4
+-
+-#define MTU_PERIPH_ID0	0xfe0
+-#define MTU_PERIPH_ID1	0xfe4
+-#define MTU_PERIPH_ID2	0xfe8
+-#define MTU_PERIPH_ID3	0xfeC
+-
+-#define MTU_PCELL0	0xff0
+-#define MTU_PCELL1	0xff4
+-#define MTU_PCELL2	0xff8
+-#define MTU_PCELL3	0xffC
+-
+-static void __iomem *mtu_base;
+-static bool clkevt_periodic;
+-static u32 clk_prescale;
+-static u32 nmdk_cycle;		/* write-once */
+-
+-#ifdef CONFIG_NOMADIK_MTU_SCHED_CLOCK
+-/*
+- * Override the global weak sched_clock symbol with this
+- * local implementation which uses the clocksource to get some
+- * better resolution when scheduling the kernel.
+- */
+-static u32 notrace nomadik_read_sched_clock(void)
+-{
+-	if (unlikely(!mtu_base))
+-		return 0;
+-
+-	return -readl(mtu_base + MTU_VAL(0));
+-}
+-#endif
+-
+-/* Clockevent device: use one-shot mode */
+-static int nmdk_clkevt_next(unsigned long evt, struct clock_event_device *ev)
+-{
+-	writel(1 << 1, mtu_base + MTU_IMSC);
+-	writel(evt, mtu_base + MTU_LR(1));
+-	/* Load highest value, enable device, enable interrupts */
+-	writel(MTU_CRn_ONESHOT | clk_prescale |
+-	       MTU_CRn_32BITS | MTU_CRn_ENA,
+-	       mtu_base + MTU_CR(1));
+-
+-	return 0;
+-}
+-
+-void nmdk_clkevt_reset(void)
+-{
+-	if (clkevt_periodic) {
+-		/* Timer: configure load and background-load, and fire it up */
+-		writel(nmdk_cycle, mtu_base + MTU_LR(1));
+-		writel(nmdk_cycle, mtu_base + MTU_BGLR(1));
+-
+-		writel(MTU_CRn_PERIODIC | clk_prescale |
+-		       MTU_CRn_32BITS | MTU_CRn_ENA,
+-		       mtu_base + MTU_CR(1));
+-		writel(1 << 1, mtu_base + MTU_IMSC);
+-	} else {
+-		/* Generate an interrupt to start the clockevent again */
+-		(void) nmdk_clkevt_next(nmdk_cycle, NULL);
+-	}
+-}
+-
+-static void nmdk_clkevt_mode(enum clock_event_mode mode,
+-			     struct clock_event_device *dev)
+-{
+-	switch (mode) {
+-	case CLOCK_EVT_MODE_PERIODIC:
+-		clkevt_periodic = true;
+-		nmdk_clkevt_reset();
+-		break;
+-	case CLOCK_EVT_MODE_ONESHOT:
+-		clkevt_periodic = false;
+-		break;
+-	case CLOCK_EVT_MODE_SHUTDOWN:
+-	case CLOCK_EVT_MODE_UNUSED:
+-		writel(0, mtu_base + MTU_IMSC);
+-		/* disable timer */
+-		writel(0, mtu_base + MTU_CR(1));
+-		/* load some high default value */
+-		writel(0xffffffff, mtu_base + MTU_LR(1));
+-		break;
+-	case CLOCK_EVT_MODE_RESUME:
+-		break;
+-	}
+-}
+-
+-static struct clock_event_device nmdk_clkevt = {
+-	.name		= "mtu_1",
+-	.features	= CLOCK_EVT_FEAT_ONESHOT | CLOCK_EVT_FEAT_PERIODIC,
+-	.rating		= 200,
+-	.set_mode	= nmdk_clkevt_mode,
+-	.set_next_event	= nmdk_clkevt_next,
+-};
+-
+-/*
+- * IRQ Handler for timer 1 of the MTU block.
+- */
+-static irqreturn_t nmdk_timer_interrupt(int irq, void *dev_id)
+-{
+-	struct clock_event_device *evdev = dev_id;
+-
+-	writel(1 << 1, mtu_base + MTU_ICR); /* Interrupt clear reg */
+-	evdev->event_handler(evdev);
+-	return IRQ_HANDLED;
+-}
+-
+-static struct irqaction nmdk_timer_irq = {
+-	.name		= "Nomadik Timer Tick",
+-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+-	.handler	= nmdk_timer_interrupt,
+-	.dev_id		= &nmdk_clkevt,
+-};
+-
+-void nmdk_clksrc_reset(void)
+-{
+-	/* Disable */
+-	writel(0, mtu_base + MTU_CR(0));
+-
+-	/* ClockSource: configure load and background-load, and fire it up */
+-	writel(nmdk_cycle, mtu_base + MTU_LR(0));
+-	writel(nmdk_cycle, mtu_base + MTU_BGLR(0));
+-
+-	writel(clk_prescale | MTU_CRn_32BITS | MTU_CRn_ENA,
+-	       mtu_base + MTU_CR(0));
+-}
+-
+-void __init nmdk_timer_init(void __iomem *base, int irq)
+-{
+-	unsigned long rate;
+-	struct clk *clk0;
+-
+-	mtu_base = base;
+-	clk0 = clk_get_sys("mtu0", NULL);
+-	BUG_ON(IS_ERR(clk0));
+-	BUG_ON(clk_prepare(clk0) < 0);
+-	BUG_ON(clk_enable(clk0) < 0);
+-
+-	/*
+-	 * Tick rate is 2.4MHz for Nomadik and 2.4Mhz, 100MHz or 133 MHz
+-	 * for ux500.
+-	 * Use a divide-by-16 counter if the tick rate is more than 32MHz.
+-	 * At 32 MHz, the timer (with 32 bit counter) can be programmed
+-	 * to wake-up at a max 127s a head in time. Dividing a 2.4 MHz timer
+-	 * with 16 gives too low timer resolution.
+-	 */
+-	rate = clk_get_rate(clk0);
+-	if (rate > 32000000) {
+-		rate /= 16;
+-		clk_prescale = MTU_CRn_PRESCALE_16;
+-	} else {
+-		clk_prescale = MTU_CRn_PRESCALE_1;
+-	}
+-
+-	/* Cycles for periodic mode */
+-	nmdk_cycle = DIV_ROUND_CLOSEST(rate, HZ);
+-
+-
+-	/* Timer 0 is the free running clocksource */
+-	nmdk_clksrc_reset();
+-
+-	if (clocksource_mmio_init(mtu_base + MTU_VAL(0), "mtu_0",
+-			rate, 200, 32, clocksource_mmio_readl_down))
+-		pr_err("timer: failed to initialize clock source %s\n",
+-		       "mtu_0");
+-
+-#ifdef CONFIG_NOMADIK_MTU_SCHED_CLOCK
+-	setup_sched_clock(nomadik_read_sched_clock, 32, rate);
+-#endif
+-
+-	/* Timer 1 is used for events, register irq and clockevents */
+-	setup_irq(irq, &nmdk_timer_irq);
+-	nmdk_clkevt.cpumask = cpumask_of(0);
+-	clockevents_config_and_register(&nmdk_clkevt, rate, 2, 0xffffffffU);
+-}
+diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
+index fbd9b2b..5bc09ee 100644
+--- a/drivers/char/hw_random/Kconfig
++++ b/drivers/char/hw_random/Kconfig
+@@ -216,7 +216,7 @@ config HW_RANDOM_MXC_RNGA
+ 
+ config HW_RANDOM_NOMADIK
+ 	tristate "ST-Ericsson Nomadik Random Number Generator support"
+-	depends on HW_RANDOM && PLAT_NOMADIK
++	depends on HW_RANDOM && ARCH_NOMADIK
+ 	---help---
+ 	  This driver provides kernel-side support for the Random Number
+ 	  Generator hardware found on ST-Ericsson SoCs (8815 and 8500).
+diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
+index 6a78073..c9f67de 100644
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -22,6 +22,21 @@ config DW_APB_TIMER_OF
+ config ARMADA_370_XP_TIMER
+ 	bool
+ 
++config CLKSRC_NOMADIK_MTU
++	bool
++	depends on (ARCH_NOMADIK || ARCH_U8500)
++	select CLKSRC_MMIO
++	help
++	  Support for Multi Timer Unit. MTU provides access
++	  to multiple interrupt generating programmable
++	  32-bit free running decrementing counters.
++
++config CLKSRC_NOMADIK_MTU_SCHED_CLOCK
++	bool
++	depends on CLKSRC_NOMADIK_MTU
++	help
++	  Use the Multi Timer Unit as the sched_clock.
++
+ config CLKSRC_DBX500_PRCMU
+ 	bool "Clocksource PRCMU Timer"
+ 	depends on UX500_SOC_DB8500
+@@ -31,7 +46,7 @@ config CLKSRC_DBX500_PRCMU
+ 
+ config CLKSRC_DBX500_PRCMU_SCHED_CLOCK
+ 	bool "Clocksource PRCMU Timer sched_clock"
+-	depends on (CLKSRC_DBX500_PRCMU && !NOMADIK_MTU_SCHED_CLOCK)
++	depends on (CLKSRC_DBX500_PRCMU && !CLKSRC_NOMADIK_MTU_SCHED_CLOCK)
+ 	default y
+ 	help
+ 	  Use the always on PRCMU Timer as sched_clock
+diff --git a/drivers/clocksource/Makefile b/drivers/clocksource/Makefile
+index 603be36..24fb888 100644
+--- a/drivers/clocksource/Makefile
++++ b/drivers/clocksource/Makefile
+@@ -11,6 +11,7 @@ obj-$(CONFIG_CLKBLD_I8253)	+= i8253.o
+ obj-$(CONFIG_CLKSRC_MMIO)	+= mmio.o
+ obj-$(CONFIG_DW_APB_TIMER)	+= dw_apb_timer.o
+ obj-$(CONFIG_DW_APB_TIMER_OF)	+= dw_apb_timer_of.o
++obj-$(CONFIG_CLKSRC_NOMADIK_MTU)	+= nomadik-mtu.o
+ obj-$(CONFIG_CLKSRC_DBX500_PRCMU)	+= clksrc-dbx500-prcmu.o
+ obj-$(CONFIG_ARMADA_370_XP_TIMER)	+= time-armada-370-xp.o
+ obj-$(CONFIG_ARCH_BCM2835)	+= bcm2835_timer.o
+diff --git a/drivers/clocksource/nomadik-mtu.c b/drivers/clocksource/nomadik-mtu.c
+new file mode 100644
+index 0000000..23c780b
+--- /dev/null
++++ b/drivers/clocksource/nomadik-mtu.c
+@@ -0,0 +1,224 @@
++/*
++ * Copyright (C) 2008 STMicroelectronics
++ * Copyright (C) 2010 Alessandro Rubini
++ * Copyright (C) 2010 Linus Walleij for ST-Ericsson
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2, as
++ * published by the Free Software Foundation.
++ */
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/clockchips.h>
++#include <linux/clocksource.h>
++#include <linux/clk.h>
++#include <linux/jiffies.h>
++#include <linux/err.h>
++#include <linux/platform_data/clocksource-nomadik-mtu.h>
++#include <asm/mach/time.h>
++#include <asm/sched_clock.h>
++
++/*
++ * The MTU device hosts four different counters, with 4 set of
++ * registers. These are register names.
++ */
++
++#define MTU_IMSC	0x00	/* Interrupt mask set/clear */
++#define MTU_RIS		0x04	/* Raw interrupt status */
++#define MTU_MIS		0x08	/* Masked interrupt status */
++#define MTU_ICR		0x0C	/* Interrupt clear register */
++
++/* per-timer registers take 0..3 as argument */
++#define MTU_LR(x)	(0x10 + 0x10 * (x) + 0x00)	/* Load value */
++#define MTU_VAL(x)	(0x10 + 0x10 * (x) + 0x04)	/* Current value */
++#define MTU_CR(x)	(0x10 + 0x10 * (x) + 0x08)	/* Control reg */
++#define MTU_BGLR(x)	(0x10 + 0x10 * (x) + 0x0c)	/* At next overflow */
++
++/* bits for the control register */
++#define MTU_CRn_ENA		0x80
++#define MTU_CRn_PERIODIC	0x40	/* if 0 = free-running */
++#define MTU_CRn_PRESCALE_MASK	0x0c
++#define MTU_CRn_PRESCALE_1		0x00
++#define MTU_CRn_PRESCALE_16		0x04
++#define MTU_CRn_PRESCALE_256		0x08
++#define MTU_CRn_32BITS		0x02
++#define MTU_CRn_ONESHOT		0x01	/* if 0 = wraps reloading from BGLR*/
++
++/* Other registers are usual amba/primecell registers, currently not used */
++#define MTU_ITCR	0xff0
++#define MTU_ITOP	0xff4
++
++#define MTU_PERIPH_ID0	0xfe0
++#define MTU_PERIPH_ID1	0xfe4
++#define MTU_PERIPH_ID2	0xfe8
++#define MTU_PERIPH_ID3	0xfeC
++
++#define MTU_PCELL0	0xff0
++#define MTU_PCELL1	0xff4
++#define MTU_PCELL2	0xff8
++#define MTU_PCELL3	0xffC
++
++static void __iomem *mtu_base;
++static bool clkevt_periodic;
++static u32 clk_prescale;
++static u32 nmdk_cycle;		/* write-once */
++
++#ifdef CONFIG_NOMADIK_MTU_SCHED_CLOCK
++/*
++ * Override the global weak sched_clock symbol with this
++ * local implementation which uses the clocksource to get some
++ * better resolution when scheduling the kernel.
++ */
++static u32 notrace nomadik_read_sched_clock(void)
++{
++	if (unlikely(!mtu_base))
++		return 0;
++
++	return -readl(mtu_base + MTU_VAL(0));
++}
++#endif
++
++/* Clockevent device: use one-shot mode */
++static int nmdk_clkevt_next(unsigned long evt, struct clock_event_device *ev)
++{
++	writel(1 << 1, mtu_base + MTU_IMSC);
++	writel(evt, mtu_base + MTU_LR(1));
++	/* Load highest value, enable device, enable interrupts */
++	writel(MTU_CRn_ONESHOT | clk_prescale |
++	       MTU_CRn_32BITS | MTU_CRn_ENA,
++	       mtu_base + MTU_CR(1));
++
++	return 0;
++}
++
++void nmdk_clkevt_reset(void)
++{
++	if (clkevt_periodic) {
++		/* Timer: configure load and background-load, and fire it up */
++		writel(nmdk_cycle, mtu_base + MTU_LR(1));
++		writel(nmdk_cycle, mtu_base + MTU_BGLR(1));
++
++		writel(MTU_CRn_PERIODIC | clk_prescale |
++		       MTU_CRn_32BITS | MTU_CRn_ENA,
++		       mtu_base + MTU_CR(1));
++		writel(1 << 1, mtu_base + MTU_IMSC);
++	} else {
++		/* Generate an interrupt to start the clockevent again */
++		(void) nmdk_clkevt_next(nmdk_cycle, NULL);
++	}
++}
++
++static void nmdk_clkevt_mode(enum clock_event_mode mode,
++			     struct clock_event_device *dev)
++{
++	switch (mode) {
++	case CLOCK_EVT_MODE_PERIODIC:
++		clkevt_periodic = true;
++		nmdk_clkevt_reset();
++		break;
++	case CLOCK_EVT_MODE_ONESHOT:
++		clkevt_periodic = false;
++		break;
++	case CLOCK_EVT_MODE_SHUTDOWN:
++	case CLOCK_EVT_MODE_UNUSED:
++		writel(0, mtu_base + MTU_IMSC);
++		/* disable timer */
++		writel(0, mtu_base + MTU_CR(1));
++		/* load some high default value */
++		writel(0xffffffff, mtu_base + MTU_LR(1));
++		break;
++	case CLOCK_EVT_MODE_RESUME:
++		break;
++	}
++}
++
++static struct clock_event_device nmdk_clkevt = {
++	.name		= "mtu_1",
++	.features	= CLOCK_EVT_FEAT_ONESHOT | CLOCK_EVT_FEAT_PERIODIC,
++	.rating		= 200,
++	.set_mode	= nmdk_clkevt_mode,
++	.set_next_event	= nmdk_clkevt_next,
++};
++
++/*
++ * IRQ Handler for timer 1 of the MTU block.
++ */
++static irqreturn_t nmdk_timer_interrupt(int irq, void *dev_id)
++{
++	struct clock_event_device *evdev = dev_id;
++
++	writel(1 << 1, mtu_base + MTU_ICR); /* Interrupt clear reg */
++	evdev->event_handler(evdev);
++	return IRQ_HANDLED;
++}
++
++static struct irqaction nmdk_timer_irq = {
++	.name		= "Nomadik Timer Tick",
++	.flags		= IRQF_DISABLED | IRQF_TIMER,
++	.handler	= nmdk_timer_interrupt,
++	.dev_id		= &nmdk_clkevt,
++};
++
++void nmdk_clksrc_reset(void)
++{
++	/* Disable */
++	writel(0, mtu_base + MTU_CR(0));
++
++	/* ClockSource: configure load and background-load, and fire it up */
++	writel(nmdk_cycle, mtu_base + MTU_LR(0));
++	writel(nmdk_cycle, mtu_base + MTU_BGLR(0));
++
++	writel(clk_prescale | MTU_CRn_32BITS | MTU_CRn_ENA,
++	       mtu_base + MTU_CR(0));
++}
++
++void __init nmdk_timer_init(void __iomem *base, int irq)
++{
++	unsigned long rate;
++	struct clk *clk0;
++
++	mtu_base = base;
++	clk0 = clk_get_sys("mtu0", NULL);
++	BUG_ON(IS_ERR(clk0));
++	BUG_ON(clk_prepare(clk0) < 0);
++	BUG_ON(clk_enable(clk0) < 0);
++
++	/*
++	 * Tick rate is 2.4MHz for Nomadik and 2.4Mhz, 100MHz or 133 MHz
++	 * for ux500.
++	 * Use a divide-by-16 counter if the tick rate is more than 32MHz.
++	 * At 32 MHz, the timer (with 32 bit counter) can be programmed
++	 * to wake-up at a max 127s a head in time. Dividing a 2.4 MHz timer
++	 * with 16 gives too low timer resolution.
++	 */
++	rate = clk_get_rate(clk0);
++	if (rate > 32000000) {
++		rate /= 16;
++		clk_prescale = MTU_CRn_PRESCALE_16;
++	} else {
++		clk_prescale = MTU_CRn_PRESCALE_1;
++	}
++
++	/* Cycles for periodic mode */
++	nmdk_cycle = DIV_ROUND_CLOSEST(rate, HZ);
++
++
++	/* Timer 0 is the free running clocksource */
++	nmdk_clksrc_reset();
++
++	if (clocksource_mmio_init(mtu_base + MTU_VAL(0), "mtu_0",
++			rate, 200, 32, clocksource_mmio_readl_down))
++		pr_err("timer: failed to initialize clock source %s\n",
++		       "mtu_0");
++
++#ifdef CONFIG_NOMADIK_MTU_SCHED_CLOCK
++	setup_sched_clock(nomadik_read_sched_clock, 32, rate);
++#endif
++
++	/* Timer 1 is used for events, register irq and clockevents */
++	setup_irq(irq, &nmdk_timer_irq);
++	nmdk_clkevt.cpumask = cpumask_of(0);
++	clockevents_config_and_register(&nmdk_clkevt, rate, 2, 0xffffffffU);
++}
+diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
+index b4b65af..855fc52 100644
+--- a/drivers/input/keyboard/Kconfig
++++ b/drivers/input/keyboard/Kconfig
+@@ -408,7 +408,7 @@ config KEYBOARD_NEWTON
+ 
+ config KEYBOARD_NOMADIK
+ 	tristate "ST-Ericsson Nomadik SKE keyboard"
+-	depends on PLAT_NOMADIK
++	depends on (ARCH_NOMADIK || ARCH_U8500)
+ 	select INPUT_MATRIXKMAP
+ 	help
+ 	  Say Y here if you want to use a keypad provided on the SKE controller
+diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
+index 4883139..e4f5748 100644
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -559,7 +559,7 @@ config MTD_NAND_JZ4740
+ 
+ config MTD_NAND_FSMC
+ 	tristate "Support for NAND on ST Micros FSMC"
+-	depends on PLAT_SPEAR || PLAT_NOMADIK || MACH_U300
++	depends on PLAT_SPEAR || ARCH_NOMADIK || ARCH_U8500 || MACH_U300
+ 	help
+ 	  Enables support for NAND Flash chips on the ST Microelectronics
+ 	  Flexible Static Memory Controller (FSMC)
+diff --git a/include/linux/platform_data/clocksource-nomadik-mtu.h b/include/linux/platform_data/clocksource-nomadik-mtu.h
+new file mode 100644
+index 0000000..8008897
+--- /dev/null
++++ b/include/linux/platform_data/clocksource-nomadik-mtu.h
+@@ -0,0 +1,9 @@
++#ifndef __PLAT_MTU_H
++#define __PLAT_MTU_H
++
++void nmdk_timer_init(void __iomem *base, int irq);
++void nmdk_clkevt_reset(void);
++void nmdk_clksrc_reset(void);
++
++#endif /* __PLAT_MTU_H */
++
+-- 
+1.8.0
+

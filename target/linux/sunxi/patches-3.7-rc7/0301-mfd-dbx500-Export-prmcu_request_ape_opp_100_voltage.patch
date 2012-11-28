@@ -1,0 +1,98 @@
+From 686f871b7109e7e253a7a1cef542c00d0ed1a323 Mon Sep 17 00:00:00 2001
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Mon, 24 Sep 2012 16:43:17 +0200
+Subject: [PATCH 301/951] mfd: dbx500: Export
+ prmcu_request_ape_opp_100_voltage
+
+This function needs to be exported to let clients be able to
+request the ape opp 100 voltage.
+
+Cc: Samuel Ortiz <sameo@linux.intel.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+---
+ drivers/mfd/db8500-prcmu.c       |  4 ++--
+ include/linux/mfd/db8500-prcmu.h |  4 ++--
+ include/linux/mfd/dbx500-prcmu.h | 10 ++++++++++
+ 3 files changed, 14 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mfd/db8500-prcmu.c b/drivers/mfd/db8500-prcmu.c
+index 00b8b0f..3167bfd 100644
+--- a/drivers/mfd/db8500-prcmu.c
++++ b/drivers/mfd/db8500-prcmu.c
+@@ -1169,12 +1169,12 @@ int db8500_prcmu_get_ape_opp(void)
+ }
+ 
+ /**
+- * prcmu_request_ape_opp_100_voltage - Request APE OPP 100% voltage
++ * db8500_prcmu_request_ape_opp_100_voltage - Request APE OPP 100% voltage
+  * @enable: true to request the higher voltage, false to drop a request.
+  *
+  * Calls to this function to enable and disable requests must be balanced.
+  */
+-int prcmu_request_ape_opp_100_voltage(bool enable)
++int db8500_prcmu_request_ape_opp_100_voltage(bool enable)
+ {
+ 	int r = 0;
+ 	u8 header;
+diff --git a/include/linux/mfd/db8500-prcmu.h b/include/linux/mfd/db8500-prcmu.h
+index b82f6ee..6ee4247 100644
+--- a/include/linux/mfd/db8500-prcmu.h
++++ b/include/linux/mfd/db8500-prcmu.h
+@@ -515,7 +515,6 @@ enum romcode_read prcmu_get_rc_p2a(void);
+ enum ap_pwrst prcmu_get_xp70_current_state(void);
+ bool prcmu_has_arm_maxopp(void);
+ struct prcmu_fw_version *prcmu_get_fw_version(void);
+-int prcmu_request_ape_opp_100_voltage(bool enable);
+ int prcmu_release_usb_wakeup_state(void);
+ void prcmu_configure_auto_pm(struct prcmu_auto_pm_config *sleep,
+ 	struct prcmu_auto_pm_config *idle);
+@@ -564,6 +563,7 @@ int db8500_prcmu_set_arm_opp(u8 opp);
+ int db8500_prcmu_get_arm_opp(void);
+ int db8500_prcmu_set_ape_opp(u8 opp);
+ int db8500_prcmu_get_ape_opp(void);
++int db8500_prcmu_request_ape_opp_100_voltage(bool enable);
+ int db8500_prcmu_set_ddr_opp(u8 opp);
+ int db8500_prcmu_get_ddr_opp(void);
+ 
+@@ -610,7 +610,7 @@ static inline int db8500_prcmu_get_ape_opp(void)
+ 	return APE_100_OPP;
+ }
+ 
+-static inline int prcmu_request_ape_opp_100_voltage(bool enable)
++static inline int db8500_prcmu_request_ape_opp_100_voltage(bool enable)
+ {
+ 	return 0;
+ }
+diff --git a/include/linux/mfd/dbx500-prcmu.h b/include/linux/mfd/dbx500-prcmu.h
+index c410d99..c202d6c 100644
+--- a/include/linux/mfd/dbx500-prcmu.h
++++ b/include/linux/mfd/dbx500-prcmu.h
+@@ -336,6 +336,11 @@ static inline int prcmu_get_ape_opp(void)
+ 	return db8500_prcmu_get_ape_opp();
+ }
+ 
++static inline int prcmu_request_ape_opp_100_voltage(bool enable)
++{
++	return db8500_prcmu_request_ape_opp_100_voltage(enable);
++}
++
+ static inline void prcmu_system_reset(u16 reset_code)
+ {
+ 	return db8500_prcmu_system_reset(reset_code);
+@@ -507,6 +512,11 @@ static inline int prcmu_get_ape_opp(void)
+ 	return APE_100_OPP;
+ }
+ 
++static inline int prcmu_request_ape_opp_100_voltage(bool enable)
++{
++	return 0;
++}
++
+ static inline int prcmu_set_arm_opp(u8 opp)
+ {
+ 	return 0;
+-- 
+1.8.0
+

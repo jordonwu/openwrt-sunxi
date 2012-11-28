@@ -1,0 +1,287 @@
+From 482a8f3f53e9bc7a52ef54f6cd40bcf2c270e2f5 Mon Sep 17 00:00:00 2001
+From: Vipin Kumar <vipin.kumar@st.com>
+Date: Thu, 5 Jul 2012 11:51:47 +0800
+Subject: [PATCH 938/951] ARM: SPEAr: DT: Update partition info for MTD
+ devices
+
+This patch enhances partition information of MTD devices like fsmc-nand and
+spear-smi.
+
+Signed-off-by: Shiraz Hashim <shiraz.hashim@st.com>
+Signed-off-by: Vipin Kumar <vipin.kumar@st.com>
+Signed-off-by: Vipul Kumar Samar <vipulkumar.samar@st.com>
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+---
+ arch/arm/boot/dts/spear1310-evb.dts | 43 ++++++++++++++++++++++++++++++++-----
+ arch/arm/boot/dts/spear1340-evb.dts | 43 ++++++++++++++++++++++++++++++++-----
+ arch/arm/boot/dts/spear300-evb.dts  | 18 +++++++++++-----
+ arch/arm/boot/dts/spear310-evb.dts  | 18 +++++++++++-----
+ arch/arm/boot/dts/spear320-evb.dts  | 18 +++++++++++-----
+ arch/arm/boot/dts/spear600-evb.dts  | 18 +++++++++++-----
+ 6 files changed, 128 insertions(+), 30 deletions(-)
+
+diff --git a/arch/arm/boot/dts/spear1310-evb.dts b/arch/arm/boot/dts/spear1310-evb.dts
+index 3448d60..010e21d 100644
+--- a/arch/arm/boot/dts/spear1310-evb.dts
++++ b/arch/arm/boot/dts/spear1310-evb.dts
+@@ -120,6 +120,31 @@
+ 
+ 		fsmc: flash@b0000000 {
+ 			status = "okay";
++
++			partition@0 {
++				label = "xloader";
++				reg = <0x0 0x80000>;
++			};
++			partition@80000 {
++				label = "u-boot";
++				reg = <0x80000 0x140000>;
++			};
++			partition@1C0000 {
++				label = "environment";
++				reg = <0x1C0000 0x40000>;
++			};
++			partition@200000 {
++				label = "dtb";
++				reg = <0x200000 0x40000>;
++			};
++			partition@240000 {
++				label = "linux";
++				reg = <0x240000 0xC00000>;
++			};
++			partition@E40000 {
++				label = "rootfs";
++				reg = <0xE40000 0x0>;
++			};
+ 		};
+ 
+ 		gmac0: eth@e2000000 {
+@@ -146,15 +171,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
++				};
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
+ 				};
+-				partition@50000 {
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+diff --git a/arch/arm/boot/dts/spear1340-evb.dts b/arch/arm/boot/dts/spear1340-evb.dts
+index 1fc5584..b16f756 100644
+--- a/arch/arm/boot/dts/spear1340-evb.dts
++++ b/arch/arm/boot/dts/spear1340-evb.dts
+@@ -128,6 +128,31 @@
+ 
+ 		fsmc: flash@b0000000 {
+ 			status = "okay";
++
++			partition@0 {
++				label = "xloader";
++				reg = <0x0 0x200000>;
++			};
++			partition@200000 {
++				label = "u-boot";
++				reg = <0x200000 0x200000>;
++			};
++			partition@400000 {
++				label = "environment";
++				reg = <0x400000 0x100000>;
++			};
++			partition@500000 {
++				label = "dtb";
++				reg = <0x500000 0x100000>;
++			};
++			partition@600000 {
++				label = "linux";
++				reg = <0x600000 0xC00000>;
++			};
++			partition@1200000 {
++				label = "rootfs";
++				reg = <0x1200000 0x0>;
++			};
+ 		};
+ 
+ 		gmac0: eth@e2000000 {
+@@ -154,15 +179,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
++				};
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
+ 				};
+-				partition@50000 {
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+diff --git a/arch/arm/boot/dts/spear300-evb.dts b/arch/arm/boot/dts/spear300-evb.dts
+index 1e7c7a8..b3265f6 100644
+--- a/arch/arm/boot/dts/spear300-evb.dts
++++ b/arch/arm/boot/dts/spear300-evb.dts
+@@ -100,15 +100,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
+ 				};
+-				partition@50000 {
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
++				};
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+diff --git a/arch/arm/boot/dts/spear310-evb.dts b/arch/arm/boot/dts/spear310-evb.dts
+index b00544e..b30fa0e 100644
+--- a/arch/arm/boot/dts/spear310-evb.dts
++++ b/arch/arm/boot/dts/spear310-evb.dts
+@@ -114,15 +114,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
+ 				};
+-				partition@50000 {
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
++				};
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+diff --git a/arch/arm/boot/dts/spear320-evb.dts b/arch/arm/boot/dts/spear320-evb.dts
+index 70c3498..5b73d9c 100644
+--- a/arch/arm/boot/dts/spear320-evb.dts
++++ b/arch/arm/boot/dts/spear320-evb.dts
+@@ -118,15 +118,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
+ 				};
+-				partition@50000 {
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
++				};
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+diff --git a/arch/arm/boot/dts/spear600-evb.dts b/arch/arm/boot/dts/spear600-evb.dts
+index 1119c22..16e4de4 100644
+--- a/arch/arm/boot/dts/spear600-evb.dts
++++ b/arch/arm/boot/dts/spear600-evb.dts
+@@ -49,15 +49,23 @@
+ 				};
+ 				partition@10000 {
+ 					label = "u-boot";
+-					reg = <0x10000 0x40000>;
++					reg = <0x10000 0x50000>;
+ 				};
+-				partition@50000 {
++				partition@60000 {
++					label = "environment";
++					reg = <0x60000 0x10000>;
++				};
++				partition@70000 {
++					label = "dtb";
++					reg = <0x70000 0x10000>;
++				};
++				partition@80000 {
+ 					label = "linux";
+-					reg = <0x50000 0x2c0000>;
++					reg = <0x80000 0x310000>;
+ 				};
+-				partition@310000 {
++				partition@390000 {
+ 					label = "rootfs";
+-					reg = <0x310000 0x4f0000>;
++					reg = <0x390000 0x0>;
+ 				};
+ 			};
+ 		};
+-- 
+1.8.0
+

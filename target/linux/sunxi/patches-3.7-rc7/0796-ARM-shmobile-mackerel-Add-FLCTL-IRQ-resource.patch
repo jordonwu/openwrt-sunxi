@@ -1,0 +1,37 @@
+From 3042ac5731e6db441dfce85612da4aa3913dab3b Mon Sep 17 00:00:00 2001
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Tue, 20 Nov 2012 01:05:00 +0100
+Subject: [PATCH 796/951] ARM: shmobile: mackerel: Add FLCTL IRQ resource
+
+Since commit 3c7ea4e (mtd: sh_flctl: Add support for error IRQ)
+the sh_flctl driver requires the error IRQ line to signal failed
+transactions between the flash controller and the NAND chip.
+This information is mandatory - else the driver refuses to start
+up. We provide it here for the board mackerel.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index bf2bcb9..3f56e70 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -950,7 +950,11 @@ static struct resource nand_flash_resources[] = {
+ 		.start	= 0xe6a30000,
+ 		.end	= 0xe6a3009b,
+ 		.flags	= IORESOURCE_MEM,
+-	}
++	},
++	[1] = {
++		.start	= evt2irq(0x0d80), /* flstei: status error irq */
++		.flags	= IORESOURCE_IRQ,
++	},
+ };
+ 
+ static struct sh_flctl_platform_data nand_flash_data = {
+-- 
+1.8.0
+

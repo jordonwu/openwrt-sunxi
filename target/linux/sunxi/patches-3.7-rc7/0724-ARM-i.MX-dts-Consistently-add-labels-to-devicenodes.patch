@@ -1,0 +1,761 @@
+From 7b7d6727344a2a7727255d61fa1bd3ff447c4f6c Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 15 Nov 2012 09:31:52 +0100
+Subject: [PATCH 724/951] ARM i.MX dts: Consistently add labels to devicenodes
+
+Having labels before each node allows board bindings to reference
+to nodes by using the &nodename {} notation. This way boards do not
+have to resemble the whole devicetree layout. Due to less indention
+needed the board files also get better readability. Since the label
+make the documentation behind the nodes unnecessary it is removed.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx27.dtsi |  5 ++-
+ arch/arm/boot/dts/imx51.dtsi | 40 ++++++++++----------
+ arch/arm/boot/dts/imx53.dtsi | 42 ++++++++++-----------
+ arch/arm/boot/dts/imx6q.dtsi | 88 ++++++++++++++++++++++----------------------
+ 4 files changed, 88 insertions(+), 87 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx27.dtsi b/arch/arm/boot/dts/imx27.dtsi
+index 67d6727..b8d3905 100644
+--- a/arch/arm/boot/dts/imx27.dtsi
++++ b/arch/arm/boot/dts/imx27.dtsi
+@@ -58,7 +58,7 @@
+ 			reg = <0x10000000 0x10000000>;
+ 			ranges;
+ 
+-			wdog@10002000 {
++			wdog: wdog@10002000 {
+ 				compatible = "fsl,imx27-wdt", "fsl,imx21-wdt";
+ 				reg = <0x10002000 0x4000>;
+ 				interrupts = <27>;
+@@ -218,7 +218,8 @@
+ 				status = "disabled";
+ 			};
+ 		};
+-		nand@d8000000 {
++
++		nfc: nand@d8000000 {
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+ 
+diff --git a/arch/arm/boot/dts/imx51.dtsi b/arch/arm/boot/dts/imx51.dtsi
+index 0bc8ae7..1fdee31 100644
+--- a/arch/arm/boot/dts/imx51.dtsi
++++ b/arch/arm/boot/dts/imx51.dtsi
+@@ -76,14 +76,14 @@
+ 				reg = <0x70000000 0x40000>;
+ 				ranges;
+ 
+-				esdhc@70004000 { /* ESDHC1 */
++				esdhc1: esdhc@70004000 {
+ 					compatible = "fsl,imx51-esdhc";
+ 					reg = <0x70004000 0x4000>;
+ 					interrupts = <1>;
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@70008000 { /* ESDHC2 */
++				esdhc2: esdhc@70008000 {
+ 					compatible = "fsl,imx51-esdhc";
+ 					reg = <0x70008000 0x4000>;
+ 					interrupts = <2>;
+@@ -98,7 +98,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@70010000 { /* ECSPI1 */
++				ecspi1: ecspi@70010000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx51-ecspi";
+@@ -116,7 +116,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@70020000 { /* ESDHC3 */
++				esdhc3: esdhc@70020000 {
+ 					compatible = "fsl,imx51-esdhc";
+ 					reg = <0x70020000 0x4000>;
+ 					interrupts = <3>;
+@@ -124,7 +124,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@70024000 { /* ESDHC4 */
++				esdhc4: esdhc@70024000 {
+ 					compatible = "fsl,imx51-esdhc";
+ 					reg = <0x70024000 0x4000>;
+ 					interrupts = <4>;
+@@ -133,28 +133,28 @@
+ 				};
+ 			};
+ 
+-			usb@73f80000 {
++			usbotg: usb@73f80000 {
+ 				compatible = "fsl,imx51-usb", "fsl,imx27-usb";
+ 				reg = <0x73f80000 0x0200>;
+ 				interrupts = <18>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@73f80200 {
++			usbh1: usb@73f80200 {
+ 				compatible = "fsl,imx51-usb", "fsl,imx27-usb";
+ 				reg = <0x73f80200 0x0200>;
+ 				interrupts = <14>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@73f80400 {
++			usbh2: usb@73f80400 {
+ 				compatible = "fsl,imx51-usb", "fsl,imx27-usb";
+ 				reg = <0x73f80400 0x0200>;
+ 				interrupts = <16>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@73f80600 {
++			usbh3: usb@73f80600 {
+ 				compatible = "fsl,imx51-usb", "fsl,imx27-usb";
+ 				reg = <0x73f80600 0x0200>;
+ 				interrupts = <17>;
+@@ -201,20 +201,20 @@
+ 				#interrupt-cells = <2>;
+ 			};
+ 
+-			wdog@73f98000 { /* WDOG1 */
++			wdog1: wdog@73f98000 {
+ 				compatible = "fsl,imx51-wdt", "fsl,imx21-wdt";
+ 				reg = <0x73f98000 0x4000>;
+ 				interrupts = <58>;
+ 			};
+ 
+-			wdog@73f9c000 { /* WDOG2 */
++			wdog2: wdog@73f9c000 {
+ 				compatible = "fsl,imx51-wdt", "fsl,imx21-wdt";
+ 				reg = <0x73f9c000 0x4000>;
+ 				interrupts = <59>;
+ 				status = "disabled";
+ 			};
+ 
+-			iomuxc@73fa8000 {
++			iomuxc: iomuxc@73fa8000 {
+ 				compatible = "fsl,imx51-iomuxc";
+ 				reg = <0x73fa8000 0x4000>;
+ 
+@@ -352,7 +352,7 @@
+ 			reg = <0x80000000 0x10000000>;
+ 			ranges;
+ 
+-			ecspi@83fac000 { /* ECSPI2 */
++			ecspi2: ecspi@83fac000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx51-ecspi";
+@@ -361,14 +361,14 @@
+ 				status = "disabled";
+ 			};
+ 
+-			sdma@83fb0000 {
++			sdma: sdma@83fb0000 {
+ 				compatible = "fsl,imx51-sdma", "fsl,imx35-sdma";
+ 				reg = <0x83fb0000 0x4000>;
+ 				interrupts = <6>;
+ 				fsl,sdma-ram-script-name = "imx/sdma/sdma-imx51.bin";
+ 			};
+ 
+-			cspi@83fc0000 {
++			cspi: cspi@83fc0000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx51-cspi", "fsl,imx35-cspi";
+@@ -377,7 +377,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@83fc4000 { /* I2C2 */
++			i2c2: i2c@83fc4000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx51-i2c", "fsl,imx21-i2c";
+@@ -386,7 +386,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@83fc8000 { /* I2C1 */
++			i2c1: i2c@83fc8000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx51-i2c", "fsl,imx21-i2c";
+@@ -404,13 +404,13 @@
+ 				status = "disabled";
+ 			};
+ 
+-			audmux@83fd0000 {
++			audmux: audmux@83fd0000 {
+ 				compatible = "fsl,imx51-audmux", "fsl,imx31-audmux";
+ 				reg = <0x83fd0000 0x4000>;
+ 				status = "disabled";
+ 			};
+ 
+-			nand@83fdb000 {
++			nfc: nand@83fdb000 {
+ 				compatible = "fsl,imx51-nand";
+ 				reg = <0x83fdb000 0x1000 0xcfff0000 0x10000>;
+ 				interrupts = <8>;
+@@ -426,7 +426,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			ethernet@83fec000 {
++			fec: ethernet@83fec000 {
+ 				compatible = "fsl,imx51-fec", "fsl,imx27-fec";
+ 				reg = <0x83fec000 0x4000>;
+ 				interrupts = <87>;
+diff --git a/arch/arm/boot/dts/imx53.dtsi b/arch/arm/boot/dts/imx53.dtsi
+index 8b33195..f45d4b1 100644
+--- a/arch/arm/boot/dts/imx53.dtsi
++++ b/arch/arm/boot/dts/imx53.dtsi
+@@ -81,7 +81,7 @@
+ 				reg = <0x50000000 0x40000>;
+ 				ranges;
+ 
+-				esdhc@50004000 { /* ESDHC1 */
++				esdhc1: esdhc@50004000 {
+ 					compatible = "fsl,imx53-esdhc";
+ 					reg = <0x50004000 0x4000>;
+ 					interrupts = <1>;
+@@ -89,7 +89,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@50008000 { /* ESDHC2 */
++				esdhc2: esdhc@50008000 {
+ 					compatible = "fsl,imx53-esdhc";
+ 					reg = <0x50008000 0x4000>;
+ 					interrupts = <2>;
+@@ -104,7 +104,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@50010000 { /* ECSPI1 */
++				ecspi1: ecspi@50010000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx53-ecspi", "fsl,imx51-ecspi";
+@@ -122,7 +122,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@50020000 { /* ESDHC3 */
++				esdhc3: esdhc@50020000 {
+ 					compatible = "fsl,imx53-esdhc";
+ 					reg = <0x50020000 0x4000>;
+ 					interrupts = <3>;
+@@ -130,7 +130,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esdhc@50024000 { /* ESDHC4 */
++				esdhc4: esdhc@50024000 {
+ 					compatible = "fsl,imx53-esdhc";
+ 					reg = <0x50024000 0x4000>;
+ 					interrupts = <4>;
+@@ -139,28 +139,28 @@
+ 				};
+ 			};
+ 
+-			usb@53f80000 {
++			usbotg: usb@53f80000 {
+ 				compatible = "fsl,imx53-usb", "fsl,imx27-usb";
+ 				reg = <0x53f80000 0x0200>;
+ 				interrupts = <18>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@53f80200 {
++			usbh1: usb@53f80200 {
+ 				compatible = "fsl,imx53-usb", "fsl,imx27-usb";
+ 				reg = <0x53f80200 0x0200>;
+ 				interrupts = <14>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@53f80400 {
++			usbh2: usb@53f80400 {
+ 				compatible = "fsl,imx53-usb", "fsl,imx27-usb";
+ 				reg = <0x53f80400 0x0200>;
+ 				interrupts = <16>;
+ 				status = "disabled";
+ 			};
+ 
+-			usb@53f80600 {
++			usbh3: usb@53f80600 {
+ 				compatible = "fsl,imx53-usb", "fsl,imx27-usb";
+ 				reg = <0x53f80600 0x0200>;
+ 				interrupts = <17>;
+@@ -207,20 +207,20 @@
+ 				#interrupt-cells = <2>;
+ 			};
+ 
+-			wdog@53f98000 { /* WDOG1 */
++			wdog1: wdog@53f98000 {
+ 				compatible = "fsl,imx53-wdt", "fsl,imx21-wdt";
+ 				reg = <0x53f98000 0x4000>;
+ 				interrupts = <58>;
+ 			};
+ 
+-			wdog@53f9c000 { /* WDOG2 */
++			wdog2: wdog@53f9c000 {
+ 				compatible = "fsl,imx53-wdt", "fsl,imx21-wdt";
+ 				reg = <0x53f9c000 0x4000>;
+ 				interrupts = <59>;
+ 				status = "disabled";
+ 			};
+ 
+-			iomuxc@53fa8000 {
++			iomuxc: iomuxc@53fa8000 {
+ 				compatible = "fsl,imx53-iomuxc";
+ 				reg = <0x53fa8000 0x4000>;
+ 
+@@ -479,7 +479,7 @@
+ 				#interrupt-cells = <2>;
+ 			};
+ 
+-			i2c@53fec000 { /* I2C3 */
++			i2c3: i2c@53fec000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx53-i2c", "fsl,imx21-i2c";
+@@ -510,7 +510,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			ecspi@63fac000 { /* ECSPI2 */
++			ecspi2: ecspi@63fac000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx53-ecspi", "fsl,imx51-ecspi";
+@@ -519,14 +519,14 @@
+ 				status = "disabled";
+ 			};
+ 
+-			sdma@63fb0000 {
++			sdma: sdma@63fb0000 {
+ 				compatible = "fsl,imx53-sdma", "fsl,imx35-sdma";
+ 				reg = <0x63fb0000 0x4000>;
+ 				interrupts = <6>;
+ 				fsl,sdma-ram-script-name = "imx/sdma/sdma-imx53.bin";
+ 			};
+ 
+-			cspi@63fc0000 {
++			cspi: cspi@63fc0000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx53-cspi", "fsl,imx35-cspi";
+@@ -535,7 +535,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@63fc4000 { /* I2C2 */
++			i2c2: i2c@63fc4000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx53-i2c", "fsl,imx21-i2c";
+@@ -544,7 +544,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@63fc8000 { /* I2C1 */
++			i2c1: i2c@63fc8000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx53-i2c", "fsl,imx21-i2c";
+@@ -562,13 +562,13 @@
+ 				status = "disabled";
+ 			};
+ 
+-			audmux@63fd0000 {
++			audmux: audmux@63fd0000 {
+ 				compatible = "fsl,imx53-audmux", "fsl,imx31-audmux";
+ 				reg = <0x63fd0000 0x4000>;
+ 				status = "disabled";
+ 			};
+ 
+-			nand@63fdb000 {
++			nfc: nand@63fdb000 {
+ 				compatible = "fsl,imx53-nand";
+ 				reg = <0x63fdb000 0x1000 0xf7ff0000 0x10000>;
+ 				interrupts = <8>;
+@@ -584,7 +584,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			ethernet@63fec000 {
++			fec: ethernet@63fec000 {
+ 				compatible = "fsl,imx53-fec", "fsl,imx25-fec";
+ 				reg = <0x63fec000 0x4000>;
+ 				interrupts = <87>;
+diff --git a/arch/arm/boot/dts/imx6q.dtsi b/arch/arm/boot/dts/imx6q.dtsi
+index 1565aea..6dfeaed 100644
+--- a/arch/arm/boot/dts/imx6q.dtsi
++++ b/arch/arm/boot/dts/imx6q.dtsi
+@@ -108,7 +108,7 @@
+ 			clocks = <&clks 106>;
+ 		};
+ 
+-		gpmi-nand@00112000 {
++		nfc: gpmi-nand@00112000 {
+ 			compatible = "fsl,imx6q-gpmi-nand";
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
+@@ -152,12 +152,12 @@
+ 				reg = <0x02000000 0x40000>;
+ 				ranges;
+ 
+-				spdif@02004000 {
++				spdif: spdif@02004000 {
+ 					reg = <0x02004000 0x4000>;
+ 					interrupts = <0 52 0x04>;
+ 				};
+ 
+-				ecspi@02008000 { /* eCSPI1 */
++				ecspi1: ecspi@02008000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
+@@ -168,7 +168,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@0200c000 { /* eCSPI2 */
++				ecspi2: ecspi@0200c000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
+@@ -179,7 +179,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@02010000 { /* eCSPI3 */
++				ecspi3: ecspi@02010000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
+@@ -190,7 +190,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@02014000 { /* eCSPI4 */
++				ecspi4: ecspi@02014000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
+@@ -201,7 +201,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				ecspi@02018000 { /* eCSPI5 */
++				ecspi5: ecspi@02018000 {
+ 					#address-cells = <1>;
+ 					#size-cells = <0>;
+ 					compatible = "fsl,imx6q-ecspi", "fsl,imx51-ecspi";
+@@ -221,7 +221,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				esai@02024000 {
++				esai: esai@02024000 {
+ 					reg = <0x02024000 0x4000>;
+ 					interrupts = <0 51 0x04>;
+ 				};
+@@ -256,7 +256,7 @@
+ 					status = "disabled";
+ 				};
+ 
+-				asrc@02034000 {
++				asrc: asrc@02034000 {
+ 					reg = <0x02034000 0x4000>;
+ 					interrupts = <0 50 0x04>;
+ 				};
+@@ -266,7 +266,7 @@
+ 				};
+ 			};
+ 
+-			vpu@02040000 {
++			vpu: vpu@02040000 {
+ 				reg = <0x02040000 0x3c000>;
+ 				interrupts = <0 3 0x04 0 12 0x04>;
+ 			};
+@@ -275,37 +275,37 @@
+ 				reg = <0x0207c000 0x4000>;
+ 			};
+ 
+-			pwm@02080000 { /* PWM1 */
++			pwm1: pwm@02080000 {
+ 				reg = <0x02080000 0x4000>;
+ 				interrupts = <0 83 0x04>;
+ 			};
+ 
+-			pwm@02084000 { /* PWM2 */
++			pwm2: pwm@02084000 {
+ 				reg = <0x02084000 0x4000>;
+ 				interrupts = <0 84 0x04>;
+ 			};
+ 
+-			pwm@02088000 { /* PWM3 */
++			pwm3: pwm@02088000 {
+ 				reg = <0x02088000 0x4000>;
+ 				interrupts = <0 85 0x04>;
+ 			};
+ 
+-			pwm@0208c000 { /* PWM4 */
++			pwm4: pwm@0208c000 {
+ 				reg = <0x0208c000 0x4000>;
+ 				interrupts = <0 86 0x04>;
+ 			};
+ 
+-			flexcan@02090000 { /* CAN1 */
++			can1: flexcan@02090000 {
+ 				reg = <0x02090000 0x4000>;
+ 				interrupts = <0 110 0x04>;
+ 			};
+ 
+-			flexcan@02094000 { /* CAN2 */
++			can2: flexcan@02094000 {
+ 				reg = <0x02094000 0x4000>;
+ 				interrupts = <0 111 0x04>;
+ 			};
+ 
+-			gpt@02098000 {
++			gpt: gpt@02098000 {
+ 				compatible = "fsl,imx6q-gpt";
+ 				reg = <0x02098000 0x4000>;
+ 				interrupts = <0 55 0x04>;
+@@ -381,19 +381,19 @@
+ 				#interrupt-cells = <2>;
+ 			};
+ 
+-			kpp@020b8000 {
++			kpp: kpp@020b8000 {
+ 				reg = <0x020b8000 0x4000>;
+ 				interrupts = <0 82 0x04>;
+ 			};
+ 
+-			wdog@020bc000 { /* WDOG1 */
++			wdog1: wdog@020bc000 {
+ 				compatible = "fsl,imx6q-wdt", "fsl,imx21-wdt";
+ 				reg = <0x020bc000 0x4000>;
+ 				interrupts = <0 80 0x04>;
+ 				clocks = <&clks 0>;
+ 			};
+ 
+-			wdog@020c0000 { /* WDOG2 */
++			wdog2: wdog@020c0000 {
+ 				compatible = "fsl,imx6q-wdt", "fsl,imx21-wdt";
+ 				reg = <0x020c0000 0x4000>;
+ 				interrupts = <0 81 0x04>;
+@@ -525,23 +525,23 @@
+ 				};
+ 			};
+ 
+-			epit@020d0000 { /* EPIT1 */
++			epit1: epit@020d0000 { /* EPIT1 */
+ 				reg = <0x020d0000 0x4000>;
+ 				interrupts = <0 56 0x04>;
+ 			};
+ 
+-			epit@020d4000 { /* EPIT2 */
++			epit2: epit@020d4000 { /* EPIT2 */
+ 				reg = <0x020d4000 0x4000>;
+ 				interrupts = <0 57 0x04>;
+ 			};
+ 
+-			src@020d8000 {
++			src: src@020d8000 {
+ 				compatible = "fsl,imx6q-src";
+ 				reg = <0x020d8000 0x4000>;
+ 				interrupts = <0 91 0x04 0 96 0x04>;
+ 			};
+ 
+-			gpc@020dc000 {
++			gpc: gpc@020dc000 {
+ 				compatible = "fsl,imx6q-gpc";
+ 				reg = <0x020dc000 0x4000>;
+ 				interrupts = <0 89 0x04 0 90 0x04>;
+@@ -552,7 +552,7 @@
+ 				reg = <0x020e0000 0x38>;
+ 			};
+ 
+-			iomuxc@020e0000 {
++			iomuxc: iomuxc@020e0000 {
+ 				compatible = "fsl,imx6q-iomuxc";
+ 				reg = <0x020e0000 0x4000>;
+ 
+@@ -764,17 +764,17 @@
+ 				};
+ 			};
+ 
+-			dcic@020e4000 { /* DCIC1 */
++			dcic1: dcic@020e4000 {
+ 				reg = <0x020e4000 0x4000>;
+ 				interrupts = <0 124 0x04>;
+ 			};
+ 
+-			dcic@020e8000 { /* DCIC2 */
++			dcic2: dcic@020e8000 {
+ 				reg = <0x020e8000 0x4000>;
+ 				interrupts = <0 125 0x04>;
+ 			};
+ 
+-			sdma@020ec000 {
++			sdma: sdma@020ec000 {
+ 				compatible = "fsl,imx6q-sdma", "fsl,imx35-sdma";
+ 				reg = <0x020ec000 0x4000>;
+ 				interrupts = <0 2 0x04>;
+@@ -800,7 +800,7 @@
+ 				reg = <0x0217c000 0x4000>;
+ 			};
+ 
+-			usb@02184000 { /* USB OTG */
++			usbotg: usb@02184000 {
+ 				compatible = "fsl,imx6q-usb", "fsl,imx27-usb";
+ 				reg = <0x02184000 0x200>;
+ 				interrupts = <0 43 0x04>;
+@@ -810,7 +810,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usb@02184200 { /* USB1 */
++			usbh1: usb@02184200 {
+ 				compatible = "fsl,imx6q-usb", "fsl,imx27-usb";
+ 				reg = <0x02184200 0x200>;
+ 				interrupts = <0 40 0x04>;
+@@ -820,7 +820,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usb@02184400 { /* USB2 */
++			usbh2: usb@02184400 {
+ 				compatible = "fsl,imx6q-usb", "fsl,imx27-usb";
+ 				reg = <0x02184400 0x200>;
+ 				interrupts = <0 41 0x04>;
+@@ -829,7 +829,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usb@02184600 { /* USB3 */
++			usbh3: usb@02184600 {
+ 				compatible = "fsl,imx6q-usb", "fsl,imx27-usb";
+ 				reg = <0x02184600 0x200>;
+ 				interrupts = <0 42 0x04>;
+@@ -838,14 +838,14 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usbmisc: usbmisc@02184800 {
++			usbmisc: usbmisc: usbmisc@02184800 {
+ 				#index-cells = <1>;
+ 				compatible = "fsl,imx6q-usbmisc";
+ 				reg = <0x02184800 0x200>;
+ 				clocks = <&clks 162>;
+ 			};
+ 
+-			ethernet@02188000 {
++			fec: ethernet@02188000 {
+ 				compatible = "fsl,imx6q-fec";
+ 				reg = <0x02188000 0x4000>;
+ 				interrupts = <0 118 0x04 0 119 0x04>;
+@@ -859,7 +859,7 @@
+ 				interrupts = <0 53 0x04 0 117 0x04 0 126 0x04>;
+ 			};
+ 
+-			usdhc@02190000 { /* uSDHC1 */
++			usdhc1: usdhc@02190000 {
+ 				compatible = "fsl,imx6q-usdhc";
+ 				reg = <0x02190000 0x4000>;
+ 				interrupts = <0 22 0x04>;
+@@ -869,7 +869,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usdhc@02194000 { /* uSDHC2 */
++			usdhc2: usdhc@02194000 {
+ 				compatible = "fsl,imx6q-usdhc";
+ 				reg = <0x02194000 0x4000>;
+ 				interrupts = <0 23 0x04>;
+@@ -879,7 +879,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usdhc@02198000 { /* uSDHC3 */
++			usdhc3: usdhc@02198000 {
+ 				compatible = "fsl,imx6q-usdhc";
+ 				reg = <0x02198000 0x4000>;
+ 				interrupts = <0 24 0x04>;
+@@ -889,7 +889,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			usdhc@0219c000 { /* uSDHC4 */
++			usdhc4: usdhc@0219c000 {
+ 				compatible = "fsl,imx6q-usdhc";
+ 				reg = <0x0219c000 0x4000>;
+ 				interrupts = <0 25 0x04>;
+@@ -899,7 +899,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@021a0000 { /* I2C1 */
++			i2c1: i2c@021a0000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx6q-i2c", "fsl,imx21-i2c";
+@@ -909,7 +909,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@021a4000 { /* I2C2 */
++			i2c2: i2c@021a4000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx6q-i2c", "fsl,imx21-i2c";
+@@ -919,7 +919,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			i2c@021a8000 { /* I2C3 */
++			i2c3: i2c@021a8000 {
+ 				#address-cells = <1>;
+ 				#size-cells = <0>;
+ 				compatible = "fsl,imx6q-i2c", "fsl,imx21-i2c";
+@@ -933,12 +933,12 @@
+ 				reg = <0x021ac000 0x4000>;
+ 			};
+ 
+-			mmdc@021b0000 { /* MMDC0 */
++			mmdc0: mmdc@021b0000 { /* MMDC0 */
+ 				compatible = "fsl,imx6q-mmdc";
+ 				reg = <0x021b0000 0x4000>;
+ 			};
+ 
+-			mmdc@021b4000 { /* MMDC1 */
++			mmdc1: mmdc@021b4000 { /* MMDC1 */
+ 				reg = <0x021b4000 0x4000>;
+ 			};
+ 
+@@ -966,7 +966,7 @@
+ 				interrupts = <0 109 0x04>;
+ 			};
+ 
+-			audmux@021d8000 {
++			audmux: audmux@021d8000 {
+ 				compatible = "fsl,imx6q-audmux", "fsl,imx31-audmux";
+ 				reg = <0x021d8000 0x4000>;
+ 				status = "disabled";
+-- 
+1.8.0
+

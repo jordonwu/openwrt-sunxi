@@ -1,0 +1,38 @@
+From b57870e28d27561ea5bad538c22b7d10f531b35c Mon Sep 17 00:00:00 2001
+From: Haojian Zhuang <haojian.zhuang@gmail.com>
+Date: Wed, 3 Oct 2012 23:44:32 +0800
+Subject: [PATCH 830/951] ARM: mmp: select pinctrl driver
+
+Pinctrl driver is necessary for MMP DT & MMP2 DT platforms.
+
+Signed-off-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/arm/mach-mmp/Kconfig | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-mmp/Kconfig b/arch/arm/mach-mmp/Kconfig
+index 178d4da..ebdda83 100644
+--- a/arch/arm/mach-mmp/Kconfig
++++ b/arch/arm/mach-mmp/Kconfig
+@@ -89,6 +89,8 @@ config MACH_MMP_DT
+ 	select CPU_PXA168
+ 	select CPU_PXA910
+ 	select USE_OF
++	select PINCTRL
++	select PINCTRL_SINGLE
+ 	help
+ 	  Include support for Marvell MMP2 based platforms using
+ 	  the device tree. Needn't select any other machine while
+@@ -99,6 +101,8 @@ config MACH_MMP2_DT
+ 	depends on !CPU_MOHAWK
+ 	select CPU_MMP2
+ 	select USE_OF
++	select PINCTRL
++	select PINCTRL_SINGLE
+ 	help
+ 	  Include support for Marvell MMP2 based platforms using
+ 	  the device tree.
+-- 
+1.8.0
+

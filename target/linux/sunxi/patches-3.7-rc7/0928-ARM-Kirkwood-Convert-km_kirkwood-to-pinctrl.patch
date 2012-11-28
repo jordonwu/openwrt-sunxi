@@ -1,0 +1,83 @@
+From 9891b3f63d551bcc249a4121f4bb5813dfda94db Mon Sep 17 00:00:00 2001
+From: Valentin Longchamp <valentin.longchamp@keymile.com>
+Date: Sat, 17 Nov 2012 17:00:56 +0100
+Subject: [PATCH 928/951] ARM: Kirkwood: Convert km_kirkwood to pinctrl
+
+Signed-off-by: Valentin Longchamp <valentin.longchamp@keymile.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-km_kirkwood.dts | 17 +++++++++++++++++
+ arch/arm/mach-kirkwood/board-km_kirkwood.c | 12 ------------
+ 2 files changed, 17 insertions(+), 12 deletions(-)
+
+diff --git a/arch/arm/boot/dts/kirkwood-km_kirkwood.dts b/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
+index 75bdb93..8db3123 100644
+--- a/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
++++ b/arch/arm/boot/dts/kirkwood-km_kirkwood.dts
+@@ -1,6 +1,7 @@
+ /dts-v1/;
+ 
+ /include/ "kirkwood.dtsi"
++/include/ "kirkwood-98dx4122.dtsi"
+ 
+ / {
+ 	model = "Keymile Kirkwood Reference Design";
+@@ -16,6 +17,22 @@
+ 	};
+ 
+ 	ocp@f1000000 {
++		pinctrl: pinctrl@10000 {
++
++			pinctrl-0 = < &pmx_nand &pmx_i2c_gpio_sda
++				&pmx_i2c_gpio_scl >;
++			pinctrl-names = "default";
++
++			pmx_i2c_gpio_sda: pmx-gpio-sda {
++				marvell,pins = "mpp8";
++				marvell,function = "gpio";
++			};
++			pmx_i2c_gpio_scl: pmx-gpio-scl {
++				marvell,pins = "mpp9";
++				marvell,function = "gpio";
++			};
++		};
++
+ 		serial@12000 {
+ 			clock-frequency = <200000000>;
+ 			status = "ok";
+diff --git a/arch/arm/mach-kirkwood/board-km_kirkwood.c b/arch/arm/mach-kirkwood/board-km_kirkwood.c
+index 1e9ac4b..44e4605 100644
+--- a/arch/arm/mach-kirkwood/board-km_kirkwood.c
++++ b/arch/arm/mach-kirkwood/board-km_kirkwood.c
+@@ -18,27 +18,15 @@
+ #include <linux/clk.h>
+ #include <linux/clk-private.h>
+ #include "common.h"
+-#include "mpp.h"
+ 
+ static struct mv643xx_eth_platform_data km_kirkwood_ge00_data = {
+ 	.phy_addr	= MV643XX_ETH_PHY_ADDR(0),
+ };
+ 
+-static unsigned int km_kirkwood_mpp_config[] __initdata = {
+-	MPP8_GPIO,	/* I2C SDA */
+-	MPP9_GPIO,	/* I2C SCL */
+-	0
+-};
+-
+ void __init km_kirkwood_init(void)
+ {
+ 	struct clk *sata_clk;
+ 	/*
+-	 * Basic setup. Needs to be called early.
+-	 */
+-	kirkwood_mpp_conf(km_kirkwood_mpp_config);
+-
+-	/*
+ 	 * Our variant of kirkwood (integrated in the Bobcat) hangs on accessing
+ 	 * SATA bits (14-15) of the Clock Gating Control Register. Since these
+ 	 * devices are also not present in this variant, their clocks get
+-- 
+1.8.0
+

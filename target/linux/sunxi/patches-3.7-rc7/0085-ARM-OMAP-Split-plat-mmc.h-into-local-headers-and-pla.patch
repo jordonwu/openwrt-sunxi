@@ -1,0 +1,813 @@
+From 68f39e74fbc3e58ad52d008072bddacc9eee1c7e Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Mon, 15 Oct 2012 12:09:43 -0700
+Subject: [PATCH 085/951] ARM: OMAP: Split plat/mmc.h into local headers and
+ platform_data
+
+We need to remove this from plat for ARM common zImage
+support.
+
+Also remove includes not needed by the omap_hsmmc.c driver.
+
+Cc: linux-mmc@vger.kernel.org
+Acked-by: Chris Ball <cjb@laptop.org>
+Acked-by: Venkatraman S <svenkatr@ti.com>
+[tony@atomide.com: fold in removal of unused driver includes]
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap1/board-h2-mmc.c         |   5 +-
+ arch/arm/mach-omap1/board-h3-mmc.c         |   3 +-
+ arch/arm/mach-omap1/board-htcherald.c      |   2 +-
+ arch/arm/mach-omap1/board-innovator.c      |   2 +-
+ arch/arm/mach-omap1/board-nokia770.c       |   2 +-
+ arch/arm/mach-omap1/board-sx1-mmc.c        |   3 +-
+ arch/arm/mach-omap1/devices.c              |   2 +-
+ arch/arm/mach-omap1/mmc.h                  |  18 +++
+ arch/arm/mach-omap2/board-4430sdp.c        |   2 +-
+ arch/arm/mach-omap2/board-n8x0.c           |   2 +-
+ arch/arm/mach-omap2/board-omap4panda.c     |   2 +-
+ arch/arm/mach-omap2/board-rm680.c          |   2 +-
+ arch/arm/mach-omap2/hsmmc.c                |   2 +-
+ arch/arm/mach-omap2/mmc.h                  |  23 ++++
+ arch/arm/mach-omap2/msdi.c                 |   2 +-
+ arch/arm/mach-omap2/omap4-common.c         |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_2420_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_2430_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_33xx_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_3xxx_data.c |   2 +-
+ arch/arm/mach-omap2/omap_hwmod_44xx_data.c |   2 +-
+ arch/arm/plat-omap/include/plat/mmc.h      | 188 -----------------------------
+ drivers/mmc/host/omap.c                    |   3 +-
+ drivers/mmc/host/omap_hsmmc.c              |   4 +-
+ include/linux/platform_data/mmc-omap.h     | 147 ++++++++++++++++++++++
+ 25 files changed, 212 insertions(+), 214 deletions(-)
+ create mode 100644 arch/arm/mach-omap1/mmc.h
+ create mode 100644 arch/arm/mach-omap2/mmc.h
+ delete mode 100644 arch/arm/plat-omap/include/plat/mmc.h
+ create mode 100644 include/linux/platform_data/mmc-omap.h
+
+diff --git a/arch/arm/mach-omap1/board-h2-mmc.c b/arch/arm/mach-omap1/board-h2-mmc.c
+index e1362ce..7119ef2 100644
+--- a/arch/arm/mach-omap1/board-h2-mmc.c
++++ b/arch/arm/mach-omap1/board-h2-mmc.c
+@@ -13,12 +13,11 @@
+  */
+ #include <linux/gpio.h>
+ #include <linux/platform_device.h>
+-
++#include <linux/platform_data/gpio-omap.h>
+ #include <linux/i2c/tps65010.h>
+ 
+-#include <plat/mmc.h>
+-
+ #include "board-h2.h"
++#include "mmc.h"
+ 
+ #if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
+ 
+diff --git a/arch/arm/mach-omap1/board-h3-mmc.c b/arch/arm/mach-omap1/board-h3-mmc.c
+index c74daac..17d7791 100644
+--- a/arch/arm/mach-omap1/board-h3-mmc.c
++++ b/arch/arm/mach-omap1/board-h3-mmc.c
+@@ -16,9 +16,8 @@
+ 
+ #include <linux/i2c/tps65010.h>
+ 
+-#include <plat/mmc.h>
+-
+ #include "board-h3.h"
++#include "mmc.h"
+ 
+ #if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
+ 
+diff --git a/arch/arm/mach-omap1/board-htcherald.c b/arch/arm/mach-omap1/board-htcherald.c
+index 87ab208..f23200c 100644
+--- a/arch/arm/mach-omap1/board-htcherald.c
++++ b/arch/arm/mach-omap1/board-htcherald.c
+@@ -43,7 +43,7 @@
+ #include <asm/mach/arch.h>
+ 
+ #include <mach/omap7xx.h>
+-#include <plat/mmc.h>
++#include "mmc.h"
+ 
+ #include <mach/irqs.h>
+ #include <mach/usb.h>
+diff --git a/arch/arm/mach-omap1/board-innovator.c b/arch/arm/mach-omap1/board-innovator.c
+index db5f7d2..411cc5b 100644
+--- a/arch/arm/mach-omap1/board-innovator.c
++++ b/arch/arm/mach-omap1/board-innovator.c
+@@ -36,13 +36,13 @@
+ #include <plat/fpga.h>
+ #include <plat/tc.h>
+ #include <linux/platform_data/keypad-omap.h>
+-#include <plat/mmc.h>
+ 
+ #include <mach/hardware.h>
+ #include <mach/usb.h>
+ 
+ #include "iomap.h"
+ #include "common.h"
++#include "mmc.h"
+ 
+ /* At OMAP1610 Innovator the Ethernet is directly connected to CS1 */
+ #define INNOVATOR1610_ETHR_START	0x04000300
+diff --git a/arch/arm/mach-omap1/board-nokia770.c b/arch/arm/mach-omap1/board-nokia770.c
+index 7d5c06d..cb72f24 100644
+--- a/arch/arm/mach-omap1/board-nokia770.c
++++ b/arch/arm/mach-omap1/board-nokia770.c
+@@ -29,13 +29,13 @@
+ #include <asm/mach/map.h>
+ 
+ #include <mach/mux.h>
+-#include <plat/mmc.h>
+ #include <plat/clock.h>
+ 
+ #include <mach/hardware.h>
+ #include <mach/usb.h>
+ 
+ #include "common.h"
++#include "mmc.h"
+ 
+ #define ADS7846_PENDOWN_GPIO	15
+ 
+diff --git a/arch/arm/mach-omap1/board-sx1-mmc.c b/arch/arm/mach-omap1/board-sx1-mmc.c
+index 5932d56..4fcf19c 100644
+--- a/arch/arm/mach-omap1/board-sx1-mmc.c
++++ b/arch/arm/mach-omap1/board-sx1-mmc.c
+@@ -16,9 +16,10 @@
+ #include <linux/platform_device.h>
+ 
+ #include <mach/hardware.h>
+-#include <plat/mmc.h>
+ #include <mach/board-sx1.h>
+ 
++#include "mmc.h"
++
+ #if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
+ 
+ static int mmc_set_power(struct device *dev, int slot, int power_on,
+diff --git a/arch/arm/mach-omap1/devices.c b/arch/arm/mach-omap1/devices.c
+index d3fec92..f85836a 100644
+--- a/arch/arm/mach-omap1/devices.c
++++ b/arch/arm/mach-omap1/devices.c
+@@ -22,7 +22,6 @@
+ #include <plat/tc.h>
+ #include <mach/mux.h>
+ #include <plat/dma.h>
+-#include <plat/mmc.h>
+ 
+ #include <mach/omap7xx.h>
+ #include <mach/camera.h>
+@@ -30,6 +29,7 @@
+ 
+ #include "common.h"
+ #include "clock.h"
++#include "mmc.h"
+ 
+ #if defined(CONFIG_SND_SOC) || defined(CONFIG_SND_SOC_MODULE)
+ 
+diff --git a/arch/arm/mach-omap1/mmc.h b/arch/arm/mach-omap1/mmc.h
+new file mode 100644
+index 0000000..39c2b13
+--- /dev/null
++++ b/arch/arm/mach-omap1/mmc.h
+@@ -0,0 +1,18 @@
++#include <linux/mmc/host.h>
++#include <linux/platform_data/mmc-omap.h>
++
++#define OMAP15XX_NR_MMC		1
++#define OMAP16XX_NR_MMC		2
++#define OMAP1_MMC_SIZE		0x080
++#define OMAP1_MMC1_BASE		0xfffb7800
++#define OMAP1_MMC2_BASE		0xfffb7c00	/* omap16xx only */
++
++#if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
++void omap1_init_mmc(struct omap_mmc_platform_data **mmc_data,
++				int nr_controllers);
++#else
++static inline void omap1_init_mmc(struct omap_mmc_platform_data **mmc_data,
++				int nr_controllers)
++{
++}
++#endif
+diff --git a/arch/arm/mach-omap2/board-4430sdp.c b/arch/arm/mach-omap2/board-4430sdp.c
+index 3669c12..2ab267e 100644
+--- a/arch/arm/mach-omap2/board-4430sdp.c
++++ b/arch/arm/mach-omap2/board-4430sdp.c
+@@ -35,7 +35,6 @@
+ 
+ #include "common.h"
+ #include <plat/usb.h>
+-#include <plat/mmc.h>
+ #include "omap4-keypad.h"
+ #include <video/omapdss.h>
+ #include <video/omap-panel-nokia-dsi.h>
+@@ -45,6 +44,7 @@
+ 
+ #include "soc.h"
+ #include "mux.h"
++#include "mmc.h"
+ #include "hsmmc.h"
+ #include "control.h"
+ #include "common-board-devices.h"
+diff --git a/arch/arm/mach-omap2/board-n8x0.c b/arch/arm/mach-omap2/board-n8x0.c
+index d95f727..f865ace 100644
+--- a/arch/arm/mach-omap2/board-n8x0.c
++++ b/arch/arm/mach-omap2/board-n8x0.c
+@@ -29,7 +29,7 @@
+ 
+ #include "common.h"
+ #include <plat/menelaus.h>
+-#include <plat/mmc.h>
++#include "mmc.h"
+ 
+ #include "mux.h"
+ 
+diff --git a/arch/arm/mach-omap2/board-omap4panda.c b/arch/arm/mach-omap2/board-omap4panda.c
+index bfcd397..e9ce9fb 100644
+--- a/arch/arm/mach-omap2/board-omap4panda.c
++++ b/arch/arm/mach-omap2/board-omap4panda.c
+@@ -40,10 +40,10 @@
+ 
+ #include "common.h"
+ #include <plat/usb.h>
+-#include <plat/mmc.h>
+ #include <video/omap-panel-tfp410.h>
+ 
+ #include "soc.h"
++#include "mmc.h"
+ #include "hsmmc.h"
+ #include "control.h"
+ #include "mux.h"
+diff --git a/arch/arm/mach-omap2/board-rm680.c b/arch/arm/mach-omap2/board-rm680.c
+index 45997bf..f4b3c28 100644
+--- a/arch/arm/mach-omap2/board-rm680.c
++++ b/arch/arm/mach-omap2/board-rm680.c
+@@ -23,13 +23,13 @@
+ #include <asm/mach-types.h>
+ 
+ #include <plat/i2c.h>
+-#include <plat/mmc.h>
+ #include <plat/usb.h>
+ #include <plat/gpmc.h>
+ #include "common.h"
+ #include <plat/serial.h>
+ 
+ #include "mux.h"
++#include "mmc.h"
+ #include "hsmmc.h"
+ #include "sdram-nokia.h"
+ #include "common-board-devices.h"
+diff --git a/arch/arm/mach-omap2/hsmmc.c b/arch/arm/mach-omap2/hsmmc.c
+index 4d3a632..ec6c223 100644
+--- a/arch/arm/mach-omap2/hsmmc.c
++++ b/arch/arm/mach-omap2/hsmmc.c
+@@ -17,11 +17,11 @@
+ #include <mach/hardware.h>
+ #include <linux/platform_data/gpio-omap.h>
+ 
+-#include <plat/mmc.h>
+ #include <plat/omap-pm.h>
+ #include <plat/omap_device.h>
+ 
+ #include "mux.h"
++#include "mmc.h"
+ #include "hsmmc.h"
+ #include "control.h"
+ 
+diff --git a/arch/arm/mach-omap2/mmc.h b/arch/arm/mach-omap2/mmc.h
+new file mode 100644
+index 0000000..0cd4b08
+--- /dev/null
++++ b/arch/arm/mach-omap2/mmc.h
+@@ -0,0 +1,23 @@
++#include <linux/mmc/host.h>
++#include <linux/platform_data/mmc-omap.h>
++
++#define OMAP24XX_NR_MMC		2
++#define OMAP2420_MMC_SIZE	OMAP1_MMC_SIZE
++#define OMAP2_MMC1_BASE		0x4809c000
++
++#define OMAP4_MMC_REG_OFFSET	0x100
++
++#if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
++void omap242x_init_mmc(struct omap_mmc_platform_data **mmc_data);
++#else
++static inline void omap242x_init_mmc(struct omap_mmc_platform_data **mmc_data)
++{
++}
++#endif
++
++struct omap_hwmod;
++int omap_msdi_reset(struct omap_hwmod *oh);
++
++/* called from board-specific card detection service routine */
++extern void omap_mmc_notify_cover_event(struct device *dev, int slot,
++					int is_closed);
+diff --git a/arch/arm/mach-omap2/msdi.c b/arch/arm/mach-omap2/msdi.c
+index 9e57b4a..a6020d7 100644
+--- a/arch/arm/mach-omap2/msdi.c
++++ b/arch/arm/mach-omap2/msdi.c
+@@ -27,11 +27,11 @@
+ 
+ #include <plat/omap_hwmod.h>
+ #include <plat/omap_device.h>
+-#include <plat/mmc.h>
+ 
+ #include "common.h"
+ #include "control.h"
+ #include "mux.h"
++#include "mmc.h"
+ 
+ /*
+  * MSDI_CON_OFFSET: offset in bytes of the MSDI IP block's CON register
+diff --git a/arch/arm/mach-omap2/omap4-common.c b/arch/arm/mach-omap2/omap4-common.c
+index e1f2897..de89d38 100644
+--- a/arch/arm/mach-omap2/omap4-common.c
++++ b/arch/arm/mach-omap2/omap4-common.c
+@@ -27,12 +27,12 @@
+ 
+ #include <plat/sram.h>
+ #include <plat/omap-secure.h>
+-#include <plat/mmc.h>
+ 
+ #include "omap-wakeupgen.h"
+ 
+ #include "soc.h"
+ #include "common.h"
++#include "mmc.h"
+ #include "hsmmc.h"
+ #include "omap4-sar-layout.h"
+ 
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2420_data.c b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+index b5db600..82ad9a5 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2420_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2420_data.c
+@@ -21,12 +21,12 @@
+ #include <plat/dmtimer.h>
+ #include "l3_2xxx.h"
+ #include "l4_2xxx.h"
+-#include <plat/mmc.h>
+ 
+ #include "omap_hwmod_common_data.h"
+ 
+ #include "cm-regbits-24xx.h"
+ #include "prm-regbits-24xx.h"
++#include "mmc.h"
+ #include "wd_timer.h"
+ 
+ /*
+diff --git a/arch/arm/mach-omap2/omap_hwmod_2430_data.c b/arch/arm/mach-omap2/omap_hwmod_2430_data.c
+index c455e41..5c833fb 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_2430_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_2430_data.c
+@@ -20,7 +20,7 @@
+ #include <plat/serial.h>
+ #include <plat/i2c.h>
+ #include <plat/dmtimer.h>
+-#include <plat/mmc.h>
++#include "mmc.h"
+ #include "l3_2xxx.h"
+ 
+ #include "soc.h"
+diff --git a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
+index 59d5c1c..d023a99 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_33xx_data.c
+@@ -19,7 +19,6 @@
+ #include <linux/platform_data/gpio-omap.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ #include <plat/dma.h>
+-#include <plat/mmc.h>
+ #include <plat/i2c.h>
+ 
+ #include "omap_hwmod_common_data.h"
+@@ -28,6 +27,7 @@
+ #include "cm33xx.h"
+ #include "prm33xx.h"
+ #include "prm-regbits-33xx.h"
++#include "mmc.h"
+ 
+ /*
+  * IP blocks
+diff --git a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+index f67b7ee..509e8ba 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_3xxx_data.c
+@@ -23,7 +23,6 @@
+ #include "l3_3xxx.h"
+ #include "l4_3xxx.h"
+ #include <plat/i2c.h>
+-#include <plat/mmc.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ #include <plat/dmtimer.h>
+@@ -35,6 +34,7 @@
+ #include "omap_hwmod_common_data.h"
+ #include "prm-regbits-34xx.h"
+ #include "cm-regbits-34xx.h"
++#include "mmc.h"
+ #include "wd_timer.h"
+ 
+ /*
+diff --git a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+index 652d028..f87d781 100644
+--- a/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
++++ b/arch/arm/mach-omap2/omap_hwmod_44xx_data.c
+@@ -27,7 +27,6 @@
+ #include <plat/dma.h>
+ #include <linux/platform_data/spi-omap2-mcspi.h>
+ #include <linux/platform_data/asoc-ti-mcbsp.h>
+-#include <plat/mmc.h>
+ #include <plat/dmtimer.h>
+ #include <plat/common.h>
+ #include <plat/iommu.h>
+@@ -37,6 +36,7 @@
+ #include "cm2_44xx.h"
+ #include "prm44xx.h"
+ #include "prm-regbits-44xx.h"
++#include "mmc.h"
+ #include "wd_timer.h"
+ 
+ /* Base offset for all OMAP4 interrupts external to MPUSS */
+diff --git a/arch/arm/plat-omap/include/plat/mmc.h b/arch/arm/plat-omap/include/plat/mmc.h
+deleted file mode 100644
+index 8b4e4f2..0000000
+--- a/arch/arm/plat-omap/include/plat/mmc.h
++++ /dev/null
+@@ -1,188 +0,0 @@
+-/*
+- * MMC definitions for OMAP2
+- *
+- * Copyright (C) 2006 Nokia Corporation
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-
+-#ifndef __OMAP2_MMC_H
+-#define __OMAP2_MMC_H
+-
+-#include <linux/types.h>
+-#include <linux/device.h>
+-#include <linux/mmc/host.h>
+-
+-#include <plat/omap_hwmod.h>
+-
+-#define OMAP15XX_NR_MMC		1
+-#define OMAP16XX_NR_MMC		2
+-#define OMAP1_MMC_SIZE		0x080
+-#define OMAP1_MMC1_BASE		0xfffb7800
+-#define OMAP1_MMC2_BASE		0xfffb7c00	/* omap16xx only */
+-
+-#define OMAP24XX_NR_MMC		2
+-#define OMAP2420_MMC_SIZE	OMAP1_MMC_SIZE
+-#define OMAP2_MMC1_BASE		0x4809c000
+-
+-#define OMAP4_MMC_REG_OFFSET	0x100
+-
+-#define OMAP_MMC_MAX_SLOTS	2
+-
+-/*
+- * struct omap_mmc_dev_attr.flags possibilities
+- *
+- * OMAP_HSMMC_SUPPORTS_DUAL_VOLT: Some HSMMC controller instances can
+- *    operate with either 1.8Vdc or 3.0Vdc card voltages; this flag
+- *    should be set if this is the case.  See for example Section 22.5.3
+- *    "MMC/SD/SDIO1 Bus Voltage Selection" of the OMAP34xx Multimedia
+- *    Device Silicon Revision 3.1.x Revision ZR (July 2011) (SWPU223R).
+- *
+- * OMAP_HSMMC_BROKEN_MULTIBLOCK_READ: Multiple-block read transfers
+- *    don't work correctly on some MMC controller instances on some
+- *    OMAP3 SoCs; this flag should be set if this is the case.  See
+- *    for example Advisory 2.1.1.128 "MMC: Multiple Block Read
+- *    Operation Issue" in _OMAP3530/3525/3515/3503 Silicon Errata_
+- *    Revision F (October 2010) (SPRZ278F).
+- */
+-#define OMAP_HSMMC_SUPPORTS_DUAL_VOLT		BIT(0)
+-#define OMAP_HSMMC_BROKEN_MULTIBLOCK_READ	BIT(1)
+-
+-struct omap_mmc_dev_attr {
+-	u8 flags;
+-};
+-
+-struct omap_mmc_platform_data {
+-	/* back-link to device */
+-	struct device *dev;
+-
+-	/* number of slots per controller */
+-	unsigned nr_slots:2;
+-
+-	/* set if your board has components or wiring that limits the
+-	 * maximum frequency on the MMC bus */
+-	unsigned int max_freq;
+-
+-	/* switch the bus to a new slot */
+-	int (*switch_slot)(struct device *dev, int slot);
+-	/* initialize board-specific MMC functionality, can be NULL if
+-	 * not supported */
+-	int (*init)(struct device *dev);
+-	void (*cleanup)(struct device *dev);
+-	void (*shutdown)(struct device *dev);
+-
+-	/* To handle board related suspend/resume functionality for MMC */
+-	int (*suspend)(struct device *dev, int slot);
+-	int (*resume)(struct device *dev, int slot);
+-
+-	/* Return context loss count due to PM states changing */
+-	int (*get_context_loss_count)(struct device *dev);
+-
+-	/* Integrating attributes from the omap_hwmod layer */
+-	u8 controller_flags;
+-
+-	/* Register offset deviation */
+-	u16 reg_offset;
+-
+-	struct omap_mmc_slot_data {
+-
+-		/*
+-		 * 4/8 wires and any additional host capabilities
+-		 * need to OR'd all capabilities (ref. linux/mmc/host.h)
+-		 */
+-		u8  wires;	/* Used for the MMC driver on omap1 and 2420 */
+-		u32 caps;	/* Used for the MMC driver on 2430 and later */
+-		u32 pm_caps;	/* PM capabilities of the mmc */
+-
+-		/*
+-		 * nomux means "standard" muxing is wrong on this board, and
+-		 * that board-specific code handled it before common init logic.
+-		 */
+-		unsigned nomux:1;
+-
+-		/* switch pin can be for card detect (default) or card cover */
+-		unsigned cover:1;
+-
+-		/* use the internal clock */
+-		unsigned internal_clock:1;
+-
+-		/* nonremovable e.g. eMMC */
+-		unsigned nonremovable:1;
+-
+-		/* Try to sleep or power off when possible */
+-		unsigned power_saving:1;
+-
+-		/* If using power_saving and the MMC power is not to go off */
+-		unsigned no_off:1;
+-
+-		/* eMMC does not handle power off when not in sleep state */
+-		unsigned no_regulator_off_init:1;
+-
+-		/* Regulator off remapped to sleep */
+-		unsigned vcc_aux_disable_is_sleep:1;
+-
+-		/* we can put the features above into this variable */
+-#define HSMMC_HAS_PBIAS		(1 << 0)
+-#define HSMMC_HAS_UPDATED_RESET	(1 << 1)
+-		unsigned features;
+-
+-		int switch_pin;			/* gpio (card detect) */
+-		int gpio_wp;			/* gpio (write protect) */
+-
+-		int (*set_bus_mode)(struct device *dev, int slot, int bus_mode);
+-		int (*set_power)(struct device *dev, int slot,
+-				 int power_on, int vdd);
+-		int (*get_ro)(struct device *dev, int slot);
+-		void (*remux)(struct device *dev, int slot, int power_on);
+-		/* Call back before enabling / disabling regulators */
+-		void (*before_set_reg)(struct device *dev, int slot,
+-				       int power_on, int vdd);
+-		/* Call back after enabling / disabling regulators */
+-		void (*after_set_reg)(struct device *dev, int slot,
+-				      int power_on, int vdd);
+-		/* if we have special card, init it using this callback */
+-		void (*init_card)(struct mmc_card *card);
+-
+-		/* return MMC cover switch state, can be NULL if not supported.
+-		 *
+-		 * possible return values:
+-		 *   0 - closed
+-		 *   1 - open
+-		 */
+-		int (*get_cover_state)(struct device *dev, int slot);
+-
+-		const char *name;
+-		u32 ocr_mask;
+-
+-		/* Card detection IRQs */
+-		int card_detect_irq;
+-		int (*card_detect)(struct device *dev, int slot);
+-
+-		unsigned int ban_openended:1;
+-
+-	} slots[OMAP_MMC_MAX_SLOTS];
+-};
+-
+-/* called from board-specific card detection service routine */
+-extern void omap_mmc_notify_cover_event(struct device *dev, int slot,
+-					int is_closed);
+-
+-#if defined(CONFIG_MMC_OMAP) || defined(CONFIG_MMC_OMAP_MODULE)
+-void omap1_init_mmc(struct omap_mmc_platform_data **mmc_data,
+-				int nr_controllers);
+-void omap242x_init_mmc(struct omap_mmc_platform_data **mmc_data);
+-#else
+-static inline void omap1_init_mmc(struct omap_mmc_platform_data **mmc_data,
+-				int nr_controllers)
+-{
+-}
+-static inline void omap242x_init_mmc(struct omap_mmc_platform_data **mmc_data)
+-{
+-}
+-#endif
+-
+-extern int omap_msdi_reset(struct omap_hwmod *oh);
+-
+-#endif
+diff --git a/drivers/mmc/host/omap.c b/drivers/mmc/host/omap.c
+index 48ad361..e7c61b9 100644
+--- a/drivers/mmc/host/omap.c
++++ b/drivers/mmc/host/omap.c
+@@ -28,8 +28,9 @@
+ #include <linux/clk.h>
+ #include <linux/scatterlist.h>
+ #include <linux/slab.h>
++#include <linux/platform_data/mmc-omap.h>
+ 
+-#include <plat/mmc.h>
++#include <plat/cpu.h>
+ #include <plat/dma.h>
+ 
+ #define	OMAP_MMC_REG_CMD	0x00
+diff --git a/drivers/mmc/host/omap_hsmmc.c b/drivers/mmc/host/omap_hsmmc.c
+index 54bfd0c..9b24bd4 100644
+--- a/drivers/mmc/host/omap_hsmmc.c
++++ b/drivers/mmc/host/omap_hsmmc.c
+@@ -38,9 +38,7 @@
+ #include <linux/gpio.h>
+ #include <linux/regulator/consumer.h>
+ #include <linux/pm_runtime.h>
+-#include <mach/hardware.h>
+-#include <plat/mmc.h>
+-#include <plat/cpu.h>
++#include <linux/platform_data/mmc-omap.h>
+ 
+ /* OMAP HSMMC Host Controller Registers */
+ #define OMAP_HSMMC_SYSSTATUS	0x0014
+diff --git a/include/linux/platform_data/mmc-omap.h b/include/linux/platform_data/mmc-omap.h
+new file mode 100644
+index 0000000..39a7abc
+--- /dev/null
++++ b/include/linux/platform_data/mmc-omap.h
+@@ -0,0 +1,147 @@
++/*
++ * MMC definitions for OMAP2
++ *
++ * Copyright (C) 2006 Nokia Corporation
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#define OMAP_MMC_MAX_SLOTS	2
++
++/*
++ * struct omap_mmc_dev_attr.flags possibilities
++ *
++ * OMAP_HSMMC_SUPPORTS_DUAL_VOLT: Some HSMMC controller instances can
++ *    operate with either 1.8Vdc or 3.0Vdc card voltages; this flag
++ *    should be set if this is the case.  See for example Section 22.5.3
++ *    "MMC/SD/SDIO1 Bus Voltage Selection" of the OMAP34xx Multimedia
++ *    Device Silicon Revision 3.1.x Revision ZR (July 2011) (SWPU223R).
++ *
++ * OMAP_HSMMC_BROKEN_MULTIBLOCK_READ: Multiple-block read transfers
++ *    don't work correctly on some MMC controller instances on some
++ *    OMAP3 SoCs; this flag should be set if this is the case.  See
++ *    for example Advisory 2.1.1.128 "MMC: Multiple Block Read
++ *    Operation Issue" in _OMAP3530/3525/3515/3503 Silicon Errata_
++ *    Revision F (October 2010) (SPRZ278F).
++ */
++#define OMAP_HSMMC_SUPPORTS_DUAL_VOLT		BIT(0)
++#define OMAP_HSMMC_BROKEN_MULTIBLOCK_READ	BIT(1)
++
++struct mmc_card;
++
++struct omap_mmc_dev_attr {
++	u8 flags;
++};
++
++struct omap_mmc_platform_data {
++	/* back-link to device */
++	struct device *dev;
++
++	/* number of slots per controller */
++	unsigned nr_slots:2;
++
++	/* set if your board has components or wiring that limits the
++	 * maximum frequency on the MMC bus */
++	unsigned int max_freq;
++
++	/* switch the bus to a new slot */
++	int (*switch_slot)(struct device *dev, int slot);
++	/* initialize board-specific MMC functionality, can be NULL if
++	 * not supported */
++	int (*init)(struct device *dev);
++	void (*cleanup)(struct device *dev);
++	void (*shutdown)(struct device *dev);
++
++	/* To handle board related suspend/resume functionality for MMC */
++	int (*suspend)(struct device *dev, int slot);
++	int (*resume)(struct device *dev, int slot);
++
++	/* Return context loss count due to PM states changing */
++	int (*get_context_loss_count)(struct device *dev);
++
++	/* Integrating attributes from the omap_hwmod layer */
++	u8 controller_flags;
++
++	/* Register offset deviation */
++	u16 reg_offset;
++
++	struct omap_mmc_slot_data {
++
++		/*
++		 * 4/8 wires and any additional host capabilities
++		 * need to OR'd all capabilities (ref. linux/mmc/host.h)
++		 */
++		u8  wires;	/* Used for the MMC driver on omap1 and 2420 */
++		u32 caps;	/* Used for the MMC driver on 2430 and later */
++		u32 pm_caps;	/* PM capabilities of the mmc */
++
++		/*
++		 * nomux means "standard" muxing is wrong on this board, and
++		 * that board-specific code handled it before common init logic.
++		 */
++		unsigned nomux:1;
++
++		/* switch pin can be for card detect (default) or card cover */
++		unsigned cover:1;
++
++		/* use the internal clock */
++		unsigned internal_clock:1;
++
++		/* nonremovable e.g. eMMC */
++		unsigned nonremovable:1;
++
++		/* Try to sleep or power off when possible */
++		unsigned power_saving:1;
++
++		/* If using power_saving and the MMC power is not to go off */
++		unsigned no_off:1;
++
++		/* eMMC does not handle power off when not in sleep state */
++		unsigned no_regulator_off_init:1;
++
++		/* Regulator off remapped to sleep */
++		unsigned vcc_aux_disable_is_sleep:1;
++
++		/* we can put the features above into this variable */
++#define HSMMC_HAS_PBIAS		(1 << 0)
++#define HSMMC_HAS_UPDATED_RESET	(1 << 1)
++		unsigned features;
++
++		int switch_pin;			/* gpio (card detect) */
++		int gpio_wp;			/* gpio (write protect) */
++
++		int (*set_bus_mode)(struct device *dev, int slot, int bus_mode);
++		int (*set_power)(struct device *dev, int slot,
++				 int power_on, int vdd);
++		int (*get_ro)(struct device *dev, int slot);
++		void (*remux)(struct device *dev, int slot, int power_on);
++		/* Call back before enabling / disabling regulators */
++		void (*before_set_reg)(struct device *dev, int slot,
++				       int power_on, int vdd);
++		/* Call back after enabling / disabling regulators */
++		void (*after_set_reg)(struct device *dev, int slot,
++				      int power_on, int vdd);
++		/* if we have special card, init it using this callback */
++		void (*init_card)(struct mmc_card *card);
++
++		/* return MMC cover switch state, can be NULL if not supported.
++		 *
++		 * possible return values:
++		 *   0 - closed
++		 *   1 - open
++		 */
++		int (*get_cover_state)(struct device *dev, int slot);
++
++		const char *name;
++		u32 ocr_mask;
++
++		/* Card detection IRQs */
++		int card_detect_irq;
++		int (*card_detect)(struct device *dev, int slot);
++
++		unsigned int ban_openended:1;
++
++	} slots[OMAP_MMC_MAX_SLOTS];
++};
+-- 
+1.8.0
+

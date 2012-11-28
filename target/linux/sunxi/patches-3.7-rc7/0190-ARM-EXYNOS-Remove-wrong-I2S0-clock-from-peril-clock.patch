@@ -1,0 +1,36 @@
+From 4ec673ae05f787f89819e76c34e7d6a21f7d0a8f Mon Sep 17 00:00:00 2001
+From: Sangsu Park <sangsu4u.park@samsung.com>
+Date: Tue, 23 Oct 2012 18:51:57 +0900
+Subject: [PATCH 190/951] ARM: EXYNOS: Remove wrong I2S0 clock from peril
+ clock
+
+Remove I2S0 clk from peril since peril clock doesn't have
+I2S0 clk for EXYNOS4. Audio Subsystem block has I2S0 clk.
+
+Signed-off-by: Sangsu Park <sangsu4u.park@samsung.com>
+[sbkim73@samsung.com: peril control bit 19 is reserved]
+Acked-by: Sangbeom Kim <sbkim73@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-exynos/clock-exynos4.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/arch/arm/mach-exynos/clock-exynos4.c b/arch/arm/mach-exynos/clock-exynos4.c
+index 2f51293..68a2a9c 100644
+--- a/arch/arm/mach-exynos/clock-exynos4.c
++++ b/arch/arm/mach-exynos/clock-exynos4.c
+@@ -601,11 +601,6 @@ static struct clk exynos4_init_clocks_off[] = {
+ 		.ctrlbit	= (1 << 18),
+ 	}, {
+ 		.name		= "iis",
+-		.devname	= "samsung-i2s.0",
+-		.enable		= exynos4_clk_ip_peril_ctrl,
+-		.ctrlbit	= (1 << 19),
+-	}, {
+-		.name		= "iis",
+ 		.devname	= "samsung-i2s.1",
+ 		.enable		= exynos4_clk_ip_peril_ctrl,
+ 		.ctrlbit	= (1 << 20),
+-- 
+1.8.0
+

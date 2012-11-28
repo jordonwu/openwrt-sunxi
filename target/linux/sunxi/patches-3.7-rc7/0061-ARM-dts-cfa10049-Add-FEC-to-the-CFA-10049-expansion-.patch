@@ -1,0 +1,82 @@
+From 8eec4b3117405e5561d2c65c9222cf3334c0ca3a Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Sun, 7 Oct 2012 10:36:28 +0800
+Subject: [PATCH 061/951] ARM: dts: cfa10049: Add FEC to the CFA-10049
+ expansion board
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx28-cfa10049.dts | 11 +++++++++++
+ arch/arm/mach-mxs/mach-mxs.c         | 14 ++++++++++++++
+ 2 files changed, 25 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx28-cfa10049.dts b/arch/arm/boot/dts/imx28-cfa10049.dts
+index 05c892e..a34676f 100644
+--- a/arch/arm/boot/dts/imx28-cfa10049.dts
++++ b/arch/arm/boot/dts/imx28-cfa10049.dts
+@@ -96,4 +96,15 @@
+ 			gpio = <&gpio0 7 1>;
+ 		};
+ 	};
++
++	ahb@80080000 {
++		mac0: ethernet@800f0000 {
++			phy-mode = "rmii";
++			pinctrl-names = "default";
++			pinctrl-0 = <&mac0_pins_a>;
++			phy-reset-gpios = <&gpio2 21 0>;
++			phy-reset-duration = <100>;
++			status = "okay";
++		};
++	};
+ };
+diff --git a/arch/arm/mach-mxs/mach-mxs.c b/arch/arm/mach-mxs/mach-mxs.c
+index 4748ec5..b8c452a 100644
+--- a/arch/arm/mach-mxs/mach-mxs.c
++++ b/arch/arm/mach-mxs/mach-mxs.c
+@@ -160,6 +160,7 @@ static struct sys_timer imx28_timer = {
+ enum mac_oui {
+ 	OUI_FSL,
+ 	OUI_DENX,
++	OUI_CRYSTALFONTZ,
+ };
+ 
+ static void __init update_fec_mac_prop(enum mac_oui oui)
+@@ -205,6 +206,11 @@ static void __init update_fec_mac_prop(enum mac_oui oui)
+ 			macaddr[1] = 0xe5;
+ 			macaddr[2] = 0x4e;
+ 			break;
++		case OUI_CRYSTALFONTZ:
++			macaddr[0] = 0x58;
++			macaddr[1] = 0xb9;
++			macaddr[2] = 0xe1;
++			break;
+ 		}
+ 		val = ocotp[i];
+ 		macaddr[3] = (val >> 16) & 0xff;
+@@ -355,6 +361,12 @@ static void __init tx28_post_init(void)
+ 	pinctrl_put(pctl);
+ }
+ 
++static void __init cfa10049_init(void)
++{
++	enable_clk_enet_out();
++	update_fec_mac_prop(OUI_CRYSTALFONTZ);
++}
++
+ static void __init mxs_machine_init(void)
+ {
+ 	if (of_machine_is_compatible("fsl,imx28-evk"))
+@@ -365,6 +377,8 @@ static void __init mxs_machine_init(void)
+ 		m28evk_init();
+ 	else if (of_machine_is_compatible("bluegiga,apx4devkit"))
+ 		apx4devkit_init();
++	else if (of_machine_is_compatible("crystalfontz,cfa10049"))
++		cfa10049_init();
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     mxs_auxdata_lookup, NULL);
+-- 
+1.8.0
+

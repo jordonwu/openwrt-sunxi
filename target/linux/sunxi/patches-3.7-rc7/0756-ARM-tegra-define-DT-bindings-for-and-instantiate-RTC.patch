@@ -1,0 +1,83 @@
+From 380e04ac2cd96a4c36ad164fce556427dcd2ea0f Mon Sep 17 00:00:00 2001
+From: Stephen Warren <swarren@nvidia.com>
+Date: Wed, 19 Sep 2012 12:13:16 -0600
+Subject: [PATCH 756/951] ARM: tegra: define DT bindings for and instantiate
+ RTC
+
+The Tegra RTC maintains seconds and milliseconds counters, and five alarm
+registers. The alarms and other interrupts may wake the system from
+low-power state.
+
+Define a DT binding for this HW module, and add the module into the Tegra
+device tree files.
+
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ .../devicetree/bindings/rtc/nvidia,tegra20-rtc.txt    | 19 +++++++++++++++++++
+ arch/arm/boot/dts/tegra20.dtsi                        |  6 ++++++
+ arch/arm/boot/dts/tegra30.dtsi                        |  6 ++++++
+ 3 files changed, 31 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/rtc/nvidia,tegra20-rtc.txt
+
+diff --git a/Documentation/devicetree/bindings/rtc/nvidia,tegra20-rtc.txt b/Documentation/devicetree/bindings/rtc/nvidia,tegra20-rtc.txt
+new file mode 100644
+index 0000000..93f45e9
+--- /dev/null
++++ b/Documentation/devicetree/bindings/rtc/nvidia,tegra20-rtc.txt
+@@ -0,0 +1,19 @@
++NVIDIA Tegra20 real-time clock
++
++The Tegra RTC maintains seconds and milliseconds counters, and five alarm
++registers. The alarms and other interrupts may wake the system from low-power
++state.
++
++Required properties:
++
++- compatible : should be "nvidia,tegra20-rtc".
++- reg : Specifies base physical address and size of the registers.
++- interrupts : A single interrupt specifier.
++
++Example:
++
++timer {
++	compatible = "nvidia,tegra20-rtc";
++	reg = <0x7000e000 0x100>;
++	interrupts = <0 2 0x04>;
++};
+diff --git a/arch/arm/boot/dts/tegra20.dtsi b/arch/arm/boot/dts/tegra20.dtsi
+index 96c922d..63c25ce 100644
+--- a/arch/arm/boot/dts/tegra20.dtsi
++++ b/arch/arm/boot/dts/tegra20.dtsi
+@@ -234,6 +234,12 @@
+ 		#pwm-cells = <2>;
+ 	};
+ 
++	rtc {
++		compatible = "nvidia,tegra20-rtc";
++		reg = <0x7000e000 0x100>;
++		interrupts = <0 2 0x04>;
++	};
++
+ 	i2c@7000c000 {
+ 		compatible = "nvidia,tegra20-i2c";
+ 		reg = <0x7000c000 0x100>;
+diff --git a/arch/arm/boot/dts/tegra30.dtsi b/arch/arm/boot/dts/tegra30.dtsi
+index 48a8320..f7af066 100644
+--- a/arch/arm/boot/dts/tegra30.dtsi
++++ b/arch/arm/boot/dts/tegra30.dtsi
+@@ -230,6 +230,12 @@
+ 		#pwm-cells = <2>;
+ 	};
+ 
++	rtc {
++		compatible = "nvidia,tegra30-rtc", "nvidia,tegra20-rtc";
++		reg = <0x7000e000 0x100>;
++		interrupts = <0 2 0x04>;
++	};
++
+ 	i2c@7000c000 {
+ 		compatible =  "nvidia,tegra30-i2c", "nvidia,tegra20-i2c";
+ 		reg = <0x7000c000 0x100>;
+-- 
+1.8.0
+

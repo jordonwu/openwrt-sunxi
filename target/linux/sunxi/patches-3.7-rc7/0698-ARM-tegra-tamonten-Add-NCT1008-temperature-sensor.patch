@@ -1,0 +1,34 @@
+From 840a40807f17ac6b8f2e1f19e495cab9896b19bc Mon Sep 17 00:00:00 2001
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 9 Nov 2012 23:00:08 +0100
+Subject: [PATCH 698/951] ARM: tegra: tamonten: Add NCT1008 temperature sensor
+
+The Tamonten SOM has an ON Semiconductor NCT1008 connected to the DVC
+bus which is used to measure the ambient (local) temperature as well as
+the on-die (remote) temperature.
+
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/boot/dts/tegra20-tamonten.dtsi | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm/boot/dts/tegra20-tamonten.dtsi b/arch/arm/boot/dts/tegra20-tamonten.dtsi
+index c3540e0..95df80e 100644
+--- a/arch/arm/boot/dts/tegra20-tamonten.dtsi
++++ b/arch/arm/boot/dts/tegra20-tamonten.dtsi
+@@ -440,6 +440,11 @@
+ 				};
+ 			};
+ 		};
++
++		temperature-sensor@4c {
++			compatible = "onnn,nct1008";
++			reg = <0x4c>;
++		};
+ 	};
+ 
+ 	pmc {
+-- 
+1.8.0
+

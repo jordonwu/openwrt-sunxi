@@ -1,0 +1,271 @@
+From dc843280c954877b8a196e59a9f92cd8b94c2d25 Mon Sep 17 00:00:00 2001
+From: Tony Lindgren <tony@atomide.com>
+Date: Wed, 3 Oct 2012 11:23:43 -0700
+Subject: [PATCH 138/951] ARM: OMAP: Merge plat/multi.h into plat/cpu.h
+
+This is private to cpu.h and no other places should
+need to include it and we can drop the include
+in mach-omap2/io.c.
+
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap2/io.c                |   3 +-
+ arch/arm/plat-omap/include/plat/cpu.h   |  96 ++++++++++++++++++++++++-
+ arch/arm/plat-omap/include/plat/multi.h | 120 --------------------------------
+ 3 files changed, 96 insertions(+), 123 deletions(-)
+ delete mode 100644 arch/arm/plat-omap/include/plat/multi.h
+
+diff --git a/arch/arm/mach-omap2/io.c b/arch/arm/mach-omap2/io.c
+index 60dede8..b373cb5 100644
+--- a/arch/arm/mach-omap2/io.c
++++ b/arch/arm/mach-omap2/io.c
+@@ -27,12 +27,11 @@
+ 
+ #include <plat/serial.h>
+ #include <plat/omap-pm.h>
+-#include "omap_hwmod.h"
+-#include <plat/multi.h>
+ #include <plat-omap/dma-omap.h>
+ 
+ #include "../plat-omap/sram.h"
+ 
++#include "omap_hwmod.h"
+ #include "soc.h"
+ #include "iomap.h"
+ #include "voltage.h"
+diff --git a/arch/arm/plat-omap/include/plat/cpu.h b/arch/arm/plat-omap/include/plat/cpu.h
+index 67da857..bfd9c5f 100644
+--- a/arch/arm/plat-omap/include/plat/cpu.h
++++ b/arch/arm/plat-omap/include/plat/cpu.h
+@@ -33,7 +33,101 @@
+ #ifndef __ASSEMBLY__
+ 
+ #include <linux/bitops.h>
+-#include <plat/multi.h>
++
++/*
++ * Test if multicore OMAP support is needed
++ */
++#undef MULTI_OMAP1
++#undef MULTI_OMAP2
++#undef OMAP_NAME
++
++#ifdef CONFIG_ARCH_OMAP730
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP1
++#  define MULTI_OMAP1
++# else
++#  define OMAP_NAME omap730
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP850
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP1
++#  define MULTI_OMAP1
++# else
++#  define OMAP_NAME omap850
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP15XX
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP1
++#  define MULTI_OMAP1
++# else
++#  define OMAP_NAME omap1510
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP16XX
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP1
++#  define MULTI_OMAP1
++# else
++#  define OMAP_NAME omap16xx
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP2PLUS
++# if (defined(OMAP_NAME) || defined(MULTI_OMAP1))
++#  error "OMAP1 and OMAP2PLUS can't be selected at the same time"
++# endif
++#endif
++#ifdef CONFIG_SOC_OMAP2420
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME omap2420
++# endif
++#endif
++#ifdef CONFIG_SOC_OMAP2430
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME omap2430
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP3
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME omap3
++# endif
++#endif
++#ifdef CONFIG_ARCH_OMAP4
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME omap4
++# endif
++#endif
++
++#ifdef CONFIG_SOC_OMAP5
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME omap5
++# endif
++#endif
++
++#ifdef CONFIG_SOC_AM33XX
++# ifdef OMAP_NAME
++#  undef  MULTI_OMAP2
++#  define MULTI_OMAP2
++# else
++#  define OMAP_NAME am33xx
++# endif
++#endif
+ 
+ /*
+  * Omap device type i.e. EMU/HS/TST/GP/BAD
+diff --git a/arch/arm/plat-omap/include/plat/multi.h b/arch/arm/plat-omap/include/plat/multi.h
+deleted file mode 100644
+index 324d31b..0000000
+--- a/arch/arm/plat-omap/include/plat/multi.h
++++ /dev/null
+@@ -1,120 +0,0 @@
+-/*
+- * Support for compiling in multiple OMAP processors
+- *
+- * Copyright (C) 2010 Nokia Corporation
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License as published by
+- * the Free Software Foundation; either version 2 of the License, or
+- * (at your option) any later version.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+- *
+- */
+-
+-#ifndef __PLAT_OMAP_MULTI_H
+-#define __PLAT_OMAP_MULTI_H
+-
+-/*
+- * Test if multicore OMAP support is needed
+- */
+-#undef MULTI_OMAP1
+-#undef MULTI_OMAP2
+-#undef OMAP_NAME
+-
+-#ifdef CONFIG_ARCH_OMAP730
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP1
+-#  define MULTI_OMAP1
+-# else
+-#  define OMAP_NAME omap730
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP850
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP1
+-#  define MULTI_OMAP1
+-# else
+-#  define OMAP_NAME omap850
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP15XX
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP1
+-#  define MULTI_OMAP1
+-# else
+-#  define OMAP_NAME omap1510
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP16XX
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP1
+-#  define MULTI_OMAP1
+-# else
+-#  define OMAP_NAME omap16xx
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP2PLUS
+-# if (defined(OMAP_NAME) || defined(MULTI_OMAP1))
+-#  error "OMAP1 and OMAP2PLUS can't be selected at the same time"
+-# endif
+-#endif
+-#ifdef CONFIG_SOC_OMAP2420
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME omap2420
+-# endif
+-#endif
+-#ifdef CONFIG_SOC_OMAP2430
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME omap2430
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP3
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME omap3
+-# endif
+-#endif
+-#ifdef CONFIG_ARCH_OMAP4
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME omap4
+-# endif
+-#endif
+-
+-#ifdef CONFIG_SOC_OMAP5
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME omap5
+-# endif
+-#endif
+-
+-#ifdef CONFIG_SOC_AM33XX
+-# ifdef OMAP_NAME
+-#  undef  MULTI_OMAP2
+-#  define MULTI_OMAP2
+-# else
+-#  define OMAP_NAME am33xx
+-# endif
+-#endif
+-
+-#endif	/* __PLAT_OMAP_MULTI_H */
+-- 
+1.8.0
+

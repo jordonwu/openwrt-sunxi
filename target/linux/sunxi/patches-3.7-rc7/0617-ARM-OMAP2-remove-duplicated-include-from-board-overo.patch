@@ -1,0 +1,32 @@
+From e05cf58d50e3ce3601ebf753728eee0df759e38f Mon Sep 17 00:00:00 2001
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Date: Wed, 7 Nov 2012 20:53:49 +0800
+Subject: [PATCH 617/951] ARM: OMAP2+: remove duplicated include from
+ board-overo.c
+
+Remove duplicated include.
+
+dpatch engine is used to auto generate this patch.
+(https://github.com/weiyj/dpatch)
+
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Tony Lindgren <tony@atomide.com>
+---
+ arch/arm/mach-omap2/board-overo.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-omap2/board-overo.c b/arch/arm/mach-omap2/board-overo.c
+index 1cfb037..f5ba43f 100644
+--- a/arch/arm/mach-omap2/board-overo.c
++++ b/arch/arm/mach-omap2/board-overo.c
+@@ -45,7 +45,6 @@
+ #include <asm/mach/flash.h>
+ #include <asm/mach/map.h>
+ 
+-#include "common.h"
+ #include <video/omapdss.h>
+ #include <video/omap-panel-generic-dpi.h>
+ #include <video/omap-panel-tfp410.h>
+-- 
+1.8.0
+

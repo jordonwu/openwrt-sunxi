@@ -1,0 +1,1154 @@
+From b9c665d75beb9239f8a0847786cf27dcb8a61b00 Mon Sep 17 00:00:00 2001
+From: Stephen Warren <swarren@nvidia.com>
+Date: Thu, 20 Sep 2012 17:04:06 -0600
+Subject: [PATCH 425/951] ARM: tegra: update *.dts for regulator-compatible
+ deprecation
+
+Commit 13511de "regulator: deprecate regulator-compatible DT property"
+now allows for simpler content within the regulators node within a PMIC.
+Modify all the Tegra device tree files to take advantage of this.
+
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+Acked-by: Thierry Reding <thierry.reding@avionic-design.de>
+---
+ arch/arm/boot/dts/tegra20-harmony.dts   |  63 ++++-------------
+ arch/arm/boot/dts/tegra20-paz00.dts     |  59 ++++------------
+ arch/arm/boot/dts/tegra20-seaboard.dts  |  59 ++++------------
+ arch/arm/boot/dts/tegra20-tamonten.dtsi |  63 ++++-------------
+ arch/arm/boot/dts/tegra20-ventana.dts   |  59 ++++------------
+ arch/arm/boot/dts/tegra20-whistler.dts  | 119 ++++++++------------------------
+ arch/arm/boot/dts/tegra30-cardhu.dtsi   |  47 +++----------
+ 7 files changed, 112 insertions(+), 357 deletions(-)
+
+diff --git a/arch/arm/boot/dts/tegra20-harmony.dts b/arch/arm/boot/dts/tegra20-harmony.dts
+index c3ef1ad..74b8a47 100644
+--- a/arch/arm/boot/dts/tegra20-harmony.dts
++++ b/arch/arm/boot/dts/tegra20-harmony.dts
+@@ -297,131 +297,98 @@
+ 			vinldo9-supply = <&sm2_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				sys_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "sys";
++				sys_reg: sys {
+ 					regulator-name = "vdd_sys";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sm0";
++				sm0 {
+ 					regulator-name = "vdd_sm0,vdd_core";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sm1";
++				sm1 {
+ 					regulator-name = "vdd_sm1,vdd_cpu";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				sm2_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sm2";
++				sm2_reg: sm2 {
+ 					regulator-name = "vdd_sm2,vin_ldo*";
+ 					regulator-min-microvolt = <3700000>;
+ 					regulator-max-microvolt = <3700000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@4 {
+-					reg = <4>;
+-					regulator-compatible = "ldo0";
++				ldo0 {
+ 					regulator-name = "vdd_ldo0,vddio_pex_clk";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "vdd_ldo1,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "vdd_ldo2,vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "vdd_ldo3,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "vdd_ldo4,avdd_osc,vddio_sys";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "vdd_ldo5,vcore_mmc";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					regulator-name = "vdd_ldo6,avdd_vdac";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "vdd_ldo7,avdd_hdmi";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "vdd_ldo8,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "vdd_ldo9,avdd_2v85,vdd_ddr_rx";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo_rtc";
++				ldo_rtc {
+ 					regulator-name = "vdd_rtc_out,vdd_cell";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+diff --git a/arch/arm/boot/dts/tegra20-paz00.dts b/arch/arm/boot/dts/tegra20-paz00.dts
+index ddf287f..6a93d14 100644
+--- a/arch/arm/boot/dts/tegra20-paz00.dts
++++ b/arch/arm/boot/dts/tegra20-paz00.dts
+@@ -291,37 +291,26 @@
+ 			vinldo9-supply = <&sm2_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				sys_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "sys";
++				sys_reg: sys {
+ 					regulator-name = "vdd_sys";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sm0";
++				sm0 {
+ 					regulator-name = "+1.2vs_sm0,vdd_core";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sm1";
++				sm1 {
+ 					regulator-name = "+1.0vs_sm1,vdd_cpu";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				sm2_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sm2";
++				sm2_reg: sm2 {
+ 					regulator-name = "+3.7vs_sm2,vin_ldo*";
+ 					regulator-min-microvolt = <3700000>;
+ 					regulator-max-microvolt = <3700000>;
+@@ -330,53 +319,41 @@
+ 
+ 				/* LDO0 is not connected to anything */
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "+1.1vs_ldo1,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "+1.2vs_ldo2,vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "+3.3vs_ldo3,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "+1.8vs_ldo4,avdd_osc,vddio_sys";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "+2.85vs_ldo5,vcore_mmc";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					/*
+ 					 * Research indicates this should be
+ 					 * 1.8v; other boards that use this
+@@ -390,34 +367,26 @@
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "+3.3vs_ldo7,avdd_hdmi";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "+1.8vs_ldo8,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "+2.85vs_ldo9,vdd_ddr_rx";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo_rtc";
++				ldo_rtc {
+ 					regulator-name = "+3.3vs_rtc";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+diff --git a/arch/arm/boot/dts/tegra20-seaboard.dts b/arch/arm/boot/dts/tegra20-seaboard.dts
+index f0ba901..33ae813 100644
+--- a/arch/arm/boot/dts/tegra20-seaboard.dts
++++ b/arch/arm/boot/dts/tegra20-seaboard.dts
+@@ -395,37 +395,26 @@
+ 			vinldo9-supply = <&sm2_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				sys_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "sys";
++				sys_reg: sys {
+ 					regulator-name = "vdd_sys";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sm0";
++				sm0 {
+ 					regulator-name = "vdd_sm0,vdd_core";
+ 					regulator-min-microvolt = <1300000>;
+ 					regulator-max-microvolt = <1300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sm1";
++				sm1 {
+ 					regulator-name = "vdd_sm1,vdd_cpu";
+ 					regulator-min-microvolt = <1125000>;
+ 					regulator-max-microvolt = <1125000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				sm2_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sm2";
++				sm2_reg: sm2 {
+ 					regulator-name = "vdd_sm2,vin_ldo*";
+ 					regulator-min-microvolt = <3700000>;
+ 					regulator-max-microvolt = <3700000>;
+@@ -434,86 +423,66 @@
+ 
+ 				/* LDO0 is not connected to anything */
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "vdd_ldo1,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "vdd_ldo2,vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "vdd_ldo3,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "vdd_ldo4,avdd_osc,vddio_sys";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "vdd_ldo5,vcore_mmc";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					regulator-name = "vdd_ldo6,avdd_vdac,vddio_vi,vddio_cam";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "vdd_ldo7,avdd_hdmi,vdd_fuse";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "vdd_ldo8,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "vdd_ldo9,avdd_2v85,vdd_ddr_rx";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo_rtc";
++				ldo_rtc {
+ 					regulator-name = "vdd_rtc_out,vdd_cell";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+diff --git a/arch/arm/boot/dts/tegra20-tamonten.dtsi b/arch/arm/boot/dts/tegra20-tamonten.dtsi
+index f18cec9..5b3d8b1 100644
+--- a/arch/arm/boot/dts/tegra20-tamonten.dtsi
++++ b/arch/arm/boot/dts/tegra20-tamonten.dtsi
+@@ -271,97 +271,72 @@
+ 			vinldo9-supply = <&sm2_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				sys_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "sys";
++				sys_reg: sys {
+ 					regulator-name = "vdd_sys";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sm0";
++				sm0 {
+ 					regulator-name = "vdd_sys_sm0,vdd_core";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sm1";
++				sm1 {
+ 					regulator-name = "vdd_sys_sm1,vdd_cpu";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				sm2_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sm2";
++				sm2_reg: sm2 {
+ 					regulator-name = "vdd_sys_sm2,vin_ldo*";
+ 					regulator-min-microvolt = <3700000>;
+ 					regulator-max-microvolt = <3700000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@4 {
+-					reg = <4>;
+-					regulator-compatible = "ldo0";
++				ldo0 {
+ 					regulator-name = "vdd_ldo0,vddio_pex_clk";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "vdd_ldo1,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "vdd_ldo2,vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "vdd_ldo3,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "vdd_ldo4,avdd_osc,vddio_sys";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "vdd_ldo5,vcore_mmc";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					regulator-name = "vdd_ldo6,avdd_vdac";
+ 					/*
+ 					 * According to the Tegra 2 Automotive
+@@ -373,25 +348,19 @@
+ 					regulator-max-microvolt = <2850000>;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "vdd_ldo7,avdd_hdmi";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "vdd_ldo8,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "vdd_ldo9,vdd_ddr_rx,avdd_cam";
+ 					/*
+ 					 * According to the Tegra 2 Automotive
+@@ -404,9 +373,7 @@
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo_rtc";
++				ldo_rtc {
+ 					regulator-name = "vdd_rtc_out";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+diff --git a/arch/arm/boot/dts/tegra20-ventana.dts b/arch/arm/boot/dts/tegra20-ventana.dts
+index 3e5952f..86854f1 100644
+--- a/arch/arm/boot/dts/tegra20-ventana.dts
++++ b/arch/arm/boot/dts/tegra20-ventana.dts
+@@ -311,37 +311,26 @@
+ 			vinldo9-supply = <&sm2_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				sys_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "sys";
++				sys_reg: sys {
+ 					regulator-name = "vdd_sys";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sm0";
++				sm0 {
+ 					regulator-name = "vdd_sm0,vdd_core";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sm1";
++				sm1 {
+ 					regulator-name = "vdd_sm1,vdd_cpu";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				sm2_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sm2";
++				sm2_reg: sm2 {
+ 					regulator-name = "vdd_sm2,vin_ldo*";
+ 					regulator-min-microvolt = <3700000>;
+ 					regulator-max-microvolt = <3700000>;
+@@ -350,86 +339,66 @@
+ 
+ 				/* LDO0 is not connected to anything */
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "vdd_ldo1,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "vdd_ldo2,vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "vdd_ldo3,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "vdd_ldo4,avdd_osc,vddio_sys";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "vdd_ldo5,vcore_mmc";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					regulator-name = "vdd_ldo6,avdd_vdac";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "vdd_ldo7,avdd_hdmi,vdd_fuse";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "vdd_ldo8,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "vdd_ldo9,avdd_2v85,vdd_ddr_rx";
+ 					regulator-min-microvolt = <2850000>;
+ 					regulator-max-microvolt = <2850000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo_rtc";
++				ldo_rtc {
+ 					regulator-name = "vdd_rtc_out,vdd_cell";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+diff --git a/arch/arm/boot/dts/tegra20-whistler.dts b/arch/arm/boot/dts/tegra20-whistler.dts
+index c636d00..94a71c9 100644
+--- a/arch/arm/boot/dts/tegra20-whistler.dts
++++ b/arch/arm/boot/dts/tegra20-whistler.dts
+@@ -295,243 +295,182 @@
+ 			in20-supply = <&mbatt_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				mbatt_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "mbatt";
++				mbatt_reg: mbatt {
+ 					regulator-name = "vbat_pmu";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "sd1";
++				sd1 {
+ 					regulator-name = "nvvdd_sv1,vdd_cpu_pmu";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "sd2";
++				sd2 {
+ 					regulator-name = "nvvdd_sv2,vdd_core";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				nvvdd_sv3_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "sd3";
++				nvvdd_sv3_reg: sd3 {
+ 					regulator-name = "nvvdd_sv3";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@4 {
+-					reg = <4>;
+-					regulator-compatible = "ldo1";
++				ldo1 {
+ 					regulator-name = "nvvdd_ldo1,vddio_rx_ddr,vcore_acc";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo2";
++				ldo2 {
+ 					regulator-name = "nvvdd_ldo2,avdd_pll*";
+ 					regulator-min-microvolt = <1100000>;
+ 					regulator-max-microvolt = <1100000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@6 {
+-					reg = <6>;
+-					regulator-compatible = "ldo3";
++				ldo3 {
+ 					regulator-name = "nvvdd_ldo3,vcom_1v8b";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo4";
++				ldo4 {
+ 					regulator-name = "nvvdd_ldo4,avdd_usb*";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo5";
++				ldo5 {
+ 					regulator-name = "nvvdd_ldo5,vcore_mmc,avdd_lcd1,vddio_1wire";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo6";
++				ldo6 {
+ 					regulator-name = "nvvdd_ldo6,avdd_hdmi_pll";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo7";
++				ldo7 {
+ 					regulator-name = "nvvdd_ldo7,avddio_audio";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo8";
++				ldo8 {
+ 					regulator-name = "nvvdd_ldo8,vcom_3v0,vcore_cmps";
+ 					regulator-min-microvolt = <3000000>;
+ 					regulator-max-microvolt = <3000000>;
+ 				};
+ 
+-				regulator@12 {
+-					reg = <12>;
+-					regulator-compatible = "ldo9";
++				ldo9 {
+ 					regulator-name = "nvvdd_ldo9,avdd_cam*";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 				};
+ 
+-				regulator@13 {
+-					reg = <13>;
+-					regulator-compatible = "ldo10";
++				ldo10 {
+ 					regulator-name = "nvvdd_ldo10,avdd_usb_ic_3v0";
+ 					regulator-min-microvolt = <3000000>;
+ 					regulator-max-microvolt = <3000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@14 {
+-					reg = <14>;
+-					regulator-compatible = "ldo11";
++				ldo11 {
+ 					regulator-name = "nvvdd_ldo11,vddio_pex_clk,vcom_33,avdd_hdmi";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@15 {
+-					reg = <15>;
+-					regulator-compatible = "ldo12";
++				ldo12 {
+ 					regulator-name = "nvvdd_ldo12,vddio_sdio";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@16 {
+-					reg = <16>;
+-					regulator-compatible = "ldo13";
++				ldo13 {
+ 					regulator-name = "nvvdd_ldo13,vcore_phtn,vdd_af";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 				};
+ 
+-				regulator@17 {
+-					reg = <17>;
+-					regulator-compatible = "ldo14";
++				ldo14 {
+ 					regulator-name = "nvvdd_ldo14,avdd_vdac";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 				};
+ 
+-				regulator@18 {
+-					reg = <18>;
+-					regulator-compatible = "ldo15";
++				ldo15 {
+ 					regulator-name = "nvvdd_ldo15,vcore_temp,vddio_hdcp";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 				};
+ 
+-				regulator@19 {
+-					reg = <19>;
+-					regulator-compatible = "ldo16";
++				ldo16 {
+ 					regulator-name = "nvvdd_ldo16,vdd_dbrtr";
+ 					regulator-min-microvolt = <1300000>;
+ 					regulator-max-microvolt = <1300000>;
+ 				};
+ 
+-				regulator@20 {
+-					reg = <20>;
+-					regulator-compatible = "ldo17";
++				ldo17 {
+ 					regulator-name = "nvvdd_ldo17,vddio_mipi";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				regulator@21 {
+-					reg = <21>;
+-					regulator-compatible = "ldo18";
++				ldo18 {
+ 					regulator-name = "nvvdd_ldo18,vddio_vi,vcore_cam*";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 				};
+ 
+-				regulator@22 {
+-					reg = <22>;
+-					regulator-compatible = "ldo19";
++				ldo19 {
+ 					regulator-name = "nvvdd_ldo19,avdd_lcd2,vddio_lx";
+ 					regulator-min-microvolt = <2800000>;
+ 					regulator-max-microvolt = <2800000>;
+ 				};
+ 
+-				regulator@23 {
+-					reg = <23>;
+-					regulator-compatible = "ldo20";
++				ldo20 {
+ 					regulator-name = "nvvdd_ldo20,vddio_ddr_1v2,vddio_hsic,vcom_1v2";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@24 {
+-					reg = <24>;
+-					regulator-compatible = "out5v";
++				out5v {
+ 					regulator-name = "usb0_vbus_reg";
+ 				};
+ 
+-				regulator@25 {
+-					reg = <25>;
+-					regulator-compatible = "out33v";
++				out33v {
+ 					regulator-name = "pmu_out3v3";
+ 				};
+ 
+-				regulator@26 {
+-					reg = <26>;
+-					regulator-compatible = "bbat";
++				bbat {
+ 					regulator-name = "pmu_bbat";
+ 					regulator-min-microvolt = <2400000>;
+ 					regulator-max-microvolt = <2400000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@27 {
+-					reg = <27>;
+-					regulator-compatible = "sdby";
++				sdby {
+ 					regulator-name = "vdd_aon";
+ 					regulator-always-on;
+ 				};
+ 
+-				regulator@28 {
+-					reg = <28>;
+-					regulator-compatible = "vrtc";
++				vrtc {
+ 					regulator-name = "vrtc,pmu_vccadc";
+ 					regulator-always-on;
+ 				};
+diff --git a/arch/arm/boot/dts/tegra30-cardhu.dtsi b/arch/arm/boot/dts/tegra30-cardhu.dtsi
+index d10c9c5..b1271a8 100644
+--- a/arch/arm/boot/dts/tegra30-cardhu.dtsi
++++ b/arch/arm/boot/dts/tegra30-cardhu.dtsi
+@@ -171,56 +171,41 @@
+ 			vccio-supply = <&vdd_ac_bat_reg>;
+ 
+ 			regulators {
+-				#address-cells = <1>;
+-				#size-cells = <0>;
+-
+-				vdd1_reg: regulator@0 {
+-					reg = <0>;
+-					regulator-compatible = "vdd1";
++				vdd1_reg: vdd1 {
+ 					regulator-name = "vddio_ddr_1v2";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				vdd2_reg: regulator@1 {
+-					reg = <1>;
+-					regulator-compatible = "vdd2";
++				vdd2_reg: vdd2 {
+ 					regulator-name = "vdd_1v5_gen";
+ 					regulator-min-microvolt = <1500000>;
+ 					regulator-max-microvolt = <1500000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				vddctrl_reg: regulator@2 {
+-					reg = <2>;
+-					regulator-compatible = "vddctrl";
++				vddctrl_reg: vddctrl {
+ 					regulator-name = "vdd_cpu,vdd_sys";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				vio_reg: regulator@3 {
+-					reg = <3>;
+-					regulator-compatible = "vio";
++				vio_reg: vio {
+ 					regulator-name = "vdd_1v8_gen";
+ 					regulator-min-microvolt = <1800000>;
+ 					regulator-max-microvolt = <1800000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				ldo1_reg: regulator@4 {
+-					reg = <4>;
+-					regulator-compatible = "ldo1";
++				ldo1_reg: ldo1 {
+ 					regulator-name = "vdd_pexa,vdd_pexb";
+ 					regulator-min-microvolt = <1050000>;
+ 					regulator-max-microvolt = <1050000>;
+ 				};
+ 
+-				ldo2_reg: regulator@5 {
+-					reg = <5>;
+-					regulator-compatible = "ldo2";
++				ldo2_reg: ldo2 {
+ 					regulator-name = "vdd_sata,avdd_plle";
+ 					regulator-min-microvolt = <1050000>;
+ 					regulator-max-microvolt = <1050000>;
+@@ -228,44 +213,34 @@
+ 
+ 				/* LDO3 is not connected to anything */
+ 
+-				ldo4_reg: regulator@7 {
+-					reg = <7>;
+-					regulator-compatible = "ldo4";
++				ldo4_reg: ldo4 {
+ 					regulator-name = "vdd_rtc";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				ldo5_reg: regulator@8 {
+-					reg = <8>;
+-					regulator-compatible = "ldo5";
++				ldo5_reg: ldo5 {
+ 					regulator-name = "vddio_sdmmc,avdd_vdac";
+ 					regulator-min-microvolt = <3300000>;
+ 					regulator-max-microvolt = <3300000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				ldo6_reg: regulator@9 {
+-					reg = <9>;
+-					regulator-compatible = "ldo6";
++				ldo6_reg: ldo6 {
+ 					regulator-name = "avdd_dsi_csi,pwrdet_mipi";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 				};
+ 
+-				ldo7_reg: regulator@10 {
+-					reg = <10>;
+-					regulator-compatible = "ldo7";
++				ldo7_reg: ldo7 {
+ 					regulator-name = "vdd_pllm,x,u,a_p_c_s";
+ 					regulator-min-microvolt = <1200000>;
+ 					regulator-max-microvolt = <1200000>;
+ 					regulator-always-on;
+ 				};
+ 
+-				ldo8_reg: regulator@11 {
+-					reg = <11>;
+-					regulator-compatible = "ldo8";
++				ldo8_reg: ldo8 {
+ 					regulator-name = "vdd_ddr_hs";
+ 					regulator-min-microvolt = <1000000>;
+ 					regulator-max-microvolt = <1000000>;
+-- 
+1.8.0
+

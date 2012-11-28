@@ -1,0 +1,33 @@
+From 358f88937dad397bca25b12118870b06f9f47df1 Mon Sep 17 00:00:00 2001
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 16 Nov 2012 16:56:51 +0100
+Subject: [PATCH 752/951] ARM: tegra: plutux: Enable HDMI output
+
+Enable the HDMI output found on Plutux boards.
+
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+Signed-off-by: Stephen Warren <swarren@nvidia.com>
+---
+ arch/arm/boot/dts/tegra20-plutux.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/tegra20-plutux.dts b/arch/arm/boot/dts/tegra20-plutux.dts
+index 331a3ef..2894800 100644
+--- a/arch/arm/boot/dts/tegra20-plutux.dts
++++ b/arch/arm/boot/dts/tegra20-plutux.dts
+@@ -6,6 +6,12 @@
+ 	model = "Avionic Design Plutux board";
+ 	compatible = "ad,plutux", "ad,tamonten", "nvidia,tegra20";
+ 
++	host1x {
++		hdmi {
++			status = "okay";
++		};
++	};
++
+ 	i2c@7000c000 {
+ 		wm8903: wm8903@1a {
+ 			compatible = "wlf,wm8903";
+-- 
+1.8.0
+

@@ -1,0 +1,28 @@
+From 41b3996e3b6825bd3a0624d62fde53fbad092ed0 Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Wed, 24 Oct 2012 10:58:57 +0400
+Subject: [PATCH 194/951] GPIO: clps711x: Fix return value for
+ gpio_clps711x_get
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/gpio/gpio-clps711x.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpio/gpio-clps711x.c b/drivers/gpio/gpio-clps711x.c
+index ea21822..0753b3a 100644
+--- a/drivers/gpio/gpio-clps711x.c
++++ b/drivers/gpio/gpio-clps711x.c
+@@ -47,7 +47,7 @@ static void __iomem *clps711x_pdirs[] = {
+ 
+ static int gpio_clps711x_get(struct gpio_chip *chip, unsigned offset)
+ {
+-	return !!readb(clps711x_port(chip)) & (1 << offset);
++	return !!(readb(clps711x_port(chip)) & (1 << offset));
+ }
+ 
+ static void gpio_clps711x_set(struct gpio_chip *chip, unsigned offset,
+-- 
+1.8.0
+

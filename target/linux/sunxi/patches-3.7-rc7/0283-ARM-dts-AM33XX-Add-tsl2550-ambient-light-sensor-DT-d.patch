@@ -1,0 +1,48 @@
+From cd5cfac26d00b4e00f785ee22dc54fb3ea203f6f Mon Sep 17 00:00:00 2001
+From: AnilKumar Ch <anilkumar@ti.com>
+Date: Fri, 21 Sep 2012 21:19:11 +0530
+Subject: [PATCH 283/951] ARM: dts: AM33XX: Add tsl2550 ambient light sensor
+ DT data
+
+In AM335x EVM tsl2550 ambient light sensor is connected to I2C2 bus.
+Add child node inside i2c2 node with i2c slave address.
+
+TAOS tsl2550 sensor is using a two-wire SMBus serial interface.
+Reduce I2C2 clock frequency to 100kHz from 400kHz because the
+maximum clock frequency of SMBus is 100kHz.
+
+Signed-off-by: AnilKumar Ch <anilkumar@ti.com>
+[b-cousson@ti.com: Clean the changelog]
+Signed-off-by: Benoit Cousson <b-cousson@ti.com>
+---
+ arch/arm/boot/dts/am335x-evm.dts | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/am335x-evm.dts b/arch/arm/boot/dts/am335x-evm.dts
+index a5c4c62..513284f 100644
+--- a/arch/arm/boot/dts/am335x-evm.dts
++++ b/arch/arm/boot/dts/am335x-evm.dts
+@@ -40,7 +40,7 @@
+ 
+ 		i2c2: i2c@4802a000 {
+ 			status = "okay";
+-			clock-frequency = <400000>;
++			clock-frequency = <100000>;
+ 
+ 			lis331dlh: lis331dlh@18 {
+ 				compatible = "st,lis331dlh", "st,lis3lv02d";
+@@ -70,6 +70,11 @@
+ 				st,max-limit-z = <750>;
+ 			};
+ 
++			tsl2550: tsl2550@39 {
++				compatible = "taos,tsl2550";
++				reg = <0x39>;
++			};
++
+ 			tmp275: tmp275@48 {
+ 				compatible = "ti,tmp275";
+ 				reg = <0x48>;
+-- 
+1.8.0
+

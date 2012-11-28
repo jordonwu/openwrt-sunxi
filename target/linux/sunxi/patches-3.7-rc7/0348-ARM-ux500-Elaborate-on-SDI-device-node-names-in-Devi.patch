@@ -1,0 +1,97 @@
+From 81bf8c2e0f473c443bb067a55f55e6311adf5993 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Wed, 26 Sep 2012 12:55:56 +0100
+Subject: [PATCH 348/951] ARM: ux500: Elaborate on SDI device node names in
+ Device Tree
+
+In the DB8500 Reference Manual SDI devices are described as being
+part of peripheral blocks. This is more in line with how these devices
+are actually represented in hardware, so here we detail which
+peripheral block each of the SDI devices belong in the node name.
+
+Requested-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ arch/arm/boot/dts/dbx5x0.dtsi  | 12 ++++++------
+ arch/arm/boot/dts/snowball.dts |  4 ++--
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/boot/dts/dbx5x0.dtsi b/arch/arm/boot/dts/dbx5x0.dtsi
+index 058e682..3b4298b 100644
+--- a/arch/arm/boot/dts/dbx5x0.dtsi
++++ b/arch/arm/boot/dts/dbx5x0.dtsi
+@@ -546,42 +546,42 @@
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80126000 {
++		sdi0_per1@80126000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80126000 0x1000>;
+ 			interrupts = <0 60 0x4>;
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80118000 {
++		sdi1_per2@80118000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80118000 0x1000>;
+ 			interrupts = <0 50 0x4>;
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80005000 {
++		sdi2_per3@80005000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80005000 0x1000>;
+ 			interrupts = <0 41 0x4>;
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80119000 {
++		sdi3_per2@80119000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80119000 0x1000>;
+ 			interrupts = <0 59 0x4>;
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80114000 {
++		sdi4_per2@80114000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80114000 0x1000>;
+ 			interrupts = <0 99 0x4>;
+ 			status = "disabled";
+ 		};
+ 
+-		sdi@80008000 {
++		sdi5_per3@80008000 {
+ 			compatible = "arm,pl18x", "arm,primecell";
+ 			reg = <0x80008000 0x1000>;
+ 			interrupts = <0 100 0x4>;
+diff --git a/arch/arm/boot/dts/snowball.dts b/arch/arm/boot/dts/snowball.dts
+index 639b8e9..9a37244 100644
+--- a/arch/arm/boot/dts/snowball.dts
++++ b/arch/arm/boot/dts/snowball.dts
+@@ -120,7 +120,7 @@
+ 		};
+ 
+ 		// External Micro SD slot
+-		sdi@80126000 {
++		sdi0_per1@80126000 {
+ 			arm,primecell-periphid = <0x10480180>;
+ 			max-frequency = <50000000>;
+ 			bus-width = <8>;
+@@ -134,7 +134,7 @@
+ 		};
+ 
+ 		// On-board eMMC
+-		sdi@80114000 {
++		sdi4_per2@80114000 {
+ 			arm,primecell-periphid = <0x10480180>;
+ 		        max-frequency = <50000000>;
+ 			bus-width = <8>;
+-- 
+1.8.0
+

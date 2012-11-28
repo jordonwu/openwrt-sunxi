@@ -1,0 +1,37 @@
+From cece5c4009355323c6f453ef6814e7dd85a0f896 Mon Sep 17 00:00:00 2001
+From: Lee Jones <lee.jones@linaro.org>
+Date: Sat, 3 Nov 2012 13:37:15 +0100
+Subject: [PATCH 826/951] ARM: ux500: Describe UART platform registering
+ issues more accurately
+
+UARTs no longer require call-back information, since the reset
+call-back was removed in 43b5f0d69291374f602ad8e1817f329573a59010.
+The only AUXDATA dependencies remaining for UARTs are DMA settings.
+
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ arch/arm/mach-ux500/cpu-db8500.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-ux500/cpu-db8500.c b/arch/arm/mach-ux500/cpu-db8500.c
+index 4a0c40a..d2076ce 100644
+--- a/arch/arm/mach-ux500/cpu-db8500.c
++++ b/arch/arm/mach-ux500/cpu-db8500.c
+@@ -262,11 +262,10 @@ static struct device * __init u8500_of_init_devices(void)
+ static struct of_dev_auxdata u8500_auxdata_lookup[] __initdata = {
+ 	/* Requires call-back bindings. */
+ 	OF_DEV_AUXDATA("arm,cortex-a9-pmu", 0, "arm-pmu", &db8500_pmu_platdata),
+-	/* Requires DMA and call-back bindings. */
++	/* Requires DMA bindings. */
+ 	OF_DEV_AUXDATA("arm,pl011", 0x80120000, "uart0", &uart0_plat),
+ 	OF_DEV_AUXDATA("arm,pl011", 0x80121000, "uart1", &uart1_plat),
+ 	OF_DEV_AUXDATA("arm,pl011", 0x80007000, "uart2", &uart2_plat),
+-	/* Requires DMA bindings. */
+ 	OF_DEV_AUXDATA("arm,pl022", 0x80002000, "ssp0",  &ssp0_plat),
+ 	OF_DEV_AUXDATA("arm,pl18x", 0x80126000, "sdi0",  &mop500_sdi0_data),
+ 	OF_DEV_AUXDATA("arm,pl18x", 0x80118000, "sdi1",  &mop500_sdi1_data),
+-- 
+1.8.0
+

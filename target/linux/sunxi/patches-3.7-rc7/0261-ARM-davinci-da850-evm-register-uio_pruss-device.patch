@@ -1,0 +1,45 @@
+From ae41d17a76338ed4cb2ab2c7db2b5de9f9524609 Mon Sep 17 00:00:00 2001
+From: Matt Porter <mporter@ti.com>
+Date: Mon, 8 Oct 2012 09:54:42 -0400
+Subject: [PATCH 261/951] ARM: davinci: da850 evm: register uio_pruss device
+
+Registers the uio_pruss platform device on the DA850 EVM.
+
+Tested on AM180x-EVM using the PRU_memAccessPRUDataRam and
+PRU_memAccessL3andDDR examples from the PRU userspace tools
+available from http://www.ti.com/tool/sprc940
+
+Signed-off-by: Matt Porter <mporter@ti.com>
+[nsekhar@ti.com: use pr_warn() instead of pr_warning()]
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/mach-davinci/board-da850-evm.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/mach-davinci/board-da850-evm.c b/arch/arm/mach-davinci/board-da850-evm.c
+index 500c0b1..d4f4dbf 100644
+--- a/arch/arm/mach-davinci/board-da850-evm.c
++++ b/arch/arm/mach-davinci/board-da850-evm.c
+@@ -31,6 +31,7 @@
+ #include <linux/platform_data/mtd-davinci.h>
+ #include <linux/platform_data/mtd-davinci-aemif.h>
+ #include <linux/platform_data/spi-davinci.h>
++#include <linux/platform_data/uio_pruss.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/regulator/tps6507x.h>
+ #include <linux/spi/spi.h>
+@@ -1516,6 +1517,11 @@ static __init void da850_evm_init(void)
+ 		pr_warning("da850_evm_init: lcdcntl mux setup failed: %d\n",
+ 				ret);
+ 
++	ret = da8xx_register_uio_pruss();
++	if (ret)
++		pr_warn("da850_evm_init: pruss initialization failed: %d\n",
++				ret);
++
+ 	/* Handle board specific muxing for LCD here */
+ 	ret = davinci_cfg_reg_list(da850_evm_lcdc_pins);
+ 	if (ret)
+-- 
+1.8.0
+

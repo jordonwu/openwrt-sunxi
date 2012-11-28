@@ -1,0 +1,30 @@
+From eebdb17287443408c979dbc1cee594f6b770bc68 Mon Sep 17 00:00:00 2001
+From: Roland Stigge <stigge@antcom.de>
+Date: Thu, 18 Oct 2012 18:06:10 +0200
+Subject: [PATCH 736/951] ARM: mach-imx: Support for DryIce RTC in i.MX53
+
+This patch enables support for i.MX53 in addition to i.MX25 by providing a
+dummy clock on i.MX53 since this one doesn't have a separate clock for internal
+RTC but the driver requests one.
+
+Signed-off-by: Roland Stigge <stigge@antcom.de>
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ arch/arm/mach-imx/clk-imx51-imx53.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-imx/clk-imx51-imx53.c b/arch/arm/mach-imx/clk-imx51-imx53.c
+index abb71f6..6cb9795 100644
+--- a/arch/arm/mach-imx/clk-imx51-imx53.c
++++ b/arch/arm/mach-imx/clk-imx51-imx53.c
+@@ -466,6 +466,7 @@ int __init mx53_clocks_init(unsigned long rate_ckil, unsigned long rate_osc,
+ 	clk_register_clkdev(clk[can1_serial_gate], "per", "53fc8000.can");
+ 	clk_register_clkdev(clk[can2_ipg_gate], "ipg", "53fcc000.can");
+ 	clk_register_clkdev(clk[can2_serial_gate], "per", "53fcc000.can");
++	clk_register_clkdev(clk[dummy], NULL, "53fa4000.rtc");
+ 
+ 	/* set SDHC root clock to 200MHZ*/
+ 	clk_set_rate(clk[esdhc_a_podf], 200000000);
+-- 
+1.8.0
+

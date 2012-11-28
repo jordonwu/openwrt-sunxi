@@ -1,0 +1,36 @@
+From 195812e4b6a631e8eaad4046bf6890db4328ea1f Mon Sep 17 00:00:00 2001
+From: Laxman Dewangan <ldewangan@nvidia.com>
+Date: Fri, 9 Nov 2012 11:34:20 +0530
+Subject: [PATCH 783/951] gpio: tegra: read output value when gpio is set in
+ direction_out
+
+Read the output value when gpio is set for the output mode for
+gpio_get_value(). Reading input value in direction out does not
+give correct value.
+
+Signed-off-by: Laxman Dewangan <ldewangan@nvidia.com>
+Acked-by: Stephen Warren <swarren@nvidia.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/gpio/gpio-tegra.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/gpio/gpio-tegra.c b/drivers/gpio/gpio-tegra.c
+index cfd9b72..5389be8 100644
+--- a/drivers/gpio/gpio-tegra.c
++++ b/drivers/gpio/gpio-tegra.c
+@@ -134,6 +134,11 @@ static void tegra_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+ 
+ static int tegra_gpio_get(struct gpio_chip *chip, unsigned offset)
+ {
++	/* If gpio is in output mode then read from the out value */
++	if ((tegra_gpio_readl(GPIO_OE(offset)) >> GPIO_BIT(offset)) & 1)
++		return (tegra_gpio_readl(GPIO_OUT(offset)) >>
++				GPIO_BIT(offset)) & 0x1;
++
+ 	return (tegra_gpio_readl(GPIO_IN(offset)) >> GPIO_BIT(offset)) & 0x1;
+ }
+ 
+-- 
+1.8.0
+

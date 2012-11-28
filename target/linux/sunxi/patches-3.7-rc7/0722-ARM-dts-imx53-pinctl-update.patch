@@ -1,0 +1,88 @@
+From a1fff236b43dfe6394fd04b0302f5a261e1cc3e5 Mon Sep 17 00:00:00 2001
+From: Roland Stigge <stigge@antcom.de>
+Date: Thu, 25 Oct 2012 13:26:39 +0200
+Subject: [PATCH 722/951] ARM: dts: imx53: pinctl update
+
+This patch supplements pinctl support on i.MX53.
+
+Signed-off-by: Roland Stigge <stigge@antcom.de>
+Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/boot/dts/imx53.dtsi | 46 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 46 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx53.dtsi b/arch/arm/boot/dts/imx53.dtsi
+index a5dd4ce..8b33195 100644
+--- a/arch/arm/boot/dts/imx53.dtsi
++++ b/arch/arm/boot/dts/imx53.dtsi
+@@ -320,6 +320,24 @@
+ 					};
+ 				};
+ 
++				can1 {
++					pinctrl_can1_1: can1grp-1 {
++						fsl,pins = <
++							847 0x80000000  /* MX53_PAD_PATA_INTRQ__CAN1_TXCAN */
++							853 0x80000000  /* MX53_PAD_PATA_DIOR__CAN1_RXCAN */
++						>;
++					};
++				};
++
++				can2 {
++					pinctrl_can2_1: can2grp-1 {
++						fsl,pins = <
++							67  0x80000000  /* MX53_PAD_KEY_COL4__CAN2_TXCAN */
++							74  0x80000000  /* MX53_PAD_KEY_ROW4__CAN2_RXCAN */
++						>;
++					};
++				};
++
+ 				i2c1 {
+ 					pinctrl_i2c1_1: i2c1grp-1 {
+ 						fsl,pins = <
+@@ -338,6 +356,15 @@
+ 					};
+ 				};
+ 
++				i2c3 {
++					pinctrl_i2c3_1: i2c3grp-1 {
++						fsl,pins = <
++							1102 0xc0000000	/* MX53_PAD_GPIO_6__I2C3_SDA */
++							1130 0xc0000000	/* MX53_PAD_GPIO_5__I2C3_SCL */
++						>;
++					};
++				};
++
+ 				uart1 {
+ 					pinctrl_uart1_1: uart1grp-1 {
+ 						fsl,pins = <
+@@ -373,6 +400,25 @@
+ 						>;
+ 					};
+ 				};
++
++				uart4 {
++					pinctrl_uart4_1: uart4grp-1 {
++						fsl,pins = <
++							11 0x1c5	/* MX53_PAD_KEY_COL0__UART4_TXD_MUX */
++							18 0x1c5	/* MX53_PAD_KEY_ROW0__UART4_RXD_MUX */
++						>;
++					};
++				};
++
++				uart5 {
++					pinctrl_uart5_1: uart5grp-1 {
++						fsl,pins = <
++							24 0x1c5	/* MX53_PAD_KEY_COL1__UART5_TXD_MUX */
++							31 0x1c5	/* MX53_PAD_KEY_ROW1__UART5_RXD_MUX */
++						>;
++					};
++				};
++
+ 			};
+ 
+ 			uart1: serial@53fbc000 {
+-- 
+1.8.0
+

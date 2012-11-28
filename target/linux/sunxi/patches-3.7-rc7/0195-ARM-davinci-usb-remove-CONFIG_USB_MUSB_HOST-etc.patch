@@ -1,0 +1,41 @@
+From 0e0575197259d5de13c51cac0b98336506fd2f85 Mon Sep 17 00:00:00 2001
+From: Constantine Shulyupin <const@MakeLinux.com>
+Date: Mon, 8 Oct 2012 15:17:07 +0200
+Subject: [PATCH 195/951] ARM: davinci: usb: remove CONFIG_USB_MUSB_HOST etc
+
+Remove usage of CONFIG_USB_MUSB_OTG, CONFIG_USB_MUSB_PERIPHERAL
+and CONFIG_USB_MUSB_HOST in arch/arm/mach-davinci/usb.c since these
+are not used anymore and set mode configuration by default to
+MUSB_OTG.
+
+Signed-off-by: Constantine Shulyupin <const@MakeLinux.com>
+[prakash.pm@ti.com: Tested on DM6446-EVM]
+Acked-by: Manjunathappa, Prakash <prakash.pm@ti.com>
+Acked-by: Felipe Balbi <balbi@ti.com>
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/mach-davinci/usb.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/arch/arm/mach-davinci/usb.c b/arch/arm/mach-davinci/usb.c
+index f77b953..34509ff 100644
+--- a/arch/arm/mach-davinci/usb.c
++++ b/arch/arm/mach-davinci/usb.c
+@@ -42,14 +42,8 @@ static struct musb_hdrc_config musb_config = {
+ };
+ 
+ static struct musb_hdrc_platform_data usb_data = {
+-#if defined(CONFIG_USB_MUSB_OTG)
+ 	/* OTG requires a Mini-AB connector */
+ 	.mode           = MUSB_OTG,
+-#elif defined(CONFIG_USB_MUSB_PERIPHERAL)
+-	.mode           = MUSB_PERIPHERAL,
+-#elif defined(CONFIG_USB_MUSB_HOST)
+-	.mode           = MUSB_HOST,
+-#endif
+ 	.clock		= "usb",
+ 	.config		= &musb_config,
+ };
+-- 
+1.8.0
+

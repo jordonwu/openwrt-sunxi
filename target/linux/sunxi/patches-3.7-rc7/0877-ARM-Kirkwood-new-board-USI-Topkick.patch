@@ -1,0 +1,301 @@
+From 767fc1ea92f70b5a97d43b79c146c2bee3eb6e83 Mon Sep 17 00:00:00 2001
+From: Jason Cooper <jason@lakedaemon.net>
+Date: Mon, 22 Oct 2012 02:15:35 +0000
+Subject: [PATCH 877/951] ARM: Kirkwood: new board USI Topkick
+
+This is a new kirkwood box made by Universal Scientific Industrial, Inc.
+The product description is here:
+
+http://www.usish.com/english/products_topkick1281p2.php
+
+It is very similar to the dreamplug and other plug devices, with the
+exception that it has room for a 2.5" SATA HDD internally.
+
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+Acked-by: Andrew Lunn <andrew@lunn.ch>
+Tested-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+---
+ arch/arm/boot/dts/Makefile                 |  1 +
+ arch/arm/boot/dts/kirkwood-topkick.dts     | 85 ++++++++++++++++++++++++++++++
+ arch/arm/configs/kirkwood_defconfig        |  1 +
+ arch/arm/mach-kirkwood/Kconfig             |  7 +++
+ arch/arm/mach-kirkwood/Makefile            |  1 +
+ arch/arm/mach-kirkwood/board-dt.c          |  4 ++
+ arch/arm/mach-kirkwood/board-usi_topkick.c | 82 ++++++++++++++++++++++++++++
+ arch/arm/mach-kirkwood/common.h            |  6 +++
+ 8 files changed, 187 insertions(+)
+ create mode 100644 arch/arm/boot/dts/kirkwood-topkick.dts
+ create mode 100644 arch/arm/mach-kirkwood/board-usi_topkick.c
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 77fce3f..df3a8ae 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -44,6 +44,7 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-dns320.dtb \
+ 	kirkwood-ns2lite.dtb \
+ 	kirkwood-ns2max.dtb \
+ 	kirkwood-ns2mini.dtb \
++	kirkwood-topkick.dtb \
+ 	kirkwood-ts219-6281.dtb \
+ 	kirkwood-ts219-6282.dtb
+ dtb-$(CONFIG_ARCH_MSM) += msm8660-surf.dtb \
+diff --git a/arch/arm/boot/dts/kirkwood-topkick.dts b/arch/arm/boot/dts/kirkwood-topkick.dts
+new file mode 100644
+index 0000000..c0de5a7
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-topkick.dts
+@@ -0,0 +1,85 @@
++/dts-v1/;
++
++/include/ "kirkwood.dtsi"
++
++/ {
++	model = "Univeral Scientific Industrial Co. Topkick-1281P2";
++	compatible = "usi,topkick-1281P2", "usi,topkick", "marvell,kirkwood-88f6282", "marvell,kirkwood";
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x10000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200n8 earlyprintk";
++	};
++
++	ocp@f1000000 {
++		serial@12000 {
++			clock-frequency = <200000000>;
++			status = "ok";
++		};
++
++		nand@3000000 {
++			status = "okay";
++
++			partition@0 {
++				label = "u-boot";
++				reg = <0x0000000 0x180000>;
++			};
++
++			partition@180000 {
++				label = "u-boot env";
++				reg = <0x0180000 0x20000>;
++			};
++
++			partition@200000 {
++				label = "uImage";
++				reg = <0x0200000 0x600000>;
++			};
++
++			partition@800000 {
++				label = "uInitrd";
++				reg = <0x0800000 0x1000000>;
++			};
++
++			partition@1800000 {
++				label = "rootfs";
++				reg = <0x1800000 0xe800000>;
++			};
++		};
++
++		sata@80000 {
++			status = "okay";
++			nr-ports = <1>;
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++
++		disk {
++			label = "topkick:yellow:disk";
++			gpios = <&gpio0 21 1>;
++			linux,default-trigger = "ide-disk";
++		};
++		system2 {
++			label = "topkick:red:system";
++			gpios = <&gpio1 5 1>;
++		};
++		system {
++			label = "topkick:blue:system";
++			gpios = <&gpio1 6 1>;
++			default-state = "on";
++		};
++		wifi {
++			label = "topkick:green:wifi";
++			gpios = <&gpio1 7 1>;
++		};
++		wifi2 {
++			label = "topkick:yellow:wifi";
++			gpios = <&gpio1 16 1>;
++		};
++	};
++};
+diff --git a/arch/arm/configs/kirkwood_defconfig b/arch/arm/configs/kirkwood_defconfig
+index 66f7ae7..006b7b9 100644
+--- a/arch/arm/configs/kirkwood_defconfig
++++ b/arch/arm/configs/kirkwood_defconfig
+@@ -32,6 +32,7 @@ CONFIG_MACH_NETSPACE_V2_DT=y
+ CONFIG_MACH_NETSPACE_MAX_V2_DT=y
+ CONFIG_MACH_NETSPACE_LITE_V2_DT=y
+ CONFIG_MACH_NETSPACE_MINI_V2_DT=y
++CONFIG_MACH_TOPKICK_DT=y
+ CONFIG_MACH_TS219=y
+ CONFIG_MACH_TS41X=y
+ CONFIG_MACH_DOCKSTAR=y
+diff --git a/arch/arm/mach-kirkwood/Kconfig b/arch/arm/mach-kirkwood/Kconfig
+index 757bdb3..1d5283f 100644
+--- a/arch/arm/mach-kirkwood/Kconfig
++++ b/arch/arm/mach-kirkwood/Kconfig
+@@ -166,6 +166,13 @@ config MACH_NETSPACE_MINI_V2_DT
+ 	  Network Space Mini v2 NAS (aka SafeBox), using Flattened
+ 	  Device Tree.
+ 
++config MACH_TOPKICK_DT
++	bool "USI Topkick (Flattened Device Tree)"
++	select ARCH_KIRKWOOD_DT
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  USI Topkick, using Flattened Device Tree
++
+ config MACH_TS219
+ 	bool "QNAP TS-110, TS-119, TS-119P+, TS-210, TS-219, TS-219P and TS-219P+ Turbo NAS"
+ 	help
+diff --git a/arch/arm/mach-kirkwood/Makefile b/arch/arm/mach-kirkwood/Makefile
+index 3ff4aa1..d867b36 100644
+--- a/arch/arm/mach-kirkwood/Makefile
++++ b/arch/arm/mach-kirkwood/Makefile
+@@ -36,3 +36,4 @@ obj-$(CONFIG_MACH_NETSPACE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MAX_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_LITE_V2_DT)	+= board-ns2.o
+ obj-$(CONFIG_MACH_NETSPACE_MINI_V2_DT)	+= board-ns2.o
++obj-$(CONFIG_MACH_TOPKICK_DT)		+= board-usi_topkick.o
+diff --git a/arch/arm/mach-kirkwood/board-dt.c b/arch/arm/mach-kirkwood/board-dt.c
+index 571b019..e0bb9ca 100644
+--- a/arch/arm/mach-kirkwood/board-dt.c
++++ b/arch/arm/mach-kirkwood/board-dt.c
+@@ -103,6 +103,9 @@ static void __init kirkwood_dt_init(void)
+ 	    of_machine_is_compatible("lacie,netspace_mini_v2"))
+ 		ns2_init();
+ 
++	if (of_machine_is_compatible("usi,topkick"))
++		usi_topkick_init();
++
+ 	of_platform_populate(NULL, kirkwood_dt_match_table,
+ 			     kirkwood_auxdata_lookup, NULL);
+ }
+@@ -124,6 +127,7 @@ static const char *kirkwood_dt_board_compat[] = {
+ 	"lacie,netspace_v2",
+ 	"lacie,netspace_lite_v2",
+ 	"lacie,netspace_mini_v2",
++	"usi,topkick",
+ 	NULL
+ };
+ 
+diff --git a/arch/arm/mach-kirkwood/board-usi_topkick.c b/arch/arm/mach-kirkwood/board-usi_topkick.c
+new file mode 100644
+index 0000000..e2ec9d8
+--- /dev/null
++++ b/arch/arm/mach-kirkwood/board-usi_topkick.c
+@@ -0,0 +1,82 @@
++/*
++ * Copyright 2012 (C), Jason Cooper <jason@lakedaemon.net>
++ *
++ * arch/arm/mach-kirkwood/board-usi_topkick.c
++ *
++ * USI Topkick Init for drivers not converted to flattened device tree yet.
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/mv643xx_eth.h>
++#include <linux/gpio.h>
++#include <linux/platform_data/mmc-mvsdio.h>
++#include "common.h"
++#include "mpp.h"
++
++static struct mv643xx_eth_platform_data topkick_ge00_data = {
++	.phy_addr	= MV643XX_ETH_PHY_ADDR(0),
++};
++
++static struct mvsdio_platform_data topkick_mvsdio_data = {
++	/* unfortunately the CD signal has not been connected */
++};
++
++/*
++ * GPIO LED layout
++ *
++ *       /-SYS_LED(2)
++ *       |
++ *       |   /-DISK_LED
++ *       |   |
++ *       |   |   /-WLAN_LED(2)
++ *       |   |   |
++ * [SW] [*] [*] [*]
++ */
++
++/*
++ * Switch positions
++ *
++ *     /-SW_LEFT
++ *     |
++ *     |   /-SW_IDLE
++ *     |   |
++ *     |   |   /-SW_RIGHT
++ *     |   |   |
++ * PS [L] [I] [R] LEDS
++ */
++
++static unsigned int topkick_mpp_config[] __initdata = {
++	MPP21_GPIO,	/* DISK_LED           (low active) - yellow */
++	MPP36_GPIO,	/* SATA0 power enable (high active) */
++	MPP37_GPIO,	/* SYS_LED2           (low active) - red */
++	MPP38_GPIO,	/* SYS_LED            (low active) - blue */
++	MPP39_GPIO,	/* WLAN_LED           (low active) - green */
++	MPP43_GPIO,	/* SW_LEFT            (low active) */
++	MPP44_GPIO,     /* SW_RIGHT           (low active) */
++	MPP45_GPIO,	/* SW_IDLE            (low active) */
++	MPP46_GPIO,     /* SW_LEFT            (low active) */
++	MPP48_GPIO,	/* WLAN_LED2          (low active) - yellow */
++	0
++};
++
++#define TOPKICK_SATA0_PWR_ENABLE 36
++
++void __init usi_topkick_init(void)
++{
++	/*
++	 * Basic setup. Needs to be called early.
++	 */
++	kirkwood_mpp_conf(topkick_mpp_config);
++
++	/* SATA0 power enable */
++	gpio_set_value(TOPKICK_SATA0_PWR_ENABLE, 1);
++
++	kirkwood_ehci_init();
++	kirkwood_ge00_init(&topkick_ge00_data);
++	kirkwood_sdio_init(&topkick_mvsdio_data);
++}
+diff --git a/arch/arm/mach-kirkwood/common.h b/arch/arm/mach-kirkwood/common.h
+index 95eb69b..276fc01 100644
+--- a/arch/arm/mach-kirkwood/common.h
++++ b/arch/arm/mach-kirkwood/common.h
+@@ -122,6 +122,12 @@ void ns2_init(void);
+ static inline void ns2_init(void) {};
+ #endif
+ 
++#ifdef CONFIG_MACH_TOPKICK_DT
++void usi_topkick_init(void);
++#else
++static inline void usi_topkick_init(void) {};
++#endif
++
+ /* early init functions not converted to fdt yet */
+ char *kirkwood_id(void);
+ void kirkwood_l2_init(void);
+-- 
+1.8.0
+

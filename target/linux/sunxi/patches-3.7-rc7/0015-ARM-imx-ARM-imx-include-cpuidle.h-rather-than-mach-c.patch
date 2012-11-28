@@ -1,0 +1,112 @@
+From e29248c9a7522cb50edd29f2a717be8f323cbeb3 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Thu, 13 Sep 2012 21:12:50 +0800
+Subject: [PATCH 015/951] ARM: imx: ARM: imx: include cpuidle.h rather than
+ mach/cpuidle.h
+
+Rename mach-imx/include/mach/cpuidle.h to mach-imx/cpuidle.h, and
+update users to include cpuidle.h rather than mach/cpuidle.h.
+
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Acked-by: Sascha Hauer <s.hauer@pengutronix.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/mach-imx/cpuidle.h              | 22 ++++++++++++++++++++++
+ arch/arm/mach-imx/include/mach/cpuidle.h | 22 ----------------------
+ arch/arm/mach-imx/mach-imx6q.c           |  2 +-
+ arch/arm/mach-imx/pm-imx5.c              |  2 +-
+ 4 files changed, 24 insertions(+), 24 deletions(-)
+ create mode 100644 arch/arm/mach-imx/cpuidle.h
+ delete mode 100644 arch/arm/mach-imx/include/mach/cpuidle.h
+
+diff --git a/arch/arm/mach-imx/cpuidle.h b/arch/arm/mach-imx/cpuidle.h
+new file mode 100644
+index 0000000..bc932d1
+--- /dev/null
++++ b/arch/arm/mach-imx/cpuidle.h
+@@ -0,0 +1,22 @@
++/*
++ * Copyright 2012 Freescale Semiconductor, Inc.
++ * Copyright 2012 Linaro Ltd.
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++#include <linux/cpuidle.h>
++
++#ifdef CONFIG_CPU_IDLE
++extern int imx_cpuidle_init(struct cpuidle_driver *drv);
++#else
++static inline int imx_cpuidle_init(struct cpuidle_driver *drv)
++{
++	return -ENODEV;
++}
++#endif
+diff --git a/arch/arm/mach-imx/include/mach/cpuidle.h b/arch/arm/mach-imx/include/mach/cpuidle.h
+deleted file mode 100644
+index bc932d1..0000000
+--- a/arch/arm/mach-imx/include/mach/cpuidle.h
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/*
+- * Copyright 2012 Freescale Semiconductor, Inc.
+- * Copyright 2012 Linaro Ltd.
+- *
+- * The code contained herein is licensed under the GNU General Public
+- * License. You may obtain a copy of the GNU General Public License
+- * Version 2 or later at the following locations:
+- *
+- * http://www.opensource.org/licenses/gpl-license.html
+- * http://www.gnu.org/copyleft/gpl.html
+- */
+-
+-#include <linux/cpuidle.h>
+-
+-#ifdef CONFIG_CPU_IDLE
+-extern int imx_cpuidle_init(struct cpuidle_driver *drv);
+-#else
+-static inline int imx_cpuidle_init(struct cpuidle_driver *drv)
+-{
+-	return -ENODEV;
+-}
+-#endif
+diff --git a/arch/arm/mach-imx/mach-imx6q.c b/arch/arm/mach-imx/mach-imx6q.c
+index 8565761..c0245ab 100644
+--- a/arch/arm/mach-imx/mach-imx6q.c
++++ b/arch/arm/mach-imx/mach-imx6q.c
+@@ -33,10 +33,10 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ #include <asm/system_misc.h>
+-#include <mach/cpuidle.h>
+ #include <mach/hardware.h>
+ 
+ #include "common.h"
++#include "cpuidle.h"
+ 
+ void imx6q_restart(char mode, const char *cmd)
+ {
+diff --git a/arch/arm/mach-imx/pm-imx5.c b/arch/arm/mach-imx/pm-imx5.c
+index 9fead8c..a614702 100644
+--- a/arch/arm/mach-imx/pm-imx5.c
++++ b/arch/arm/mach-imx/pm-imx5.c
+@@ -16,10 +16,10 @@
+ #include <asm/cacheflush.h>
+ #include <asm/system_misc.h>
+ #include <asm/tlbflush.h>
+-#include <mach/cpuidle.h>
+ #include <mach/hardware.h>
+ 
+ #include "common.h"
++#include "cpuidle.h"
+ #include "crm-regs-imx5.h"
+ 
+ /*
+-- 
+1.8.0
+

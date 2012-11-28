@@ -1,0 +1,142 @@
+From 69ac71d370b21cc52a2afd06f3a6d6d1da5edc75 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Thu, 20 Sep 2012 14:21:16 +0800
+Subject: [PATCH 038/951] ARM: imx: call mxc_device_init() in soc specific
+ function
+
+mxc_device_init() is a core_initcall function used to register devices
+for mxc_aips_bus and mxc_ahb_bus, which are needed by gpio and dma
+device registration.
+
+Instead of being a core_initcall function, we have it called in soc
+specific initialization function before gpio and dma devices get
+registered, so that it will not be called for other platforms when
+we enable multi-platform support for imx.
+
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+---
+ arch/arm/mach-imx/common.h          | 1 +
+ arch/arm/mach-imx/devices/devices.c | 3 +--
+ arch/arm/mach-imx/mm-imx21.c        | 2 ++
+ arch/arm/mach-imx/mm-imx25.c        | 2 ++
+ arch/arm/mach-imx/mm-imx27.c        | 2 ++
+ arch/arm/mach-imx/mm-imx3.c         | 4 ++++
+ arch/arm/mach-imx/mm-imx5.c         | 4 ++++
+ 7 files changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-imx/common.h b/arch/arm/mach-imx/common.h
+index ead9018..ef8db6b 100644
+--- a/arch/arm/mach-imx/common.h
++++ b/arch/arm/mach-imx/common.h
+@@ -79,6 +79,7 @@ extern void mxc_arch_reset_init(void __iomem *);
+ extern int mx53_revision(void);
+ extern int mx53_display_revision(void);
+ extern void imx_set_aips(void __iomem *);
++extern int mxc_device_init(void);
+ 
+ enum mxc_cpu_pwr_mode {
+ 	WAIT_CLOCKED,		/* wfi only */
+diff --git a/arch/arm/mach-imx/devices/devices.c b/arch/arm/mach-imx/devices/devices.c
+index 9301e07..1b37482 100644
+--- a/arch/arm/mach-imx/devices/devices.c
++++ b/arch/arm/mach-imx/devices/devices.c
+@@ -32,7 +32,7 @@ struct device mxc_ahb_bus = {
+ 	.parent		= &platform_bus,
+ };
+ 
+-static int __init mxc_device_init(void)
++int __init mxc_device_init(void)
+ {
+ 	int ret;
+ 
+@@ -45,4 +45,3 @@ static int __init mxc_device_init(void)
+ done:
+ 	return ret;
+ }
+-core_initcall(mxc_device_init);
+diff --git a/arch/arm/mach-imx/mm-imx21.c b/arch/arm/mach-imx/mm-imx21.c
+index 8868398..d8ccd3a 100644
+--- a/arch/arm/mach-imx/mm-imx21.c
++++ b/arch/arm/mach-imx/mm-imx21.c
+@@ -82,6 +82,8 @@ static const struct resource imx21_audmux_res[] __initconst = {
+ 
+ void __init imx21_soc_init(void)
+ {
++	mxc_device_init();
++
+ 	mxc_register_gpio("imx21-gpio", 0, MX21_GPIO1_BASE_ADDR, SZ_256, MX21_INT_GPIO, 0);
+ 	mxc_register_gpio("imx21-gpio", 1, MX21_GPIO2_BASE_ADDR, SZ_256, MX21_INT_GPIO, 0);
+ 	mxc_register_gpio("imx21-gpio", 2, MX21_GPIO3_BASE_ADDR, SZ_256, MX21_INT_GPIO, 0);
+diff --git a/arch/arm/mach-imx/mm-imx25.c b/arch/arm/mach-imx/mm-imx25.c
+index 9be33cd..9357707 100644
+--- a/arch/arm/mach-imx/mm-imx25.c
++++ b/arch/arm/mach-imx/mm-imx25.c
+@@ -89,6 +89,8 @@ static const struct resource imx25_audmux_res[] __initconst = {
+ 
+ void __init imx25_soc_init(void)
+ {
++	mxc_device_init();
++
+ 	/* i.mx25 has the i.mx35 type gpio */
+ 	mxc_register_gpio("imx35-gpio", 0, MX25_GPIO1_BASE_ADDR, SZ_16K, MX25_INT_GPIO1, 0);
+ 	mxc_register_gpio("imx35-gpio", 1, MX25_GPIO2_BASE_ADDR, SZ_16K, MX25_INT_GPIO2, 0);
+diff --git a/arch/arm/mach-imx/mm-imx27.c b/arch/arm/mach-imx/mm-imx27.c
+index ecaa5b9..4f1be65 100644
+--- a/arch/arm/mach-imx/mm-imx27.c
++++ b/arch/arm/mach-imx/mm-imx27.c
+@@ -82,6 +82,8 @@ static const struct resource imx27_audmux_res[] __initconst = {
+ 
+ void __init imx27_soc_init(void)
+ {
++	mxc_device_init();
++
+ 	/* i.mx27 has the i.mx21 type gpio */
+ 	mxc_register_gpio("imx21-gpio", 0, MX27_GPIO1_BASE_ADDR, SZ_256, MX27_INT_GPIO, 0);
+ 	mxc_register_gpio("imx21-gpio", 1, MX27_GPIO2_BASE_ADDR, SZ_256, MX27_INT_GPIO, 0);
+diff --git a/arch/arm/mach-imx/mm-imx3.c b/arch/arm/mach-imx/mm-imx3.c
+index 072b3bf..f718bf5 100644
+--- a/arch/arm/mach-imx/mm-imx3.c
++++ b/arch/arm/mach-imx/mm-imx3.c
+@@ -175,6 +175,8 @@ void __init imx31_soc_init(void)
+ 
+ 	imx3_init_l2x0();
+ 
++	mxc_device_init();
++
+ 	mxc_register_gpio("imx31-gpio", 0, MX31_GPIO1_BASE_ADDR, SZ_16K, MX31_INT_GPIO1, 0);
+ 	mxc_register_gpio("imx31-gpio", 1, MX31_GPIO2_BASE_ADDR, SZ_16K, MX31_INT_GPIO2, 0);
+ 	mxc_register_gpio("imx31-gpio", 2, MX31_GPIO3_BASE_ADDR, SZ_16K, MX31_INT_GPIO3, 0);
+@@ -271,6 +273,8 @@ void __init imx35_soc_init(void)
+ 
+ 	imx3_init_l2x0();
+ 
++	mxc_device_init();
++
+ 	mxc_register_gpio("imx35-gpio", 0, MX35_GPIO1_BASE_ADDR, SZ_16K, MX35_INT_GPIO1, 0);
+ 	mxc_register_gpio("imx35-gpio", 1, MX35_GPIO2_BASE_ADDR, SZ_16K, MX35_INT_GPIO2, 0);
+ 	mxc_register_gpio("imx35-gpio", 2, MX35_GPIO3_BASE_ADDR, SZ_16K, MX35_INT_GPIO3, 0);
+diff --git a/arch/arm/mach-imx/mm-imx5.c b/arch/arm/mach-imx/mm-imx5.c
+index e739553..f92caf1 100644
+--- a/arch/arm/mach-imx/mm-imx5.c
++++ b/arch/arm/mach-imx/mm-imx5.c
+@@ -138,6 +138,8 @@ static const struct resource imx51_audmux_res[] __initconst = {
+ 
+ void __init imx50_soc_init(void)
+ {
++	mxc_device_init();
++
+ 	/* i.mx50 has the i.mx35 type gpio */
+ 	mxc_register_gpio("imx35-gpio", 0, MX50_GPIO1_BASE_ADDR, SZ_16K, MX50_INT_GPIO1_LOW, MX50_INT_GPIO1_HIGH);
+ 	mxc_register_gpio("imx35-gpio", 1, MX50_GPIO2_BASE_ADDR, SZ_16K, MX50_INT_GPIO2_LOW, MX50_INT_GPIO2_HIGH);
+@@ -153,6 +155,8 @@ void __init imx50_soc_init(void)
+ 
+ void __init imx51_soc_init(void)
+ {
++	mxc_device_init();
++
+ 	/* i.mx51 has the i.mx35 type gpio */
+ 	mxc_register_gpio("imx35-gpio", 0, MX51_GPIO1_BASE_ADDR, SZ_16K, MX51_INT_GPIO1_LOW, MX51_INT_GPIO1_HIGH);
+ 	mxc_register_gpio("imx35-gpio", 1, MX51_GPIO2_BASE_ADDR, SZ_16K, MX51_INT_GPIO2_LOW, MX51_INT_GPIO2_HIGH);
+-- 
+1.8.0
+

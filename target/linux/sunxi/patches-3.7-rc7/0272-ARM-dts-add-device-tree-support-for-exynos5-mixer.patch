@@ -1,0 +1,69 @@
+From 5af0d8a372811c353ab7de5d161463f58aa2173a Mon Sep 17 00:00:00 2001
+From: Rahul Sharma <rahul.sharma@samsung.com>
+Date: Mon, 29 Oct 2012 21:51:36 +0900
+Subject: [PATCH 272/951] ARM: dts: add device tree support for exynos5 mixer
+
+This patch adds support for device tree based discovery for exynos5
+mixer. Mixer node is also renamed with "exynos5-mixer".
+
+Signed-off-by: Rahul Sharma <rahul.sharma@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ Documentation/devicetree/bindings/drm/exynos/mixer.txt | 15 +++++++++++++++
+ arch/arm/boot/dts/exynos5250.dtsi                      |  6 ++++++
+ arch/arm/mach-exynos/mach-exynos5-dt.c                 |  2 ++
+ 3 files changed, 23 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/drm/exynos/mixer.txt
+
+diff --git a/Documentation/devicetree/bindings/drm/exynos/mixer.txt b/Documentation/devicetree/bindings/drm/exynos/mixer.txt
+new file mode 100644
+index 0000000..9b2ea03
+--- /dev/null
++++ b/Documentation/devicetree/bindings/drm/exynos/mixer.txt
+@@ -0,0 +1,15 @@
++Device-Tree bindings for mixer driver
++
++Required properties:
++- compatible: value should be "samsung,exynos5-mixer".
++- reg: physical base address of the mixer and length of memory mapped
++	region.
++- interrupts: interrupt number to the cpu.
++
++Example:
++
++	mixer {
++		compatible = "samsung,exynos5-mixer";
++		reg = <0x14450000 0x10000>;
++		interrupts = <0 94 0>;
++	};
+diff --git a/arch/arm/boot/dts/exynos5250.dtsi b/arch/arm/boot/dts/exynos5250.dtsi
+index b68be1c..2a203e6 100644
+--- a/arch/arm/boot/dts/exynos5250.dtsi
++++ b/arch/arm/boot/dts/exynos5250.dtsi
+@@ -526,4 +526,10 @@
+ 		reg = <0x14530000 0x100000>;
+ 		interrupts = <0 95 0>;
+ 	};
++
++	mixer {
++		compatible = "samsung,exynos5-mixer";
++		reg = <0x14450000 0x10000>;
++		interrupts = <0 94 0>;
++	};
+ };
+diff --git a/arch/arm/mach-exynos/mach-exynos5-dt.c b/arch/arm/mach-exynos/mach-exynos5-dt.c
+index 5e38208..4fc15da 100644
+--- a/arch/arm/mach-exynos/mach-exynos5-dt.c
++++ b/arch/arm/mach-exynos/mach-exynos5-dt.c
+@@ -74,6 +74,8 @@ static const struct of_dev_auxdata exynos5250_auxdata_lookup[] __initconst = {
+ 				"exynos-gsc.3", NULL),
+ 	OF_DEV_AUXDATA("samsung,exynos5-hdmi", 0x14530000,
+ 				"exynos5-hdmi", NULL),
++	OF_DEV_AUXDATA("samsung,exynos5-mixer", 0x14450000,
++				"exynos5-mixer", NULL),
+ 	{},
+ };
+ 
+-- 
+1.8.0
+

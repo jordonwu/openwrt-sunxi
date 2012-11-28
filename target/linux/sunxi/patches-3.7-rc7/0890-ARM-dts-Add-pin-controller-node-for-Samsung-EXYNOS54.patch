@@ -1,0 +1,43 @@
+From b1ce101bb9e52dcd5b143f7f376a04f1db95014c Mon Sep 17 00:00:00 2001
+From: Thomas Abraham <thomas.abraham@linaro.org>
+Date: Wed, 24 Oct 2012 17:18:52 +0900
+Subject: [PATCH 890/951] ARM: dts: Add pin controller node for Samsung
+ EXYNOS5440 SoC
+
+Signed-off-by: Thomas Abraham <thomas.abraham@linaro.org>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/boot/dts/exynos5440.dtsi | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/boot/dts/exynos5440.dtsi b/arch/arm/boot/dts/exynos5440.dtsi
+index 6f13d4e..024269d 100644
+--- a/arch/arm/boot/dts/exynos5440.dtsi
++++ b/arch/arm/boot/dts/exynos5440.dtsi
+@@ -90,6 +90,23 @@
+ 		reg = <0xE0000 0x1000>;
+ 		interrupt-controller;
+ 		#interrupt-cells = <2>;
++		#gpio-cells = <2>;
++
++		fan: fan {
++			samsung,exynos5440-pin-function = <1>;
++		};
++
++		hdd_led0: hdd_led0 {
++			samsung,exynos5440-pin-function = <2>;
++		};
++
++		hdd_led1: hdd_led1 {
++			samsung,exynos5440-pin-function = <3>;
++		};
++
++		uart1: uart1 {
++			samsung,exynos5440-pin-function = <4>;
++		};
+ 	};
+ 
+ 	i2c@F0000 {
+-- 
+1.8.0
+

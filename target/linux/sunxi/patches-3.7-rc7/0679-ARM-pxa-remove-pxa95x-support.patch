@@ -1,0 +1,894 @@
+From 49ea7fc094162fcaa83f5876b2090c816cc4498c Mon Sep 17 00:00:00 2001
+From: Haojian Zhuang <haojian.zhuang@gmail.com>
+Date: Thu, 15 Nov 2012 17:06:06 +0800
+Subject: [PATCH 679/951] ARM: pxa: remove pxa95x support
+
+PXA95x isn't widely used. And it adds the effort on supporting
+multiple platform. So remove it.
+
+The assumption is that nobody will miss this support. If you are
+reading this text because you actually require pxa95x support on
+a new kernel, we can work out a way to revert this patch or add
+support to the mmp platform.
+
+Signed-off-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/Kconfig                          |   2 +-
+ arch/arm/mach-pxa/Kconfig                 |  34 ----
+ arch/arm/mach-pxa/Makefile                |   3 -
+ arch/arm/mach-pxa/clock.h                 |   2 +-
+ arch/arm/mach-pxa/devices.c               |   8 +-
+ arch/arm/mach-pxa/include/mach/hardware.h |  28 ---
+ arch/arm/mach-pxa/include/mach/irqs.h     |   1 -
+ arch/arm/mach-pxa/include/mach/pxa3xx.h   |   1 -
+ arch/arm/mach-pxa/include/mach/pxa95x.h   |   7 -
+ arch/arm/mach-pxa/pxa95x.c                | 295 ------------------------------
+ arch/arm/mach-pxa/saarb.c                 | 115 ------------
+ arch/arm/mach-pxa/tavorevb3.c             | 136 --------------
+ arch/arm/plat-pxa/Makefile                |   1 -
+ arch/arm/plat-pxa/include/plat/mfp.h      |   4 +-
+ drivers/gpio/gpio-pxa.c                   |   2 +-
+ 15 files changed, 9 insertions(+), 630 deletions(-)
+ delete mode 100644 arch/arm/mach-pxa/include/mach/pxa95x.h
+ delete mode 100644 arch/arm/mach-pxa/pxa95x.c
+ delete mode 100644 arch/arm/mach-pxa/saarb.c
+ delete mode 100644 arch/arm/mach-pxa/tavorevb3.c
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index f96dd54..c837293 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1154,7 +1154,7 @@ config ARM_NR_BANKS
+ config IWMMXT
+ 	bool "Enable iWMMXt support"
+ 	depends on CPU_XSCALE || CPU_XSC3 || CPU_MOHAWK || CPU_PJ4
+-	default y if PXA27x || PXA3xx || PXA95x || ARCH_MMP
++	default y if PXA27x || PXA3xx || ARCH_MMP
+ 	help
+ 	  Enable support for iWMMXt context switching at run time if
+ 	  running on a CPU that supports it.
+diff --git a/arch/arm/mach-pxa/Kconfig b/arch/arm/mach-pxa/Kconfig
+index 11aa739..86eec41 100644
+--- a/arch/arm/mach-pxa/Kconfig
++++ b/arch/arm/mach-pxa/Kconfig
+@@ -2,27 +2,6 @@ if ARCH_PXA
+ 
+ menu "Intel PXA2xx/PXA3xx Implementations"
+ 
+-config ARCH_PXA_V7
+-	bool "ARMv7 (PXA95x) based systems"
+-
+-if ARCH_PXA_V7
+-comment "Marvell Dev Platforms (sorted by hardware release time)"
+-config MACH_TAVOREVB3
+-	bool "PXA95x Development Platform (aka TavorEVB III)"
+-	select CPU_PXA955
+-
+-config MACH_SAARB
+-	bool "PXA955 Handheld Platform (aka SAARB)"
+-	select CPU_PXA955
+-endif
+-
+-config PXA_V7_MACH_AUTO
+-	def_bool y
+-	depends on ARCH_PXA_V7
+-	depends on !MACH_SAARB
+-	select MACH_TAVOREVB3
+-
+-if !ARCH_PXA_V7
+ comment "Intel/Marvell Dev Platforms (sorted by hardware release time)"
+ 
+ config MACH_PXA3XX_DT
+@@ -630,7 +609,6 @@ config MACH_ZIPIT2
+ 	bool "Zipit Z2 Handheld"
+ 	select HAVE_PWM
+ 	select PXA27x
+-endif
+ endmenu
+ 
+ config PXA25x
+@@ -688,18 +666,6 @@ config CPU_PXA935
+ 	help
+ 	  PXA935 (codename Tavor-P65)
+ 
+-config PXA95x
+-	bool
+-	select CPU_PJ4
+-	help
+-	  Select code specific to PXA95x variants
+-
+-config CPU_PXA955
+-	bool
+-	select PXA95x
+-	help
+-	  PXA950 (codename MG1)
+-
+ config PXA_SHARP_C7xx
+ 	bool
+ 	select SHARPSL_PM
+diff --git a/arch/arm/mach-pxa/Makefile b/arch/arm/mach-pxa/Makefile
+index ee88d6e..12c5005 100644
+--- a/arch/arm/mach-pxa/Makefile
++++ b/arch/arm/mach-pxa/Makefile
+@@ -19,7 +19,6 @@ endif
+ obj-$(CONFIG_PXA25x)		+= mfp-pxa2xx.o clock-pxa2xx.o pxa2xx.o pxa25x.o
+ obj-$(CONFIG_PXA27x)		+= mfp-pxa2xx.o clock-pxa2xx.o pxa2xx.o pxa27x.o
+ obj-$(CONFIG_PXA3xx)		+= mfp-pxa3xx.o clock-pxa3xx.o pxa3xx.o smemc.o pxa3xx-ulpi.o
+-obj-$(CONFIG_PXA95x)		+= mfp-pxa3xx.o clock-pxa3xx.o pxa3xx.o pxa95x.o smemc.o
+ obj-$(CONFIG_CPU_PXA300)	+= pxa300.o
+ obj-$(CONFIG_CPU_PXA320)	+= pxa320.o
+ obj-$(CONFIG_CPU_PXA930)	+= pxa930.o
+@@ -36,9 +35,7 @@ obj-$(CONFIG_MACH_ZYLONITE300)	+= zylonite.o zylonite_pxa300.o
+ obj-$(CONFIG_MACH_ZYLONITE320)	+= zylonite.o zylonite_pxa320.o
+ obj-$(CONFIG_MACH_LITTLETON)	+= littleton.o
+ obj-$(CONFIG_MACH_TAVOREVB)	+= tavorevb.o
+-obj-$(CONFIG_MACH_TAVOREVB3)	+= tavorevb3.o
+ obj-$(CONFIG_MACH_SAAR)		+= saar.o
+-obj-$(CONFIG_MACH_SAARB)	+= saarb.o
+ 
+ # 3rd Party Dev Platforms
+ obj-$(CONFIG_ARCH_PXA_IDP)	+= idp.o
+diff --git a/arch/arm/mach-pxa/clock.h b/arch/arm/mach-pxa/clock.h
+index 3a258b1..1f65d32 100644
+--- a/arch/arm/mach-pxa/clock.h
++++ b/arch/arm/mach-pxa/clock.h
+@@ -57,7 +57,7 @@ void clk_pxa2xx_cken_disable(struct clk *clk);
+ 
+ extern struct syscore_ops pxa2xx_clock_syscore_ops;
+ 
+-#if defined(CONFIG_PXA3xx) || defined(CONFIG_PXA95x)
++#if defined(CONFIG_PXA3xx)
+ #define DEFINE_PXA3_CKEN(_name, _cken, _rate, _delay)	\
+ struct clk clk_##_name = {				\
+ 		.ops	= &clk_pxa3xx_cken_ops,		\
+diff --git a/arch/arm/mach-pxa/devices.c b/arch/arm/mach-pxa/devices.c
+index ddaa04d..daa86d3 100644
+--- a/arch/arm/mach-pxa/devices.c
++++ b/arch/arm/mach-pxa/devices.c
+@@ -703,7 +703,7 @@ void __init pxa_set_ohci_info(struct pxaohci_platform_data *info)
+ }
+ #endif /* CONFIG_PXA27x || CONFIG_PXA3xx */
+ 
+-#if defined(CONFIG_PXA27x) || defined(CONFIG_PXA3xx) || defined(CONFIG_PXA95x)
++#if defined(CONFIG_PXA27x) || defined(CONFIG_PXA3xx)
+ static struct resource pxa27x_resource_keypad[] = {
+ 	[0] = {
+ 		.start	= 0x41500000,
+@@ -872,7 +872,7 @@ struct platform_device pxa27x_device_pwm1 = {
+ 	.resource	= pxa27x_resource_pwm1,
+ 	.num_resources	= ARRAY_SIZE(pxa27x_resource_pwm1),
+ };
+-#endif /* CONFIG_PXA27x || CONFIG_PXA3xx || CONFIG_PXA95x*/
++#endif /* CONFIG_PXA27x || CONFIG_PXA3xx */
+ 
+ #ifdef CONFIG_PXA3xx
+ static struct resource pxa3xx_resources_mci2[] = {
+@@ -981,7 +981,7 @@ struct platform_device pxa3xx_device_gcu = {
+ 
+ #endif /* CONFIG_PXA3xx */
+ 
+-#if defined(CONFIG_PXA3xx) || defined(CONFIG_PXA95x)
++#if defined(CONFIG_PXA3xx)
+ static struct resource pxa3xx_resources_i2c_power[] = {
+ 	{
+ 		.start  = 0x40f500c0,
+@@ -1082,7 +1082,7 @@ struct platform_device pxa3xx_device_ssp4 = {
+ 	.resource	= pxa3xx_resource_ssp4,
+ 	.num_resources	= ARRAY_SIZE(pxa3xx_resource_ssp4),
+ };
+-#endif /* CONFIG_PXA3xx || CONFIG_PXA95x */
++#endif /* CONFIG_PXA3xx */
+ 
+ struct resource pxa_resource_gpio[] = {
+ 	{
+diff --git a/arch/arm/mach-pxa/include/mach/hardware.h b/arch/arm/mach-pxa/include/mach/hardware.h
+index 56d92e5..ccb06e4 100644
+--- a/arch/arm/mach-pxa/include/mach/hardware.h
++++ b/arch/arm/mach-pxa/include/mach/hardware.h
+@@ -194,17 +194,6 @@
+ #define __cpu_is_pxa935(id)	(0)
+ #endif
+ 
+-#ifdef CONFIG_CPU_PXA955
+-#define __cpu_is_pxa955(id)				\
+-	({						\
+-		unsigned int _id = (id) >> 4 & 0xfff;	\
+-		_id == 0x581 || _id == 0xc08		\
+-			|| _id == 0xb76;		\
+-	})
+-#else
+-#define __cpu_is_pxa955(id)	(0)
+-#endif
+-
+ #define cpu_is_pxa210()					\
+ 	({						\
+ 		__cpu_is_pxa210(read_cpuid_id());	\
+@@ -255,10 +244,6 @@
+ 		__cpu_is_pxa935(read_cpuid_id());	\
+ 	 })
+ 
+-#define cpu_is_pxa955()					\
+-	({						\
+-		__cpu_is_pxa955(read_cpuid_id());	\
+-	})
+ 
+ 
+ /*
+@@ -297,15 +282,6 @@
+ #define __cpu_is_pxa93x(id)	(0)
+ #endif
+ 
+-#ifdef CONFIG_PXA95x
+-#define __cpu_is_pxa95x(id)				\
+-	({						\
+-		__cpu_is_pxa955(id);			\
+-	})
+-#else
+-#define __cpu_is_pxa95x(id)	(0)
+-#endif
+-
+ #define cpu_is_pxa2xx()					\
+ 	({						\
+ 		__cpu_is_pxa2xx(read_cpuid_id());	\
+@@ -321,10 +297,6 @@
+ 		__cpu_is_pxa93x(read_cpuid_id());	\
+ 	 })
+ 
+-#define cpu_is_pxa95x()					\
+-	({						\
+-		__cpu_is_pxa95x(read_cpuid_id());	\
+-	})
+ 
+ /*
+  * return current memory and LCD clock frequency in units of 10kHz
+diff --git a/arch/arm/mach-pxa/include/mach/irqs.h b/arch/arm/mach-pxa/include/mach/irqs.h
+index 8765782..48c2fd8 100644
+--- a/arch/arm/mach-pxa/include/mach/irqs.h
++++ b/arch/arm/mach-pxa/include/mach/irqs.h
+@@ -84,7 +84,6 @@
+ #define IRQ_PXA935_MMC0	PXA_IRQ(72)	/* MMC0 Controller (PXA935) */
+ #define IRQ_PXA935_MMC1	PXA_IRQ(73)	/* MMC1 Controller (PXA935) */
+ #define IRQ_PXA935_MMC2	PXA_IRQ(74)	/* MMC2 Controller (PXA935) */
+-#define IRQ_PXA955_MMC3	PXA_IRQ(75)	/* MMC3 Controller (PXA955) */
+ #define IRQ_U2P		PXA_IRQ(93)	/* USB PHY D+/D- Lines (PXA935) */
+ 
+ #define PXA_GPIO_IRQ_BASE	PXA_IRQ(96)
+diff --git a/arch/arm/mach-pxa/include/mach/pxa3xx.h b/arch/arm/mach-pxa/include/mach/pxa3xx.h
+index cd3e57f..6dd7fa1 100644
+--- a/arch/arm/mach-pxa/include/mach/pxa3xx.h
++++ b/arch/arm/mach-pxa/include/mach/pxa3xx.h
+@@ -7,7 +7,6 @@
+ 
+ extern void __init pxa3xx_map_io(void);
+ extern void __init pxa3xx_init_irq(void);
+-extern void __init pxa95x_init_irq(void);
+ 
+ #define pxa3xx_handle_irq	ichp_handle_irq
+ 
+diff --git a/arch/arm/mach-pxa/include/mach/pxa95x.h b/arch/arm/mach-pxa/include/mach/pxa95x.h
+deleted file mode 100644
+index cbb097c..0000000
+--- a/arch/arm/mach-pxa/include/mach/pxa95x.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#ifndef __MACH_PXA95X_H
+-#define __MACH_PXA95X_H
+-
+-#include <mach/pxa3xx.h>
+-#include <mach/mfp-pxa930.h>
+-
+-#endif /* __MACH_PXA95X_H */
+diff --git a/arch/arm/mach-pxa/pxa95x.c b/arch/arm/mach-pxa/pxa95x.c
+deleted file mode 100644
+index 47601f8..0000000
+--- a/arch/arm/mach-pxa/pxa95x.c
++++ /dev/null
+@@ -1,295 +0,0 @@
+-/*
+- * linux/arch/arm/mach-pxa/pxa95x.c
+- *
+- * code specific to PXA95x aka MGx
+- *
+- * Copyright (C) 2009-2010 Marvell International Ltd.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-#include <linux/module.h>
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/pm.h>
+-#include <linux/platform_device.h>
+-#include <linux/i2c/pxa-i2c.h>
+-#include <linux/irq.h>
+-#include <linux/io.h>
+-#include <linux/syscore_ops.h>
+-
+-#include <mach/hardware.h>
+-#include <mach/pxa3xx-regs.h>
+-#include <mach/pxa930.h>
+-#include <mach/reset.h>
+-#include <mach/pm.h>
+-#include <mach/dma.h>
+-
+-#include "generic.h"
+-#include "devices.h"
+-#include "clock.h"
+-
+-static struct mfp_addr_map pxa95x_mfp_addr_map[] __initdata = {
+-
+-	MFP_ADDR(GPIO0, 0x02e0),
+-	MFP_ADDR(GPIO1, 0x02dc),
+-	MFP_ADDR(GPIO2, 0x02e8),
+-	MFP_ADDR(GPIO3, 0x02d8),
+-	MFP_ADDR(GPIO4, 0x02e4),
+-	MFP_ADDR(GPIO5, 0x02ec),
+-	MFP_ADDR(GPIO6, 0x02f8),
+-	MFP_ADDR(GPIO7, 0x02fc),
+-	MFP_ADDR(GPIO8, 0x0300),
+-	MFP_ADDR(GPIO9, 0x02d4),
+-	MFP_ADDR(GPIO10, 0x02f4),
+-	MFP_ADDR(GPIO11, 0x02f0),
+-	MFP_ADDR(GPIO12, 0x0304),
+-	MFP_ADDR(GPIO13, 0x0310),
+-	MFP_ADDR(GPIO14, 0x0308),
+-	MFP_ADDR(GPIO15, 0x030c),
+-	MFP_ADDR(GPIO16, 0x04e8),
+-	MFP_ADDR(GPIO17, 0x04f4),
+-	MFP_ADDR(GPIO18, 0x04f8),
+-	MFP_ADDR(GPIO19, 0x04fc),
+-	MFP_ADDR(GPIO20, 0x0518),
+-	MFP_ADDR(GPIO21, 0x051c),
+-	MFP_ADDR(GPIO22, 0x04ec),
+-	MFP_ADDR(GPIO23, 0x0500),
+-	MFP_ADDR(GPIO24, 0x04f0),
+-	MFP_ADDR(GPIO25, 0x0504),
+-	MFP_ADDR(GPIO26, 0x0510),
+-	MFP_ADDR(GPIO27, 0x0514),
+-	MFP_ADDR(GPIO28, 0x0520),
+-	MFP_ADDR(GPIO29, 0x0600),
+-	MFP_ADDR(GPIO30, 0x0618),
+-	MFP_ADDR(GPIO31, 0x0610),
+-	MFP_ADDR(GPIO32, 0x060c),
+-	MFP_ADDR(GPIO33, 0x061c),
+-	MFP_ADDR(GPIO34, 0x0620),
+-	MFP_ADDR(GPIO35, 0x0628),
+-	MFP_ADDR(GPIO36, 0x062c),
+-	MFP_ADDR(GPIO37, 0x0630),
+-	MFP_ADDR(GPIO38, 0x0634),
+-	MFP_ADDR(GPIO39, 0x0638),
+-	MFP_ADDR(GPIO40, 0x063c),
+-	MFP_ADDR(GPIO41, 0x0614),
+-	MFP_ADDR(GPIO42, 0x0624),
+-	MFP_ADDR(GPIO43, 0x0608),
+-	MFP_ADDR(GPIO44, 0x0604),
+-	MFP_ADDR(GPIO45, 0x050c),
+-	MFP_ADDR(GPIO46, 0x0508),
+-	MFP_ADDR(GPIO47, 0x02bc),
+-	MFP_ADDR(GPIO48, 0x02b4),
+-	MFP_ADDR(GPIO49, 0x02b8),
+-	MFP_ADDR(GPIO50, 0x02c8),
+-	MFP_ADDR(GPIO51, 0x02c0),
+-	MFP_ADDR(GPIO52, 0x02c4),
+-	MFP_ADDR(GPIO53, 0x02d0),
+-	MFP_ADDR(GPIO54, 0x02cc),
+-	MFP_ADDR(GPIO55, 0x029c),
+-	MFP_ADDR(GPIO56, 0x02a0),
+-	MFP_ADDR(GPIO57, 0x0294),
+-	MFP_ADDR(GPIO58, 0x0298),
+-	MFP_ADDR(GPIO59, 0x02a4),
+-	MFP_ADDR(GPIO60, 0x02a8),
+-	MFP_ADDR(GPIO61, 0x02b0),
+-	MFP_ADDR(GPIO62, 0x02ac),
+-	MFP_ADDR(GPIO63, 0x0640),
+-	MFP_ADDR(GPIO64, 0x065c),
+-	MFP_ADDR(GPIO65, 0x0648),
+-	MFP_ADDR(GPIO66, 0x0644),
+-	MFP_ADDR(GPIO67, 0x0674),
+-	MFP_ADDR(GPIO68, 0x0658),
+-	MFP_ADDR(GPIO69, 0x0654),
+-	MFP_ADDR(GPIO70, 0x0660),
+-	MFP_ADDR(GPIO71, 0x0668),
+-	MFP_ADDR(GPIO72, 0x0664),
+-	MFP_ADDR(GPIO73, 0x0650),
+-	MFP_ADDR(GPIO74, 0x066c),
+-	MFP_ADDR(GPIO75, 0x064c),
+-	MFP_ADDR(GPIO76, 0x0670),
+-	MFP_ADDR(GPIO77, 0x0678),
+-	MFP_ADDR(GPIO78, 0x067c),
+-	MFP_ADDR(GPIO79, 0x0694),
+-	MFP_ADDR(GPIO80, 0x069c),
+-	MFP_ADDR(GPIO81, 0x06a0),
+-	MFP_ADDR(GPIO82, 0x06a4),
+-	MFP_ADDR(GPIO83, 0x0698),
+-	MFP_ADDR(GPIO84, 0x06bc),
+-	MFP_ADDR(GPIO85, 0x06b4),
+-	MFP_ADDR(GPIO86, 0x06b0),
+-	MFP_ADDR(GPIO87, 0x06c0),
+-	MFP_ADDR(GPIO88, 0x06c4),
+-	MFP_ADDR(GPIO89, 0x06ac),
+-	MFP_ADDR(GPIO90, 0x0680),
+-	MFP_ADDR(GPIO91, 0x0684),
+-	MFP_ADDR(GPIO92, 0x0688),
+-	MFP_ADDR(GPIO93, 0x0690),
+-	MFP_ADDR(GPIO94, 0x068c),
+-	MFP_ADDR(GPIO95, 0x06a8),
+-	MFP_ADDR(GPIO96, 0x06b8),
+-	MFP_ADDR(GPIO97, 0x0410),
+-	MFP_ADDR(GPIO98, 0x0418),
+-	MFP_ADDR(GPIO99, 0x041c),
+-	MFP_ADDR(GPIO100, 0x0414),
+-	MFP_ADDR(GPIO101, 0x0408),
+-	MFP_ADDR(GPIO102, 0x0324),
+-	MFP_ADDR(GPIO103, 0x040c),
+-	MFP_ADDR(GPIO104, 0x0400),
+-	MFP_ADDR(GPIO105, 0x0328),
+-	MFP_ADDR(GPIO106, 0x0404),
+-
+-	MFP_ADDR(GPIO159, 0x0524),
+-	MFP_ADDR(GPIO163, 0x0534),
+-	MFP_ADDR(GPIO167, 0x0544),
+-	MFP_ADDR(GPIO168, 0x0548),
+-	MFP_ADDR(GPIO169, 0x054c),
+-	MFP_ADDR(GPIO170, 0x0550),
+-	MFP_ADDR(GPIO171, 0x0554),
+-	MFP_ADDR(GPIO172, 0x0558),
+-	MFP_ADDR(GPIO173, 0x055c),
+-
+-	MFP_ADDR(nXCVREN, 0x0204),
+-	MFP_ADDR(DF_CLE_nOE, 0x020c),
+-	MFP_ADDR(DF_nADV1_ALE, 0x0218),
+-	MFP_ADDR(DF_SCLK_E, 0x0214),
+-	MFP_ADDR(DF_SCLK_S, 0x0210),
+-	MFP_ADDR(nBE0, 0x021c),
+-	MFP_ADDR(nBE1, 0x0220),
+-	MFP_ADDR(DF_nADV2_ALE, 0x0224),
+-	MFP_ADDR(DF_INT_RnB, 0x0228),
+-	MFP_ADDR(DF_nCS0, 0x022c),
+-	MFP_ADDR(DF_nCS1, 0x0230),
+-	MFP_ADDR(nLUA, 0x0254),
+-	MFP_ADDR(nLLA, 0x0258),
+-	MFP_ADDR(DF_nWE, 0x0234),
+-	MFP_ADDR(DF_nRE_nOE, 0x0238),
+-	MFP_ADDR(DF_ADDR0, 0x024c),
+-	MFP_ADDR(DF_ADDR1, 0x0250),
+-	MFP_ADDR(DF_ADDR2, 0x025c),
+-	MFP_ADDR(DF_ADDR3, 0x0260),
+-	MFP_ADDR(DF_IO0, 0x023c),
+-	MFP_ADDR(DF_IO1, 0x0240),
+-	MFP_ADDR(DF_IO2, 0x0244),
+-	MFP_ADDR(DF_IO3, 0x0248),
+-	MFP_ADDR(DF_IO4, 0x0264),
+-	MFP_ADDR(DF_IO5, 0x0268),
+-	MFP_ADDR(DF_IO6, 0x026c),
+-	MFP_ADDR(DF_IO7, 0x0270),
+-	MFP_ADDR(DF_IO8, 0x0274),
+-	MFP_ADDR(DF_IO9, 0x0278),
+-	MFP_ADDR(DF_IO10, 0x027c),
+-	MFP_ADDR(DF_IO11, 0x0280),
+-	MFP_ADDR(DF_IO12, 0x0284),
+-	MFP_ADDR(DF_IO13, 0x0288),
+-	MFP_ADDR(DF_IO14, 0x028c),
+-	MFP_ADDR(DF_IO15, 0x0290),
+-
+-	MFP_ADDR(GSIM_UIO, 0x0314),
+-	MFP_ADDR(GSIM_UCLK, 0x0318),
+-	MFP_ADDR(GSIM_UDET, 0x031c),
+-	MFP_ADDR(GSIM_nURST, 0x0320),
+-
+-	MFP_ADDR(PMIC_INT, 0x06c8),
+-
+-	MFP_ADDR(RDY, 0x0200),
+-
+-	MFP_ADDR_END,
+-};
+-
+-static DEFINE_CK(pxa95x_lcd, LCD, &clk_pxa3xx_hsio_ops);
+-static DEFINE_CLK(pxa95x_pout, &clk_pxa3xx_pout_ops, 13000000, 70);
+-static DEFINE_PXA3_CKEN(pxa95x_ffuart, FFUART, 14857000, 1);
+-static DEFINE_PXA3_CKEN(pxa95x_btuart, BTUART, 14857000, 1);
+-static DEFINE_PXA3_CKEN(pxa95x_stuart, STUART, 14857000, 1);
+-static DEFINE_PXA3_CKEN(pxa95x_i2c, I2C, 32842000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_keypad, KEYPAD, 32768, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_ssp1, SSP1, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_ssp2, SSP2, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_ssp3, SSP3, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_ssp4, SSP4, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_pwm0, PWM0, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_pwm1, PWM1, 13000000, 0);
+-static DEFINE_PXA3_CKEN(pxa95x_gpio, GPIO, 13000000, 0);
+-
+-static struct clk_lookup pxa95x_clkregs[] = {
+-	INIT_CLKREG(&clk_pxa95x_pout, NULL, "CLK_POUT"),
+-	/* Power I2C clock is always on */
+-	INIT_CLKREG(&clk_dummy, "pxa3xx-pwri2c.1", NULL),
+-	INIT_CLKREG(&clk_pxa95x_lcd, "pxa2xx-fb", NULL),
+-	INIT_CLKREG(&clk_pxa95x_ffuart, "pxa2xx-uart.0", NULL),
+-	INIT_CLKREG(&clk_pxa95x_btuart, "pxa2xx-uart.1", NULL),
+-	INIT_CLKREG(&clk_pxa95x_stuart, "pxa2xx-uart.2", NULL),
+-	INIT_CLKREG(&clk_pxa95x_stuart, "pxa2xx-ir", "UARTCLK"),
+-	INIT_CLKREG(&clk_pxa95x_i2c, "pxa2xx-i2c.0", NULL),
+-	INIT_CLKREG(&clk_pxa95x_keypad, "pxa27x-keypad", NULL),
+-	INIT_CLKREG(&clk_pxa95x_ssp1, "pxa27x-ssp.0", NULL),
+-	INIT_CLKREG(&clk_pxa95x_ssp2, "pxa27x-ssp.1", NULL),
+-	INIT_CLKREG(&clk_pxa95x_ssp3, "pxa27x-ssp.2", NULL),
+-	INIT_CLKREG(&clk_pxa95x_ssp4, "pxa27x-ssp.3", NULL),
+-	INIT_CLKREG(&clk_pxa95x_pwm0, "pxa27x-pwm.0", NULL),
+-	INIT_CLKREG(&clk_pxa95x_pwm1, "pxa27x-pwm.1", NULL),
+-	INIT_CLKREG(&clk_pxa95x_gpio, "pxa-gpio", NULL),
+-	INIT_CLKREG(&clk_dummy, "sa1100-rtc", NULL),
+-};
+-
+-void __init pxa95x_init_irq(void)
+-{
+-	pxa_init_irq(96, NULL);
+-}
+-
+-/*
+- * device registration specific to PXA93x.
+- */
+-
+-void __init pxa95x_set_i2c_power_info(struct i2c_pxa_platform_data *info)
+-{
+-	pxa_register_device(&pxa3xx_device_i2c_power, info);
+-}
+-
+-static struct platform_device *devices[] __initdata = {
+-	&pxa_device_gpio,
+-	&sa1100_device_rtc,
+-	&pxa_device_rtc,
+-	&pxa27x_device_ssp1,
+-	&pxa27x_device_ssp2,
+-	&pxa27x_device_ssp3,
+-	&pxa3xx_device_ssp4,
+-	&pxa27x_device_pwm0,
+-	&pxa27x_device_pwm1,
+-};
+-
+-static int __init pxa95x_init(void)
+-{
+-	int ret = 0, i;
+-
+-	if (cpu_is_pxa95x()) {
+-		mfp_init_base(io_p2v(MFPR_BASE));
+-		mfp_init_addr(pxa95x_mfp_addr_map);
+-
+-		reset_status = ARSR;
+-
+-		/*
+-		 * clear RDH bit every time after reset
+-		 *
+-		 * Note: the last 3 bits DxS are write-1-to-clear so carefully
+-		 * preserve them here in case they will be referenced later
+-		 */
+-		ASCR &= ~(ASCR_RDH | ASCR_D1S | ASCR_D2S | ASCR_D3S);
+-
+-		clkdev_add_table(pxa95x_clkregs, ARRAY_SIZE(pxa95x_clkregs));
+-
+-		if ((ret = pxa_init_dma(IRQ_DMA, 32)))
+-			return ret;
+-
+-		register_syscore_ops(&pxa_irq_syscore_ops);
+-		register_syscore_ops(&pxa3xx_clock_syscore_ops);
+-
+-		ret = platform_add_devices(devices, ARRAY_SIZE(devices));
+-	}
+-
+-	return ret;
+-}
+-
+-postcore_initcall(pxa95x_init);
+diff --git a/arch/arm/mach-pxa/saarb.c b/arch/arm/mach-pxa/saarb.c
+deleted file mode 100644
+index 5aded5e..0000000
+--- a/arch/arm/mach-pxa/saarb.c
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/*
+- *  linux/arch/arm/mach-pxa/saarb.c
+- *
+- *  Support for the Marvell Handheld Platform (aka SAARB)
+- *
+- *  Copyright (C) 2007-2010 Marvell International Ltd.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License version 2 as
+- *  publishhed by the Free Software Foundation.
+- */
+-#include <linux/gpio.h>
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/i2c.h>
+-#include <linux/i2c/pxa-i2c.h>
+-#include <linux/mfd/88pm860x.h>
+-
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-
+-#include <mach/irqs.h>
+-#include <mach/hardware.h>
+-#include <mach/mfp.h>
+-#include <mach/mfp-pxa930.h>
+-#include <mach/pxa95x.h>
+-
+-#include "generic.h"
+-
+-#define SAARB_NR_IRQS	(IRQ_BOARD_START + 40)
+-
+-static struct pm860x_touch_pdata saarb_touch = {
+-	.gpadc_prebias	= 1,
+-	.slot_cycle	= 1,
+-	.tsi_prebias	= 6,
+-	.pen_prebias	= 16,
+-	.pen_prechg	= 2,
+-	.res_x		= 300,
+-};
+-
+-static struct pm860x_backlight_pdata saarb_backlight[] = {
+-	{
+-		.id	= PM8606_ID_BACKLIGHT,
+-		.iset	= PM8606_WLED_CURRENT(24),
+-		.flags	= PM8606_BACKLIGHT1,
+-	},
+-	{},
+-};
+-
+-static struct pm860x_led_pdata saarb_led[] = {
+-	{
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_RED,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_GREEN,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_BLUE,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_RED,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_GREEN,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_BLUE,
+-	},
+-};
+-
+-static struct pm860x_platform_data saarb_pm8607_info = {
+-	.touch		= &saarb_touch,
+-	.backlight	= &saarb_backlight[0],
+-	.led		= &saarb_led[0],
+-	.companion_addr	= 0x10,
+-	.irq_mode	= 0,
+-	.irq_base	= IRQ_BOARD_START,
+-
+-	.i2c_port	= GI2C_PORT,
+-};
+-
+-static struct i2c_board_info saarb_i2c_info[] = {
+-	{
+-		.type		= "88PM860x",
+-		.addr		= 0x34,
+-		.platform_data	= &saarb_pm8607_info,
+-		.irq		= PXA_GPIO_TO_IRQ(mfp_to_gpio(MFP_PIN_GPIO83)),
+-	},
+-};
+-
+-static void __init saarb_init(void)
+-{
+-	pxa_set_ffuart_info(NULL);
+-	pxa_set_i2c_info(NULL);
+-	i2c_register_board_info(0, ARRAY_AND_SIZE(saarb_i2c_info));
+-}
+-
+-MACHINE_START(SAARB, "PXA955 Handheld Platform (aka SAARB)")
+-	.atag_offset    = 0x100,
+-	.map_io         = pxa3xx_map_io,
+-	.nr_irqs	= SAARB_NR_IRQS,
+-	.init_irq       = pxa95x_init_irq,
+-	.handle_irq	= pxa3xx_handle_irq,
+-	.timer          = &pxa_timer,
+-	.init_machine   = saarb_init,
+-	.restart	= pxa_restart,
+-MACHINE_END
+-
+diff --git a/arch/arm/mach-pxa/tavorevb3.c b/arch/arm/mach-pxa/tavorevb3.c
+deleted file mode 100644
+index f7d9305..0000000
+--- a/arch/arm/mach-pxa/tavorevb3.c
++++ /dev/null
+@@ -1,136 +0,0 @@
+-/*
+- *  linux/arch/arm/mach-pxa/tavorevb3.c
+- *
+- *  Support for the Marvell EVB3 Development Platform.
+- *
+- *  Copyright:  (C) Copyright 2008-2010 Marvell International Ltd.
+- *
+- *  This program is free software; you can redistribute it and/or modify
+- *  it under the terms of the GNU General Public License version 2 as
+- *  publishhed by the Free Software Foundation.
+- */
+-
+-#include <linux/init.h>
+-#include <linux/kernel.h>
+-#include <linux/platform_device.h>
+-#include <linux/interrupt.h>
+-#include <linux/i2c.h>
+-#include <linux/i2c/pxa-i2c.h>
+-#include <linux/gpio.h>
+-#include <linux/mfd/88pm860x.h>
+-
+-#include <asm/mach-types.h>
+-#include <asm/mach/arch.h>
+-
+-#include <mach/pxa930.h>
+-
+-#include "devices.h"
+-#include "generic.h"
+-
+-#define TAVOREVB3_NR_IRQS	(IRQ_BOARD_START + 24)
+-
+-static mfp_cfg_t evb3_mfp_cfg[] __initdata = {
+-	/* UART */
+-	GPIO53_UART1_TXD,
+-	GPIO54_UART1_RXD,
+-
+-	/* PMIC */
+-	PMIC_INT_GPIO83,
+-};
+-
+-#if defined(CONFIG_I2C_PXA) || defined(CONFIG_I2C_PXA_MODULE)
+-static struct pm860x_touch_pdata evb3_touch = {
+-	.gpadc_prebias	= 1,
+-	.slot_cycle	= 1,
+-	.tsi_prebias	= 6,
+-	.pen_prebias	= 16,
+-	.pen_prechg	= 2,
+-	.res_x		= 300,
+-};
+-
+-static struct pm860x_backlight_pdata evb3_backlight[] = {
+-	{
+-		.id	= PM8606_ID_BACKLIGHT,
+-		.iset	= PM8606_WLED_CURRENT(24),
+-		.flags	= PM8606_BACKLIGHT1,
+-	},
+-	{},
+-};
+-
+-static struct pm860x_led_pdata evb3_led[] = {
+-	{
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_RED,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_GREEN,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED1_BLUE,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_RED,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_GREEN,
+-	}, {
+-		.id	= PM8606_ID_LED,
+-		.iset	= PM8606_LED_CURRENT(12),
+-		.flags	= PM8606_LED2_BLUE,
+-	},
+-};
+-
+-static struct pm860x_platform_data evb3_pm8607_info = {
+-	.touch				= &evb3_touch,
+-	.backlight			= &evb3_backlight[0],
+-	.led				= &evb3_led[0],
+-	.companion_addr			= 0x10,
+-	.irq_mode			= 0,
+-	.irq_base			= IRQ_BOARD_START,
+-
+-	.i2c_port			= GI2C_PORT,
+-};
+-
+-static struct i2c_board_info evb3_i2c_info[] = {
+-	{
+-		.type		= "88PM860x",
+-		.addr		= 0x34,
+-		.platform_data	= &evb3_pm8607_info,
+-		.irq		= PXA_GPIO_TO_IRQ(mfp_to_gpio(MFP_PIN_GPIO83)),
+-	},
+-};
+-
+-static void __init evb3_init_i2c(void)
+-{
+-	pxa_set_i2c_info(NULL);
+-	i2c_register_board_info(0, ARRAY_AND_SIZE(evb3_i2c_info));
+-}
+-#else
+-static inline void evb3_init_i2c(void) {}
+-#endif
+-
+-static void __init evb3_init(void)
+-{
+-	/* initialize MFP configurations */
+-	pxa3xx_mfp_config(ARRAY_AND_SIZE(evb3_mfp_cfg));
+-
+-	pxa_set_ffuart_info(NULL);
+-
+-	evb3_init_i2c();
+-}
+-
+-MACHINE_START(TAVOREVB3, "PXA950 Evaluation Board (aka TavorEVB3)")
+-	.atag_offset	= 0x100,
+-	.map_io         = pxa3xx_map_io,
+-	.nr_irqs	= TAVOREVB3_NR_IRQS,
+-	.init_irq       = pxa3xx_init_irq,
+-	.handle_irq       = pxa3xx_handle_irq,
+-	.timer          = &pxa_timer,
+-	.init_machine   = evb3_init,
+-	.restart	= pxa_restart,
+-MACHINE_END
+diff --git a/arch/arm/plat-pxa/Makefile b/arch/arm/plat-pxa/Makefile
+index af8e484..1fc9419 100644
+--- a/arch/arm/plat-pxa/Makefile
++++ b/arch/arm/plat-pxa/Makefile
+@@ -5,7 +5,6 @@
+ obj-y	:= dma.o
+ 
+ obj-$(CONFIG_PXA3xx)		+= mfp.o
+-obj-$(CONFIG_PXA95x)		+= mfp.o
+ obj-$(CONFIG_ARCH_MMP)		+= mfp.o
+ 
+ obj-$(CONFIG_PXA_SSP)		+= ssp.o
+diff --git a/arch/arm/plat-pxa/include/plat/mfp.h b/arch/arm/plat-pxa/include/plat/mfp.h
+index 5c79c29..10bc4f3 100644
+--- a/arch/arm/plat-pxa/include/plat/mfp.h
++++ b/arch/arm/plat-pxa/include/plat/mfp.h
+@@ -423,7 +423,7 @@ typedef unsigned long mfp_cfg_t;
+ 	((MFP_CFG_DEFAULT & ~(MFP_AF_MASK | MFP_DS_MASK | MFP_LPM_STATE_MASK)) |\
+ 	 (MFP_PIN(MFP_PIN_##pin) | MFP_##af | MFP_##drv | MFP_LPM_##lpm))
+ 
+-#if defined(CONFIG_PXA3xx) || defined(CONFIG_PXA95x) || defined(CONFIG_ARCH_MMP)
++#if defined(CONFIG_PXA3xx) || defined(CONFIG_ARCH_MMP)
+ /*
+  * each MFP pin will have a MFPR register, since the offset of the
+  * register varies between processors, the processor specific code
+@@ -470,6 +470,6 @@ void mfp_write(int mfp, unsigned long mfpr_val);
+ void mfp_config(unsigned long *mfp_cfgs, int num);
+ void mfp_config_run(void);
+ void mfp_config_lpm(void);
+-#endif /* CONFIG_PXA3xx || CONFIG_PXA95x || CONFIG_ARCH_MMP */
++#endif /* CONFIG_PXA3xx || CONFIG_ARCH_MMP */
+ 
+ #endif /* __ASM_PLAT_MFP_H */
+diff --git a/drivers/gpio/gpio-pxa.c b/drivers/gpio/gpio-pxa.c
+index 98d52cb..6ab8afb 100644
+--- a/drivers/gpio/gpio-pxa.c
++++ b/drivers/gpio/gpio-pxa.c
+@@ -448,7 +448,7 @@ static int pxa_gpio_nums(void)
+ 	} else if (cpu_is_pxa27x()) {
+ 		count = 120;
+ 		gpio_type = PXA27X_GPIO;
+-	} else if (cpu_is_pxa93x() || cpu_is_pxa95x()) {
++	} else if (cpu_is_pxa93x()) {
+ 		count = 191;
+ 		gpio_type = PXA93X_GPIO;
+ 	} else if (cpu_is_pxa3xx()) {
+-- 
+1.8.0
+

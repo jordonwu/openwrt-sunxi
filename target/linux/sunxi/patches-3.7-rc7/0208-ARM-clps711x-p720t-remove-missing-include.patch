@@ -1,0 +1,27 @@
+From 66e972b4bd98cdf82ad6d04051a5f508ad73a8dd Mon Sep 17 00:00:00 2001
+From: Alexander Shiyan <shc_work@mail.ru>
+Date: Wed, 10 Oct 2012 19:45:28 +0400
+Subject: [PATCH 208/951] ARM: clps711x: p720t: remove missing #include
+
+Signed-off-by: Alexander Shiyan <shc_work@mail.ru>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ arch/arm/mach-clps711x/p720t.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/arch/arm/mach-clps711x/p720t.c b/arch/arm/mach-clps711x/p720t.c
+index b752b58..7680bea 100644
+--- a/arch/arm/mach-clps711x/p720t.c
++++ b/arch/arm/mach-clps711x/p720t.c
+@@ -36,8 +36,6 @@
+ #include <asm/mach/map.h>
+ #include <mach/syspld.h>
+ 
+-#include <asm/hardware/clps7111.h>
+-
+ #include "common.h"
+ 
+ /*
+-- 
+1.8.0
+

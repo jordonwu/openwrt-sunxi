@@ -1,0 +1,52 @@
+From cf3a97b4e4c4601d043ca1549c27e5fe18f55dde Mon Sep 17 00:00:00 2001
+From: Rahul Sharma <rahul.sharma@samsung.com>
+Date: Mon, 29 Oct 2012 21:51:51 +0900
+Subject: [PATCH 275/951] ARM: EXYNOS: add clocks for exynos5 hdmi
+
+This patch adds support for clocks for hdmi, hdmiphy and mixer.
+
+Signed-off-by: Rahul Sharma <rahul.sharma@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-exynos/clock-exynos5.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-exynos/clock-exynos5.c b/arch/arm/mach-exynos/clock-exynos5.c
+index c44ca1e..a86f20f 100644
+--- a/arch/arm/mach-exynos/clock-exynos5.c
++++ b/arch/arm/mach-exynos/clock-exynos5.c
+@@ -196,6 +196,11 @@ static int exynos5_clk_ip_isp1_ctrl(struct clk *clk, int enable)
+ 	return s5p_gatectrl(EXYNOS5_CLKGATE_IP_ISP1, clk, enable);
+ }
+ 
++static int exynos5_clk_hdmiphy_ctrl(struct clk *clk, int enable)
++{
++	return s5p_gatectrl(S5P_HDMI_PHY_CONTROL, clk, enable);
++}
++
+ /* Core list of CMU_CPU side */
+ 
+ static struct clksrc_clk exynos5_clk_mout_apll = {
+@@ -669,12 +674,17 @@ static struct clk exynos5_init_clocks_off[] = {
+ 		.ctrlbit	= (1 << 0),
+ 	}, {
+ 		.name		= "hdmi",
+-		.devname	= "exynos4-hdmi",
++		.devname	= "exynos5-hdmi",
+ 		.enable		= exynos5_clk_ip_disp1_ctrl,
+ 		.ctrlbit	= (1 << 6),
+ 	}, {
++		.name		= "hdmiphy",
++		.devname	= "exynos5-hdmi",
++		.enable		= exynos5_clk_hdmiphy_ctrl,
++		.ctrlbit	= (1 << 0),
++	}, {
+ 		.name		= "mixer",
+-		.devname	= "s5p-mixer",
++		.devname	= "exynos5-mixer",
+ 		.enable		= exynos5_clk_ip_disp1_ctrl,
+ 		.ctrlbit	= (1 << 5),
+ 	}, {
+-- 
+1.8.0
+

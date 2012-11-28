@@ -1,0 +1,50 @@
+From 22b9ba033bb4401e4cceb69c9e1af74a4631dd74 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Thu, 11 Oct 2012 10:11:19 +0200
+Subject: [PATCH 058/951] pinctrl: exynos: Set pin function to EINT in
+ irq_set_type of wake-up EINT
+
+Pins used as wake-up interrupts need to be configured as EINTs. This
+patch adds the required configuration code to exynos_wkup_irq_set_type,
+to set the pin as EINT when its interrupt trigger type is configured.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Reviewed-by: Kyungmin Park <kyungmin.park@samsung.com>
+Acked-by: Thomas Abraham <thomas.abraham@linaro.org>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/pinctrl-exynos.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/pinctrl/pinctrl-exynos.c b/drivers/pinctrl/pinctrl-exynos.c
+index 4bf2fc4..73a0aa2 100644
+--- a/drivers/pinctrl/pinctrl-exynos.c
++++ b/drivers/pinctrl/pinctrl-exynos.c
+@@ -257,6 +257,7 @@ static int exynos_wkup_irq_set_type(struct irq_data *irqd, unsigned int type)
+ 	unsigned long reg_con = d->ctrl->weint_con + bank->eint_offset;
+ 	unsigned long shift = EXYNOS_EINT_CON_LEN * pin;
+ 	unsigned long con, trig_type;
++	unsigned int mask;
+ 
+ 	switch (type) {
+ 	case IRQ_TYPE_EDGE_RISING:
+@@ -288,6 +289,16 @@ static int exynos_wkup_irq_set_type(struct irq_data *irqd, unsigned int type)
+ 	con &= ~(EXYNOS_EINT_CON_MASK << shift);
+ 	con |= trig_type << shift;
+ 	writel(con, d->virt_base + reg_con);
++
++	reg_con = bank->pctl_offset;
++	shift = pin * bank->func_width;
++	mask = (1 << bank->func_width) - 1;
++
++	con = readl(d->virt_base + reg_con);
++	con &= ~(mask << shift);
++	con |= EXYNOS_EINT_FUNC << shift;
++	writel(con, d->virt_base + reg_con);
++
+ 	return 0;
+ }
+ 
+-- 
+1.8.0
+

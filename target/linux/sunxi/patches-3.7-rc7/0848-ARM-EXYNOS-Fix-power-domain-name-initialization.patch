@@ -1,0 +1,32 @@
+From 7add0ec0fef19d5b7a3ae38c5deb80819a065a17 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Thu, 22 Nov 2012 00:21:12 +0900
+Subject: [PATCH 848/951] ARM: EXYNOS: Fix power domain name initialization
+
+This patch adds initialization of name field in generic power domain
+struct.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/mach-exynos/pm_domains.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-exynos/pm_domains.c b/arch/arm/mach-exynos/pm_domains.c
+index d1abc1a..5b7ce7e 100644
+--- a/arch/arm/mach-exynos/pm_domains.c
++++ b/arch/arm/mach-exynos/pm_domains.c
+@@ -98,7 +98,8 @@ static __init int exynos_pm_dt_parse_domains(void)
+ 			return -ENOMEM;
+ 		}
+ 
+-		pd->name = np->name;
++		pd->pd.name = kstrdup(np->name, GFP_KERNEL);
++		pd->name = pd->pd.name;
+ 		pd->base = of_iomap(np, 0);
+ 		pd->pd.power_off = exynos_pd_power_off;
+ 		pd->pd.power_on = exynos_pd_power_on;
+-- 
+1.8.0
+

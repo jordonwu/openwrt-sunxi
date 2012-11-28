@@ -1,0 +1,56 @@
+From a6e9ed9f09a98c7e85f7dc04829eca5faeb1ea36 Mon Sep 17 00:00:00 2001
+From: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Date: Fri, 23 Nov 2012 06:30:11 +0900
+Subject: [PATCH 932/951] ARM: kirkwood: Add NAND partiton map for OpenBlocks
+ A6
+
+Signed-off-by: Nobuhiro Iwamatsu <iwamatsu@nigauri.org>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/kirkwood-openblocks_a6.dts | 30 ++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
+index bada756..e80c9d0 100644
+--- a/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
++++ b/arch/arm/boot/dts/kirkwood-openblocks_a6.dts
+@@ -30,6 +30,36 @@
+ 		nand@3000000 {
+ 			chip-delay = <25>;
+ 			status = "okay";
++
++			partition@0 {
++				label = "uboot";
++				reg = <0x0 0x90000>;
++			};
++
++			partition@90000 {
++				label = "env";
++				reg = <0x90000 0x44000>;
++			};
++
++			partition@d4000 {
++				label = "test";
++				reg = <0xd4000 0x24000>;
++			};
++
++			partition@f4000 {
++				label = "conf";
++				reg = <0xf4000 0x400000>;
++			};
++
++			partition@4f4000 {
++				label = "linux";
++				reg = <0x4f4000 0x1d20000>;
++			};
++
++			partition@2214000 {
++				label = "user";
++				reg = <0x2214000 0x1dec000>;
++			};
+ 		};
+ 
+ 		sata@80000 {
+-- 
+1.8.0
+

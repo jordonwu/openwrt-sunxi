@@ -1,0 +1,52 @@
+From cf7c397b62b1afa6d17c890641d067d5999daeb9 Mon Sep 17 00:00:00 2001
+From: Tomasz Figa <t.figa@samsung.com>
+Date: Thu, 22 Nov 2012 00:15:40 +0900
+Subject: [PATCH 846/951] ARM: dts: Add vmmc fixed voltage regulator for
+ exynos4210-origen
+
+This patch adds fixed voltage vmmc regulator to dts file of Origen
+board.
+
+Signed-off-by: Tomasz Figa <t.figa@samsung.com>
+Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Kukjin Kim <kgene.kim@samsung.com>
+---
+ arch/arm/boot/dts/exynos4210-origen.dts | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/exynos4210-origen.dts b/arch/arm/boot/dts/exynos4210-origen.dts
+index 7390f8c..f271001 100644
+--- a/arch/arm/boot/dts/exynos4210-origen.dts
++++ b/arch/arm/boot/dts/exynos4210-origen.dts
+@@ -32,10 +32,20 @@
+ 		bootargs ="root=/dev/ram0 rw ramdisk=8192 initrd=0x41000000,8M console=ttySAC2,115200 init=/linuxrc";
+ 	};
+ 
++	mmc_reg: voltage-regulator {
++	        compatible = "regulator-fixed";
++		regulator-name = "VMEM_VDD_2.8V";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		gpio = <&gpx1 1 0>;
++		enable-active-high;
++	};
++
+ 	sdhci@12530000 {
+ 		bus-width = <4>;
+ 		pinctrl-0 = <&sd2_clk &sd2_cmd &sd2_bus4 &sd2_cd>;
+ 		pinctrl-names = "default";
++		vmmc-supply = <&mmc_reg>;
+ 		status = "okay";
+ 	};
+ 
+@@ -43,6 +53,7 @@
+ 		bus-width = <4>;
+ 		pinctrl-0 = <&sd0_clk &sd0_cmd &sd0_bus4 &sd0_cd>;
+ 		pinctrl-names = "default";
++		vmmc-supply = <&mmc_reg>;
+ 		status = "okay";
+ 	};
+ 
+-- 
+1.8.0
+

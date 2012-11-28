@@ -1,0 +1,94 @@
+From b5c5353d417580f7a6ac21a0954f1c500a5cc4f5 Mon Sep 17 00:00:00 2001
+From: Paul Walmsley <paul@pwsan.com>
+Date: Sun, 21 Oct 2012 01:01:12 -0600
+Subject: [PATCH 162/951] ARM: OMAP1: create read_reset_sources() function
+ (for initial use by watchdog)
+
+On OMAP1, the existing OMAP watchdog driver reads a register directly
+from a non-watchdog IP block.  It also does not convert the register's
+contents into the standard WDIOF_* bits expected from the
+GETBOOTSTATUS ioctl().
+
+To move towards fixing these problems, create an function in
+arch/arm/mach-omap1 to return the reset source data.  A subsequent
+patch will provide this function to the watchdog driver via
+platform_data.
+
+In the long term, the best approach would be to move this function
+to a new OMAP1 driver that handles access to the OMAP1 Clock
+Generation and Reset Management IP block.  Then no platform_data would
+be needed.
+
+Signed-off-by: Paul Walmsley <paul@pwsan.com>
+---
+ arch/arm/mach-omap1/common.h |  2 ++
+ arch/arm/mach-omap1/reset.c  | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 40 insertions(+)
+
+diff --git a/arch/arm/mach-omap1/common.h b/arch/arm/mach-omap1/common.h
+index c2552b2..e4efac9 100644
+--- a/arch/arm/mach-omap1/common.h
++++ b/arch/arm/mach-omap1/common.h
+@@ -90,4 +90,6 @@ extern int ocpi_enable(void);
+ static inline int ocpi_enable(void) { return 0; }
+ #endif
+ 
++extern int omap1_get_reset_sources(void);
++
+ #endif /* __ARCH_ARM_MACH_OMAP1_COMMON_H */
+diff --git a/arch/arm/mach-omap1/reset.c b/arch/arm/mach-omap1/reset.c
+index b177091..a0a9f97 100644
+--- a/arch/arm/mach-omap1/reset.c
++++ b/arch/arm/mach-omap1/reset.c
+@@ -10,6 +10,19 @@
+ 
+ #include "common.h"
+ 
++/* ARM_SYSST bit shifts related to SoC reset sources */
++#define ARM_SYSST_POR_SHIFT				5
++#define ARM_SYSST_EXT_RST_SHIFT				4
++#define ARM_SYSST_ARM_WDRST_SHIFT			2
++#define ARM_SYSST_GLOB_SWRST_SHIFT			1
++
++/* Standardized reset source bits (across all OMAP SoCs) */
++#define OMAP_GLOBAL_COLD_RST_SRC_ID_SHIFT		0
++#define OMAP_GLOBAL_WARM_RST_SRC_ID_SHIFT		1
++#define OMAP_MPU_WD_RST_SRC_ID_SHIFT			3
++#define OMAP_EXTWARM_RST_SRC_ID_SHIFT			5
++
++
+ void omap1_restart(char mode, const char *cmd)
+ {
+ 	/*
+@@ -23,3 +36,28 @@ void omap1_restart(char mode, const char *cmd)
+ 
+ 	omap_writew(1, ARM_RSTCT1);
+ }
++
++/**
++ * omap1_get_reset_sources - return the source of the SoC's last reset
++ *
++ * Returns bits that represent the last reset source for the SoC.  The
++ * format is standardized across OMAPs for use by the OMAP watchdog.
++ */
++int omap1_get_reset_sources(void)
++{
++	int ret = 0;
++	u16 rs;
++
++	rs = __raw_readw(ARM_SYSST);
++
++	if (rs & (1 << ARM_SYSST_POR_SHIFT))
++		ret |= 1 << OMAP_GLOBAL_COLD_RST_SRC_ID_SHIFT;
++	if (rs & (1 << ARM_SYSST_EXT_RST_SHIFT))
++		ret |= 1 << OMAP_EXTWARM_RST_SRC_ID_SHIFT;
++	if (rs & (1 << ARM_SYSST_ARM_WDRST_SHIFT))
++		ret |= 1 << OMAP_MPU_WD_RST_SRC_ID_SHIFT;
++	if (rs & (1 << ARM_SYSST_GLOB_SWRST_SHIFT))
++		ret |= 1 << OMAP_GLOBAL_WARM_RST_SRC_ID_SHIFT;
++
++	return ret;
++}
+-- 
+1.8.0
+

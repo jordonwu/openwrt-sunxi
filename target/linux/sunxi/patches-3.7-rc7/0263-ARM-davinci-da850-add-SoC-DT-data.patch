@@ -1,0 +1,86 @@
+From 33085b3e819c440f8ddbbc77142134c7ce7dffd1 Mon Sep 17 00:00:00 2001
+From: Heiko Schocher <hs@denx.de>
+Date: Thu, 30 Aug 2012 14:21:04 +0530
+Subject: [PATCH 263/951] ARM: davinci: da850: add SoC DT data
+
+Add DT data for DA850 SoC. Only interrupt controller and
+serial port information is being added at this time.
+
+Signed-off-by: Heiko Schocher <hs@denx.de>
+[nsekhar@ti.com: refactored DT data into SoC specific and
+board specific and include SoC data into .dtsi file]
+Signed-off-by: Sekhar Nori <nsekhar@ti.com>
+---
+ arch/arm/boot/dts/da850.dtsi | 60 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 60 insertions(+)
+ create mode 100644 arch/arm/boot/dts/da850.dtsi
+
+diff --git a/arch/arm/boot/dts/da850.dtsi b/arch/arm/boot/dts/da850.dtsi
+new file mode 100644
+index 0000000..640ab75
+--- /dev/null
++++ b/arch/arm/boot/dts/da850.dtsi
+@@ -0,0 +1,60 @@
++/*
++ * Copyright 2012 DENX Software Engineering GmbH
++ * Heiko Schocher <hs@denx.de>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++/include/ "skeleton.dtsi"
++
++/ {
++	arm {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++		intc: interrupt-controller {
++			compatible = "ti,cp-intc";
++			interrupt-controller;
++			#interrupt-cells = <1>;
++			ti,intc-size = <100>;
++			reg = <0xfffee000 0x2000>;
++		};
++	};
++	soc {
++		compatible = "simple-bus";
++		model = "da850";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0x0 0x01c00000 0x400000>;
++
++		serial0: serial@1c42000 {
++			compatible = "ns16550a";
++			reg = <0x42000 0x100>;
++			clock-frequency = <150000000>;
++			reg-shift = <2>;
++			interrupts = <25>;
++			interrupt-parent = <&intc>;
++			status = "disabled";
++		};
++		serial1: serial@1d0c000 {
++			compatible = "ns16550a";
++			reg = <0x10c000 0x100>;
++			clock-frequency = <150000000>;
++			reg-shift = <2>;
++			interrupts = <53>;
++			interrupt-parent = <&intc>;
++			status = "disabled";
++		};
++		serial2: serial@1d0d000 {
++			compatible = "ns16550a";
++			reg = <0x10d000 0x100>;
++			clock-frequency = <150000000>;
++			reg-shift = <2>;
++			interrupts = <61>;
++			interrupt-parent = <&intc>;
++			status = "disabled";
++		};
++	};
++};
+-- 
+1.8.0
+

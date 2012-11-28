@@ -1,0 +1,280 @@
+From 1bffb4a8729838f5ee27364803406416459c3252 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Fri, 16 Nov 2012 16:39:45 +0100
+Subject: [PATCH 881/951] arm: orion5x: basic Device Tree support
+
+This commit adds basic DT support for the Orion5x SoC family. It adds
+an orion5x.dtsi description of the Orion5x SoC as well as the needed
+DT_MACHINE structure to support boards converted to DT in the future.
+
+So far, the Device Tree contains the interrupt controller, the GPIO
+bank, the UART controllers, the SPI controller, the watchdog, the SATA
+controller, the I2C controller and the cryptographic engine.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Tested by: Maxime Hadjinlian <mhadjinlian@lacie.com>
+Acked-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+---
+ arch/arm/boot/dts/orion5x.dtsi   | 98 ++++++++++++++++++++++++++++++++++++++++
+ arch/arm/mach-orion5x/Kconfig    |  7 +++
+ arch/arm/mach-orion5x/Makefile   |  2 +
+ arch/arm/mach-orion5x/board-dt.c | 76 +++++++++++++++++++++++++++++++
+ arch/arm/mach-orion5x/common.c   |  4 +-
+ arch/arm/mach-orion5x/common.h   |  2 +
+ 6 files changed, 187 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/boot/dts/orion5x.dtsi
+ create mode 100644 arch/arm/mach-orion5x/board-dt.c
+
+diff --git a/arch/arm/boot/dts/orion5x.dtsi b/arch/arm/boot/dts/orion5x.dtsi
+new file mode 100644
+index 0000000..8aad00f
+--- /dev/null
++++ b/arch/arm/boot/dts/orion5x.dtsi
+@@ -0,0 +1,98 @@
++/*
++ * Copyright (C) 2012 Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2. This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	model = "Marvell Orion5x SoC";
++	compatible = "marvell,orion5x";
++	interrupt-parent = <&intc>;
++
++	intc: interrupt-controller {
++		compatible = "marvell,orion-intc", "marvell,intc";
++		interrupt-controller;
++		#interrupt-cells = <1>;
++		reg = <0xf1020204 0x04>;
++	};
++
++	ocp@f1000000 {
++		compatible = "simple-bus";
++		ranges = <0x00000000 0xf1000000 0x4000000
++		          0xf2200000 0xf2200000 0x0000800>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		gpio0: gpio@10100 {
++			compatible = "marvell,orion-gpio";
++			#gpio-cells = <2>;
++			gpio-controller;
++			reg = <0x10100 0x40>;
++			ngpio = <32>;
++			interrupts = <6>, <7>, <8>, <9>;
++		};
++
++		serial@12000 {
++			compatible = "ns16550a";
++			reg = <0x12000 0x100>;
++			reg-shift = <2>;
++			interrupts = <3>;
++			/* set clock-frequency in board dts */
++			status = "disabled";
++		};
++
++		serial@12100 {
++			compatible = "ns16550a";
++			reg = <0x12100 0x100>;
++			reg-shift = <2>;
++			interrupts = <4>;
++			/* set clock-frequency in board dts */
++			status = "disabled";
++		};
++
++		spi@10600 {
++			compatible = "marvell,orion-spi";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			cell-index = <0>;
++			reg = <0x10600 0x28>;
++			status = "disabled";
++		};
++
++		wdt@20300 {
++			compatible = "marvell,orion-wdt";
++			reg = <0x20300 0x28>;
++			status = "okay";
++		};
++
++		sata@80000 {
++			compatible = "marvell,orion-sata";
++			reg = <0x80000 0x5000>;
++			interrupts = <29>;
++			status = "disabled";
++		};
++
++		i2c@11000 {
++			compatible = "marvell,mv64xxx-i2c";
++			reg = <0x11000 0x20>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			interrupts = <5>;
++			clock-frequency = <100000>;
++			status = "disabled";
++		};
++
++		crypto@90000 {
++			compatible = "marvell,orion-crypto";
++			reg = <0x90000 0x10000>,
++			      <0xf2200000 0x800>;
++			reg-names = "regs", "sram";
++			interrupts = <22>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm/mach-orion5x/Kconfig b/arch/arm/mach-orion5x/Kconfig
+index 0673f0c..0910c3b 100644
+--- a/arch/arm/mach-orion5x/Kconfig
++++ b/arch/arm/mach-orion5x/Kconfig
+@@ -2,6 +2,13 @@ if ARCH_ORION5X
+ 
+ menu "Orion Implementations"
+ 
++config ARCH_ORION5X_DT
++	bool "Marvell Orion5x Flattened Device Tree"
++	select USE_OF
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Marvell Orion5x using flattened device tree.
++
+ config MACH_DB88F5281
+ 	bool "Marvell Orion-2 Development Board"
+ 	select I2C_BOARDINFO
+diff --git a/arch/arm/mach-orion5x/Makefile b/arch/arm/mach-orion5x/Makefile
+index 7f18cda..843e6de 100644
+--- a/arch/arm/mach-orion5x/Makefile
++++ b/arch/arm/mach-orion5x/Makefile
+@@ -22,3 +22,5 @@ obj-$(CONFIG_MACH_RD88F5181L_GE)	+= rd88f5181l-ge-setup.o
+ obj-$(CONFIG_MACH_RD88F5181L_FXO)	+= rd88f5181l-fxo-setup.o
+ obj-$(CONFIG_MACH_RD88F6183AP_GE)	+= rd88f6183ap-ge-setup.o
+ obj-$(CONFIG_MACH_LINKSTATION_LSCHL)	+= ls-chl-setup.o
++
++obj-$(CONFIG_ARCH_ORION5X_DT)		+= board-dt.o
+diff --git a/arch/arm/mach-orion5x/board-dt.c b/arch/arm/mach-orion5x/board-dt.c
+new file mode 100644
+index 0000000..a26397f
+--- /dev/null
++++ b/arch/arm/mach-orion5x/board-dt.c
+@@ -0,0 +1,76 @@
++/*
++ * Copyright 2012 (C), Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
++ *
++ * arch/arm/mach-orion5x/board-dt.c
++ *
++ * Flattened Device Tree board initialization
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <asm/system_misc.h>
++#include <asm/mach/arch.h>
++#include <mach/orion5x.h>
++#include <plat/irq.h>
++#include "common.h"
++
++struct of_dev_auxdata orion5x_auxdata_lookup[] __initdata = {
++	OF_DEV_AUXDATA("marvell,orion-spi", 0xf1010600, "orion_spi.0", NULL),
++	OF_DEV_AUXDATA("marvell,mv64xxx-i2c", 0xf1011000, "mv64xxx_i2c.0",
++		       NULL),
++	OF_DEV_AUXDATA("marvell,orion-wdt", 0xf1020300, "orion_wdt", NULL),
++	OF_DEV_AUXDATA("marvell,orion-sata", 0xf1080000, "sata_mv.0", NULL),
++	OF_DEV_AUXDATA("marvell,orion-crypto", 0xf1090000, "mv_crypto", NULL),
++	{},
++};
++
++static void __init orion5x_dt_init(void)
++{
++	char *dev_name;
++	u32 dev, rev;
++
++	orion5x_id(&dev, &rev, &dev_name);
++	printk(KERN_INFO "Orion ID: %s. TCLK=%d.\n", dev_name, orion5x_tclk);
++
++	/*
++	 * Setup Orion address map
++	 */
++	orion5x_setup_cpu_mbus_bridge();
++
++	/* Setup root of clk tree */
++	clk_init();
++
++	/*
++	 * Don't issue "Wait for Interrupt" instruction if we are
++	 * running on D0 5281 silicon.
++	 */
++	if (dev == MV88F5281_DEV_ID && rev == MV88F5281_REV_D0) {
++		printk(KERN_INFO "Orion: Applying 5281 D0 WFI workaround.\n");
++		disable_hlt();
++	}
++
++	of_platform_populate(NULL, of_default_bus_match_table,
++			     orion5x_auxdata_lookup, NULL);
++}
++
++static const char *orion5x_dt_compat[] = {
++	"marvell,orion5x",
++	NULL,
++};
++
++DT_MACHINE_START(ORION5X_DT, "Marvell Orion5x (Flattened Device Tree)")
++	/* Maintainer: Thomas Petazzoni <thomas.petazzoni@free-electrons.com> */
++	.map_io		= orion5x_map_io,
++	.init_early	= orion5x_init_early,
++	.init_irq	= orion_dt_init_irq,
++	.timer		= &orion5x_timer,
++	.init_machine	= orion5x_dt_init,
++	.restart	= orion5x_restart,
++	.dt_compat	= orion5x_dt_compat,
++MACHINE_END
+diff --git a/arch/arm/mach-orion5x/common.c b/arch/arm/mach-orion5x/common.c
+index b3eb3da..550f923 100644
+--- a/arch/arm/mach-orion5x/common.c
++++ b/arch/arm/mach-orion5x/common.c
+@@ -65,7 +65,7 @@ void __init orion5x_map_io(void)
+  ****************************************************************************/
+ static struct clk *tclk;
+ 
+-static void __init clk_init(void)
++void __init clk_init(void)
+ {
+ 	tclk = clk_register_fixed_rate(NULL, "tclk", NULL, CLK_IS_ROOT,
+ 				       orion5x_tclk);
+@@ -236,7 +236,7 @@ struct sys_timer orion5x_timer = {
+ /*
+  * Identify device ID and rev from PCIe configuration header space '0'.
+  */
+-static void __init orion5x_id(u32 *dev, u32 *rev, char **dev_name)
++void __init orion5x_id(u32 *dev, u32 *rev, char **dev_name)
+ {
+ 	orion5x_pcie_id(dev, rev);
+ 
+diff --git a/arch/arm/mach-orion5x/common.h b/arch/arm/mach-orion5x/common.h
+index 31bab92..2033b79 100644
+--- a/arch/arm/mach-orion5x/common.h
++++ b/arch/arm/mach-orion5x/common.h
+@@ -12,6 +12,8 @@ void orion5x_map_io(void);
+ void orion5x_init_early(void);
+ void orion5x_init_irq(void);
+ void orion5x_init(void);
++void orion5x_id(u32 *dev, u32 *rev, char **dev_name);
++void clk_init(void);
+ extern int orion5x_tclk;
+ extern struct sys_timer orion5x_timer;
+ 
+-- 
+1.8.0
+

@@ -1,0 +1,78 @@
+From 6fa44907eef4aed168413b6883ddc1fa2efff201 Mon Sep 17 00:00:00 2001
+From: Tomi Valkeinen <tomi.valkeinen@ti.com>
+Date: Fri, 28 Sep 2012 13:00:33 +0300
+Subject: [PATCH 103/951] OMAPDSS: HDMI: use omapdss_version
+
+Use omapdss_version in hdmi.c to select the proper hdmi features.
+
+Signed-off-by: Tomi Valkeinen <tomi.valkeinen@ti.com>
+---
+ drivers/video/omap2/dss/dss_features.c | 14 ++++++++++++--
+ drivers/video/omap2/dss/dss_features.h |  3 ++-
+ drivers/video/omap2/dss/hdmi.c         |  3 ++-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/video/omap2/dss/dss_features.c b/drivers/video/omap2/dss/dss_features.c
+index 5936ba7..e2c2e2b 100644
+--- a/drivers/video/omap2/dss/dss_features.c
++++ b/drivers/video/omap2/dss/dss_features.c
+@@ -825,10 +825,20 @@ static const struct ti_hdmi_ip_ops omap4_hdmi_functions = {
+ 
+ };
+ 
+-void dss_init_hdmi_ip_ops(struct hdmi_ip_data *ip_data)
++void dss_init_hdmi_ip_ops(struct hdmi_ip_data *ip_data,
++		enum omapdss_version version)
+ {
+-	if (cpu_is_omap44xx())
++	switch (version) {
++	case OMAPDSS_VER_OMAP4430_ES1:
++	case OMAPDSS_VER_OMAP4430_ES2:
++	case OMAPDSS_VER_OMAP4:
+ 		ip_data->ops = &omap4_hdmi_functions;
++		break;
++	default:
++		ip_data->ops = NULL;
++	}
++
++	WARN_ON(ip_data->ops == NULL);
+ }
+ #endif
+ 
+diff --git a/drivers/video/omap2/dss/dss_features.h b/drivers/video/omap2/dss/dss_features.h
+index 14a412e..fc492ef 100644
+--- a/drivers/video/omap2/dss/dss_features.h
++++ b/drivers/video/omap2/dss/dss_features.h
+@@ -125,6 +125,7 @@ bool dss_has_feature(enum dss_feat_id id);
+ void dss_feat_get_reg_field(enum dss_feat_reg_field id, u8 *start, u8 *end);
+ void dss_features_init(enum omapdss_version version);
+ #if defined(CONFIG_OMAP4_DSS_HDMI)
+-void dss_init_hdmi_ip_ops(struct hdmi_ip_data *ip_data);
++void dss_init_hdmi_ip_ops(struct hdmi_ip_data *ip_data,
++		enum omapdss_version version);
+ #endif
+ #endif
+diff --git a/drivers/video/omap2/dss/hdmi.c b/drivers/video/omap2/dss/hdmi.c
+index a48a7dd..adcc906 100644
+--- a/drivers/video/omap2/dss/hdmi.c
++++ b/drivers/video/omap2/dss/hdmi.c
+@@ -323,6 +323,7 @@ static void hdmi_runtime_put(void)
+ 
+ static int __init hdmi_init_display(struct omap_dss_device *dssdev)
+ {
++	struct omap_dss_board_info *pdata = hdmi.pdev->dev.platform_data;
+ 	int r;
+ 
+ 	struct gpio gpios[] = {
+@@ -333,7 +334,7 @@ static int __init hdmi_init_display(struct omap_dss_device *dssdev)
+ 
+ 	DSSDBG("init_display\n");
+ 
+-	dss_init_hdmi_ip_ops(&hdmi.ip_data);
++	dss_init_hdmi_ip_ops(&hdmi.ip_data, pdata->version);
+ 
+ 	if (hdmi.vdda_hdmi_dac_reg == NULL) {
+ 		struct regulator *reg;
+-- 
+1.8.0
+
